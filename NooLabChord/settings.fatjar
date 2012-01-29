@@ -1,0 +1,14 @@
+#Fat Jar Configuration File
+#Fri Nov 11 01:09:49 CET 2011
+onejar.license.required=true
+manifest.classpath=
+manifest.removesigners=true
+onejar.checkbox=false
+jarname=D\:\\dev\\java\\workspace\\NooLabMultiThread.jar
+manifest.mergeall=true
+manifest.mainclass=
+manifest.file=<createnew>
+jarname.isextern=true
+onejar.expand=
+excludes=
+includes=

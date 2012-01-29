@@ -1,0 +1,49 @@
+
+
+
+this class provides an easy way to organize multi-threaded digesting
+of sets of items.
+ 
+
+The class itself does not know anything about the calculations do be performed,
+it just provides 
+
+It uses callbacks via a generic interface and the observer pattern 
+
+This way, any set could be digested .
+
+
+
+
+The generic interface provides methods on an action level.
+
+The calling program must implement a class (preferably as an inner class of
+your main class, which can access the data), which implements the methods of the interface.
+
+
+Examples for utilizing this method are:
+
+- digesting collections of documents
+
+- image processing and analysis
+
+- machine learning based on large collections of "agents"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
