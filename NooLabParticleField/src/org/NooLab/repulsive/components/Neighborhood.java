@@ -965,23 +965,29 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 	}
 
 
-	public void updateAsCloneFrom( Neighborhood srcNB ) {
+	public int updateAsCloneFrom( Neighborhood srcNB ) {
 		//
-		
-		
-		if ((xyPlane.coordinates == null) || (xyPlane.coordinates.size()==0) || (xyPlane.positionTableMap.values().size()==0)){
-		
-			xyPlane.coordinates = new ArrayList<Coordinate2D>(srcNB.xyPlane.coordinates ) ;
-			xyPlane.positionTableMap = new HashMap<Integer,Integer>(srcNB.xyPlane.positionTableMap);
+		int r=-1;
+		try{
 			
-		}else{
+			
+			if ((xyPlane.coordinates == null) || (xyPlane.coordinates.size()==0) || (xyPlane.positionTableMap.values().size()==0)){
+			
+				xyPlane.coordinates = new ArrayList<Coordinate2D>(srcNB.xyPlane.coordinates ) ;
+				xyPlane.positionTableMap = new HashMap<Integer,Integer>(srcNB.xyPlane.positionTableMap);
+				
+			}else{
 
-			xyPlane.coordinates = new ArrayList<Coordinate2D>(srcNB.xyPlane.coordinates ) ;
-			xyPlane.positionTableMap = new HashMap<Integer,Integer>(srcNB.xyPlane.positionTableMap);
+				xyPlane.coordinates = new ArrayList<Coordinate2D>(srcNB.xyPlane.coordinates ) ;
+				xyPlane.positionTableMap = new HashMap<Integer,Integer>(srcNB.xyPlane.positionTableMap);
+				
+			}
 			
-			
+			r = 0;
+		}catch(Exception e){
+			r = -3;
 		}
-		
+		return r;
 	}
 
 	/**

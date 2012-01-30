@@ -22,6 +22,8 @@ public interface GraphParticleIntf {
 
 	public int getCharge() ;
 
+	public void unselect();
+
 
 	
 	

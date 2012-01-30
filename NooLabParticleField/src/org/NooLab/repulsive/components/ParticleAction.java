@@ -41,16 +41,47 @@ public class ParticleAction {
 			}
 		}
 	}
+	
+	public int size(){
+		return addQueue.size() + delQueue.size();
+	}
+	
+	/** use "a" for the "add" queue and "d" for the "delete" queue */
+	public int size( String ids){
+		int n= -1;
+		
+		if (ids.toLowerCase().startsWith("a")){
+			n = addQueue.size();  
+		}
+		if (ids.toLowerCase().startsWith("d")){
+			n = delQueue.size();  
+		}
+		
+		
+		return n;
+	}
+
 	synchronized public void add(ActionDescriptor ad){
 		
 		if (ad.getActionCode() == RepulsionFieldEventsIntf._FIELDACTION_ADD){
 			
+			
+			for (int i=0;i<addQueue.size();i++){
+				if ( (ad.x>0) && (addQueue.get(i).x==ad.x) && (ad.y>0) &&(addQueue.get(i).y==ad.y)){
+					ad.x = ad.x + Math.random()*15;
+					ad.y = ad.y + Math.random()*15;
+				}
+			}
 			addQueue.add(ad);
 			
 			out.print(3, "addQueue size now : "+addQueue.size());
 		}
 		if (ad.getActionCode() == RepulsionFieldEventsIntf._FIELDACTION_DEL){
 			removeEmptyItems(delQueue);
+			
+			for (int i=0;i<delQueue.size();i++){
+				
+			}
 			delQueue.add(ad);
 			out.print(3, "delQueue size now : "+delQueue.size());
 		}  

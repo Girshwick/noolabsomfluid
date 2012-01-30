@@ -147,8 +147,8 @@ import org.NooLab.utilities.logging.PrintLog;
  *  The update() call needs to be repeated if multi-threading is switched off by  </br>
        repulsionField.useParallelProcesses(0);  </br></br>
        
- *  Note that any access to the methods of the RepulsionFIeld is only through its interface, which is
- *  initially retrieved by  
+ *  Note that any access to the methods of the RepulsionField is only through its interface, which is
+ *  initially retrieved by the Factory 
  *   
  *   
  *   
@@ -179,9 +179,13 @@ public class RepulsionFieldCore implements 	Runnable,
 	public Particles particles, frozenParticles;
 
 	int nbrParticles = 0;
-	double densityPerAcre = 0.0 ; // 1 acre = 100*100 pix :)
+	double currentBaselineDensity = -1.0 ;
+	double maxDensityDeviationPercent = -1.0;
+	double densityPerAcre = -1.0 ; // 1 acre = 100*100 pix :)
 	double averageDistance = -1;
-
+	int stabilizationCounter=0;
+	double defaultThresholdForDensity = 40.0;
+	
 	int areaWidth=1, areaHeight=1, areaDepth=0;
 	boolean areaChangedSize=true ;
 	int areaWidth0, areaHeight0;
@@ -213,7 +217,7 @@ public class RepulsionFieldCore implements 	Runnable,
 	private int initialDelayedOnsetMillis;
 	boolean restoreInitialMobilityValues = false;
 	
-	double maxDensityDeviationPercent;
+	
 	
 	boolean freezingAllowed=true;
 	boolean fieldLayoutFrozen=false;
@@ -1432,6 +1436,11 @@ if (this.name.contains("sampler")){
 		}
 		isReadyToUse = true;
 		 
+		// TODO
+		
+		if (particleAction.size()>0){
+			releaseShakeIt(3);
+		}
 	}
 	
 	
@@ -1714,6 +1723,7 @@ if (this.name.contains("sampler")){
 						ad.setY( particles.get(index).y);
 						ad.setIndex(index);
 						particleAction.add(ad);
+						out.print(2, "n="+particleAction.size("d")+"  new particles are waiting to be deleted...");
 					}
 				} // i->
  
@@ -1820,6 +1830,7 @@ if (this.name.contains("sampler")){
 				ad.setIndex(0);
 				particleAction.add(ad);
 				isReadyToUse = false ;
+				out.print(2, "n="+particleAction.size("a")+"  new particles are waiting to be added...");
 			}
 			
 			return "";
@@ -1828,7 +1839,7 @@ if (this.name.contains("sampler")){
 		densityPerAcre = calculateDensity(count);
 		adaptAreaSizeToDensity(count) ;
 		
-											out.print(3, "particle adding...");
+											out.print(2, "particle(s) (n="+count+") adding...");
 		for (int i=0;i<count;i++){
 			if (x[i]<=-3){
 				continue;
@@ -1974,7 +1985,38 @@ if (this.name.contains("sampler")){
 		// frozen state of particle will be released on new global frozen state
 	}
 
-
+	// obsolete
+	private Object getParametersFromParticlesChangeQueue( String ids){
+		
+		Object obj=null;
+		int[][] addParameters = null ;
+		int[] delParameters = null ;
+		int n;
+		
+		n = particleAction.size(ids);
+		
+		if ((n>0) && (ids.toLowerCase().startsWith("a"))){
+		
+			addParameters = new int[n][n];
+			for (int i=0;i<particleAction.size();i++){
+				
+				
+			}
+			obj = addParameters;
+		} 
+		if ((n>0) && (ids.toLowerCase().startsWith("d"))){
+			
+			delParameters = new int[n];
+			for (int i=0;i<n;i++){
+				 
+			}
+			obj = delParameters;
+		} 
+		
+		
+		return obj ;
+	}
+	
 	public void clearData(int index){
 		
 		Particle particle;
@@ -2119,6 +2161,7 @@ if (this.name.contains("sampler")){
 			for (int i=0;i<intensity;i++){
 				mobilityIncrease();
 			}
+			
 			
 			for (int i=0;i<particles.size();i++){
 				p = particles.get(i);
@@ -3043,7 +3086,7 @@ if (index>nbrParticles-5){
 
 
 	private void adaptAreaSizeToDensity( int expectedIncrease){ 
-		double avgDens,aspectRatio ;
+		double avgDens,aspectRatio,threshold  ;
 		int aW,aH, area, daW,daH ;
 		
 		if (areaHeight==0){
@@ -3063,10 +3106,17 @@ if (index>nbrParticles-5){
 		
 		boolean tooSmall = true;
 		
+		out.print(2, "densityPerAcre "+Math.round(densityPerAcre*100.0)/100.0);
+		threshold = defaultThresholdForDensity ; // usually 40.0
+		  
+		if (maxDensityDeviationPercent >0.0){
+			threshold = currentBaselineDensity * (1.0+maxDensityDeviationPercent);
+		}
+		
 		while (tooSmall){
 			area = aW*aH;
-			avgDens = calculateDensity( aW,aH,psz);
-			if (avgDens>40){
+			avgDens = calculateDensity( aW,aH,psz); 
+			if (avgDens> threshold){
 				daW = (int)Math.round( ((double)aW*1.0) *0.02 );
 				daH = (int)Math.round( ((double)aH*1.0) *0.02 / aspectRatio);
 				daW = Math.max( daW, 10);
@@ -3097,7 +3147,7 @@ if (index>nbrParticles-5){
 					aW=aW-5; aH=aH+5;
 				}
 				avgDens = calculateDensity( aW,aH,psz);
-				if (avgDens>40){
+				if (avgDens>threshold){
 					aW=aW+5; aH=aH+5;
 				}
 			}else{
@@ -3110,13 +3160,16 @@ if (index>nbrParticles-5){
 		areaHeight = aH ;
 		 
 		eventsReceptors.get(0).onAreaSizeChanged( this, aW, aH);
-		out.print(2, "N = "+particles.size()+" , density = "+densityPerAcre+" , average of distance "+ Math.round(averageDistance*100.0)/100.0) ;
+		out.print(2, "Density has been adjusted: N = "+particles.size()+" , density = "+densityPerAcre+" , average of distance "+ Math.round(averageDistance*100.0)/100.0) ;
 				
 	}
 	
 	@Override
 	public void setMaxDensityDeviationPercent(double value) {
-		 
+		
+		if ((updateCounter>0) && (currentBaselineDensity>0)){
+			currentBaselineDensity = this.densityPerAcre ;
+		}
 		maxDensityDeviationPercent = value ;
 	}
 	
@@ -3227,10 +3280,13 @@ if (index>nbrParticles-5){
 		if (freezeNow ){ // && (passes>10)
 			out.print(3, "\nlayout for field <"+this.name+"> has been frozen (n="+particles.size()+").");
 			
-			
+			stabilizationCounter++;
 			setLayoutFrozenState(true); // fieldLayoutFrozen = true; -> NEVER set it directly, we have to know whether it happens
 			 
-			
+			if ((currentBaselineDensity<0) && (densityPerAcre>3.0)){
+				currentBaselineDensity = this.densityPerAcre ;
+			}
+			// out.print(2, "stabz # "+stabilizationCounter+" , densityPerAcre "+Math.round(densityPerAcre*100.0)/100.0);
 			
 			updateFinished = true;
 			delayedOnsetMillis = 50;

@@ -381,6 +381,13 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 	}
 
 	@Override
+	public void unselect() {
+		// this is for the GraphParticles perspective...
+		selectedFlag = 0;
+		resetColor() ;
+	}
+	
+	@Override
 	public void setLocationFixed(int flag) {
 		if (flag<-1)flag=-1;
 		if (flag>1)flag=1;
@@ -423,9 +430,10 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 	}
 
 
-	public void setDisplayedColor(PColor displayedColor) {
-		this.displayedColor = displayedColor;
+	public void setDisplayedColor(PColor color) {
+		this.displayedColor = color;
 	}
+	
 	/** range for color values [0..255] */
 	public void setDisplayedColor( int[] displayedColors) {
 		displayedColor.r = displayedColors[0]/255 ;
@@ -590,6 +598,8 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 	public int getCharge() {
 		return charge;
 	}
+
+
 
  
 	

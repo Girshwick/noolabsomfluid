@@ -62,6 +62,7 @@ public class RepulsionField implements 	Runnable,
 	
 	ArrayList<String> availableResults = new ArrayList<String>(); 
 	
+	boolean isFacadeReadyToUse=false;
 	
 	ArrUtilities arrutil = new ArrUtilities();
 	public PrintLog out = new PrintLog(2,true);
@@ -82,6 +83,7 @@ public class RepulsionField implements 	Runnable,
 		surroundBuffers = new SurroundBuffers( this, out);
 		surroundBuffers.setParentName(this.getClass().getSimpleName()) ;
 		
+		 
 		
 		out.setPrefix("[RF]");
 	}
@@ -266,6 +268,10 @@ public class RepulsionField implements 	Runnable,
 			String guidStr="";
 			int pix;
 			 
+			if (surroundRetrieval==null){
+				surroundRetrieval = new SurroundRetrieval( this,  (SurroundRetrievalObserverIntf)this) ;
+			}
+			
 			surroundN = coreInstance.getSelectionSize() ;	
 			
 			pix = surroundRetrieval.addRetrieval( xpos, ypos, surroundN, selectMode, autoselect);
@@ -293,6 +299,10 @@ public class RepulsionField implements 	Runnable,
 		
 		if (coreInstance.isReadyToUse()){
 			surroundN = coreInstance.getSelectionSize();
+
+			if (surroundRetrieval==null){
+				surroundRetrieval = new SurroundRetrieval( this,  (SurroundRetrievalObserverIntf)this) ;
+			}
 
 			pix = surroundRetrieval.addRetrieval(index, surroundN, selectMode, autoselect);
 
@@ -348,8 +358,14 @@ public class RepulsionField implements 	Runnable,
 		String guidStr = "";
 		int pix;
 	
+		
+		if (surroundRetrieval==null){
+			surroundRetrieval = new SurroundRetrieval( this,  (SurroundRetrievalObserverIntf)this) ;
+		}
+
 		// pix then will contain the indx to a slot in the collecton of
 		// "paramSets"
+		
 		pix = surroundRetrieval.addRetrieval(indexes, thickness, endPointRatio, autoselect);
 	
 		guidStr = surroundRetrieval.go(pix, SurroundRetrieval._TASK_SURROUND_MST);
@@ -363,6 +379,10 @@ public class RepulsionField implements 	Runnable,
 		String guidStr="";
 		int pix;
 		
+		if (surroundRetrieval==null){
+			surroundRetrieval = new SurroundRetrieval( this,  (SurroundRetrievalObserverIntf)this) ;
+		}
+
 		// pix then will contain the indx to a slot in the collecton of "paramSets"
 		pix = surroundRetrieval.addRetrieval( indexes,  thickness, topology, autoselect);
 		
@@ -663,7 +683,8 @@ public class RepulsionField implements 	Runnable,
 
 	@Override
 	public boolean isReadyToUse() {
-		return coreInstance.isReadyToUse();
+		return isFacadeReadyToUse ;
+		
 	}
 	
 	@Override
@@ -764,6 +785,8 @@ public class RepulsionField implements 	Runnable,
 		updatingBuffersFromCore(); 
 		
 		eventsReceptor.onCalculationsCompleted();
+		
+		isFacadeReadyToUse=true; // will be set only HERE to true, after the first fixation 
 	}
 	
 	

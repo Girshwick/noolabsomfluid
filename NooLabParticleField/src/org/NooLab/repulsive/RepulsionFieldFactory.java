@@ -3,6 +3,11 @@ package org.NooLab.repulsive;
 import org.NooLab.repulsive.components.RepulsionFieldProperties;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
 
+import tester.RequestTester;
+
+
+
+
 public class RepulsionFieldFactory {
 
 	RepulsionField repulsionField;
@@ -11,9 +16,31 @@ public class RepulsionFieldFactory {
 	
 	RepulsionFieldFactory rfFactory;
 	
+	RequestTester rqTester;
+	
 	// ========================================================================
 	public RepulsionFieldFactory(){
+		init();
+	}
+	
+	public RepulsionFieldFactory( String command ){
+		init();
 		
+		// test:RQ=100
+		if ((command.contains("test")) && (command.contains("RQ"))){
+			String dvs = command.split("=")[1];
+			int dv = Integer.parseInt(dvs) ;
+			
+			if ((dv>0)&&(dv<10)){
+				dv = 10;
+			}
+			if (dv>0){
+				rqTester = new RequestTester(repulsionField, dv);
+			}
+		}
+	}
+	
+	private void init(){
 		rfProperties = new RepulsionFieldProperties() ;
 		rfFactory = this;
 		produce(rfProperties);
@@ -27,11 +54,7 @@ public class RepulsionFieldFactory {
 	
 	private void produce(RepulsionFieldProperties rfProperties){
 
-		
-		
-
 		repulsionField = new RepulsionField(rfFactory);
-		
 		
 	}
 	// ========================================================================
@@ -49,6 +72,10 @@ public class RepulsionFieldFactory {
 
 	public RepulsionFieldProperties getRfProperties() {
 		return rfProperties;
+	}
+
+	public RequestTester getRqTester() {
+		return rqTester;
 	}
 
 	public RepulsionFieldFactory getRfFactory() {

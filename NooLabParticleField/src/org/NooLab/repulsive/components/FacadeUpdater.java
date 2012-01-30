@@ -98,14 +98,14 @@ public class FacadeUpdater implements Runnable{
 		particles.setAverageDensity( coreInstance.particles.getDensity() ) ;
 		
 		// finally the plane
-		neighborhood.updateAsCloneFrom( coreInstance.getNeighborhood() );
+		int r = neighborhood.updateAsCloneFrom( coreInstance.getNeighborhood() );
 		
-		// most of the work has already been done by sync'ing the particles, surround buffers have been transferred
-		transferSurroundBuffers();
-
+		if (r==0){
+			// most of the work has already been done by sync'ing the particles, surround buffers have been transferred
+			transferSurroundBuffers();
 		
-		out.print(2, "update of facade layer completed.");
-		
+			out.print(2, "update of facade layer completed.");
+		}
 		isFinished=true;
 	}
 	
