@@ -44,9 +44,10 @@ public interface RepulsionFieldIntf extends RepulsionFieldBasicIntf{
 	public String getParticlesOfFiguratedSet( int figure, Object indexes, double thickness, double endPointRatio, boolean autoselect );
 	
 	public String getParticlesOfFiguratedSet( int figure, ArrayList<PointXY> points, double thickness, double endPointRatio, boolean autoselect );
-	
-	
-	
+
+
+	public void setFieldIsRandom(boolean flag);
+
 	
 	
 }

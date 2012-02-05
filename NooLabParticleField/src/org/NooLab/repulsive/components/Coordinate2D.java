@@ -1,6 +1,6 @@
 package org.NooLab.repulsive.components;
 
-import java.util.Comparator;
+
 import java.util.HashMap;
 import java.util.Map;
 

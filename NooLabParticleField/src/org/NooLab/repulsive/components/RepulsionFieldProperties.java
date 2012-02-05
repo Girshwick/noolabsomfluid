@@ -1,6 +1,7 @@
 package org.NooLab.repulsive.components;
 
 import java.io.Serializable;
+import java.util.Random;
 
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.CreateLogging;
@@ -18,13 +19,20 @@ public class RepulsionFieldProperties  implements Serializable{
 	String homePath = "";
 	String configPath = "";
 	
+	boolean fieldIsRandom = false;
+	// this sets the relative strength of the randomization
+	double relativeRandomness = 1.0 ;
+	
+	
+	Random random = new Random();
 	
 	transient public DFutils fileutil = new DFutils();
 	transient public StringsUtil strgutil = new StringsUtil(); 
 	
 	// ========================================================================
 	public RepulsionFieldProperties(){
-		
+		random.setSeed(7531);
+		random.nextGaussian() ;
 	}
 	// ========================================================================
 	
@@ -55,6 +63,31 @@ public class RepulsionFieldProperties  implements Serializable{
 	
 		return homePath;
 	}
+
+
+	public boolean getFieldIsRandom() {
+		return fieldIsRandom;
+	}
+	public void setFieldIsRandom(boolean isRandom) {
+		this.fieldIsRandom = isRandom;
+	}
+
+	public double getRelativeRandomness() {
+		return relativeRandomness;
+	}
+
+
+	public void setRelativeRandomness(double relativeRandomness) {
+		this.relativeRandomness = relativeRandomness;
+	}
+
+
+	public Random getRandom() {
+		return random;
+	}
+
+
+
 	
 	
 	

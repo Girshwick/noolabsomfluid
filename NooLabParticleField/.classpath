@@ -10,5 +10,6 @@
 	<classpathentry kind="lib" path="C:/Programs/dev/processing-1.5/modes/java/libraries/NooLabParticleField/library/NooLabChord.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/processing-1.5/modes/java/libraries/NooLabParticleField/library/NooLabGraph.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/processing-1.5/modes/java/libraries/NooLabParticleField/library/NooLabUtilities.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/math/jmath/jmatharray.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

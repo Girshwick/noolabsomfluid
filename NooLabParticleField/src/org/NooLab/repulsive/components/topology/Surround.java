@@ -234,7 +234,10 @@ public class Surround {
 			particleIndex = neighborhood.getItemsCloseTo( xpos, ypos);
 			// TODO check for the radius	  
 			
-			if (particles.get(particleIndex).getIsAlive()<0){
+			if ((particles==null) || (particleIndex<0) || (particleIndex>=particles.size()) || (particles.get(particleIndex).getIsAlive()<0)){
+				String str="";
+				if (particles!=null){ str = " ,  particles n="+ particles.size();}
+				out.print(2, "problem in <getParticleAt()>, particleIndex="+particleIndex+", particles oK? ->"+(particles!=null)+" "+str);
 				particleIndex = -2;
 			}
 			//
@@ -242,6 +245,8 @@ public class Surround {
 			out.print(4, "particle (index="+particleIndex+",x="+xpos+",y="+ypos+") has been retrieved in "+(ctime-stime)+" ms");
 			
 		} catch(Exception e){
+			String str = "Critical error in context <" + parentField.getName()+">";
+			out.printErr(2, str);
 			e.printStackTrace();
 		}
 		 

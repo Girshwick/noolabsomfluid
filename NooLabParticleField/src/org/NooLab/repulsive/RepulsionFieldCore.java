@@ -5,6 +5,7 @@ package org.NooLab.repulsive;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import org.math.array.StatisticSample;
 
 import org.NooLab.chord.CompletionEventMessageCallIntf;
 
@@ -190,8 +191,13 @@ public class RepulsionFieldCore implements 	Runnable,
 	double defaultThresholdForDensity = 40.0;
 	
 	int areaWidth=1, areaHeight=1, areaDepth=0;
+	
+	int areaSizeAuto = -1;
+	double defaultDensity ;
+	int autoSizeNodeCounts ;
+	
 	boolean areaChangedSize=true ;
-	int areaWidth0, areaHeight0;
+
 	int changesInPopulation=0;
 	
 	private int neighborhoodBorderMode = Neighborhood.__BORDER_ALL ;
@@ -270,7 +276,7 @@ public class RepulsionFieldCore implements 	Runnable,
 	FieldSampler sampler ;
 	
 	boolean isRunning=false, startInitiated=false, isStopped=true ;
-	int threadcount = 5;
+	int threadcount = 6;
 
 	public int nextThreadCount=0;
 	
@@ -292,6 +298,7 @@ public class RepulsionFieldCore implements 	Runnable,
 	
 	RelocationDurationLimiter relocationDurationLimiter;
 	
+	boolean fieldIsRandom = false;
 	RepulsionFieldProperties rfProperties;
 	Storage storage;
 	
@@ -568,25 +575,26 @@ public class RepulsionFieldCore implements 	Runnable,
 		if (selectionBuffersActivated==true){
 			surroundBuffers = new SurroundBuffers( this , particles, out) ;
 			surroundBuffers.setParentName( this.name+"."+this.getClass().getSimpleName());
+out.print(2, "restart()->initialization() : size of particles = "+particles.size());			
 		} 
 
+				
+		statisticsCollector = new CollectStatistics(this);
+		statisticsCollector.setShowStatisticsInfo(false) ;
+		surroundRetrieval = new SurroundRetrieval(this); 
 		
 		neighborhood = new Neighborhood( neighborhoodBorderMode, surroundBuffers,out ) ;
 		neighborhood.setAreaSize( areaWidth, areaHeight, areaDepth);
 		neighborhood.setParentName( this.name+"."+this.getClass().getSimpleName());
 		
-		
-		statisticsCollector = new CollectStatistics(this);
-		statisticsCollector.setShowStatisticsInfo(false) ;
-		surroundRetrieval = new SurroundRetrieval(this); 
-		
+
 		rf = this;
 	}
 	
 	private void createParticlesPopulation() {
 	
 		Particle p;
-		
+		double globRepulsion ;
 		// defining the collections
 		particles = new Particles(this);
 		frozenParticles = new Particles(this);
@@ -598,9 +606,16 @@ public class RepulsionFieldCore implements 	Runnable,
 		
 		if (nbrParticles>1000)rf=1.2;
 		
+		globRepulsion = repulsion; 
+		
 		// populating the collection of normal particles
 		for (int i = 0; i < nbrParticles; ++i) {
 			
+			if (fieldIsRandom ){
+				repulsion = calculateForcesRandomization(globRepulsion, -0.6,3.4);
+			}
+			
+	
 			p = new Particle(areaWidth, areaHeight, kRadiusFactor, nbrParticles, repulsion, sizefactor, colormode);
 			if (initialLayoutMode == RepulsionField._INIT_LAYOUT_REGULAR){
 				
@@ -625,12 +640,43 @@ public class RepulsionFieldCore implements 	Runnable,
 			
 			
 		}// i->
-		
+		repulsion = globRepulsion ;
 		
 	}
-
 	
-	 
+	
+	private double calculateForcesRandomization( double valueForRandomization, double min, double max){
+		double result = valueForRandomization;
+		// =(1/(s*SQRT(2*PI()))*EXP(-(B10-m)*(B10-m)/(2*s*s)))
+	
+		double m,s, rr , rv=1.0;
+		
+		m= (2.0*min+max)/3.0; //  
+		
+		rr = rfProperties.getRelativeRandomness(); // by default = 1.0
+		result = -1.0 ;
+
+		double[] rvs = org.math.array.StatisticSample.randomNormal(3, m, (m-min)/2.43);
+		
+		for (int i=0;i<rvs.length;i++){
+			rv = rvs[i];
+			if ((rv>min) && (rv<max)){
+				result = rv;
+				break;
+			}
+		}
+		if (result<0){
+			result = valueForRandomization;
+			rv=1.0;
+		}
+		result = valueForRandomization * Math.max(rv, min);
+		result = Math.min(result, max);
+out.print(4,"rnd : "+ (Math.round(rv*1000.0)/1000.0)+ " ,  randomized repulsion : "+(Math.round(result *1000.0)/1000.0)) ; // Math.round( repulsion*1000.0)/1000.0 ) ;		
+		// better to use sth like lognormal
+		
+		
+		return result;
+	}
 	
 	
 	public void initStorage(){
@@ -787,12 +833,13 @@ if (this.name.contains("sampler")){
 		return neighbors;
 	}
 	
-	
 	private DislocationXY calculateDislocation( int index, ArrayList<Integer> neighbors) {
 		
 		int i = index,j;
 		double dx,dy,scale ,diff , maxDist, distance ;
-
+		double effectiveRepulsion,rp1,rp2 ;
+		
+		
 		DislocationXY dislocation = new DislocationXY();
 			
 		try{
@@ -807,6 +854,20 @@ if (this.name.contains("sampler")){
 				}
 
 				
+				rp1 = 1.0 ;
+				rp2 = 1.0 ;
+				effectiveRepulsion = 1.0 ;
+				
+				// without request for random forces, te forces remain fully symmetrical
+				// ... if not, then we take (simplified) the effective force for particle i as the weighted mean 
+				//     between the forces of the two particles 
+				if (fieldIsRandom){
+					rp1 = particles.get(i).getRepulsion();
+					rp2 = particles.get(j).getRepulsion();
+					effectiveRepulsion = Math.max(0.1,((2.0*rp1+rp2)/3.0)) ;
+				}
+				
+				
 				dx = neighborhood.getLinearDistance(particles.get(i).x , particles.get(j).x, areaWidth) ;
 				dy = neighborhood.getLinearDistance(particles.get(i).y , particles.get(j).y, areaHeight) ;
 
@@ -820,7 +881,8 @@ if (this.name.contains("sampler")){
 					scale = diff / maxDist;
 					scale = scale * scale;
 					dislocation.wt = dislocation.wt + scale;
-					scale = scale * (energy * energyCorrection) / distance;
+					scale = scale * (effectiveRepulsion) * (energy * energyCorrection) / distance;
+				
 					dislocation.x = dislocation.x + (dx * scale);
 					dislocation.y = dislocation.y + (dy * scale);
 				}
@@ -1431,7 +1493,7 @@ if (this.name.contains("sampler")){
 			                >2   -> perfectly fixed 
 			     */
 			 // 1 acre = 100*100 pix 
-			    densityPerAcre = calculateDensity(0);
+			    densityPerAcre = calculateDensity(particles.size(), 0);
 			    
 			    q = statisticsCollector.getTrendStabilityValue();
 			    
@@ -1483,7 +1545,6 @@ if (this.name.contains("sampler")){
 		}
 		isReadyToUse = true;
 		 
-		// TODO
 		
 		if (particleAction.size()>0){
 			releaseShakeIt(3);
@@ -1715,8 +1776,7 @@ if (this.name.contains("sampler")){
 
 	@Override
 	public void setShapeOfSelection() {
-		// TODO Auto-generated method stub
-		
+		// TODO: offer hex , circle (=hex constrained by radius), square
 	}
 
 
@@ -1823,7 +1883,7 @@ if (this.name.contains("sampler")){
 	
 		newradius = particles.get(0).calculateRadius(nbrParticles);
 		
-		// TODO: NOT the last, but the closest one
+		// possible improvement: NOT the last, but the closest one, take it fro surround before removal		
 		particles.get( particles.size()-1).radius = newradius;
 		p = particles.get( particles.size()-1);
 		
@@ -1892,8 +1952,7 @@ if (this.name.contains("sampler")){
 		// inclusive complete rebuild of surround
 
 		int count = x.length ;
-		
-		Particle p=null;
+		 
 		
 		if (count==0){return -3;}
 		if (x.length!=y.length){return -4;}
@@ -1923,7 +1982,7 @@ if (this.name.contains("sampler")){
 			return -3; //
 		}
 		
-		densityPerAcre = calculateDensity(count);
+		densityPerAcre = calculateDensity(particles.size(), count);
 		adaptAreaSizeToDensity(count) ;
 		
 		if (particleAction.size("a")>0){
@@ -1969,9 +2028,9 @@ if (this.name.contains("sampler")){
 
 	@Override
 	public int splitParticle(int index, ParticleDataHandlingIntf pdataHandler) {
-		int result = -1 ;
+	 
 		int x,y;
-		Particle particle, blossomedParticle;
+		Particle particle ;
 		
 		
 		if ((index<0) || (index>particles.size()-1)){
@@ -1986,7 +2045,7 @@ if (this.name.contains("sampler")){
 		
 		int pix = addParticles( x, y);
 		
-		blossomedParticle = particles.get(pix) ;
+		// Particle blossomedParticle = particles.get(pix) ;
 		
 		// what to do with the data ? ...
 		
@@ -2179,7 +2238,7 @@ if (this.name.contains("sampler")){
 											
 		if (fieldLayoutFrozen){
 											out.print(4, "relocating particles, changesInPopulation = "+changesInPopulation);
-			calculateDensity(particles.size());
+			calculateDensity(particles.size(), particles.size());
 			
 			chgHistoryCounterThreshold = 100.0*(((double)nbrParticles/(double)(nbrParticles-changesInPopulation))-1.0);
 			shake_it = ( (densityPerAcre>10) && 
@@ -2437,6 +2496,7 @@ if (this.name.contains("sampler")){
 	}
 
 	private void restartSubProcesses(int mode){
+		
 		CollectStatistics statsCollector;
 		if ((neighborhood == null) || (statisticsCollector==null)) {
 			mode = 1;
@@ -2446,7 +2506,7 @@ if (this.name.contains("sampler")){
 			
 			if (selectionBuffersActivated==true){
 				surroundBuffers = new SurroundBuffers( this ,particles, out) ;
-				// TODO: SurroundBuffers() gap: Note that the particles contain a SurroundBuffer, whose parent is pointing to the old instance !
+				
 			} 
 			 
 			out.print(3, "neighborhood : strictly new start...)");
@@ -2506,7 +2566,7 @@ if (this.name.contains("sampler")){
 				restartSubProcesses(1);
 				*/
 				initialization();
-				 
+				delay(300); 
 				fieldThrd.start();
 				
 				
@@ -2893,7 +2953,14 @@ if (this.name.contains("sampler")){
 	
 	@Override
 	public void setAreaSize(int width, int height) {
-		 
+		
+		if (areaSizeAuto>0){
+			if ((width*height)<areaWidth*areaHeight){
+				return;
+			}
+		}
+		
+		
 		if ((areaWidth != width) || (areaHeight != height)){
 		
 			informParticlesAboutArea(areaWidth,areaHeight);
@@ -2912,11 +2979,13 @@ if (this.name.contains("sampler")){
 
 	public int[] getAreaSize(){
 		int[] as = new int[2] ;
+		
 		as[0] = areaWidth;
 		as[1] = areaHeight;
 		
 		return as;
 	}
+	
 
 	public void setAreaHeight(int height) {
 		areaHeight = height;
@@ -2926,6 +2995,54 @@ if (this.name.contains("sampler")){
 		areaWidth = width;
 	}
 
+	@Override
+	public void setDefaultDensity( double dvalue ) {
+		 
+		defaultDensity = dvalue; 
+		
+		if (defaultDensity>25){
+			defaultDensity = 25.0;
+		}
+		if (defaultDensity<5){
+			defaultDensity = 5.0;
+		} 
+	}
+	
+	@Override
+	public void setAreaSizeAuto(int nodecounttarget) {
+		double  aspectRatio = 1.666;
+		int w,h ;
+		
+		autoSizeNodeCounts = nodecounttarget;
+		
+		if (defaultDensity<0){
+			return;
+		}
+		
+		averageDistance = 30;
+		
+		w = (int)(Math.sqrt(autoSizeNodeCounts)*((1.0+aspectRatio)/2.0) * 30.0) ;
+		h = (int)(Math.sqrt(autoSizeNodeCounts)/((1.0+aspectRatio)/2.0) * 30.0) ;
+		
+		// double d = (100*100)*autoSizeNodeCounts/(w*h);
+		
+		areaSizeAuto = w*h;
+		areaWidth = w ; 
+		areaHeight = h ;
+		
+		
+		adaptAreaSizeToDensity( -autoSizeNodeCounts );
+		
+		areaSizeAuto= areaWidth*areaHeight ;  
+		 
+	}
+	
+	@Override
+	public void setAreaSizeMin() {
+		areaHeight = 300;
+		areaWidth  = 400;
+	}
+	
 	public void setFreezingAllowed(boolean freezingAllowed) {
 		this.freezingAllowed = freezingAllowed;
 	}
@@ -3056,10 +3173,11 @@ if (this.name.contains("sampler")){
 	@Override
 	public GraphParticlesIntf getGraphParticles() {
 		
-		// TODO actually, we should return an abridged version of the full particles, 
-		// i.e. a separate population where items contain only with graph information (x,y,z, colors)
+		// returns an abridged version of the full particles, 
+		// provides access only to graph information (x,y,z, colors)
 		return (GraphParticlesIntf) particles;
 	}
+	
 	public boolean isFreezingAllowed() {
 		return freezingAllowed;
 	}
@@ -3199,30 +3317,38 @@ if (index>nbrParticles-5){
 	}
 
 	private void adaptAreaSizeToDensity( int count ){ 
-		double avgDens,aspectRatio,threshold  ;
-		int aW,aH, area, daW,daH;
+		double avgDens = 0,aspectRatio,threshold  ;
+		int aW,aH,   daW,daH, pc;
 	 
+		avgDens = densityPerAcre;
+		
+		pc = 0 ;
+		
+		if (particles!=null){
+			pc = particles.size();
+		}
 		
 		if (areaHeight==0){
 			return;
 		}
 		 
-		if ((maxDensityDeviationPercent<=0.0) && ((averageDistance>15.0)|| (densityPerAcre<32))){ 
+		if ((count>=0) && ((maxDensityDeviationPercent<=0.0) && ((averageDistance>15.0)|| (densityPerAcre<32)))){ 
 			return;
 		}
+		count = Math.abs(count) ;
 		
-		aspectRatio = areaWidth/ areaHeight; 
+		aspectRatio = (double)areaWidth/ (double)areaHeight; 
 		aW = areaWidth  ;
 		aH = areaHeight;
-		int psz = (int)(particles.size()*0.03)+ count ;
+		int psz = (int)( pc *0.03)+ count ;
 		
 		boolean tooSmall = true;
 		
-		out.print(2, "densityPerAcre "+Math.round(densityPerAcre*100.0)/100.0);
+		out.print(4, "densityPerAcre "+Math.round(densityPerAcre*100.0)/100.0);
 		threshold = defaultThresholdForDensity ; // usually 40.0
 		  
 		if (maxDensityDeviationPercent >0.0){
-			avgDens = calculateDensity( aW,aH,psz); 
+			avgDens = calculateDensity( (pc+count), aW,aH,psz); 
 			double actualDeviationPercent = 100.0*(double)(avgDens/currentBaselineDensity) ;
 			
 			if (Math.abs(actualDeviationPercent-100.0)<maxDensityDeviationPercent){
@@ -3232,8 +3358,8 @@ if (index>nbrParticles-5){
 		}
 		
 		while (tooSmall){
-			area = aW*aH;
-			avgDens = calculateDensity( aW,aH,psz); 
+			// int area = aW*aH;
+			avgDens = calculateDensity( (pc+count),aW,aH,psz); 
 			if (avgDens> threshold){
 				daW = (int)Math.round( ((double)aW*1.0) *0.02 );
 				daH = (int)Math.round( ((double)aH*1.0) *0.02 / aspectRatio);
@@ -3264,7 +3390,7 @@ if (index>nbrParticles-5){
 				}else{
 					aW=aW-5; aH=aH+5;
 				}
-				avgDens = calculateDensity( aW,aH,psz);
+				avgDens = calculateDensity( (pc+count), aW,aH,psz);
 				if (avgDens>threshold){
 					aW=aW+5; aH=aH+5;
 				}
@@ -3272,13 +3398,15 @@ if (index>nbrParticles-5){
 				arMatch=true;
 			}
 		}
-		
-		changesInPopulation = (int) (particles.size()*0.1);
+		if (densityPerAcre<0){
+			densityPerAcre = avgDens;
+		}
+		changesInPopulation = (int) (pc*0.1);
 		areaWidth = aW ;
 		areaHeight = aH ;
 		 
 		eventsReceptors.get(0).onAreaSizeChanged( this, aW, aH);
-		out.print(2, "Density has been adjusted: N = "+particles.size()+" , density = "+densityPerAcre+" , average of distance "+ Math.round(averageDistance*100.0)/100.0) ;
+		out.print(3, "Density has been adjusted: N = "+pc+" , density = "+densityPerAcre+" , average of distance "+ Math.round(averageDistance*100.0)/100.0) ;
 				
 	}
 	
@@ -3294,13 +3422,13 @@ if (index>nbrParticles-5){
 		}
 	}
 	
-	private double calculateDensity( int expectedIncrease){
-		return  calculateDensity( areaWidth, areaHeight, expectedIncrease);
+	private double calculateDensity( int particlesCount, int expectedIncrease){
+		return  calculateDensity( particlesCount, areaWidth, areaHeight, expectedIncrease);
 	}
 	
-	private double calculateDensity( int areaWidth, int areaHeight, int expectedIncrease){
+	private double calculateDensity( int particlesCount, int areaWidth, int areaHeight, int expectedIncrease){
 		
-		double _densityPerAcre = Math.round( ((10000.00*(double)((double)(particles.size())+expectedIncrease)/((double)areaWidth* (double)areaHeight))) *10000.0)/10000.0;
+		double _densityPerAcre = Math.round( ((10000.00*(double)((double)(particlesCount)+expectedIncrease)/((double)areaWidth* (double)areaHeight))) *10000.0)/10000.0;
 		
 		return _densityPerAcre;
 	}
@@ -3433,7 +3561,6 @@ if (index>nbrParticles-5){
 				out.print(3, "re-building surroundBuffers ...");
 				if (selectionBuffersActivated==true){
 					surroundBuffers = new SurroundBuffers( this ,particles, out) ;
-					// TODO: SurroundBuffers() gap: Note that the particles contain a SurroundBuffer, whose parent is pointing to the old instance !
 				}
 			}
 			multipleDeletions=0;
@@ -3450,7 +3577,7 @@ if (index>nbrParticles-5){
 			}else{
 				if (selectionBuffersActivated==true){
 					surroundBuffers = new SurroundBuffers( this ,particles, out) ;
-					// TODO: SurroundBuffers() gap: Note that the particles contain a SurroundBuffer, whose parent is pointing to the old instance !
+
 				}
 			}
 			
@@ -3473,10 +3600,8 @@ if (index>nbrParticles-5){
 	
 
 	
-	private void updateNeighborhood( ){ 
-		
-		int k;
-		
+	void updateNeighborhood( ){ 
+		 
 		if (neighborhood==null){
 			neighborhood = new Neighborhood(neighborhoodBorderMode,surroundBuffers,out) ;
 			// neighborhood.setBorderMode( neighborhoodBorderMode );
@@ -3484,10 +3609,7 @@ if (index>nbrParticles-5){
 		
 		
 			for (int i=0;i<particles.size();i++){
-				
-				if (i==641){
-					k=0;
-				}
+				 
 				neighborhood.update(i, particles.get(i).x,particles.get(i).y, particles.get(i).radius);
 			}
 			neighborhood.finalizeQ();
@@ -3691,7 +3813,7 @@ if (index>nbrParticles-5){
 		relocationDurationLimiter = new RelocationDurationLimiter(this);
 	}
 	public void startRelocationDurationLimiter() {
-		// TODO Auto-generated method stub
+		
 		relocationDurationLimiter.start(0) ;
 	}
 	public void setRelocationDurationLimiter( RelocationDurationLimiter rdl) {
@@ -3710,12 +3832,12 @@ if (index>nbrParticles-5){
 	public RelocationDurationLimiter getRelocationDurationLimiter() {
 		return relocationDurationLimiter;
 	}
-	 
+	public void setFieldIsRandom(boolean flag) {
+		
+		fieldIsRandom = flag;
+	}
+	
  
-
-	
-	
-
 	
 	// ========================================================================
 
@@ -3800,7 +3922,7 @@ class RelocationDurationLimiter implements Runnable{
 		timerIsRunning=true;
 		timers.get(timers.size()-1).schedule(new DelayedReFreezeTask(parent.name), delay);
 
-		parent.out.print(2, "A new relocation interrupt-timer (n="+timers.size()+") has been scheduled for <"+parent.name+">...");
+		parent.out.print(3, "A new relocation interrupt-timer (n="+timers.size()+") has been scheduled for <"+parent.name+">...");
 
 	}
 

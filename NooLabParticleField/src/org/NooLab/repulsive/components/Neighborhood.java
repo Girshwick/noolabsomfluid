@@ -140,7 +140,6 @@ public class Neighborhood implements Runnable, Stoppable{
 	double surroundScaleFactor = 0.7;
 	double averageDistance = 0.0 ;
 	
-	
 	// --------------------------------
 	
 	Map<String, RequestBorder> requestBorders = new HashMap<String, RequestBorder>();
@@ -164,6 +163,7 @@ public class Neighborhood implements Runnable, Stoppable{
 		out = outprn;
 		if (out==null){
 			out = new PrintLog(2,false) ;
+			out.setPrefix("[RF]");
 		}
 		surroundBuffers = sb;
 		
@@ -176,7 +176,6 @@ public class Neighborhood implements Runnable, Stoppable{
 		}
 		init( bordermode );
 	}
-	
 	
 	private void init( int bmode ){
 		borderMode = bmode;
@@ -215,14 +214,23 @@ public class Neighborhood implements Runnable, Stoppable{
 	              by the calling instance of this routine (random guid)
 	*/
 	public int getItemsCloseTo(int xpos, int ypos ) {
+		
 		int index=-1;
-		Coordinate2D c2D;
+		
+		Coordinate2D c2D = new Coordinate2D(-1,-1,-1,"") ;
+		Vector<Coordinate2D>  c2Di;
 		
 		try{
-			c2D = (getItemsCloseTo(xpos, ypos, -1, "" )).get(0);
-			index = c2D.particleIndex ;
+			c2Di = (getItemsCloseTo(xpos, ypos, -1, "" ));
+			if (c2Di.size()>0){
+				c2D = c2Di.get(0);
+				index = c2D.particleIndex ;
+			}
 			
-		}catch(Exception e){}
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 		
 		return index;
 	}
@@ -266,7 +274,6 @@ public class Neighborhood implements Runnable, Stoppable{
 				 
 				if (this.borderMode == __BORDER_ALL) {
 					if (x > (xpos - averageDistance * 1.2)) { // radius 
-						 
 						break;
 					}
 				}
@@ -278,12 +285,18 @@ public class Neighborhood implements Runnable, Stoppable{
 					}
 					
 				}
+				// not allowed, leads to half circles since it is too close... to the coord
+				// -> the criteria/thresholds do not take into account the size of the neighbourhood 
+				//    = layers of particles around the target 
+				// cx = i; // ???????????????????
 			}
 		} // i-> n :: all coordinates
  
 		if (cx<0)cx=0;
 		n = xyPlane.coordinates.size() ; 
 		double restrictionDx = (radius+averageDistance*0.3);
+		
+		int startindex = cx;
 		
 		while ((found==false) && (cx<n)){
 			
@@ -295,7 +308,7 @@ public class Neighborhood implements Runnable, Stoppable{
 				
 				boolean hbb = requestBorder.indexIsAccessible(ccPIndex, xyPlane.coordinates.size() );
 				
-				
+											out.print(2, "requestborder in charge...");
 				if (hbb==false){
 					continue;
 				}
@@ -334,7 +347,7 @@ public class Neighborhood implements Runnable, Stoppable{
 				preselect = (c2Ds.size()==0) || 
 							(  (dx < averageDistance*1.8 ) && 
 							   (( dc2x > dx ) || (dx<averageDistance*0.38)));  // if yes, then put it to the 
-				if ((dy > averageDistance*1.4 )){
+				if ((dy > averageDistance*1.8 )){
 					preselect = false;
 				}
 			}
@@ -378,8 +391,14 @@ public class Neighborhood implements Runnable, Stoppable{
 		
 		if (radius<=0){
 			int p = getClosestCoordinate(c2Ds,xpos, ypos );
-			
-			if (p!=0){
+			 
+			if (p<0){
+				out.printErr(3, "looking for candidates, c2Ds ok? -> "+ (c2Ds!=null )) ;
+				out.printErr(3, "number of found candidates : "+c2Ds.size() +" , startindex : "+startindex) ;
+				out.printErr(3, "size of coordinates field  : "+xyPlane.coordinates.size() +"\n") ;
+				
+			}
+			if (p>0){
 				c2Ds.set(0, c2Ds.get(p)) ;
 			}
 			// outside, we will be interested only in the first element, if radius < 0
@@ -417,6 +436,7 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 		double x,y,dx, xd,yd ;
 		Vector<Coordinate2D> c2Ds = new Vector<Coordinate2D>(); 
 
+		
 		c2Ds = getItemsCloseTo( xpos, ypos, radius ,guidStr );
 		
 		x=0;
@@ -528,7 +548,7 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 		}
 		if (xs!=expectedCollSize){
 			
-			out.print(2, "neighborhood.getItemsOfSurround(), checking buffer for particle "+index+", sizes:"+xs+"(+"+sbxn+") ,"+expectedCollSize+", indexed in xyPlane ? -> "+bcix);
+			out.print(4, "neighborhood.getItemsOfSurround(), checking buffer for particle "+index+", sizes:"+xs+"(+"+sbxn+") ,"+expectedCollSize+", indexed in xyPlane ? -> "+bcix);
 		}
 		if ((xs+sbxn>=expectedCollSize) && ( bcix )){
 			String sbName = surroundBuffers.parentName ;
@@ -765,7 +785,8 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 			}catch(Exception e){}
 			nbThrd = null;
 			
-			nbThrd = new Thread(this,"nbThrd");
+			nbThrd = new Thread(this,"nbThrd-"+surroundBuffers.parentName); 
+			
 			
 			nbThrd.start();
 			out.print(2, "neighborhood process has been re-started.");

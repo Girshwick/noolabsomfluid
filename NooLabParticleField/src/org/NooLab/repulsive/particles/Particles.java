@@ -38,9 +38,11 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 	 * @param particles
 	 */
 	public Particles(Particles templateParticles, SurroundBuffers sbs) {
+		
 		Particle p;
 		particleProperties = templateParticles.particleProperties ;
 		int k;
+		
 		for (int i=0;i<templateParticles.size();i++){
 			
 			if (i==641){

@@ -355,8 +355,8 @@ public class SurroundRetrieval implements Runnable {
 			return;
 		}
 		
-		
-		RetrievalParamSet p = paramSets.get(paramSets.size()-1) ;
+		RetrievalParamSet p = paramSets.get(paramSets.size()-1) ; 
+		if (p.surroundN > particles.size()*(2.0/3.0)){ p.surroundN = (int) (particles.size()*(2.0/3.0)); };
 		
 		if (style== _TASK_SURROUND_C){
 			results = getSurround( p.xpos, p.ypos, p.surroundN, p.selectMode,  p.autoselect);

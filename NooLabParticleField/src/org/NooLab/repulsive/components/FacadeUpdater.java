@@ -60,6 +60,8 @@ public class FacadeUpdater implements Runnable{
 		neighborhood = nb; 
 		surroundBuffers = sbs ;
 		
+		out = coreInstance.out ;
+		
 		boundingBox[0] = new PointXY(0,0);
 		boundingBox[1] = new PointXY(rField.getAreaSize()[0],rField.getAreaSize()[1]);
 		
@@ -73,7 +75,8 @@ public class FacadeUpdater implements Runnable{
 		} 
 		surroundBuffers.selectionSize = coreInstance.getSurroundBuffers().selectionSize ;
 		
-		if (neighborhood == null) {
+		if (neighborhood == null) 
+		{
 			
 			neighborhood = new Neighborhood( coreInstance.getBorderMode() , surroundBuffers,out ) ;
 			neighborhood.setAreaSize( coreInstance.getAreaWidth(), coreInstance.getAreaHeight(), coreInstance.getAreaDepth() );
@@ -81,7 +84,7 @@ public class FacadeUpdater implements Runnable{
 		} 
 		
 		
-		out = coreInstance.out ;
+		
 		fupThrd = new Thread(this, "fupThrd") ;
 		
 	}
@@ -129,11 +132,14 @@ public class FacadeUpdater implements Runnable{
 			particles.setParentName( rField.getClass().getSimpleName()) ;
 
 		} else { 
+											out.print(2,"facade updater, updating particles...");
 			// after adding, deleting, moving, trembling, ...
 			// this changes the size of the particles field 
 			// (which is currently only in this updater, the facade does not know about these particles here so far!)
 			particles.updateByParticles( coreInstance.particles, surroundBuffers, beyondIndexValue );
 			
+			
+											out.print(2,"facade updater, updating particles done.");
 			if (beyondIndexValue>0){
 				// TODO
 				// we not only have to add the particle, but we also have to update the surround buffer of

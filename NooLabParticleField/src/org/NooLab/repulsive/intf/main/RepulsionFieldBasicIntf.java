@@ -155,8 +155,12 @@ public interface RepulsionFieldBasicIntf {
 	
 	/** the first value is width, the second height*/
 	public int[] getAreaSize() ;
+
+	public void setDefaultDensity(double dvalue);
+
+	public void setAreaSizeAuto( int nodecounttarget );
 	
-	
+	public void setAreaSizeMin();
 	
 	// -------------------------------------
 

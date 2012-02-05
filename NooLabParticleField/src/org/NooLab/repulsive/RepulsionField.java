@@ -42,6 +42,7 @@ public class RepulsionField implements 	Runnable,
 										ParticleDataHandlingIntf,
 										// messages related to the retrieval of a surround upon a request issued by the use layer 
 										SurroundRetrievalObserverIntf {
+										
 	
 	public static final int _INIT_LAYOUT_RANDOM  = 1;
 	public static final int _INIT_LAYOUT_REGULAR = 5;
@@ -54,7 +55,7 @@ public class RepulsionField implements 	Runnable,
 	public static String _RFUSERDIR = "";
 	
 	
-	
+	RepulsionField rField; // variable for itself, for referring to it from within inner classes
 	RepulsionFieldCore coreInstance ;
 	
 	Neighborhood neighborhood;
@@ -95,7 +96,7 @@ public class RepulsionField implements 	Runnable,
 		surroundBuffers = new SurroundBuffers( this, out);
 		surroundBuffers.setParentName(this.getClass().getSimpleName()) ;
 		
-		 
+		rField = this;
 		
 		out.setPrefix("[RF]");
 	}
@@ -128,11 +129,14 @@ public class RepulsionField implements 	Runnable,
 		FacadeUpdater facade; 
 		boolean finished =false;
 		
+		coreInstance.updateNeighborhood( );
+		
 		// this opens a new thread and waits for its completion
 		// the first time we call this, "new particles" is performed using the particles of the core layer as templates
 		// such, we effectively create a clone of the particles object, where also the particles (and any of the
 		// objects included therein) are cloned!
 		facade = new FacadeUpdater( this, particles,surroundBuffers,neighborhood, coreInstance) ;
+		
 		
 		
 		// here we have to set a flag, causing selection processes to wait!!
@@ -144,6 +148,8 @@ public class RepulsionField implements 	Runnable,
 		
 		neighborhood = facade.getNeighborhood() ;
 
+		
+		
 		surroundBuffers = facade.getSurroundBuffers() ;
 		
 		
@@ -315,95 +321,162 @@ public class RepulsionField implements 	Runnable,
 	
 	// ========================================================================
 
+
+
+	class SurroundRetrievalHandler{
+		String guidStr="";
+		int pix;
+		int surroundN=7;
+		
+		int index;
+		int xpos; 
+		int ypos;
+		int selectMode;
+		boolean autoselect;
+
+		public SurroundRetrievalHandler(  double xpos, double ypos, boolean autoselect){
+			
+			this.xpos= (int) xpos;
+			this.ypos= (int) ypos;
+			 
+			this.autoselect = autoselect;
+		}
+
+		public SurroundRetrievalHandler(  int xpos, int ypos, int selectMode, boolean autoselect){
+			this.xpos= xpos;
+			this.ypos= ypos;
+			this.selectMode = selectMode;
+			this.autoselect = autoselect;
+		}
+		public SurroundRetrievalHandler(  int index, int selectMode, boolean autoselect){
+			this.index= index;
+			this.selectMode = selectMode;
+			this.autoselect = autoselect;
+		}
+	
+		public String go(int task){
+
+			
+			if (task==1){
+				return _selectParticleAt();
+			}
+			if (task==2){
+				return _getSurroundforLocation();
+			}
+			if (task==3){
+				return _getSurroundforIndex();
+			}
+			
+			return "" ;
+		}
+		
+		private String _selectParticleAt(){
+			
+
+			String guidStr="";
+			int pix;
+			
+			if (neighborhood==null){
+				return "";
+			}
+			// for getting the results we should NOT refer to the core, of course !!
+			surroundRetrieval = new SurroundRetrieval( rField,  (SurroundRetrievalObserverIntf)rField) ; 
+			
+			pix = surroundRetrieval.addRetrieval( xpos, ypos, autoselect);
+			
+			guidStr = surroundRetrieval.go(pix,SurroundRetrieval._TASK_PARTICLE);
+			 
+			availableResults.add(guidStr);
+			
+			String str = Thread.currentThread().getStackTrace()[1].getMethodName();
+			// 	caller: GetStacktrace()[1]
+			
+			return guidStr;
+			
+		}
+		
+		private String _getSurroundforLocation(){
+			
+
+			int surroundN;
+												out.print(4,"getSurround(x,y), ready to use ? -> "+isReadyToUse());
+
+			int z=0;
+			while ((isReadyToUse()==false) && (surroundBuffers.isAllBuffersUpdating()) && (z<100)){
+				out.delay(10); z++;
+			}
+
+			if (isReadyToUse()){
+				
+				String guidStr="";
+				int pix;
+				 
+				if (surroundRetrieval==null){
+					surroundRetrieval = new SurroundRetrieval( rField,  (SurroundRetrievalObserverIntf)rField) ;
+				}
+				
+				surroundN = coreInstance.getSelectionSize() ;	
+				
+				pix = surroundRetrieval.addRetrieval( xpos, ypos, surroundN, selectMode, autoselect);
+				
+				guidStr = surroundRetrieval.go(pix, SurroundRetrieval._TASK_SURROUND_C);
+				  
+				 
+				return guidStr;
+			} 
+			return "";
+		}
+		
+		private String _getSurroundforIndex(){
+
+			String guidStr="";
+			int pix;
+			int surroundN=7;
+
+												out.print(2,"getSurround("+index+"), ready to use ? -> "+isReadyToUse());
+			int z=0;
+			while (( isReadyToUse()==false)  && (surroundBuffers.isAllBuffersUpdating()) && (z<100)){
+				out.delay(10); z++;
+			}
+			
+			if ((isReadyToUse()) && (particles.get(index).getIsAlive()>0 )){
+				
+				surroundN = coreInstance.getSelectionSize();
+
+				if (surroundRetrieval==null){
+					surroundRetrieval = new SurroundRetrieval( rField,  (SurroundRetrievalObserverIntf)rField) ;
+				}
+
+				pix = surroundRetrieval.addRetrieval(index, surroundN, selectMode, autoselect);
+
+				guidStr = surroundRetrieval.go(pix, SurroundRetrieval._TASK_SURROUND_X);
+				return guidStr;
+			}
+			return "";
+		}
+		
+	} // inner class SurroundRetrievalHandler
+	
+	
+
 	@Override
 	public String  selectParticleAt(int xpos, int ypos, boolean autoselect) {
 		
-		String guidStr="";
-		int pix;
-		
-		if (neighborhood==null){
-			return "";
-		}
-		// for getting the results we should NOT refer to the core, of course !!
-		surroundRetrieval = new SurroundRetrieval( this,  (SurroundRetrievalObserverIntf)this) ;
-		
-		pix = surroundRetrieval.addRetrieval( xpos, ypos, autoselect);
-		
-		guidStr = surroundRetrieval.go(pix,SurroundRetrieval._TASK_PARTICLE);
-		 
-		availableResults.add(guidStr);
-		
-		String str = Thread.currentThread().getStackTrace()[1].getMethodName();
-		// 	caller: GetStacktrace()[1]
-		
-		return guidStr;
-		
+		return (new SurroundRetrievalHandler( (double)xpos, (double)ypos, autoselect)).go(1);
 	}
-
 
 	@Override
 	public String getSurround(int xpos, int ypos, int selectMode, boolean autoselect) {
 		// EXCEPT startup, NOT handled by passing through, served from objects of the facade 
 		
-		int surroundN;
-											out.print(4,"getSurround(x,y), ready to use ? -> "+isReadyToUse());
-
-		int z=0;
-		while ((isReadyToUse()==false) && (surroundBuffers.isAllBuffersUpdating()) && (z<100)){
-			out.delay(10); z++;
-		}
-
-		if (isReadyToUse()){
-			
-			String guidStr="";
-			int pix;
-			 
-			if (surroundRetrieval==null){
-				surroundRetrieval = new SurroundRetrieval( this,  (SurroundRetrievalObserverIntf)this) ;
-			}
-			
-			surroundN = coreInstance.getSelectionSize() ;	
-			
-			pix = surroundRetrieval.addRetrieval( xpos, ypos, surroundN, selectMode, autoselect);
-			
-			guidStr = surroundRetrieval.go(pix, SurroundRetrieval._TASK_SURROUND_C);
-			  
-			 
-			return guidStr;
-		} 
-		return "";
+		return (new SurroundRetrievalHandler( xpos, ypos, selectMode, autoselect)).go(2);
 	}
-
+	
 	@Override
-	public String getSurround(int index, int selectMode, boolean autoselect) {
+	public String getSurround( int index, int selectMode, boolean autoselect) {
 
-
-		String guidStr="";
-		int pix;
-		int surroundN=7;
-
-											out.print(2,"getSurround(index), ready to use ? -> "+isReadyToUse());
-		int z=0;
-		while (( isReadyToUse()==false)  && (surroundBuffers.isAllBuffersUpdating()) && (z<100)){
-			out.delay(10); z++;
-		}
-		
-		if ((isReadyToUse()) && (particles.get(index).getIsAlive()>0 )){
-			
-			surroundN = coreInstance.getSelectionSize();
-
-			if (surroundRetrieval==null){
-				surroundRetrieval = new SurroundRetrieval( this,  (SurroundRetrievalObserverIntf)this) ;
-			}
-
-			pix = surroundRetrieval.addRetrieval(index, surroundN, selectMode, autoselect);
-
-			guidStr = surroundRetrieval.go(pix, SurroundRetrieval._TASK_SURROUND_X);
-		}
-		return "";
-		 
+		return (new SurroundRetrievalHandler( index, selectMode, autoselect)).go(3);
 	}
- 
 	
 	@Override
 	public String getParticlesOfFiguratedSet( int figure, Object objIndexes, 
@@ -741,6 +814,7 @@ public class RepulsionField implements 	Runnable,
 	public void setAreaSize(int width, int height) {
 		// 
 		coreInstance.setAreaSize(width, height);
+		 
 	}
 
 	@Override
@@ -749,6 +823,27 @@ public class RepulsionField implements 	Runnable,
 		return coreInstance.getAreaSize() ;
 	}
 
+	@Override
+	public void setDefaultDensity(double dvalue) {
+		
+		coreInstance.setDefaultDensity(dvalue);
+	}
+
+
+	@Override
+	public void setAreaSizeAuto(int nodecounttarget) {
+		
+		coreInstance.setAreaSizeAuto(nodecounttarget);
+		setAreaSize( coreInstance.getAreaWidth(),coreInstance.areaHeight);
+		
+	}
+	
+
+	@Override
+	public void setAreaSizeMin() {
+		coreInstance.setAreaSizeMin();
+		setAreaSize( coreInstance.getAreaWidth(),coreInstance.areaHeight);
+	}
 	
 	@Override
 	public void setMaxDensityDeviationPercent(double value) {
@@ -775,6 +870,12 @@ public class RepulsionField implements 	Runnable,
 		coreInstance.setStepsLimit(steps);
 	}
 
+	@Override
+	public void setFieldIsRandom(boolean flag) {
+		 
+		
+		coreInstance.setFieldIsRandom(flag);
+	}
 	@Override
 	public void interrupt() {
 		// 
@@ -989,11 +1090,19 @@ public class RepulsionField implements 	Runnable,
 		return -1;
 	}
 	@Override
-	public void handlingDataOnParticleSplit(Object observable,
-			Particles particles, int originix, int pullulix) {
+	public void handlingDataOnParticleSplit( Object observable,
+											 Particles particles, int originix, int pullulix) {
 		// TODO Auto-generated method stub
 		
 	}
+
+
+
+
+
+
+
+
 
 
 	
