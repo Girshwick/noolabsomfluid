@@ -7,5 +7,7 @@ import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamics
 
 public interface ExtensionalityDynamicsImportIntf {
 
-	public ExtensionalityDynamicsIntf importExtensionalityDynamics() ;
+	public ExtensionalityDynamicsIntf importExtensionalityDynamics() ; 
+	
+	public ExtensionalityDynamicsIntf importExtensionalityDynamics(long serialID) ; 
 }

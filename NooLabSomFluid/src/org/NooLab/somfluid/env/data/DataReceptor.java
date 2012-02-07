@@ -49,7 +49,7 @@ public class DataReceptor implements //
 		DataTable dataTable;
 		out = somData.getOut();
 		
-		rawFileData = new RawFileData( out ) ;
+		rawFileData = new RawFileData(  somData, out ) ;
 		
 		rawFileData.readRawDatafromFile( filename );
 		
@@ -57,9 +57,8 @@ public class DataReceptor implements //
 		
 		somData.importDataTable( dataTable );
 	
-		
 		rawFileData=null;
-		dataTable=null;
+		// dataTable=null;
 	}
 	
 	

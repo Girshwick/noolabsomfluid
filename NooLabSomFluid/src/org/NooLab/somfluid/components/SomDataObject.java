@@ -8,7 +8,7 @@ import java.util.*;
  
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
-import org.NooLab.somfluid.data.DataRecord;
+
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.data.TableImportSettings;
@@ -36,61 +36,61 @@ import org.NooLab.utilities.xml.*;
  * actively check for new data: file, http, ftp
  * 
  *  
+ * TODO:  prepare the interface DataSourceIntf !
  */
 public class SomDataObject 	implements  
 										//	used for read access, e.g. by nodes
 											DataSourceIntf {
 
-	DataHandlingPropertiesIntf dataHandlingProperties;
-	SomFluidFactory sfFactory;
+	transient DataHandlingPropertiesIntf dataHandlingProperties;
+	transient SomFluidFactory sfFactory;
 	
 	// object references ..............
-	FileDataSource filesource;
-	
-	XmlFileRead xmlFile ;
+	transient FileDataSource filesource;
+	transient XmlFileRead xmlFile ;
 	
 	// main variables / properties ....
-	 
-	 
 	
+	DataTable data=null, normalizedSomData=null ;
+	
+	Variables variables = new Variables() ;
+	Variables activeVariables;
+
+	ArrayList<String> variableLabels = null; 
+
+	
+	MissingValues missingValues;
+
 	int maxColumnCount ;
 	int maxRecordCount = -1 ;
 	
-	Variables variables = new Variables() ;
-	
-	DataTable data = new DataTable( true ); // true: isnumeric, Som data objects always contain numeric data
-	
 	boolean dataAvailable=false ;
 	
-	
 	// read mode = random, serial, block (begin, end) ?
-	
 	
 	// volatile variables .............
 	int dobjsIndex ; // == an identifier in the vector of SomDataObjects, maintained by Spela 
 	
 	int vectorSize;
 	
-	ArrayList<String> variableLabels = null;
-	 
-	
-	// Vector<Object> somParents = new Vector<Object>(); // SomUsageIntf>() ; 
-	
-	// helper objects .................
-	StringsUtil strgutil = new StringsUtil();
-	DFutils fileutil = new DFutils () ; 
-	ArrUtilities utils = new ArrUtilities();
-	
-	PrintLog out  ;
 
+
+	// helper objects .................
+	transient StringsUtil strgutil = new StringsUtil();
+	transient DFutils fileutil = new DFutils () ; 
+	transient ArrUtilities utils = new ArrUtilities();
 	
-	
-	
+	transient PrintLog out  ;
+		
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 
 	public SomDataObject( DataHandlingPropertiesIntf datahandleProps){
 		
 		dataHandlingProperties = datahandleProps;
+		
+		missingValues = new MissingValues(this);
+		data = new DataTable( this, true ); // true: isnumeric, Som data objects always contain numeric data
+		
 		
 	}
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -246,7 +246,7 @@ public class SomDataObject 	implements
 		
 		
 		Variable var ;
-		DataRecord rec = null;
+		
 		File file ;
 		
 
@@ -433,41 +433,98 @@ public class SomDataObject 	implements
 	}
 	
 	public void importDataTable( DataTable datatable ){
+		SomTransformer  transformer;
 		
 		if (datatable==null){
 			return;
 		}
 		
-		
-		TableImportSettings importSettings = new TableImportSettings() ;
-		
+
 		try{
-			
+
+			TableImportSettings importSettings = new TableImportSettings() ;
+			transformer = sfFactory.getTransformer();
+				
 			// TODO
-			// check, whether there is a serialization of a dataTable which we
-			// derived from the raw file
-			// we use the info about filename, filesize, filedate as stored in the 
-			// DataTable object itself
+			// check, whether there is a serialization of a dataTable which we derived from the raw file;
+			// we use the info about filename, filesize, filedate as stored in the DataTable object itself;
+			
+			
+			// the importTable applies some basic transformations that are implied 
+			//     by the format of the columns, e.g. date and NVE (text) 
+			// the original format and the if necessary also the params of the transformation are 
+			//     saved into a description object within the DataTable object;
+			// later, this wil be used to create a persistent XML description file 
+			//    (like the PTS transformer file), which is necessary for applying
+			// the result is a purely numerical table, which however is not necessarily normalized.
+
+			// it also checks wether ther eis a candidate column for an index, and, if
+			// there is none, it will insert one as column 0
 			data.importTable(datatable, importSettings);
 			
-			sfFactory.getTransformer().applyBasicNumericalAdjustments( data );
-
+			// TODO check here for buffered transformed data
+			
+			// creating variables objects
 			actualizeVariables();
+
+			// --- transforming data ------------------------------------------
+ 			transformer.setDataTable(data) ;
+			
+			// shifting distributions (kurtosis, skewness), 
+ 			// splitting (deciling) variables based on histogram splines, outlier compression,
+			transformer.applyBasicNumericalAdjustments();
+
+			// like the SomSprite, just on raw variables , but based on samples of max 1000 values
+			transformer.applyAprioriLinkChecking();
+			
+			// normalizing data: only now the data are usable
+			// note that index columns and string columns need to be excluded
+			// which we can do via the format[] value : use onls 1<= f <= 7, exclude otherwise
+			normalizedSomData = transformer.normalizeData();
+			
+			normalizedSomData.createIndexValueMap();
+			
 			
 		}catch(Exception e){
 			e.printStackTrace();
 		}
 	}
 
+	/** prepares a transposed table for fast access  */
+	public void prepareTransposedTable() {
 		
+		DataTable table;
+		
+		try{
+		
+			normalizedSomData.createTransposedForm();
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	}
 	// ------------------------------------------------------------------------
+	
+	public void determineActiveVariables() {
+
+		activeVariables = variables;
+		// TODO obviously stub...
+	}
+
+
+	public Variables getActiveVariables() {
+		 
+		return activeVariables;
+	}
+
+
 	
 	private void actualizeVariables() {
 		Variables vs;
 		Variable v;
 		DataTableCol  column ;
 		
-		int nh = data.getColumnHeaders().length;
+		int nh = data.getColumnHeaders().size();
 		
 		variables.clear() ; 
 		
@@ -491,6 +548,11 @@ public class SomDataObject 	implements
 			variables.additem(v);
 		}
 		
+	}
+
+
+	public MissingValues getMissingValues() {
+		return missingValues;
 	}
 
 
@@ -606,5 +668,8 @@ public class SomDataObject 	implements
 	public void setIndex( int indexval){
 		dobjsIndex = indexval ;
 	}
+
+
+	
 	
 }

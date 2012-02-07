@@ -22,4 +22,13 @@ public class ExtensionalityDynamicsImport implements ExtensionalityDynamicsImpor
 		return null;
 	}
 
+
+
+
+	@Override
+	public ExtensionalityDynamicsIntf importExtensionalityDynamics(long serialID) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

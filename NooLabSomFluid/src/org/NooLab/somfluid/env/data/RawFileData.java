@@ -4,7 +4,8 @@ import java.io.*;
 
 import java.util.*;
 
-import org.NooLab.somfluid.data.DataRecord;
+
+import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.utilities.ArrUtilities;
@@ -23,6 +24,7 @@ import org.NooLab.utilities.xml.XmlFileRead;
 public class RawFileData {
 
 	// object references ..............
+	SomDataObject somData;
 	FileDataSource filesource;
 
 	// main variables / properties ....
@@ -32,9 +34,7 @@ public class RawFileData {
 
 	Vector<Variable> variables = new Vector<Variable>();
 
-	DataTable datatable = new DataTable(true); // true: isnumeric, Som data
-												// objects always contain
-												// numeric data
+	DataTable datatable ;
 
 	boolean dataAvailable = false;
 
@@ -51,7 +51,10 @@ public class RawFileData {
 
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-	public RawFileData( PrintLog outprn) {
+	public RawFileData( SomDataObject somdata, PrintLog outprn) {
+		
+		somData = somdata;
+		datatable = new DataTable( somData, true); 		 
 		out = outprn;
 	}
 
@@ -69,7 +72,7 @@ public class RawFileData {
 		String cs, _id_rnum_str = "", hs1, hs2;
 		String[] celldata = null;
 
-		DataRecord rec = null;
+		
 		Variable var;
 
 		datatable.setOutPrn(out);

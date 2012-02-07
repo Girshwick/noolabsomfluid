@@ -4,13 +4,17 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import org.NooLab.somfluid.components.DataSourceIntf;
+import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
+import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivity;
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivityIntf;
+import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamics;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.categories.imports.ExtensionalityDynamicsImportIntf;
 import org.NooLab.somfluid.core.categories.imports.IntensionalitySurfaceImportIntf;
 import org.NooLab.somfluid.core.categories.imports.MetaNodeConnectivityImportIntf;
 import org.NooLab.somfluid.core.categories.imports.SimilarityImportIntf;
+import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurface;
 import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
@@ -19,10 +23,24 @@ import org.NooLab.utilities.logging.SerialGuid;
 import org.NooLab.utilities.objects.StringedObjects;
 
 
-
+/**
+ * 
+ * TODO necessary methods
+ * LearningUpdate_by_data(double[], int, double)
+ * calcPrototypeProportion(float[] prototypes)
+ * AdjustWeights( double[] datavector, 
+                		double LearningRate, 
+                		double Influence,
+                		double size_factor,
+                		int contrast_enh ){
+ *
+ *               
+ *               	
+ * 
+ */
 public abstract class AbstractMetaNode 
 										implements  
-
+											        // basic access to structures
 													MetaNodeIntf,
 													// profiles, weights, usevectors = variable selection, optionally specific for each node
 													IntensionalitySurfaceImportIntf,
@@ -89,11 +107,27 @@ public abstract class AbstractMetaNode
 			serialID = virtualLattice.getNode( virtualLattice.size()-1).getSerialID()+1 ;
 		}
 	
-		// if we want separate objects we should re-instntiate them via en-/decoding
-		intensionality = importIntensionalitySurface();
-		similarity     = importSimilarityConcepts();
+		
+		// we have to make the similarity 
+		similarity     = importSimilarityConcepts(serialID);  // Similarity@1db6942
+
+		intensionality = importIntensionalitySurface(serialID); // IntensionalitySurface@1042fcc
+
+		IntensionalitySurfaceIntf  intensy = importIntensionalitySurface();
+		String str = intensy.toString();  // IntensionalitySurface@8f3d27
+		
+		extensionality = importExtensionalityDynamics(serialID) ;
+		metaNodeConnex = importMetaNodeConnectivity(serialID); 
+		
+		/*
 		metaNodeConnex = importMetaNodeConnectivity(); 
 		extensionality = importExtensionalityDynamics() ;
+		*/
+		
+		 
+		// extensionality = new ExtensionalityDynamics(somData) ;
+		// metaNodeConnex = new MetaNodeConnectivity() ;
+		
 		
 		// just an abbreviation
 		profileVector = intensionality.getProfileVector(); 
@@ -102,6 +136,9 @@ public abstract class AbstractMetaNode
 		autonomy = new Autonomy(this);
 	}
 	 
+
+ 
+
 
 	protected Object decodeMsgObject( Object stringedObj){
 		
@@ -220,6 +257,47 @@ public abstract class AbstractMetaNode
 		}
 		
 		
+	}
+
+
+	public DataSourceIntf getSomData() {
+		return somData;
+	}
+
+
+	public ProfileVectorIntf getProfileVector() {
+		return profileVector;
+	}
+
+
+	public String getTargetVariableLabel() {
+		return targetVariableLabel;
+	}
+
+
+	public ArrayList<Long> getSdoIndexValues() {
+		return sdoIndexValues;
+	}
+
+
+	public IntensionalitySurfaceIntf getIntensionality() {
+		return intensionality;
+	}
+
+
+	public SimilarityIntf getSimilarity() {
+		
+		return similarity;
+	}
+
+
+	public MetaNodeConnectivityIntf getMetaNodeConnex() {
+		return metaNodeConnex;
+	}
+
+
+	public ExtensionalityDynamicsIntf getExtensionality() {
+		return extensionality;
 	}
 	
 

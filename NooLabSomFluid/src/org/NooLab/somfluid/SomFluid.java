@@ -1,15 +1,13 @@
 package org.NooLab.somfluid;
 
 import java.util.ArrayList;
-import java.util.Observable;
 
-import org.NooLab.repulsive.RepulsionField;
 import org.NooLab.repulsive.components.data.SurroundResults;
 import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.repulsive.particles.Particle;
-import org.NooLab.somfluid.components.IndexedDistances;
 import org.NooLab.somfluid.components.SomDataObject;
+import org.NooLab.somfluid.components.SomTransformer;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
@@ -71,7 +69,7 @@ public class SomFluid
 	SomDataObject somDataObject;
 	
 	SomTasks somTasks;
-	
+	SomFluid sf ;
  	
 	boolean isActivated=false, isInitialized=false;
 	boolean processIsRunning=false;
@@ -104,6 +102,8 @@ public class SomFluid
 		somDataObject.setFactory(sfFactory);
 		somDataObject.setOut(out) ;
 		
+		sf = this;
+		
 		out.setPrefix("[SomFluid-main]");
 	}
 	
@@ -116,6 +116,8 @@ public class SomFluid
 		virtualLatticeNodes = new VirtualLattice(this,latticeProperties);
 		
 		// if we are allowed to load the data, we'll do it there
+		// note that the task of normalizing the data is performed by the transformer part
+		// the SOM itself ALWAYS expects normalized data, even 
 		somDataObject.prepare() ;
 		
 		initStructures();
@@ -161,11 +163,42 @@ public class SomFluid
 			
 			
 		}
+		
+		
+		
+		double d = particleField.getAverageDistanceBetweenParticles();
+		virtualLatticeNodes.setAveragePhysicalDistance(d);
+		
 											out.print(2, "logical som lattice created.");
 		// 
 	}
 
+	// ========================================================================
+	
+	
+	
+	protected void performTransformations() {
+		
+		SomTransformer transformer;
+		transformer = sfFactory.getTransformer();
+		
+		
+	}
+
 	protected void initializeNodesWithData(){
+	
+		// "by index" refers to 
+		// this.notifyNodeByIndex(1, new NodeTask( NodeTask._TASK_SETDATA, variablesSetupDef, null) );
+		// this.notifyNodeBySerial( virtualLatticeNodes.getNode(5).getSerialID(), new NodeTask( NodeTask._TASK_SETDATA, new String("123-"+i)) );
+
+		// TODO: we may perform a PCA, thus deriving a weight vector (NOT: profile vector!!!)
+		//       that would prepare the SOM into the direction of the main dimensions
+		
+		
+	}
+	
+	
+	protected void initializeNodesWithRandomvalues(){
 
 		NodeTask task;
 		Variables vars;
@@ -173,7 +206,7 @@ public class SomFluid
 		LatticeFutureVisor latticeFutureVisor;
 		
 		
-		vars = somDataObject.getVariables() ;
+		vars = somDataObject.getActiveVariables() ;
 		
 		if (vars.size()<=1){
 			return;
@@ -196,11 +229,14 @@ public class SomFluid
 											out.print(4, "returned from task sending...  -> now waiting");
 		latticeFutureVisor.waitFor(); // it will wait for completion of "_TASK_SETVAR", for all nodes since we did not define a particular one		
 
+	 
 											out.print(4, "continue, next task...");
 		// set target variable ... TODO other messages about dynamic configuration : blacklist, whitelist, sim function 
 		task = new NodeTask( NodeTask._TASK_SETTV, (Object)so.encode( (Object)vars.getActiveTargetVariable()) );
 		// do it for all nodes
 		this.notifyAllNodes( task );
+		
+		 
 											out.print(3, "loading data definitions done.");
 											out.print(3, "initializing nodes...");
 											
@@ -215,10 +251,8 @@ public class SomFluid
 		
 		latticeFutureVisor.waitFor(); delay(100); 
 											out.print(1, "initialization of SomFluid done.");
-		// "by index" refers to 
-		// this.notifyNodeByIndex(1, new NodeTask( NodeTask._TASK_SETDATA, variablesSetupDef, null) );
-		// this.notifyNodeBySerial( virtualLatticeNodes.getNode(5).getSerialID(), new NodeTask( NodeTask._TASK_SETDATA, new String("123-"+i)) );
-
+											
+											
 	}
 	
 	
@@ -227,10 +261,27 @@ public class SomFluid
 		String activeTvLabel;
 		DSom dSom ;
 		
+		
+		// now, the somDataObject knows about the DataTable
+		// if there is some data in SomDataObject, it will be loaded into nodes
+		
+		// we have to remove empty columns, blacklisted columns, columns that are excluded dynamically 
+		// by criteria like derivation level 
+		somDataObject.determineActiveVariables();
+		
+		 
+		
+		initializeNodesWithRandomvalues(); // adopting feature vectors, not yet the data of course
+		
+		initializeNodesWithData(); 
+		
+		  
+		
 		activeTvLabel = sfProperties.getModelingSettings().getActiveTvLabel() ; // "TV"
 		// TargetVariable  targetVariable;
 		
-		dSom = new DSom( sfFactory, somDataObject, virtualLatticeNodes, sfTask );
+		// dSom = new DSom( sfFactory, somDataObject, virtualLatticeNodes, sfTask );
+		dSom = new DSom( this, somDataObject, virtualLatticeNodes, sfTask );
 		dSom.performTargetedModeling();
 		
 	}
@@ -284,7 +335,7 @@ public class SomFluid
 			
 			
 		}catch(Exception e){
-			
+			e.printStackTrace();
 		}
 	}
 
@@ -295,21 +346,35 @@ public class SomFluid
 			
 			// dependent on task we invoke different methods and worker classes
 			if (sfTask.somType == SomFluidProperties._SOMTYPE_MONO){
+				
+				// accessing the perssistent file,
+				// it may be an external file containing raw data, or
+				// if sth exists an already prepared one
 				sfFactory.loadSource();
+				 
+				
+				 
+				
+				// preparing the data, at least transforming and normalizing it
+				// is embedded into the SomDataObject, where it is called by
+				// importDataTable()
+				// (of course, it can be called separately too,
+
 				performTargetedModeling( sfTask );
+				
 			}else{
 				// sfFactory.openSource();
 				// performAssociativeStorage( sfTask );
 			}
 		}
+
+
 		
 		
 	} // inner class TaskDispatcher
 	// ========================================================================
 
 
-
-	// ------------------------------------------------------------------------
 	
 	public void setSerialID(long serial) {
 		numericID = serial;
@@ -339,6 +404,10 @@ public class SomFluid
 	
 	public SomDataObject getSomDataObject() {
 		return somDataObject;
+	}
+
+	public SomFluidProperties getSfProperties() {
+		return sfProperties;
 	}
 
 	@Override

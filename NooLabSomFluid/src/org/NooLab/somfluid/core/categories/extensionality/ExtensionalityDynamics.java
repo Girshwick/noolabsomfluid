@@ -19,7 +19,7 @@ import org.NooLab.somfluid.data.DataTable;
  * and in a dynamic manner, without the need to return to the transformer layer
  * for that purpose.
  * 
- * One could even thin about an embedded capability for transformation; 
+ * One could even think about an embedded capability for transformation; 
  * this does not change the logical distinction between outer loop and inner loop
  * in learning from data, yet.
  * It just provides a more elegant and a much more faster approach for the integration 
@@ -33,7 +33,7 @@ import org.NooLab.somfluid.data.DataTable;
 public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 
 	SomDataObject somData;
-	ArrayList<Integer> listOfRecords;
+	ArrayList<Integer> listOfRecords = new ArrayList<Integer>();
 	
 	// ========================================================================
 	public ExtensionalityDynamics( SomDataObject somdata){
@@ -42,8 +42,29 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	}
 	// ========================================================================
 	
-	public void getListOfRecordsAsTable( ArrayList<Integer> records){
+	public void setListOfRecordsAsTable( ArrayList<Integer> records){
 		listOfRecords = records;
+	}
+
+	public void addRecordByIndex( int index){
+		listOfRecords.add(index) ;
+	}
+
+	public void removeRecordByIndex( int index){
+		int p = listOfRecords.indexOf(index) ;
+		if (p>=0){
+			listOfRecords.remove(p) ;
+		}
+	}
+	
+	public ArrayList<Integer> getListOfRecordsAsTable(){
+		return listOfRecords ;
+	}
+
+	@Override
+	public int getCount() {
+		 
+		return listOfRecords.size() ;
 	}
 
 	 

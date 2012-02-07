@@ -6,5 +6,7 @@ import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceI
 
 public interface IntensionalitySurfaceImportIntf {
 
-	public IntensionalitySurfaceIntf importIntensionalitySurface() ; 
+	public IntensionalitySurfaceIntf importIntensionalitySurface(  ) ;
+	
+	public IntensionalitySurfaceIntf importIntensionalitySurface(long serialID ) ; 
 }

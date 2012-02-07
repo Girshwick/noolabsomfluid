@@ -16,8 +16,7 @@ public class SomProfiles {
 	
 	public String definitions_sourcefile ="";
 	
-	public SomProfiles(int rowcount,
-	                    int colcount){
+	public SomProfiles(int rowcount, int colcount){
 		
 		profilesTable = new double[rowcount][colcount];
 		

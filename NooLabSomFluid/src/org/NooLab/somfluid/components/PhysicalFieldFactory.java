@@ -81,7 +81,13 @@ public class PhysicalFieldFactory {
 		
 		// in contrast to standard SOM we need not to choose a big initial radius (usually half of the SOM size),
 		// since we can merge, split and move the particles, which prevents multicenters for very similar contexts
-		repulsionField.setSelectionSize(61); 
+		int _selectionsize = (int) (1.4 * (Math.sqrt( nbrParticles )/2.0)) ;
+		
+		if (_selectionsize>2000){
+			_selectionsize = 2000 ; // maxSelectionSize 1000, 5000
+		}
+		
+		repulsionField.setSelectionSize( _selectionsize ); 
 		
 		// this populates the field, set "nbrParticles" to 0 if you will import coordinates or a field
 		// can be set to auto-adapt

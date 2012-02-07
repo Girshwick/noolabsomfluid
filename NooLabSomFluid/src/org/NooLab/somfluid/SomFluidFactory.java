@@ -146,12 +146,8 @@ public class SomFluidFactory {
 
 	public void loadSource() {
 		
+		//  
 		dataReceptor.loadFromFile( sfProperties.getDataSrcFilename() );
-		
-		// now, the somDataObject knows about the DataTable
-		// if there is some data in SomDataObject, it will be loaded into nodes
-		
-		somFluidModule.initializeNodesWithData(); // adopting feature vectors, not yet the data of course
 		
 	}
 	
@@ -210,7 +206,14 @@ public class SomFluidFactory {
 	 */
 	public  void produce( Object sfTask ) {
 	
-		SomFluidTask somFluidfTask = (SomFluidTask)sfTask;
+		SomFluidTask somFluidfTask ;
+		
+		// First caring about the data, using the transformer module
+		
+		
+		
+		// now heading towards the SomFluid
+		somFluidfTask = (SomFluidTask)sfTask;
 		getSomFluid();
 		somFluidModule.start();   // nothing happens without providing a task
 		
@@ -227,7 +230,7 @@ public class SomFluidFactory {
 		// 
 		
 	}
-	
+ 
 
 
 	

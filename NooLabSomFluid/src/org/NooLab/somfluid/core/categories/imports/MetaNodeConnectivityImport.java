@@ -22,4 +22,12 @@ public class MetaNodeConnectivityImport implements MetaNodeConnectivityImportInt
 		return null;
 	}
 
+
+
+	@Override
+	public MetaNodeConnectivityIntf importMetaNodeConnectivity(long serialID) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

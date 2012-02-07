@@ -73,14 +73,23 @@ public class ModelingSettings {
 	// volatile variables .............
 	// only local , for speeding repeated request   .  .  .  .  .  .  .  .  .     
 	Vector<String> variableLabels = new Vector<String>() ;
+	private int maxSomEpochCount = 4 ;
+	private boolean evolutionaryAssignateSelection = false ;
+	private boolean spriteAssignateDerivation = false ;
+	
+	private int maxL2LoopCount=-1;
+	
+	private boolean contentSensitiveInfluence;
 	
 	 
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 	public ModelingSettings(){
 		
+		String str = this.toString() ;
 		
 		setRandomSeed();
+		 
 		
 		threadPriorities[3] = 1 ; // [3] = Som calculations
 	}
@@ -124,6 +133,8 @@ public class ModelingSettings {
 	
 	
 	public void setRandomSeed(){
+		
+		
 		random = new Random();
 		random.setSeed(1234) ;
 		
@@ -290,6 +301,52 @@ public class ModelingSettings {
 
 	public Growth getGrowth() {
 		return growth;
+	}
+
+	public int getMaxSomEpochCount() {
+		return maxSomEpochCount;
+	}
+
+	public double getInitialLearningRate() {
+
+		return 0.2;
+	}
+
+	public boolean getEvolutionaryAssignateSelection() {
+		 
+		return evolutionaryAssignateSelection;
+	}
+
+	public void setEvolutionaryAssignateSelection(
+			boolean evolutionaryAssignateSelection) {
+		this.evolutionaryAssignateSelection = evolutionaryAssignateSelection;
+	}
+
+	public boolean getSpriteAssignateDerivation() {
+		 
+		return spriteAssignateDerivation;
+	}
+
+	public void setSpriteAssignateDerivation(boolean spriteAssignateDerivation) {
+		this.spriteAssignateDerivation = spriteAssignateDerivation;
+	}
+
+	public int getMaxL2LoopCount() {
+		// TODO Auto-generated method stub
+		return maxL2LoopCount;
+	}
+
+	public void setMaxL2LoopCount(int maxL2LoopCount) {
+		this.maxL2LoopCount = maxL2LoopCount;
+	}
+
+	public boolean getContentSensitiveInfluence() {
+		
+		return contentSensitiveInfluence;
+	}
+
+	public void setContentSensitiveInfluence(boolean contentSensitiveInfluence) {
+		this.contentSensitiveInfluence = contentSensitiveInfluence;
 	}
 	
 	

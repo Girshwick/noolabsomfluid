@@ -22,5 +22,6 @@
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/org.NooLab/glue/org.restlet.ext.xml.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/org.NooLab/glue/org.restlet.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/math/jmath/jmatharray.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/math/flanaganScientificLib/flanagan.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

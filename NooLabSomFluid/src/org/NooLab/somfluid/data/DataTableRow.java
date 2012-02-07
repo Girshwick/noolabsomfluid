@@ -1,6 +1,8 @@
 package org.NooLab.somfluid.data;
 
-import java.util.Vector;
+import java.util.ArrayList;
+ 
+
 
 public class DataTableRow {
 
@@ -9,9 +11,9 @@ public class DataTableRow {
 		int colcount;
 		double[] cellvalue ; 
 		
-		Vector<Double> cellValue = new Vector<Double>() ;
+		ArrayList<Double> cellValue = new ArrayList<Double>() ;
 		
-		Vector<String> cellValueStr = new Vector<String>() ;
+		ArrayList<String> cellValueStr = new ArrayList<String>() ;
 		
 		public DataTableRow(){
 			

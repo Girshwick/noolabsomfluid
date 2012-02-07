@@ -89,6 +89,7 @@ public class Variables implements Serializable, VariablesIntf{
 
 	@Override
 	public ArrayList<String> getActiveVariableLabels() {
+		
 		ArrayList<String> activeVars = new ArrayList<String>(); 
 		boolean hb ;
 		String varLabel="", varstr;
@@ -133,6 +134,102 @@ public class Variables implements Serializable, VariablesIntf{
 	public ArrayList<String> getAllIndexVariables() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public ArrayList<Variable> getItems() {
+		return items;
+	}
+
+	public void setItems(ArrayList<Variable> items) {
+		this.items = items;
+	}
+
+	public ArrayList<Variable> getWhitelists() {
+		return whitelists;
+	}
+
+	public void setWhitelists(ArrayList<Variable> whitelists) {
+		this.whitelists = whitelists;
+	}
+
+	public ArrayList<Variable> getBlacklist() {
+		return blacklist;
+	}
+
+	public void setBlacklist(ArrayList<Variable> blacklist) {
+		this.blacklist = blacklist;
+	}
+
+	public ArrayList<String> getWhitelistLabels() {
+		return whitelistLabels;
+	}
+
+	public void setWhitelistLabels(ArrayList<String> whitelistLabels) {
+		this.whitelistLabels = whitelistLabels;
+	}
+
+	public ArrayList<String> getBlacklistLabels() {
+		return blacklistLabels;
+	}
+
+	public void setBlacklistLabels(ArrayList<String> blacklistLabels) {
+		this.blacklistLabels = blacklistLabels;
+	}
+
+	public ArrayList<Variable> getIdVariables() {
+		return idVariables;
+	}
+
+	public void setIdVariables(ArrayList<Variable> idVariables) {
+		this.idVariables = idVariables;
+	}
+
+	public ArrayList<Variable> getTargetedVariables() {
+		return targetedVariables;
+	}
+
+	public void setTargetedVariables(ArrayList<Variable> targetedVariables) {
+		this.targetedVariables = targetedVariables;
+	}
+
+	public Variable getTargetVariable() {
+		return targetVariable;
+	}
+
+	public void setTargetVariable(Variable targetVariable) {
+		this.targetVariable = targetVariable;
+	}
+
+	public String getIdLabel() {
+		return idLabel;
+	}
+
+	public void setIdLabel(String idLabel) {
+		this.idLabel = idLabel;
+	}
+
+	public int getTvColumnIndex() {
+		return tvColumnIndex;
+	}
+
+	public void setTvColumnIndex(int tvColumnIndex) {
+		this.tvColumnIndex = tvColumnIndex;
+	}
+
+	public int getIdColumnIndex() {
+		return idColumnIndex;
+	}
+
+	public void setIdColumnIndex(int idColumnIndex) {
+		this.idColumnIndex = idColumnIndex;
+	}
+
+	public ArrayList<String> getInitialUsageVector() {
+		return initialUsageVector;
+	}
+
+	public void setInitialUsageVector(ArrayList<String> initialUsageVector) {
+		this.initialUsageVector = initialUsageVector;
 	}
 	
 }

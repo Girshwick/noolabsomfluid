@@ -2,8 +2,13 @@ package org.NooLab.somfluid.data;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.TreeMap;
 
  
+import org.NooLab.somfluid.components.MissingValues;
+import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.util.Formula;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
@@ -21,25 +26,43 @@ import org.NooLab.utilities.strings.StringsUtil;
  *  
  *  note, that columns do NOT contain headers!
  *  
+ *  
+ *  TODO / open
+ *  
+ *  - ColumnDerivations in DataTableCol is not perfectly clones so far
+ *  - DataTableCol cloning and importColumn are incomplete
+ * 
  * 
  */
 public class DataTable implements Serializable{
+
+	private static final long serialVersionUID = 3655282650007767562L;
 
 	// not avail: ExecSettings (config for diagnostic printouts etc.) settings ;
 	// =================================
 	
 	// object references ..............
 
+	transient SomDataObject somData;
 	
+	transient DataTable dt;
+
 	// main variables / properties ....
-	ArrayList<DataTableCol> dataTable = new ArrayList<DataTableCol>() ;
+	
+	// our table consists of a list of columns
+	ArrayList<DataTableCol> dataTable = new ArrayList<DataTableCol>() ; 
 	
 	// the transposed table is always a numeric table, where previous columnheaders are replaced by enumeration 
 	ArrayList<DataTableCol> transposedTable = new ArrayList<DataTableCol>() ;
 	
+	ArrayList< ArrayList<Double> > dataTableRows = new ArrayList< ArrayList<Double>>() ;
+	
 	ArrayList<String> columnHeaders = new ArrayList<String>() ; 
 	
 	int[] formats ;
+	
+	private Map<Double,Integer> indexValueMap = new TreeMap<Double,Integer>();
+										// consider Apache's TreeBidiMap ...
 	
 	int colcount;
 	int rowcount;
@@ -49,7 +72,7 @@ public class DataTable implements Serializable{
 	boolean mvActivated ;
 	double mvIndicator = -1 ;
 	
-	int[] mvCountperColumn ;
+	ArrayList<Integer> mvCountperColumn = new ArrayList<Integer>();
 	
 	/**  if isNumeric, all data are transformed into values upon import of data, 
 	 *   incl. NominalValuesEnumeration <br/>
@@ -59,6 +82,8 @@ public class DataTable implements Serializable{
 	
 	NveMappings nveMaps;
 	ArrayList<Integer> derivedColumns = new ArrayList<Integer>();
+	
+	MissingValues missingValues;
 	
 	/**
 	 * 1=adjust colcount of table to count of header elements
@@ -73,6 +98,7 @@ public class DataTable implements Serializable{
 	
 	// ... environment ...
 	
+
 	String sourceFilename = "" ;
 	
 	
@@ -88,22 +114,89 @@ public class DataTable implements Serializable{
 	
 	
 	// helper objects .................
-	StringsUtil strgutil = new StringsUtil();
-	ArrUtilities arrutil = new ArrUtilities ();
+	transient StringsUtil strgutil = new StringsUtil();
+	transient ArrUtilities arrutil = new ArrUtilities ();
 	
-	PrintLog out = new PrintLog(4,false) ;
+	transient PrintLog out = new PrintLog(4,false) ;
 	
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 	
-	public DataTable( boolean isnumeric ){
+	public DataTable( SomDataObject somdata, boolean isnumeric ){
 		
+		dt = this;
 		isNumeric = isnumeric ;
+		
+		somData = somdata;
+		missingValues = somData.getMissingValues() ;
 		
 		nveMaps = new NveMappings(this) ;
 	}
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 	
 
+	// creating a copy of the provided data table
+	public  DataTable( DataTable inDatatable ) {
+	
+		dt= this;
+		transferContent(inDatatable,dt);
+	
+	}
+	
+	public DataTable clone( ){
+		
+		DataTable table = new DataTable(somData, true);
+		
+		transferContent(this, table);
+		return table;
+	}
+	
+	private void transferContent( DataTable inDatatable, DataTable outDaTa){
+		
+		DataTableCol col;
+		// this.dataTable = new ArrayList<DataTableCol>() ;
+		
+		outDaTa.colcount = inDatatable.colcount;
+		outDaTa.rowcount = inDatatable.rowcount;
+		
+		for (int i=0;i<colcount;i++){
+			
+			col = new DataTableCol( outDaTa, inDatatable.getColumn(i)) ;
+			outDaTa.dataTable.add(col);
+			
+		} // i-> all columns
+		 
+		outDaTa.columnHeaders = new ArrayList<String>( inDatatable.getColumnHeaders());
+	
+		outDaTa.formats = Arrays.copyOf( inDatatable.formats, inDatatable.formats.length) ;
+		
+		// System.arraycopy
+		outDaTa.columnTypes = Arrays.copyOf( inDatatable.formats, inDatatable.columnTypes.length) ;
+		outDaTa.mvActivated = inDatatable.mvActivated ; 
+		outDaTa.mvIndicator = inDatatable.mvIndicator ;
+		
+		outDaTa.mvCountperColumn = new ArrayList<Integer>( inDatatable.mvCountperColumn);
+		
+		outDaTa.isNumeric = inDatatable.isNumeric ;
+		outDaTa.maxScanRows = inDatatable.maxScanRows  ;
+		
+		outDaTa.nveMaps = new NveMappings( inDatatable.nveMaps );
+		
+		outDaTa.derivedColumns = new ArrayList<Integer>( inDatatable.derivedColumns );
+		
+		outDaTa.colcountControlMode = 3; 
+		outDaTa.colcountLimited = 0 ;
+		
+		outDaTa.headerAvailable = inDatatable.headerAvailable ;
+		outDaTa.tableHasHeader  = inDatatable.tableHasHeader ;
+		
+		outDaTa.sourceFilename = inDatatable.sourceFilename ;
+		outDaTa.headersCount = inDatatable.headersCount ; 
+		outDaTa.maxColCount = inDatatable.maxColCount ;
+		
+	}
+
+
+	
 	/**
 	 * 
 	 * creates two ArrayLists:  <br/>
@@ -138,7 +231,7 @@ public class DataTable implements Serializable{
 		for (i=0;i<n;i++){
 			columnHeaders.add( headers[i]) ;
 			
-			col = new DataTableCol(i) ;
+			col = new DataTableCol(dt, i) ;
 			col.isNumeric = this.isNumeric ;
 			dataTable.add(col) ;
 			
@@ -162,17 +255,18 @@ public class DataTable implements Serializable{
 		mvIndicator = mv_indicator;
 		mvActivated = true ;
 		
-		if ((mvCountperColumn==null) || (mvCountperColumn.length<colcount())){
-			mvCountperColumn = new int[colcount] ;
-		}
+		activateMissingValues();
 	}
 	
 	public double activateMissingValues(){
 		
 		mvActivated = true ;
 
-		if ((mvCountperColumn==null) || (mvCountperColumn.length<colcount())){
-			mvCountperColumn = new int[colcount] ;
+		if ((mvCountperColumn==null) || (mvCountperColumn.size() < colcount())){
+			mvCountperColumn = new ArrayList<Integer>() ;
+			for (int i=0;i<colcount;i++){
+				mvCountperColumn.add(0) ;
+			}
 		}
 
 		return mvIndicator ;
@@ -220,7 +314,7 @@ public class DataTable implements Serializable{
 		NomValEnum nve;
 		
 		int n,nn, z, i,err, _dataformat ;
-		
+		boolean indexColPresent;
 		
 		
 		ArrayList<Integer> potentialNVEcols  ;  
@@ -231,6 +325,7 @@ public class DataTable implements Serializable{
 		                               err = 1;
 		try{
 		
+			this.sourceFilename = importTable.sourceFilename ;
 			
 			n = importTable.colcount() ;
 			z = importTable.rowcount() ;
@@ -250,9 +345,9 @@ public class DataTable implements Serializable{
 			if (nn<=n){
 				
 				for (i=0;i<n;i++){
-					columnHeaders.add( importTable.getColumnHeaders()[i]) ;
+					columnHeaders.add( importTable.getColumnHeaders().get(i)) ;
 					
-					col = new DataTableCol(i) ;
+					col = new DataTableCol(dt, i) ;
 					this.dataTable.add(col) ;
 					
 				} // i-> n, all headers
@@ -260,13 +355,14 @@ public class DataTable implements Serializable{
 			}
 			
 			  
-			newColumn = new DataTableCol(-1) ;
+			newColumn = new DataTableCol(dt,-1) ;
 			
 			formats = new int[n] ;
 			
 			// check format of columns
 															if (out!=null){ out.print(3,"\ncheck format of columns...");};
-															
+			
+			indexColPresent = false;												
 			for (i=0;i<n;i++){  // TODO make this multidigested ...
 															if (out!=null){ out.printprc(3, i, n, n/10, "") ;};
 				column = importTable.getColumn(i) ;
@@ -277,7 +373,11 @@ public class DataTable implements Serializable{
 				   
 				formats[i] = _dataformat ;  
 				
+				if (indexColPresent==false){
+					indexColPresent = _dataformat==0;
+				}
 			} // i->n all columns of import table
+			 
 															if (out!=null){ out.print(3,"\nimporting columns...");};
 			// if necessary, apply nve
 			i=0;  // TODO make this multidigested ...
@@ -369,12 +469,43 @@ public class DataTable implements Serializable{
 				if (formats[i]<=2){
 					getColumn(i).cellValueStr.clear();
 				}
-				
+				colcount = i;
+				 
 			} // i-> all formats positions == all columns
 			
 			// translate
+			 
+			if (indexColPresent == false){
+				DataTableCol synthIndexColumn = new DataTableCol(this,0);
+				for (i=0;i<n;i++){
+					getColumn(i).index = i+1;
+				}
+				dataTable.add(0, synthIndexColumn) ; 
+				synthIndexColumn.index=0;
+				fillColumnAsIndex( synthIndexColumn , getColumn(1).size(), 0 , 1);
+				formats = arrutil.resizeArray(formats.length+1, formats);
+				
+				for (i=n;i>0;i--){
+					formats[i] = formats[i-1];  
+				}
+				formats[0] = 0;
+
+			}
 			
 			resultState = 0;
+			colcount = importTable.colcount();
+			z = importTable.rowcount();
+			if (rowcount<=0){
+				if (colcount>0){
+					rowcount = getColumn(0).rowcount;
+				}
+				if (rowcount<=0){
+					rowcount=z;
+				}
+			}
+			
+			
+			createRowOrientedTable();
 			
 		}catch (Exception e){
 			resultState = -err ;
@@ -385,8 +516,97 @@ public class DataTable implements Serializable{
 		
 	}
 	
+	private void fillColumnAsIndex(DataTableCol col, int count, int startIxVal, int increment) {
+		double value;
+		
+		col.cellValues.ensureCapacity(count);
+		
+		for (int i=0;i<count;i++){
+			value = startIxVal + (i*increment) ;
+			col.addValue(value) ;
+		}
+		
+	}
 
+	public void createRowOrientedTable(){
+		
+		ArrayList<Double> rowdata;
+		int rc ;
+		double dv;
+		
+		try{
+		
+			// ArrayList<DataTableCol> dataTable = new ArrayList<DataTableCol>() ; dataTableRows
+			// ArrayList< ArrayList<Double>>()
+			
+			rc = dataTable.get(0).getCellValues().size();
+			
+			for (int r=0;r<rc;r++){
+				
+				rowdata = new ArrayList<Double>(); 
+				
+				for (int c=0;c<dataTable.size();c++){
+					
+					dv = dataTable.get(c).getCellValues().get(r) ;
+					rowdata.add(dv);
+				}
+
+				dataTableRows.add(rowdata) ;
+			} // r ->
+			
+			
+		}catch (Exception e){
+			
+			e.printStackTrace() ;
+		}
+		rc=0;
+	}
 	
+	
+	public void createTransposedForm() {
+		// ArrayList<DataTableCol>
+		// transposes  dataTable -> transposedTable  
+		// the transposed table is always a numeric table, where previous columnheaders are replaced by enumeration 
+		  
+		
+	}
+	
+	public int getFirstIndexColumnCandidate(){
+		int rc = -1;
+		for (int i=0;i<formats.length;i++){
+			
+			if (formats[i]==0){
+				rc=i;
+				break;
+			}
+		}
+		return rc;
+	}
+	
+	
+	public void createIndexValueMap() {
+		int n,f;
+		double dv;
+		
+		DataTableCol col;
+		
+		getIndexValueMap().clear();
+		
+		f = getFirstIndexColumnCandidate() ; 
+		
+		col = this.dataTable.get(f);
+		
+		n = col.size();
+		
+		// 
+		for (int i=0;i<n;i++){
+			
+			dv = col.cellValues.get(i) ;
+			indexValueMap.put(dv, i) ;
+		}
+		
+	}
+
 	private int getMaxScanRows() {
 		
 		return maxScanRows;
@@ -499,7 +719,9 @@ public class DataTable implements Serializable{
 	
 	// -------------------------------------------------------------------------------
 	
-	
+	public void setRow( ArrayList<Double> values){
+		
+	}
 	public void setRow( double[] values){
 		int i,n=0;
 		DataTableCol column;
@@ -525,15 +747,15 @@ public class DataTable implements Serializable{
 			if (i< colcount()){
 				column = dataTable.get(i) ;
 			} else{
-				column = new DataTableCol( dataTable.size() );
+				column = new DataTableCol( dt, dataTable.size() );
 				dataTable.add( column ) ;
 			}
 			  ;
 				 
 			if (mvActivated = true){
 				if (val == mvIndicator){
-					if (i<mvCountperColumn.length){
-						mvCountperColumn[i]++ ;
+					if (i<mvCountperColumn.size()){
+						mvCountperColumn.set(i, mvCountperColumn.get(i)+1) ;
 					}
 				}
 			}
@@ -585,7 +807,7 @@ public class DataTable implements Serializable{
 			if (i< colcount()){
 				column = dataTable.get(i) ;
 			} else{
-				column = new DataTableCol( dataTable.size() );
+				column = new DataTableCol(dt, dataTable.size() );
 				dataTable.add( column ) ;
 			}
 			  ;
@@ -644,13 +866,25 @@ public class DataTable implements Serializable{
 	}
 	
 
-	public double[] getDataTableColumn() {
-		double[] columnData=null;
-		return columnData;
+	public DataTableCol getDataTableColumn( int colindex) {
+		 
+		return dataTable.get(colindex);
 	}
 	
-	public double[] getDataTableRow() {
-		double[] rowData=null;
+	/** index is NOT the value in index column, it is just the enum value, the i-th row */
+	public   ArrayList<Double> getDataTableRow(int index) {
+		
+		ArrayList<Double> rowData = new ArrayList<Double> ();
+		
+		if ((index>=0) && (index<dataTableRows.size())){
+			rowData = dataTableRows.get(index);
+		}
+		
+		return rowData;
+	}
+	
+	public  double[] getDataTableRowAsArray() {
+		double[] rowData=null; 
 		return rowData;
 	}
 	
@@ -897,19 +1131,194 @@ public class DataTable implements Serializable{
 		this.out = out;
 	}
 
-	public String[] getColumnHeaders(){
+	public String[] getColumnHeadersAsArray(){
 		String[] headstr = new String[ columnHeaders.size() ];
 		
 		for (int i=0;i<headstr.length;i++){
 			headstr[i] = columnHeaders.get(i) ;
 		}
 		return headstr ;
+		
+	}
+
+	public ArrayList<String> getColumnHeaders(){
+		 
+		return columnHeaders ;
 	}
 	
+
+
+	public int[] getFormats() {
+		return formats;
+	}
+
+	public void setFormats(int[] formats) {
+		this.formats = formats;
+	}
+
+	public void setIndexValueMap(Map<Double,Integer> indexValueMap) {
+		this.indexValueMap = indexValueMap;
+	}
+
+	public Map<Double,Integer> getIndexValueMap() {
+		return indexValueMap;
+	}
+
+	public int getColcount() {
+		if (colcount<=0){
+			colcount = dataTable.size() ;
+		}
+		if (colcount<=0){
+			colcount = columnHeaders.size() ;
+		}
+		return colcount;
+	}
+
+	public void setColcount(int colcount) {
+		this.colcount = colcount;
+	}
+
+	public int getRowcount() {
+		if (rowcount<=0){
+			if (getColcount()>0){
+				rowcount = dataTable.get(0).size() ;
+			}
+		}
+		return rowcount;
+	}
+
+	public void setRowcount(int rowcount) {
+		this.rowcount = rowcount;
+	}
+
+	public int[] getColumnTypes() {
+		return columnTypes;
+	}
+
+	public void setColumnTypes(int[] columnTypes) {
+		this.columnTypes = columnTypes;
+	}
+
+	public boolean isMvActivated() {
+		return mvActivated;
+	}
+	public boolean getMvActivated() {
+		return mvActivated;
+	}
+
+	public void setMvActivated(boolean mvActivated) {
+		this.mvActivated = mvActivated;
+	}
+
+	public double getMvIndicator() {
+		return mvIndicator;
+	}
+
+	public void setMvIndicator(double mvIndicator) {
+		this.mvIndicator = mvIndicator;
+	}
+
+	public ArrayList<Integer> getMvCountperColumn() {
+		return mvCountperColumn;
+	}
+
+	public void setMvCountperColumn(ArrayList<Integer> mvCountperColumn) {
+		this.mvCountperColumn = mvCountperColumn;
+	}
+
+	public NveMappings getNveMaps() {
+		return nveMaps;
+	}
+
+	public void setNveMaps(NveMappings nveMaps) {
+		this.nveMaps = nveMaps;
+	}
+
+	public ArrayList<Integer> getDerivedColumns() {
+		return derivedColumns;
+	}
+
+	public void setDerivedColumns(ArrayList<Integer> derivedColumns) {
+		this.derivedColumns = derivedColumns;
+	}
+
+	public MissingValues getMissingValues() {
+		return missingValues;
+	}
+
+	public void setMissingValues(MissingValues missingValues) {
+		this.missingValues = missingValues;
+	}
+
+	public int getColcountControlMode() {
+		return colcountControlMode;
+	}
+
+	public void setColcountControlMode(int colcountControlMode) {
+		this.colcountControlMode = colcountControlMode;
+	}
+
+	public int getColcountLimited() {
+		return colcountLimited;
+	}
+
+	public void setColcountLimited(int colcountLimited) {
+		this.colcountLimited = colcountLimited;
+	}
+
+	public boolean isHeaderAvailable() {
+		return headerAvailable;
+	}
+	public boolean getHeaderAvailable() {
+		return headerAvailable;
+	}
+
+	public void setHeaderAvailable(boolean headerAvailable) {
+		this.headerAvailable = headerAvailable;
+	}
+
+	public boolean isTableHasHeader() {
+		return tableHasHeader;
+	}
+	public boolean getTableHasHeader() {
+		return tableHasHeader;
+	}
+
+	public void setTableHasHeader(boolean tableHasHeader) {
+		this.tableHasHeader = tableHasHeader;
+	}
+
+	public String getSourceFilename() {
+		return sourceFilename;
+	}
+
+	public void setSourceFilename(String sourceFilename) {
+		this.sourceFilename = sourceFilename;
+	}
+
+	public void setDataTable(ArrayList<DataTableCol> dataTable) {
+		this.dataTable = dataTable;
+	}
+
+	public void setTransposedTable(ArrayList<DataTableCol> transposedTable) {
+		this.transposedTable = transposedTable;
+	}
+
+	public void setColumnHeaders(ArrayList<String> columnHeaders) {
+		this.columnHeaders = columnHeaders;
+	}
+
+	public void setHeadersCount(int headersCount) {
+		this.headersCount = headersCount;
+	}
 
 
 	public void setOutPrn( PrintLog outprn){
 		out = outprn;
 	}
+
+	
+
+
 	
 }

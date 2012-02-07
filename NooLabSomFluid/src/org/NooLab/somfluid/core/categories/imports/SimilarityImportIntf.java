@@ -8,4 +8,7 @@ public interface SimilarityImportIntf {
 
 	
 	 public SimilarityIntf importSimilarityConcepts(); 
+	 
+	 public SimilarityIntf importSimilarityConcepts( long serialID ); 
+	 
 }

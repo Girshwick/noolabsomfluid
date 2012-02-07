@@ -1,6 +1,10 @@
 package org.NooLab.somfluid.core.engines.det;
 
+import java.util.ArrayList;
+import java.util.Random;
+
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
+import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidMonoTaskIntf;
 import org.NooLab.somfluid.SomFluidProperties;
@@ -45,32 +49,46 @@ public class DSom implements DSomIntf{
 	
 	ModelingSettings  modelingSettings ;
 	
+	SomFluid somFluidParent;
 	SomFluidFactory sfFactory;
 	SomFluidProperties sfProperties;
 	
 	SomDataObject somData;
 	VirtualLattice somLattice;
 
-	// SomFluidTask 
-	SomFluidMonoTaskIntf somTask; // is of monoflavor here
+	SomFluidMonoTaskIntf somTask; // is of mono-flavor here
 	
 	DSomCore dSomCore;
 	
+	String activeTvLabel ;
+	
+	
 	PrintLog out;
+
+	public boolean loweredPriority = false ;
+
+	Random random;
 	
 	// ------------------------------------------------------------------------
-	public DSom( SomFluidFactory factory ,SomDataObject sdo, VirtualLattice somlattice, SomFluidTask sfTask ) {
+	public DSom( SomFluid sfParent ,SomDataObject sdo, VirtualLattice somlattice, SomFluidTask sfTask ) {
 		 
-		sfFactory = factory;	
-		sfProperties = factory.getSfProperties();
+		somFluidParent = sfParent;
+		//sfFactory = factory;	
+		sfProperties = somFluidParent.getSfProperties();
 		somData = sdo;
 		somLattice = somlattice ;
-		out = sdo.getOut() ;
-		
 		
 		modelingSettings = sfProperties.getModelingSettings() ;
 		
-		String activeTvLabel = sfProperties.getModelingSettings().getActiveTvLabel() ;
+		random = new Random();
+		random.setSeed(3579) ;
+		
+		
+		
+		activeTvLabel = sfProperties.getModelingSettings().getActiveTvLabel() ;
+		
+		out = sdo.getOut() ;
+		
 	}
 	
 
@@ -82,7 +100,36 @@ public class DSom implements DSomIntf{
 	public void performTargetedModeling() {
 		 
 		dSomCore = new DSomCore(this) ;
+		
+		dSomCore.perform() ;
+		
 	}
+
+
+	public int getTargetVariableColumn() {
+		// dependent on modelingSettings
+		
+		return 0;
+	}
+
+
+	public boolean getUserbreak() {
+		// will be set via Observer or callback
+		return false;
+	}
+
+	/** size of the Lattice as count of nodes  */
+	public int getSize() {
+
+		return somLattice.size();
+	}
+
+
+	public Random getRandom() {
+		return random;
+	}
+
+ 
 	
 	
 	 
@@ -90,28 +137,4 @@ public class DSom implements DSomIntf{
 	
 }
 
-/*
-  
-  	
-		som = new DSomCore(); 
-		
-		// get object reference to settings object 
-		som.setModelingSettings( modelingSettings ) ; 			
-		
-		// some helper objects, and the facultative reference to the PApplet 
-		som.setGeneralSettings( generalSettings ) ; 			
-
-		
-		
-		// provide reference to data object
-		som.setSomDataObject(somDOB);
-		
-		
-		
-		// starting the calculations
-		som.executeSOM() ;
-		
-
-  
  
- */

@@ -90,17 +90,39 @@ public class MetaNode   extends
 								 	NodesMessageIntf
 								 				    	  {
 	
-
+	ClassificationDescription  classifyDescription;
+/*  put this all in ClassificationDescription
+     public double Sum_of_Cost    = -1;
+    public double weighted_variance_total = -1;
+	
+    // these two are set in the "describe classification" context
+    public String majorityLabel="" ; // the most frequent class in the node
+    public String majorityValue="" ; // the most frequent TV norm-value in the node
+    
+    //  the proportion of "cases" in the Node;
+    //  what a "case" is, is defined in SOMPrototypes
+	//  this has as many items as there are target groups 
+	        -> note that there are 2 modes: 
+	           - several tgroups defining 1 target class, or
+	           - several tgroups defined for multi-class modeling
+	                                                                             
+	public double[] targetproportion ;  
+	public boolean[] isPrototype ;
+ 
+  
+ */
 
 	
-	// TODO for thos contexts as represented by these interfaces, we need the respective properties Objects for persistence
+	// TODO for those contexts as represented by these interfaces, we need the respective properties Objects for persistence
+	
+	int virtualRecordCount = 0; // the count of weight adjustment operations applied to the node
+	private boolean contentSensitiveInfluence;
+	private boolean changeIsSizedependent=true;
 	
 	// ------------------------------------------------------------------------
 	public MetaNode( VirtualLattice virtualLatticeNodes, DataSourceIntf somData ){
 		super(virtualLatticeNodes,  somData );
 		
-
-	
 	}
 	// ------------------------------------------------------------------------	
 	  
@@ -129,6 +151,200 @@ public class MetaNode   extends
 	
 	// ---- Events from NetworkMessageIntf ------------------------------------
 
+	@Override
+	public void adjustProfile(  ArrayList<Double> datarecord,
+								double learningrate, double influence, 
+								double sizeFactor, int i) {
+
+		int return_value=-1, contrastEnh;
+    	int err=1;
+    	int vn,_d, recordcount  ;
+    	boolean _blocked=true, calcThis, calculateAllVariables=false ;
+    	double contextual_influence_reduction=1;
+    	double _new_w=0;
+    	double _old_w, w_d ,_LR=1.0f,change ;
+    	
+    	
+    	ArrayList<Double> usevector, nodeProfile, vector2 ;
+
+		try {
+
+			err = 2;
+			// in case of excluded variable (that are not IX or TV) we possibly
+			// want to calculate the profile values to
+			// calculateAllVariables = modelingSettings.calc_all_variables();
+			calculateAllVariables = false ;
+			
+			usevector = intensionality.getWeightsVector();
+			
+			// creating copies of the two vectors
+			nodeProfile = new  ArrayList<Double>(intensionality.getProfileVector().getValues()) ;
+			vector2 = new ArrayList<Double>(datarecord);
+
+			recordcount = extensionality.getCount() ;
+			
+			if (contentSensitiveInfluence) {
+				// not available yet
+				/*
+				 * content sensitive update means, that nodes show a context specific resistance to get updated 
+				 * in the standard way. 
+				 * If the relative difference is very large, the update will be smaller However, in order to 
+				 * normalize the actual difference into the relative difference, we need a global statistics
+				 * abut each variable across all nodes. This is very expensive, thus 
+				 * we update only very rarely (around 5x per learning epoch)
+				 * 
+				 * So far we have no such statistics running, thus we cannot perform this yet
+				 */
+
+			} // contentSensitiveInfluence ?
+
+			err = 3;
+			// data object is available through the object pointer <SD> ==
+			// SOM_data
+			_d = intensionality.getProfileVector().getValues().size();
+
+			 
+			
+			contrastEnh = 0;
+			
+
+			for (int w = 0; w < _d; w++) { // across all fields
+				err = 4;
+
+				_old_w = nodeProfile.get(w); // saving weight of variable[w] as old weight
+
+				// work on the variable only if allowed
+				calcThis = (usevector.get(w) > 0);
+				
+				if (calcThis) {
+					if (calculateAllVariables) {
+						// we may update all variables, the distance will be
+						// calc'd only for used ones anyway !
+						if (w == similarity.getIndexTargetVariable()) {
+							calcThis = false; // always to exclude: the index
+												// column
+						}
+						// || ( w == similarity.getIndexIdColumn() ))
+						// we include the target variable, so we can see the expected mean value,
+						// albeit this info will be often overruled
+
+					}
+				}
+
+				if (calcThis) {
+
+            		err =5;
+                     
+                      if ( ((nodeProfile.get(w)>=0) && ( vector2.get(w)>=0)) && (vector2.get(w)<=1)){ 
+                    	  // excluding MV ...
+                                                      
+                       
+                                                     		err = 6;
+                         sizeFactor = 1;
+
+                         if (virtualRecordCount+ recordcount<= Math.sqrt( 0.1+recordcount)){
+                    	   
+                        
+                                                        
+                                                     		err = 7;
+                          w_d =0 ;
+                          w_d = (nodeProfile.get(w) - vector2.get(w)) ;
+                          w_d = w_d +  w_d * (3*nodeProfile.get(w) - vector2.get(w))/2 ;
+
+                       }
+                       else
+                       {
+                          w_d = (nodeProfile.get(w) - vector2.get(w)) ;
+
+                          									err = 8;
+                       } //else:  recordcount <= ?
+                       
+                       // w_d = w_d * contextual_influence_reduction; // not specified so far, working with default=1 here
+
+                                                         	err = 9;
+                         _LR = learningrate ;
+                         
+                         if ( ( recordcount+ Math.log10(1+virtualRecordCount)<=2) 
+                        	  && (!_blocked)){ // also in the neighbourhood ...
+                        	 // not used so far
+                                                         	err = 10;
+                            _LR = (float) (_LR + ( 1-_LR)/(11 + Math.log10(1+_d) + Math.log10(1+virtualRecordCount)));
+                         }
+                                                         	err = 11;
+                           change = (float) ((_LR * influence * w_d)* (1/(1+contrastEnh))) ;
+                           
+                           change = (float) adaptChangeRelativeToNodeExtSize( change,recordcount ) ;
+                           
+                                                         	err = 12;
+                           if ( (change<-1) || (change>2)){
+                              change=0;
+                           }
+                           if (virtualRecordCount==0){
+                        	   _new_w = nodeProfile.get(w);
+                        	   vector2.set(w,nodeProfile.get(w) );
+                           }
+                           else{
+                        	   _new_w = vector2.get(w) + change;
+                           }
+                           
+                           virtualRecordCount = virtualRecordCount+1 ;
+                      
+                       										err = 14;
+                       if (_new_w>1){ 
+                       		_new_w = 1 ;
+                       		
+                       		System.out.println("\nProblem in AdjustWeights(a): "+
+                       		                   "new weight = "+String.format("%4.3f", _new_w)+
+                       		                   "\nLR        = "+String.format("%4.3f", _LR)+
+                       		                   "\nInfluence = "+String.format("%4.3f", influence)+
+                       		                   "\nw_d       = "+String.format("%4.3f", w_d)+
+                       		                   "\nFVirtRecord_count = "+String.valueOf(virtualRecordCount)+
+                       		                   "\n");
+                       
+                       
+                       		_new_w= 1/(4-4);
+                       }
+                       
+                       if ((_new_w<0) && (_new_w>-0.3)){_new_w=0;}
+
+                       nodeProfile.set(w, _new_w);
+                       										err = 15;
+                       if ((_new_w>=0) && (_new_w<=1)){
+                       		return_value = 0 ;   
+                       }
+                   } // exclude MV for both vectors   
+                                                     
+                } // usagevector[w] ?
+
+            } // w-> across all fields
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
+	}
+
+	private double adaptChangeRelativeToNodeExtSize(double _cval, int recordcount) {
+
+		double _v, return_value;
+
+		return_value = _cval;
+		if (changeIsSizedependent) {
+
+			// thats for merging nodes: _v := ((_fval1*_count1) +
+			// (_fval2*_count2))/(_count1 + _count2)
+
+			_v = Math.log10(1 + recordcount) + 1.0; // >= 1 ,, FVirtRecord_count
+			_v = Math.sqrt(1 / _v);
+
+			return_value = _cval * _v;
+		}
+
+		return return_value;
+
+	}
+	
+	
 	@Override
 	public void onRequestForAdaptingWeightVector( Object obj, Object params) {
 		ProfileVectorIntf weightVector;
@@ -273,20 +489,56 @@ public class MetaNode   extends
 	// ========================================================================
 
 	@Override
-	public IntensionalitySurfaceIntf importIntensionalitySurface() {
+	public IntensionalitySurfaceIntf importIntensionalitySurface( long serialID ) {
 		IntensionalitySurfaceIntf intensionality;
 			
-		intensionality = virtualLattice.distributeIntensionalitySurface();
+		intensionality = virtualLattice.distributeIntensionalitySurface(serialID); // ProfileVector@30d83d
 		
 		return intensionality;
 	}
 
+	
+	@Override
+	public IntensionalitySurfaceIntf importIntensionalitySurface() {
+		// that's the intenionality of the whole lattice ! 
+		
+		IntensionalitySurfaceIntf intensionality;
+		
+		intensionality = virtualLattice.distributeIntensionalitySurface(); // ProfileVector@30d83d
+		
+		return intensionality;
+	}
+	
 	@Override
 	public SimilarityIntf importSimilarityConcepts() {
 		SimilarityIntf similarity;
 		
-		similarity = virtualLattice.distributeSimilarityConcept();
+		similarity = virtualLattice.distributeSimilarityConcept(); // Similarity@1db6942
 		return similarity;
+	}
+
+	@Override
+	public SimilarityIntf importSimilarityConcepts(long serialID) {
+SimilarityIntf similarity;
+		
+		similarity = virtualLattice.distributeSimilarityConcept(serialID); // Similarity@1db6942
+		return similarity;
+	}
+
+	@Override
+	public ExtensionalityDynamicsIntf importExtensionalityDynamics() {
+		ExtensionalityDynamicsIntf extensionality;
+		
+		extensionality = virtualLattice.distributeExtensionalityDynamics();
+		return extensionality;
+	}
+
+	@Override
+	public ExtensionalityDynamicsIntf importExtensionalityDynamics(long serialID) {
+		ExtensionalityDynamicsIntf extensionality;
+		
+		extensionality = virtualLattice.distributeExtensionalityDynamics(serialID);
+		return extensionality;
 	}
 
 	@Override
@@ -297,12 +549,20 @@ public class MetaNode   extends
 	}
 
 	@Override
-	public ExtensionalityDynamicsIntf importExtensionalityDynamics() {
-		ExtensionalityDynamicsIntf extensionality;
+	public MetaNodeConnectivityIntf importMetaNodeConnectivity(long serialID) {
 		
-		extensionality = virtualLattice.distributeExtensionalityDynamics();
-		return extensionality;
+		MetaNodeConnectivityIntf nodeConnectivity ;
+		nodeConnectivity = virtualLattice.distributeNodeConnectivity(serialID);
+		return nodeConnectivity;
 	}
+
+	@Override
+	public void setContentSensitiveInfluence(boolean flag) {
+		
+		contentSensitiveInfluence = flag ;
+	}
+
+
 
 
 

@@ -1,52 +1,73 @@
 package org.NooLab.somfluid.data;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+
+import flanagan.analysis.Stat;
 
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.strings.StringsUtil;
 
 
+import org.NooLab.somfluid.components.MissingValues;
+import org.NooLab.somfluid.util.BasicStatisticalDescription;
+import org.NooLab.somfluid.util.BasicStatistics;
 import org.NooLab.somfluid.util.Formula;
 
 
 
 
-public class DataTableCol {
+public class DataTableCol implements Serializable{
+
+	private static final long serialVersionUID = 1223985229527744867L;
 
 	// object references ..............
 
-	// TODO: reference to global missing value object,
-	//       which can hold many missing value translations
+	transient DataTable parentTable;
 	
-	
-	
-	// the object for nominal values enumeration, a reference from data table
-	NomValEnum nve = null ;
 	
 	// main variables / properties ....
 	
 	int index ; // its column enum value, will be set on construction
+	long serialID ; // monotonic increasing value, sth like a name
 	
-	int rowcount;
-	
-	// double[] cellvalue ; 
+	int levelOfDerivation = 0; // important for organizing the recalculation of complicated trees
+	int recalculationIndicator = 9;
 	
 	ArrayList<Double> cellValues = new ArrayList<Double>() ;
 	
 	ArrayList<String> cellValueStr = new ArrayList<String>() ;
+
+	int rowcount;
+	
+	// the object for nominal values enumeration, a reference from data table
+	NomValEnum nve = null ;
+	
+	/** 
+	 * any kind of formula other than NVE or basic date translation;
+	 * if null then "cellValues" id. outCellValues
+	 */
+	private ColumnDerivations derivations;
+	
+	BasicStatisticalDescription statisticalDescription ;
+	
+	// only for columns that contain normalized data, i.e. which are member of a normalized table
+	BasicStatisticalDescription rawDataStatistics ; 
+	
+	MissingValues missingValues;
 	
 	int dataFormat = -1;
 	boolean isNumeric = false;
 	boolean isIndexColumnCandidate = false;
 	
+	// a particular "transformation"
 	int copyofColumn;
+	
+	
 	int maxScanRows = -1 ;
-	
-
-	
 	boolean visibleOutput = true;
 	
-	
+	public boolean hasHeader;
 	
 	
 	// constants ......................
@@ -57,23 +78,47 @@ public class DataTableCol {
 	
 	
 	// helper objects .................
-	StringsUtil strgutil = new StringsUtil();
+	transient StringsUtil strgutil = new StringsUtil();
 	 
-	PrintLog out  ;
+	transient PrintLog out  ;
 
-	private ColumnDerivations derivations;
-
-	public boolean hasHeader;
-	
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 	
-
-	
-	public DataTableCol(int index){
+	public DataTableCol( DataTable parent, int index  ){
 		this.index = index ;
+		
+		parentTable = parent;
+		out = parent.out ;
+		
+		statisticalDescription = new BasicStatisticalDescription();
+		derivations = new ColumnDerivations ();
+		missingValues = parentTable.missingValues ;
 	}
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 	
+	
+	public DataTableCol( DataTable parent, DataTableCol inColumn) {
+		
+		cellValues = new ArrayList<Double>( inColumn.cellValues ) ;
+		
+		cellValueStr = new ArrayList<String>(inColumn.cellValueStr) ;
+		
+		index = inColumn.index;
+		// derivations nveInstances
+
+
+		derivations = new ColumnDerivations( inColumn.derivations);
+		
+		statisticalDescription = new BasicStatisticalDescription( inColumn.statisticalDescription); 
+		
+		 
+		dataFormat = inColumn.dataFormat;
+		isNumeric = inColumn.isNumeric;
+		isIndexColumnCandidate = inColumn.isIndexColumnCandidate;
+		maxScanRows = inColumn.maxScanRows ;
+	}
+	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 	
+
 	
 	public void importColumn( DataTableCol inColumn, int mode ){
 		int i,n1,n2,nm=0 ;
@@ -124,6 +169,39 @@ public class DataTableCol {
 				this.rowcount = cellValueStr.size();
 			}	
 		}
+	}
+	public void calculateBasicStatistics() {
+		BasicStatistics basicst;
+		// in a dedicated worker class
+		basicst = new BasicStatistics( statisticalDescription, missingValues, cellValues );
+		
+		if (this.dataFormat<8){
+			basicst.calculate();
+		}else{
+			statisticalDescription.setMvCount( this.size()) ;
+		}
+		
+		// now we have an updated version of the container for statistical values that we
+		// have provided ablove as "statisticalDescription"
+	}
+
+ 
+	/** just a linear normalization using the statistics   */
+	public void normalize( double min, double max ) {
+		
+		double dv = -1.0;
+		
+		for (int i=0;i<cellValues.size();i++){
+			if ((max-min)==0){
+				dv = -1;
+			}else{
+				dv = ((double)cellValues.get(i) - min)/(double)(max-min);
+			}
+			if (cellValues.get(i) != -1.0){ // this treatment of missing cvalues needs to be corrected, using the global object
+				cellValues.set(i, dv) ;
+			}
+		} // i->
+		dv = 0.0;
 	}
 
 	public void recodeBinaryEntries(boolean tableHasHeader) {
@@ -189,6 +267,15 @@ public class DataTableCol {
 
 	public NomValEnum getNve() {
 		return nve;
+	}
+
+	public BasicStatisticalDescription getStatisticalDescription() {
+		return statisticalDescription;
+	}
+
+	public void setStatisticalDescription(
+			BasicStatisticalDescription statisticalDescription) {
+		this.statisticalDescription = statisticalDescription;
 	}
 
 	public int determineFormat(){
@@ -587,6 +674,109 @@ public class DataTableCol {
 
 	public void setOut(PrintLog out) {
 		this.out = out;
+	}
+
+	public int getIndex() {
+		return index;
+	}
+
+	public void setIndex(int index) {
+		this.index = index;
+	}
+
+	public long getSerialID() {
+		return serialID;
+	}
+
+	public void setSerialID(long serialID) {
+		this.serialID = serialID;
+	}
+
+	public int getLevelOfDerivation() {
+		return levelOfDerivation;
+	}
+
+	public void setLevelOfDerivation(int levelOfDerivation) {
+		this.levelOfDerivation = levelOfDerivation;
+	}
+
+	public int getRecalculationIndicator() {
+		return recalculationIndicator;
+	}
+
+	public void setRecalculationIndicator(int recalculationIndicator) {
+		this.recalculationIndicator = recalculationIndicator;
+	}
+
+	public ArrayList<String> getCellValueStr() {
+		return cellValueStr;
+	}
+
+	public void setCellValueStr(ArrayList<String> cellValueStr) {
+		this.cellValueStr = cellValueStr;
+	}
+
+	public int getRowcount() {
+		return rowcount;
+	}
+
+	public void setRowcount(int rowcount) {
+		this.rowcount = rowcount;
+	}
+
+	public int getMaxScanRows() {
+		return maxScanRows;
+	}
+
+	public PrintLog getOut() {
+		return out;
+	}
+
+	public void setCellValues(ArrayList<Double> cellValues) {
+		this.cellValues = cellValues;
+	}
+
+	public void setNve(NomValEnum nve) {
+		this.nve = nve;
+	}
+
+	public void setDerivations(ColumnDerivations derivations) {
+		this.derivations = derivations;
+	}
+
+	public void setDataFormat(int dataFormat) {
+		this.dataFormat = dataFormat;
+	}
+
+	public void setNumeric(boolean isNumeric) {
+		this.isNumeric = isNumeric;
+	}
+
+	public void setIndexColumnCandidate(boolean isIndexColumnCandidate) {
+		this.isIndexColumnCandidate = isIndexColumnCandidate;
+	}
+
+	public void setCopyofColumn(int copyofColumn) {
+		this.copyofColumn = copyofColumn;
+	}
+
+	public void setVisibleOutput(boolean visibleOutput) {
+		this.visibleOutput = visibleOutput;
+	}
+
+	public void setHasHeader(boolean hasHeader) {
+		this.hasHeader = hasHeader;
+	}
+
+	public void setRawDataStatistics( BasicStatisticalDescription statsDescr ) {
+		 
+		rawDataStatistics = new BasicStatisticalDescription( statsDescr );
+	}
+
+	public boolean getIsEmpty(double percentThreshold) {
+		// TODO Auto-generated method stub
+		
+		return false;
 	}
 
 	

@@ -35,18 +35,28 @@ public class DataSampler {
 	
 	int effectiveRecordCount;
 	
-	
-	
+	Random _random;
 
-
-
+	// ========================================================================
 	public DataSampler(){
 		
 		for(int i=0;i<3;i++){
 			currentPosition[i] = -1;
 		}
+		
+		String str = this.toString() ;
+		
+		_random = new Random();	
 	}
 	
+	public void setModelingSettings( ModelingSettings  modelingsettings){
+		
+		modelingSettings = modelingsettings;
+		
+		_random = modelingSettings.getRandom() ;
+		_random.nextDouble() ;
+	}
+	// ========================================================================	
 	
 	public int getSizeTrainingSet(){
 		return trainingSample.size();
@@ -137,13 +147,16 @@ public class DataSampler {
 		int i, absolute_record_count;
 		ArrayList<Integer> row_IDs = new ArrayList<Integer>();
 		
+		double _scaleFactor = 1.0;
+		
+		_scaleFactor = Math.log10(currenteffectivecount) * Math.log(currenteffectivecount);
 		
 		
-		 
 		
-		if ((epoch==1) && (steps>=3)){
+		if (epoch<=1) { if (steps>=3){
 			// we drastically reduce the count of records for the first pass
-			effectiveRecordCount = Math.round(currenteffectivecount /8);
+			effectiveRecordCount = (int) Math.round(currenteffectivecount /( _scaleFactor));
+			
 			if (currenteffectivecount<100){
 				if (absrecordcount>100){
 					effectiveRecordCount=100 ;
@@ -152,16 +165,31 @@ public class DataSampler {
 					effectiveRecordCount = absrecordcount;
 				}
 			}
+			}
 		}
 		
+		double selectionProb = (double)(1.0*effectiveRecordCount) / (double)(1.0*absrecordcount) ;
+		boolean _select;
 		
-		for (i = 0; i < effectiveRecordCount; i++) {
+		i = 0; 
+		while (row_IDs.size() < effectiveRecordCount) {
+			// do it randomly, and respect blocks in case of relational/time series data
+			_select = false;
 			
-			row_IDs.add(i);
-			// reflects resized data body
-			// this now means, that all data are referenced;
-			// from this we will draw our records by random
-		}
+			
+			double rv = _random.nextDouble() ;
+			 
+			_select = rv <= selectionProb ; 
+			
+			if (_select) {
+				row_IDs.add(i);
+				// reflects resized data body;
+				// this now means, that all data are referenced;
+				// from this we will draw our records by random
+			}
+			
+			i++;
+		} // i ->
 		
 		row_IDs.trimToSize();
 		
@@ -232,11 +260,6 @@ public class DataSampler {
 	
 	
 	
-	public void setModelingSettings( ModelingSettings  modelingsettings){
-		modelingSettings = modelingsettings;
-	}
-
-
 	public int getEffectiveRecordCount() {
 		return effectiveRecordCount;
 	}

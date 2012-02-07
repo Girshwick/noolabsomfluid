@@ -9,4 +9,5 @@ public interface LatticePropertiesIntf {
 	public void setInitialNodeCount(int nodeCount) ;
 	
 	
+	
 }

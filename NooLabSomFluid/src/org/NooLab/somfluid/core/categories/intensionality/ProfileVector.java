@@ -61,7 +61,8 @@ class ProfileVector implements Serializable, ProfileVectorIntf {
 	
 	// ========================================================================
 	public ProfileVector(){
-		
+		int z;
+		z=0;
 	}
 	// ========================================================================
 	

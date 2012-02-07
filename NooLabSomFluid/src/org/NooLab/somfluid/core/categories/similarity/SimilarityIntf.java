@@ -4,6 +4,9 @@ import java.util.ArrayList;
 
 public interface SimilarityIntf {
  
+	public static final int _SIMDIST_ADVSHAPE  = 1;
+	public static final int _SIMDIST_EUCLID    = 2;
+	
 	/** 
 	 * this version assumes that the two vectors are from the same domain, where a domain is 
 	 * defined by an arbitrarily, yet fixed, ordered set of variables.
@@ -37,7 +40,8 @@ public interface SimilarityIntf {
 	 * @param useIntensity
 	 * @param suppressSQRT
 	 */
-	public double similarityWithinDomain( ArrayList<Double> vector1, ArrayList<Double> vector2, ArrayList<Double> useIntensity, boolean suppressSQRT);
+	public double similarityWithinDomain( ArrayList<Double> vector1, ArrayList<Double> vector2, 
+										  ArrayList<Double> useIntensity, boolean suppressSQRT);
 	
 	
 	
@@ -49,7 +53,7 @@ public interface SimilarityIntf {
 	 * considered to calculate the similarity
 	 * 
 	 */
-	public double similarityAcrossDomains( ArrayList<Double> vector1, ArrayList<Double> vector2);
+	public double similarityAcrossDomains( ArrayList<Double> vector1, ArrayList<Double> vector2) ;
 	
 	
 	
@@ -59,7 +63,35 @@ public interface SimilarityIntf {
 	
 	
 	
+	// ------------------------------------------------------------------------
 	
+	
+
+	
+	public int getSimilarityType() ;
+
+	public void setSimilarityType(int similarityType)  ;
+
+
+	public ArrayList<Integer> getExcludedVariableIndexes() ;
+
+	public void setExcludedVariableIndexes( ArrayList<Integer> excludedVariableIndexes) ;
+
+
+	public int getIndexIdColumn() ;
+
+	public void setIndexIdColumn(int indexIdColumn) ;
+
+
+	public int getIndexTargetVariable() ;
+
+	public void setIndexTargetVariable(int indexTargetVariable) ;
+
+	public void setUsageIndicationVector(int[] usagevector);
+
+	public void setBlacklistIndicationVector(int[] blacklistPositions);
+
+
 	
 	
 }
