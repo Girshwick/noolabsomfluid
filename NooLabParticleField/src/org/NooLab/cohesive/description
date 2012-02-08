@@ -1,0 +1,45 @@
+
+
+
+
+Given a particular grid established in a repulsion field, it is important for
+the growing SOM paradigm to allow for a movement the nodes (NOT the particles).
+
+That is, the nodes (aka: information) may move on the substrate (aka:neurons). 
+
+This movement is according to some property of the nodes, e.g. their similarity,
+ther frequency of activation, their "size"/"weight" etc.
+
+
+This movement allows for a local development of the SOM. It is NOT necessary
+to consider always all the nodes in learning. If there are once multiple areas
+describing similar issues, the nodes (aka: information packages) will move
+closer together after a while
+
+The movements of all nodes are mutually constrained through a 
+
+
+-> energy minimization in a graph ... is NP complete, so any approximate
+solution will do it  
+
+practically, we use a spring system, which is confined to the location of the particles
+a force directed graph, using toxiclibs
+-> not in parallel mode...
+http://www.shiffman.net/itp/classes/nature/toxiclibs_2010/forcedirectedgraph/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

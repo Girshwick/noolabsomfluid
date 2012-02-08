@@ -1,0 +1,14 @@
+#Fat Jar Configuration File
+#Sun Feb 05 00:22:45 CET 2012
+onejar.license.required=true
+manifest.classpath=
+manifest.removesigners=true
+onejar.checkbox=false
+jarname=D\:\\dev\\java\\workspace\\NooLabParticleField.jar
+manifest.mergeall=true
+manifest.mainclass=
+manifest.file=<createnew>
+jarname.isextern=true
+onejar.expand=
+excludes=<jar|core.jar>;<jar|commons-collections-3.2.1.jar>;<jar|log4j-1.2.16.jar>;<jar|javaGeom-0.10.1.jar>;<jar|NooLabGraph.jar>;<jar|NooLabUtilities.jar>
+includes=
