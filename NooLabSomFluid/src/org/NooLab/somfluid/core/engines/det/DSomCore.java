@@ -2,15 +2,22 @@ package org.NooLab.somfluid.core.engines.det;
 
 import java.util.ArrayList;
 
+import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
+import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceIntf;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
+import org.NooLab.somfluid.core.engines.Assignates;
+import org.NooLab.somfluid.core.engines.det.results.SomTargetResults;
+import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.data.DataSampler;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.DataTableCol;
-import org.NooLab.somfluid.data.ModelingSettings;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.communication.LatticeFutureVisor;
 import org.NooLab.somfluid.env.communication.NodeTask;
+import org.NooLab.somfluid.properties.ModelingSettings;
+import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
 
  
@@ -43,8 +50,12 @@ public class DSomCore {
 	double timeConstant;
 	double learningRate, initialLearningRate;
 	
+	ModelingSettings modelingSettings ;  
+	ClassificationSettings  classifySettings ;
 	
 	
+	// ------------------------------------------
+	ArrUtilities arrutil = new ArrUtilities();
 	PrintLog out;
 	
 	// ========================================================================
@@ -54,11 +65,14 @@ public class DSomCore {
 		// ... dSom.somData;
 		out = dSom.out;
 		
-		out.print(2, "requesting neighborhood for <11> from particle field via Som-Lattice");
+		// out.print(2, "requesting neighborhood for <11> from particle field via Som-Lattice");
 		// dSom.somLattice.getNeighborhoodNodes(11) ; out.delay(200);
 		// dSom.somLattice.getNeighborhoodNodes(15) ;
 		
 		dataSampler.setModelingSettings( dSom.modelingSettings );
+		
+		modelingSettings = dSom.modelingSettings ;
+		classifySettings = modelingSettings.getClassifySettings() ; 
 		
 		prepareSomProcess();
 		
@@ -104,6 +118,8 @@ public class DSomCore {
 		Variables variables ;
 		Variable var;
 		
+		MetaNodeIntf node;
+		
 		ArrayList<Variable> blacklist;
 		
 		
@@ -130,6 +146,9 @@ public class DSomCore {
 			col = dtable.getColumn(i);
 			
 			blacklistPositions[i] = 0;
+			if (col.getStatisticalDescription().getMvCount()> 0.92*col.size()){
+				var.setIsEmpty(1) ;
+			}
 			
 			if ((var.isIndexcandidate()) || (col.getDataFormat()==0)){
 				usagevector[i] = 0; 
@@ -176,16 +195,27 @@ public class DSomCore {
 		somSteps = modset.getMaxSomEpochCount();
 		absoluteRecordCount = dSom.somData.getRecordCount() ;
 		
-		// set blacklist, usevector to similarity object
-		SimilarityIntf simIntf ;
+		// set blacklist, usevector to similarity object of lattice, and sim object of all nodes
+		SimilarityIntf simIntf = null ;
 		
-		simIntf = dSom.somLattice.getNode(0).getSimilarity();
+		for (int i=0;i<dSom.somLattice.size();i++){
+			
+			node = dSom.somLattice.getNode(i);
+
+			
+			
+			simIntf = node.getSimilarity();
+			
+			simIntf.setUsageIndicationVector(usagevector);
+			simIntf.setBlacklistIndicationVector(blacklistPositions);
+			
+			simIntf.setIndexTargetVariable(tvColumnIndex) ;
+			simIntf.setIndexIdColumn(indexColumnIndex) ;
+			
+			
+			node.cleanInitializationByUsageVector( simIntf.getUsageIndicationVector() );
+		} // i-> all nodes
 		
-		simIntf.setUsageIndicationVector(usagevector);
-		simIntf.setBlacklistIndicationVector(blacklistPositions);
-		
-		simIntf.setIndexTargetVariable(tvColumnIndex) ;
-		simIntf.setIndexIdColumn(indexColumnIndex) ;
 		
 											out.print(4,"similarity obj = "+simIntf.toString());
 
@@ -193,13 +223,79 @@ public class DSomCore {
 		
 	}
 
-
-	private void executeSOM( ){
+	// ========================================================================
+	
+	
+	// ========================================================================
+	
+	
+	private void performDSom(){
 		
+		int loopcount=0;
+		boolean done=false;
+		
+		
+		 
+		
+		
+		while ((done==false) && (dSom.getUserbreak()==false)){
+		
+			// the initial execution of the SOM
+			// this is a simple run of the SOM. no sprites, for evolutionary optimization
+			// which we could add here in this loop below. (loop level L3/L4)
+			if (modset.getEvolutionaryAssignateSelection() == false){
+				done = executeSOM();
+			}
+		
+			if ((modset.getEvolutionaryAssignateSelection() ) && (dSom.getUserbreak()==false)){
+				/*
+				 *  in case of evolutionary modeling we need to integrate
+				 *  - validation, for calculating the cost function
+				 *  - sub-sampling = using significantly decreased samples for
+				 *                   evolutionary optimization
+				 */
+				
+			}
+			
+			if ((modset.getSpriteAssignateDerivation() )&& (dSom.getUserbreak()==false)){
+				if ((modset.getMaxL2LoopCount()<0) ){
+					// at least one loop to check for the new derivatives
+					modset.setMaxL2LoopCount(1) ; 
+				}
+				
+				
+			} // SpriteAssignateDerivation() ?
+			
+			loopcount++;
+			// http://theputnamprogram.wordpress.com/2011/12/21/technical-aspects-of-modeling/
+			if ((modset.getMaxL2LoopCount()>0) && (loopcount> modset.getMaxL2LoopCount())){
+				done = false;
+			}
+		  
+			
+		} // done ?
+	}
+
+
+	/**
+	 *  executing the SOM;
+	 *  1. basically, this just organized the learning epochs, where "organizing" meanse
+	 *     to determine the actual sample of records (only their indexes, of course).
+	 *     The first epoch is just basic priming, the second more extended priming of the SOM ;
+	 *     for that we need not to take all records (only about 3% or at least 100 records)
+	 *  2. the initial learning rate and neighborhood parameters are adjusted, becoming
+	 *     smaller and smaller with increasing epoch count,
+	 *  3. the data are sent to the core SOM process, i.e. the SOM now perceives the data vectors,
+	 *     according to the settings of use vectors and weight vectors
+	 *    
+	 */
+	private boolean executeSOM(){
+		
+		boolean rB=false;
 		DSomDataPerception somDataPerception;
 		double learningRate;
 		
-		int  limitforConsideredRecords = 0, currenteffectivecount,actualRecordCount  ;
+		int  limitforConsideredRecords = 0, actualRecordCount  ;
 		
 		int currentEpoch =0;
 		 
@@ -225,15 +321,16 @@ public class DSomCore {
 			if (limitforConsideredRecords > 1) {
 				actualRecordCount = limitforConsideredRecords;
 			}
+			 
 			
-			
-			while ((currentEpoch <= somSteps) && (dSom.getUserbreak()==false)) {
-				
+			while ((currentEpoch < somSteps) && (dSom.getUserbreak()==false)) {
+											out.print(1, "Som learning epoch... "+(currentEpoch+1));
+											
 				// before (re-)starting, we have to reset the node statistics, and the list of entries, except the weights of the vector
 				clearNodesExtension( currentEpoch );
 				
 				// sample size is dependent on epoch and number of records
-				adjustSampleAndSteps( currentEpoch, actualRecordCount );
+				adjustSampleAndSteps( currentEpoch, absoluteRecordCount ); // second epoch much too small... 
 				actualRecordCount = sampleRecordIDs.size() ;
 				
 				adjustIntensityParameters( currentEpoch, actualRecordCount ) ;
@@ -243,23 +340,72 @@ public class DSomCore {
 				
 				somDataPerception.setLoopParameters( currentEpoch, somSteps );
 				somDataPerception.setDynamicsParameters( learningRate, timeConstant , neighbourhoodRadius) ;
-						
+										//  epoch 1 :       0.2           411             6.5
 				somDataPerception.go();
-				
-				
 				currentEpoch++;
+				
+				
 			} // currentEpoch -> maxSomEpochCount 
 			
 			
-	
+			if ( (dSom.sfProperties.getSomType()==SomFluidProperties._SOMTYPE_MONO) && 
+				 (modelingSettings.getTargetedModeling() )){
+			 
+				dSom.somResults = new SomTargetResults( dSom, sampleRecordIDs, modelingSettings);
+				dSom.somResults.prepare();
+				
+			 
+				if (classifySettings.isFullSpelaDiagnostics()) {
+					// list of results from multiple modeling, based on variation of central parameters 
+					// resolution, ECR, alpha/beta target, samples, 
+					// available only after evolutionary optimization
+				}
+				
+			} // is it a targeted modeling?
+			
+			
+			
+			consoleDisplay();
+			
+			// TODO: release event message
+			
+			
+			rB=true;
 			
 		}catch(Exception e){
 			e.printStackTrace();
 		}
-		 
+		
+		out.print(1, "Basic Som learning has been finished.");
+		return rB;
 	}
 
 
+ 
+
+
+	private void consoleDisplay() {
+		MetaNodeIntf  node;
+		ArrayList<Double> values;
+		int nrc;
+		String str ;
+		
+		out.print(2,true,"\nintensional profiles of nodes:");
+		
+		for (int i=0;i<dSom.somLattice.size();i++){
+			node = dSom.somLattice.getNode(i) ;
+			
+			values = node.getIntensionality().getProfileVector().getValues();
+			nrc = node.getExtensionality().getCount() ;
+		
+			str = arrutil.arr2text( values ,2 ) ;
+			out.print(2,true, "i "+i+"  ---  [n:"+nrc+"] "+str ); // output suppressing the prefix ...
+		}
+		out.print(2,true," - - - - - \n");
+	}
+	// ========================================================================
+	
+	
 	private void  adjustSampleAndSteps( int currentEpoch, int actualRecordCount)  {
 	
 		sampleRecordIDs = dataSampler.createEffectiveRecordList( absoluteRecordCount, currentEpoch, somSteps ,  actualRecordCount);
@@ -363,6 +509,21 @@ public class DSomCore {
 		NodeTask task;
 		LatticeFutureVisor latticeFutureVisor;
 		
+		MetaNodeIntf  node;
+		ExtensionalityDynamicsIntf  ext;
+		IntensionalitySurfaceIntf  ints;
+		
+		for (int i=0;i<dSom.somLattice.size();i++){
+		
+			node = dSom.somLattice.getNode(i);
+			
+			ext  = node.getExtensionality();
+			ints = node.getIntensionality() ;
+			
+			ext.clear();
+			
+		}
+		
 		if (currentEpoch >= 1) {
 			 // send a message to all nodes
 			
@@ -383,34 +544,6 @@ public class DSomCore {
 
 
 	// ========================================================================
-	
-	
-	private void performDSom(){
-		
-		int loopcount=0;
-		boolean done=false;
-		// this is a simple run of the SOM. no sprites, for evolutionary optimization
-		// which we would add here in a loop. (loop level L3/L4)
-		
-		 
-		
-		while ((done==false) && (dSom.getUserbreak()==false)){
-		
-			executeSOM();
-		
-			if ((modset.getEvolutionaryAssignateSelection() ) && (dSom.getUserbreak()==false)){
-				
-			}
-			if ((modset.getSpriteAssignateDerivation() )&& (dSom.getUserbreak()==false)){
-				
-			}
-			// http://theputnamprogram.wordpress.com/2011/12/21/technical-aspects-of-modeling/
-			if (loopcount> modset.getMaxL2LoopCount()){
-				done = false;
-			}
-		  
-		}
-	}
 	
 	
 	public void perform() {

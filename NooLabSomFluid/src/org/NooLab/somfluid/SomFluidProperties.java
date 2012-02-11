@@ -2,8 +2,8 @@ package org.NooLab.somfluid;
 
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
-import org.NooLab.somfluid.data.ModelingSettings;
-import org.NooLab.somfluid.properties.GlueConnection;
+import org.NooLab.somfluid.env.communication.GlueConnection;
+import org.NooLab.somfluid.properties.ModelingSettings;
 
 
 											//  as usual, we offer particular views on this container
@@ -34,6 +34,8 @@ public class SomFluidProperties implements 	//
 	// lattice
 	int somType = -1; // mandatory 
 	int initialNodeCount = -1;
+	boolean messagingActive = true;
+	boolean multithreadedProcesses=false;
 	
 	
 	
@@ -143,6 +145,33 @@ public class SomFluidProperties implements 	//
 	public void setAutoAdaptResolutionAllowed(int flag) {
 		//  
 		
+	}
+
+
+	public void setMessagingActive(boolean flag) {
+		 
+		messagingActive = flag;
+	}
+
+
+	public boolean getMessagingActive() {
+		 
+		return messagingActive;
+	}
+
+
+	public void activateMultithreadedProcesses( boolean flag) {
+		// 
+		multithreadedProcesses = flag;
+	}
+	public boolean isMultithreadedProcesses() {
+		return multithreadedProcesses;
+	}
+	public boolean getMultithreadedProcessing() {
+		return multithreadedProcesses;
+	}
+	public void setMultithreadedProcesses(boolean flag) {
+		this.multithreadedProcesses = flag;
 	}
 
 

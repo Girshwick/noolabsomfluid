@@ -87,11 +87,19 @@ public interface SimilarityIntf {
 
 	public void setIndexTargetVariable(int indexTargetVariable) ;
 
+	
 	public void setUsageIndicationVector(int[] usagevector);
-
-	public void setBlacklistIndicationVector(int[] blacklistPositions);
-
-
+	public void setUsageIndicationVector(ArrayList<Double> usageIndicationVector) ;
+	
+	public ArrayList<Double> getUsageIndicationVector() ;
+	
+	
+	public void setBlacklistIndicationVector(int[] blacklistPositions) ;
+	public void setBlacklistIndicationVector( ArrayList<Double> blacklistIndicationVector) ;
+	 
+	public ArrayList<Double> getBlacklistIndicationVector() ;
+	
+	
 	
 	
 }

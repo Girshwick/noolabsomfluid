@@ -3,6 +3,7 @@ package org.NooLab.somfluid.core.categories.extensionality;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.components.SomDataObject;
+import org.NooLab.somfluid.core.engines.NodeStatistics;
 import org.NooLab.somfluid.data.DataTable;
 
 
@@ -33,12 +34,30 @@ import org.NooLab.somfluid.data.DataTable;
 public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 
 	SomDataObject somData;
+	
 	ArrayList<Integer> listOfRecords = new ArrayList<Integer>();
+	
+	/* TODO: needed: 
+	 *          - a statistical description, 
+	 * 			- indication of method for evaluating the container 
+	 *            (most dimple: frequency ratio, more advanced: SOM, PCA, Cronbach
+	 * 	        - the list of derived features, that would be added to the 
+	 *            original feature vector, or which would replace them
+	 *            
+	 */
+	
+	NodeStatistics statistics ;
+
+	/** the positive predictive value of the node */
+	double ppv;
+	double majorityValueIdentifier = -1.0 ;
 	
 	// ========================================================================
 	public ExtensionalityDynamics( SomDataObject somdata){
 		
 		somData = somdata;
+		statistics = new NodeStatistics()  ;
+		
 	}
 	// ========================================================================
 	
@@ -47,17 +66,40 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	}
 
 	public void addRecordByIndex( int index){
-		listOfRecords.add(index) ;
+		// take it to the list, but only if it is not there yet
+		if (listOfRecords.indexOf(index)<0){
+			listOfRecords.add(index) ;
+		}
 	}
 
 	public void removeRecordByIndex( int index){
+		
+		if ((index<0) || (index>=listOfRecords.size())){
+			return;
+		}
+		
 		int p = listOfRecords.indexOf(index) ;
+		
 		if (p>=0){
-			listOfRecords.remove(p) ;
+			listOfRecords.remove(index) ;
 		}
 	}
 	
-	public ArrayList<Integer> getListOfRecordsAsTable(){
+	@Override
+	public void clear() {
+		
+		statistics.resetFieldStatisticsAll();
+		listOfRecords.clear() ;
+		listOfRecords.trimToSize() ;
+	}
+
+	@Override
+	public int getRecordItem(int index) {
+		  
+		return listOfRecords.get(index);
+	}
+
+	public ArrayList<Integer> getListOfRecords(){
 		return listOfRecords ;
 	}
 
@@ -65,6 +107,32 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	public int getCount() {
 		 
 		return listOfRecords.size() ;
+	}
+
+	public NodeStatistics getStatistics() {
+		return statistics;
+	}
+
+	@Override
+	public void setPPV(double ppvValue) {
+		 
+		this.ppv = ppvValue;
+	}
+
+	public double getPPV() {
+		return ppv;
+	}
+
+	public double getMajorityValueIdentifier() {
+		return majorityValueIdentifier;
+	}
+
+	public void setMajorityValueIdentifier(double majorityValueIdentifier) {
+		this.majorityValueIdentifier = majorityValueIdentifier;
+	}
+
+	public void setStatistics(NodeStatistics statistics) {
+		this.statistics = statistics;
 	}
 
 	 

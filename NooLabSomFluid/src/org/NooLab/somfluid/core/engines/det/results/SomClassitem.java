@@ -1,4 +1,4 @@
-package org.NooLab.somfluid.core.engines.det;
+package org.NooLab.somfluid.core.engines.det.results;
 
 
 

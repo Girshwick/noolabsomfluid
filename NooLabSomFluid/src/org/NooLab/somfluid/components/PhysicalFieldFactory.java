@@ -5,6 +5,8 @@ import org.NooLab.repulsive.RepulsionFieldFactory;
 import org.NooLab.repulsive.components.Neighborhood;
 import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
+import org.NooLab.somfluid.SomFluidFactory;
+import org.NooLab.utilities.logging.LogControl;
 
 
 
@@ -33,7 +35,7 @@ public class PhysicalFieldFactory {
 	}
 	// ------------------------------------------------------------------------
 	
-	public RepulsionFieldIntf createPhysicalField( RepulsionFieldEventsIntf eventSink, int nbrparticles ){
+	public RepulsionFieldIntf createPhysicalField( SomFluidFactory sfFactory, RepulsionFieldEventsIntf eventSink, int nbrparticles ){
 	 
 		int runRequestTester=0;
 		
@@ -42,7 +44,7 @@ public class PhysicalFieldFactory {
 		
 		if (runRequestTester>0){
 			// for testing, 100 = 100ms delay between calls, pres +/. to ac-/decelerate
-			rfFactory = new RepulsionFieldFactory("test:RQ=1000");
+			rfFactory = new RepulsionFieldFactory("test:RQ=1000", 1); // , LogControl.Level);
 			repulsionField = rfFactory.getRepulsionField() ;
 			
 		}else{
@@ -50,8 +52,11 @@ public class PhysicalFieldFactory {
 			repulsionField = (new RepulsionFieldFactory()).getRepulsionField() ;
 		}
 		
-		
-		repulsionField.useParallelProcesses(0); // set to 0 for debugging
+		int pp=0;
+		if (sfFactory.getSfProperties().isMultithreadedProcesses()){
+			pp=1;
+		}
+		repulsionField.useParallelProcesses(pp); // set to 0 for debugging
 		
 		repulsionField.registerEventMessaging( eventSink );
 		repulsionField.setName("somfluid-app") ;
@@ -81,13 +86,20 @@ public class PhysicalFieldFactory {
 		
 		// in contrast to standard SOM we need not to choose a big initial radius (usually half of the SOM size),
 		// since we can merge, split and move the particles, which prevents multicenters for very similar contexts
-		int _selectionsize = (int) (1.4 * (Math.sqrt( nbrParticles )/2.0)) ;
+		double rad = (int)( (Math.sqrt( nbrParticles )/3.5));
+		
+		int _selectionsize = (int) (Math.round((rad * rad)*Math.PI)*0.82)  ;
 		
 		if (_selectionsize>2000){
 			_selectionsize = 2000 ; // maxSelectionSize 1000, 5000
 		}
-		
+
+		// this will calculate the next larger number for a hexagonal pattern;
+		// i.e. for the acual selection we have to truncate the selected collection
+		// which is not a problem, because it is returned in ordered fashion
+	
 		repulsionField.setSelectionSize( _selectionsize ); 
+		_selectionsize = repulsionField.getSelectionSize() ;
 		
 		// this populates the field, set "nbrParticles" to 0 if you will import coordinates or a field
 		// can be set to auto-adapt
@@ -111,6 +123,7 @@ public class PhysicalFieldFactory {
 		
 		return (RepulsionFieldIntf)repulsionField;
 	}
+	
 	
 	public RepulsionField getRepulsionField() {
 		return repulsionField;

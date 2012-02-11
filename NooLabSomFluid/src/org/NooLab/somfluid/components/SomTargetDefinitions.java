@@ -2,6 +2,8 @@ package org.NooLab.somfluid.components;
 
 import java.io.Serializable;
 
+import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
+
 
 
 /**
@@ -14,6 +16,11 @@ public class SomTargetDefinitions implements Serializable{
  
 	private static final long serialVersionUID = 5806200383500090178L;
 
+	ClassificationSettings classifySettings;
+	
+	
+	
+	
 	public SomTargetDefinitions(){
 		
 	}

@@ -102,11 +102,61 @@ class ProfileVector implements Serializable, ProfileVectorIntf {
 	}
 
 
-	public void setValues(ArrayList<Double> values) {
-		this.values = values;
+	public void setValues(ArrayList<Double> invalues) {
+		this.values = invalues;
+		
+		for (int i=0;i<values.size();i++){
+			
+			if ((values.get(i)>1.0) && (values.get(i)<1.8)){
+				values.set(i, 1.0);
+			}
+			if ((values.get(i)<0.0) && (values.get(i)!=-1.0)){
+				values.set(i, 0.0);
+			}
+		}
 	}
 
 
+
+
+	@Override
+	public void changeProfile(ArrayList<Double> dataVector, int count, int direction) {
+		double v , virtualSum, npv;
+		int rc=1;
+		boolean hb ;
+		
+		if (direction<-1)direction=-1;
+		if (direction> 1)direction= 1;
+		
+		
+		for (int i=0;i<values.size();i++){
+			
+			hb = true;
+			
+			// only if not index variable
+			if (hb){
+				
+				v = values.get(i) ;
+				
+				if (direction>0){
+					rc = (count-1);
+					
+				}
+				if (direction<=0){
+					rc = (count+1);
+				}
+				virtualSum = v * (double)(1.0*rc) ;
+				virtualSum = virtualSum + dataVector.get(i) ;
+				
+				npv = virtualSum/(rc + direction);
+				
+				values.set(i, npv);
+			}
+			
+		} // i-> all positions in vector
+		
+		
+	}
 
 
 	public int getLastExtDataValueIndex() {

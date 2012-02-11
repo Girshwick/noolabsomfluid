@@ -6,6 +6,7 @@ import java.util.Observer;
 import java.util.Random;
 
 
+import org.NooLab.repulsive.components.data.IndexDistance;
 import org.NooLab.repulsive.intf.DataObjectIntf;
 import org.NooLab.somfluid.components.DataSourceIntf;
 import org.NooLab.somfluid.components.VirtualLattice;
@@ -20,9 +21,12 @@ import org.NooLab.somfluid.core.categories.imports.SimilarityImportIntf;
 import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
+import org.NooLab.somfluid.core.engines.NodeStatistics;
+import org.NooLab.somfluid.core.engines.det.ProfileVectorMatcher;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
 import org.NooLab.somfluid.env.communication.NodeObserverIntf;
 import org.NooLab.somfluid.env.communication.NodeTask;
+import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.utilities.logging.PrintLog;
 
 
@@ -112,12 +116,19 @@ public class MetaNode   extends
   
  */
 
+	int _MinimalSizeBeforeSplit = 10 ;
+	int _AbsoluteMinimumForSplit = 5 ;
 	
-	// TODO for those contexts as represented by these interfaces, we need the respective properties Objects for persistence
+	// TODO for those contexts as represented by these interfaces, we need 
+	//      the respective properties Objects for persistence
 	
-	int virtualRecordCount = 0; // the count of weight adjustment operations applied to the node
+	/** the count of weight adjustment operations applied to the node */
+	int virtualRecordCount = 0; 
 	private boolean contentSensitiveInfluence;
 	private boolean changeIsSizedependent=true;
+
+	boolean calculateAllVariables=false;
+	private ArrayList<Integer> sdoIndexValues = new ArrayList<Integer>();
 	
 	// ------------------------------------------------------------------------
 	public MetaNode( VirtualLattice virtualLatticeNodes, DataSourceIntf somData ){
@@ -153,6 +164,7 @@ public class MetaNode   extends
 
 	@Override
 	public void adjustProfile(  ArrayList<Double> datarecord,
+								int nodeIndex,
 								double learningrate, double influence, 
 								double sizeFactor, int i) {
 
@@ -161,11 +173,11 @@ public class MetaNode   extends
     	int vn,_d, recordcount  ;
     	boolean _blocked=true, calcThis, calculateAllVariables=false ;
     	double contextual_influence_reduction=1;
-    	double _new_w=0;
-    	double _old_w, w_d ,_LR=1.0f,change ;
+    	double _new_w=0.0;
+    	double _old_w=0.0, w_d , _v, _LR=1.0f,change ;
     	
-    	
-    	ArrayList<Double> usevector, nodeProfile, vector2 ;
+    	NodeStatistics nodeStats ;
+    	ArrayList<Double> usevector, weightvector, nodeProfile, vector2 ;
 
 		try {
 
@@ -175,10 +187,14 @@ public class MetaNode   extends
 			// calculateAllVariables = modelingSettings.calc_all_variables();
 			calculateAllVariables = false ;
 			
-			usevector = intensionality.getWeightsVector();
+			weightvector = intensionality.getWeightsVector(); // not used so far
+			
+			usevector = this.similarity.getUsageIndicationVector() ;
 			
 			// creating copies of the two vectors
 			nodeProfile = new  ArrayList<Double>(intensionality.getProfileVector().getValues()) ;
+			
+			nodeStats = this.getExtensionality().getStatistics() ;
 			vector2 = new ArrayList<Double>(datarecord);
 
 			recordcount = extensionality.getCount() ;
@@ -209,10 +225,16 @@ public class MetaNode   extends
 			
 
 			for (int w = 0; w < _d; w++) { // across all fields
-				err = 4;
+											err = 4;
 
 				_old_w = nodeProfile.get(w); // saving weight of variable[w] as old weight
-
+				if (nodeProfile.get(w)>1.0){
+					_old_w = 1.0;
+					nodeProfile.set(w, 1.0) ; 
+				}
+				
+				
+				
 				// work on the variable only if allowed
 				calcThis = (usevector.get(w) > 0);
 				
@@ -227,99 +249,487 @@ public class MetaNode   extends
 						// || ( w == similarity.getIndexIdColumn() ))
 						// we include the target variable, so we can see the expected mean value,
 						// albeit this info will be often overruled
-
 					}
 				}
 
 				if (calcThis) {
 
-            		err =5;
-                     
-                      if ( ((nodeProfile.get(w)>=0) && ( vector2.get(w)>=0)) && (vector2.get(w)<=1)){ 
-                    	  // excluding MV ...
-                                                      
-                       
-                                                     		err = 6;
-                         sizeFactor = 1;
+											err = 5;
 
-                         if (virtualRecordCount+ recordcount<= Math.sqrt( 0.1+recordcount)){
-                    	   
-                        
-                                                        
-                                                     		err = 7;
-                          w_d =0 ;
-                          w_d = (nodeProfile.get(w) - vector2.get(w)) ;
-                          w_d = w_d +  w_d * (3*nodeProfile.get(w) - vector2.get(w))/2 ;
+					if (((nodeProfile.get(w) >= 0) && (vector2.get(w) >= 0)) && (vector2.get(w) <= 1)) {
+						// excluding MV ...
+											err = 6;
+						sizeFactor = 1;
 
-                       }
-                       else
-                       {
-                          w_d = (nodeProfile.get(w) - vector2.get(w)) ;
+						if (virtualRecordCount + recordcount <= Math.sqrt(0.1 + recordcount)) {
 
-                          									err = 8;
-                       } //else:  recordcount <= ?
-                       
+											err = 7;
+							w_d = 0;
+							w_d = (nodeProfile.get(w) - vector2.get(w))/3.0;
+							// w_d = w_d + w_d * (3 * nodeProfile.get(w) + vector2.get(w))/ 4;
+									
+							if (recordcount==0){
+							 	
+							}
+							
+						} else {
+
+							w_d = (nodeProfile.get(w) - vector2.get(w));
+											err = 8;
+						} // else: recordcount <= ?
+
                        // w_d = w_d * contextual_influence_reduction; // not specified so far, working with default=1 here
 
-                                                         	err = 9;
-                         _LR = learningrate ;
-                         
-                         if ( ( recordcount+ Math.log10(1+virtualRecordCount)<=2) 
-                        	  && (!_blocked)){ // also in the neighbourhood ...
-                        	 // not used so far
-                                                         	err = 10;
-                            _LR = (float) (_LR + ( 1-_LR)/(11 + Math.log10(1+_d) + Math.log10(1+virtualRecordCount)));
-                         }
-                                                         	err = 11;
-                           change = (float) ((_LR * influence * w_d)* (1/(1+contrastEnh))) ;
-                           
-                           change = (float) adaptChangeRelativeToNodeExtSize( change,recordcount ) ;
-                           
-                                                         	err = 12;
-                           if ( (change<-1) || (change>2)){
-                              change=0;
-                           }
-                           if (virtualRecordCount==0){
-                        	   _new_w = nodeProfile.get(w);
-                        	   vector2.set(w,nodeProfile.get(w) );
-                           }
-                           else{
-                        	   _new_w = vector2.get(w) + change;
-                           }
-                           
-                           virtualRecordCount = virtualRecordCount+1 ;
-                      
-                       										err = 14;
-                       if (_new_w>1){ 
-                       		_new_w = 1 ;
-                       		
-                       		System.out.println("\nProblem in AdjustWeights(a): "+
-                       		                   "new weight = "+String.format("%4.3f", _new_w)+
-                       		                   "\nLR        = "+String.format("%4.3f", _LR)+
-                       		                   "\nInfluence = "+String.format("%4.3f", influence)+
-                       		                   "\nw_d       = "+String.format("%4.3f", w_d)+
-                       		                   "\nFVirtRecord_count = "+String.valueOf(virtualRecordCount)+
+											err = 9;
+						_LR = learningrate;
+
+						if ((recordcount + Math.log10(1 + virtualRecordCount) <= 2) && (!_blocked)) {
+							// also in the neighbourhood
+							// not used so far
+
+											err = 10;
+							_LR = (double) (_LR + (1 - _LR)/ (11 + Math.log10(1 + _d) + Math.log10(1 + virtualRecordCount)));
+						}
+											err = 11;
+											
+						change = (double) ((_LR * influence * w_d) * (1 / (1 + contrastEnh)));
+
+						change = (double) adaptChangeRelativeToNodeExtSize(change, recordcount);
+
+											err = 12;
+						if ((change < -1) || (change > 2)) {
+							change = 0;
+						}
+						if (recordcount == 0) {
+							// in the beginning = the first updates, we scale the new record much higher (ratio 4:1),
+							// if we have updated it often, this difference decreases more and more
+							// TODO: we chould scale 
+							double imprintingRatioScale = Math.sqrt(0.01 * (double)virtualRecordCount);
+							_new_w = (double)( (nodeProfile.get(w)* (double)(1.0+imprintingRatioScale) + 
+									           (vector2.get(w) * (4.0+imprintingRatioScale))))/(5.0+(imprintingRatioScale*2.0));
+							// _new_w = vector2.get(w);
+							nodeProfile.set(w, _new_w) ; //
+							// vector2.get(w))
+						} else {
+							_new_w = vector2.get(w) + change;
+						}
+
+						virtualRecordCount = virtualRecordCount + 1;
+
+						if ((_new_w > 1.0) && (_new_w < 1.041)){
+							_new_w = 1.0 ;
+						}
+if ((_new_w<0) || (_new_w>1.04)){
+	err=16;
+}
+							
+											err = 14;
+						if (_new_w > 1) {
+											err = 15;
+                       		out.printErr(1,"\nProblem in AdjustWeights(a): "+
+                       				           "\n   position   = "+w +
+                       		                   "\n   new weight = "+String.format("%4.3f", _new_w)+
+                       		                   "\n   LR         = "+String.format("%4.3f", _LR)+
+                       		                   "\n   Influence  = "+String.format("%4.3f", influence)+
+                       		                   "\n   w_d        = "+String.format("%4.3f", w_d)+
+                       		                   "\n   VirtRecord_count = "+String.valueOf(virtualRecordCount)+
                        		                   "\n");
-                       
-                       
-                       		_new_w= 1/(4-4);
-                       }
-                       
-                       if ((_new_w<0) && (_new_w>-0.3)){_new_w=0;}
+							// TODO: rollback
+							
+                       		_new_w = 1 ;
+						}
 
-                       nodeProfile.set(w, _new_w);
-                       										err = 15;
-                       if ((_new_w>=0) && (_new_w<=1)){
-                       		return_value = 0 ;   
-                       }
-                   } // exclude MV for both vectors   
-                                                     
-                } // usagevector[w] ?
+						if ((_new_w < 0) && (_new_w > -0.3)) {
+							_new_w = 0;
+						}
 
-            } // w-> across all fields
+						if (usevector.get(w)<=0.0){
+							_new_w=0.0;
+						}
+						
+						if (_new_w>1.0)_new_w=1.0;
+						nodeProfile.set(w, _new_w);
+						
+											err = 17;
+						if ((_new_w >= 0) && (_new_w <= 1)) {
+							return_value = 0;
+						}
+					} // exclude MV for both vectors
+
+				} // usagevector[w] ?
+				err = 0;
+			} // w-> across all fields
+
+			// if everything is ok (err=0, we do not throw exceptions), we finally have to put the values 
+			// from "nodeProfile" (=clone of original vector of the profile in the lattice!)
+			// back to the node, 
+			if (err==0){
+				// TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				intensionality.getProfileVector().setValues(nodeProfile) ;
+			}
 			
 		}catch(Exception e){
 			e.printStackTrace();
+		}
+		err=0;
+	}
+	
+	public void insertDataAndAdjust( ArrayList<Double> dataNewRecord, int recordIndexInTable) {
+
+		insertDataAndAdjust( dataNewRecord,recordIndexInTable,1.0 ) ;
+	}
+	
+	
+	@Override
+	public void insertDataAndAdjust( ArrayList<Double> dataNewRecord,
+									 // int nodeIndex,
+									 int recordIndexInTable,
+									 double learningrate ) {
+		
+		int nodeExtSize, recordcount=0,_d, err=1;
+		double _old_pv , _new_pv, fieldValue ;
+		boolean calcThis ;
+		
+		NodeStatistics  nodeStats ;
+		BasicStatisticalDescription fieldStats ;
+		
+		ArrayList<Double> usevector,weightvector , nodeProfile ;
+		
+		// dependent on size of extensional container !
+		nodeExtSize = getExtensionality().getCount() ;
+		
+		
+		try{
+			calculateAllVariables = false ;
+											err = 2;
+		//  the weight vector is NOT the use vector, the weight vector describes the weight of a variable IFF used
+		//  the use vector is in the similarity part : SimilarityIntf simIntf ;
+											
+			weightvector = intensionality.getWeightsVector(); // not used so far, has the wrong length (much too long)...
+			
+			usevector = this.similarity.getUsageIndicationVector() ;
+			nodeProfile = new  ArrayList<Double>(intensionality.getProfileVector().getValues()) ;
+			recordcount = extensionality.getCount() ;
+											err = 3;
+			nodeStats = extensionality.getStatistics() ;
+			_d = intensionality.getProfileVector().getValues().size();
+			
+			for (int w = 0; w < _d; w++) { // across all fields
+				 
+				fieldValue = dataNewRecord.get(w); 
+				
+				if (fieldValue > 1.0){
+					fieldValue = 1.0;
+					dataNewRecord.set(w, 1.0) ;  
+				}
+				
+											err = 4;
+				_old_pv = nodeProfile.get(w); // saving weight of variable[w] as old weight
+				
+				if (nodeProfile.get(w)>1.0){
+					_old_pv = 1.0;
+					nodeProfile.set(w, 1.0) ;  
+				}
+				
+				
+				fieldStats = nodeStats.getFieldValues().get(w);
+				
+								if (nodeStats.getFieldValues().size()< w){
+									nodeStats.getFieldValues().add( new BasicStatisticalDescription()) ;
+								}
+											err = 5;
+				// work on the variable only if allowed
+				calcThis = (usevector.get(w) > 0);
+				
+				if (calcThis==false) {
+					if (calculateAllVariables) {
+						calcThis=true;	
+						// we may update all variables, the distance will be
+						// calc'd only for used ones anyway !
+						if (w == similarity.getIndexTargetVariable()) {
+							calcThis = false; // always to exclude: the index
+												// column
+						}
+						if (somData.getVariables().getItem(w).getIsEmpty()>0 ){
+							calcThis = false;
+						}
+						// || ( w == similarity.getIndexIdColumn() ))
+						// we include the target variable, so we can see the expected mean value,
+						// albeit this info will be often overruled
+					}
+				}
+											err = 7;
+				if (calcThis) {
+					
+											err = 10;
+					if (((nodeProfile.get(w) >= 0) && ( fieldValue >= 0)) && (fieldValue <= 1)) {
+						// excluding MV ...
+											err = 11;
+					
+						if (recordcount <= 0) {
+							// after initialization
+							_old_pv = nodeProfile.get(w);
+
+							// we replace the random value by the real value of
+							// the first observation that we add to this node
+							// fieldValue derives indeed from  "dataNewRecord" ! 
+							nodeProfile.set(w, fieldValue );
+											err = 12;							
+							fieldStats.clear();
+							fieldStats.introduceValue( fieldValue );
+							_new_pv = fieldValue;
+
+						} else {
+											err = 14;
+							_new_pv = dataNewRecord.get(w);
+							
+							fieldStats.introduceValue( fieldValue );
+							_new_pv = fieldStats.getMean() ; 
+							// _new_pv will be set as the profile value at pos w (see below)
+							// ongoing update of more complicated stats, like skewness, kurtosis
+						}
+
+						 
+						recordcount++;
+						if ((_new_pv > 1.0) && (_new_pv < 1.01)){
+							_new_pv = 1.0 ;
+						}
+							
+						if (_new_pv > 1) {
+							// _new_w = 1 ;
+											err = 15;
+							out.printErr(1, "\nProblem in AdjustWeights(b): "+
+                       				        "\n   position in vector = "+w +
+                       		                "\n   new profile value  = "+String.format("%4.3f", _new_pv)+
+                       		                "\n   count of records   = "+String.valueOf(recordcount)+
+                       		                "\n");
+                            // TODO: rollback
+                    	   _new_pv = 1.0;
+                       }
+                       
+if ((_new_pv<0) || (_new_pv>1.04)){
+	err=16;
+}						
+                       if ((_new_pv<0) && (_new_pv>-0.3)){_new_pv=0;}
+
+                       
+                       	if (similarity.getUsageIndicationVector().get(w)<=0.0){
+                       		_new_pv = 0.0;
+                       	}
+
+                       	if (_new_pv>1.0)_new_pv=1.0;
+       					nodeProfile.set(w, _new_pv);
+                       
+                       
+                   } // exclude MV for both vectors   
+                                                     
+                } // usagevector[w] ?
+				err = 0;
+				
+				extensionality.addRecordByIndex( recordIndexInTable ) ; // datarecord.get(ixPosition)) );
+				
+			} // w-> across all fields
+			
+			// if everything is ok (err=0, we do not throw exceptions), we finally have to put the values 
+			// from "nodeProfile" (=clone of original vector of the profile in the lattice!)
+			// back to the node, 
+			if (err==0){
+				 
+				intensionality.getProfileVector().setValues(nodeProfile) ;
+			}
+			
+		}catch(Exception e){
+			String str = ""+err ;
+			out.print(2, "problem in insertDataAndAdjust(), error code: "+str) ;
+			e.printStackTrace();
+		}
+		
+		
+		
+	}
+
+	public void removeDataAndAdjust( ArrayList<Double> dataNewRecord,
+			 						 int nodeIndex,
+			 						 int recordIndexInTable,
+			 						 double learningrate ) {
+		
+		
+	}
+
+	/**
+	 *  those records that are least similar to the profile will be exported, the removal will adapt the basic statistics;
+	 *  
+	 *  @param countOfRecords the number of records to be transferred;
+	 *  @param quality   <0: the least similar records, >0: the most siilar records, 0: all
+	 */
+	@Override
+	public ArrayList<Integer> exportDataFromNode( int countOfRecords, int quality, boolean removeExports) {
+		
+		ArrayList<Integer> exportedRecords = new ArrayList<Integer>(); 
+		ProfileVectorMatcher recordSorter = new ProfileVectorMatcher(out);
+		ArrayList<Integer>  boundingindexlist = new ArrayList<Integer> ();
+		
+		ArrayList<Double> profilevalues, xDataVector = null ;
+		int rcount, rIndex,ix;
+		
+		ArrayList<IndexDistance> sortedRecords = new ArrayList<IndexDistance> ();
+		SimilarityIntf simIntf;
+		
+		try{
+			
+			// 
+			profilevalues = this.intensionality.getProfileVector().getValues() ;
+			rcount = this.extensionality.getCount() ;
+			if (rcount < _MinimalSizeBeforeSplit ){
+				return exportedRecords;
+			}
+			
+			recordSorter.setParameters(profilevalues, rcount, boundingindexlist);
+			
+			
+			for (int i=0;i<rcount;i++){
+			
+				// the extension of the node contains only the indices that point to 
+				// the underlying table as a record index, not by the index value of in the data record
+				
+				rIndex = extensionality.getRecordItem(i); 
+				xDataVector = this.somData.getRecordByIndex( rIndex,2) ; // 2 == record from normalized data
+	
+				if (xDataVector.size()>0){
+					recordSorter.addRecordToCollection(xDataVector);
+				}
+			}
+			
+			simIntf = this.similarity ;
+			recordSorter.createListOfMatchingUnits( 2, simIntf); // 2 -> explicitly provided data records 
+			recordSorter.partialSort( -1, countOfRecords) ;
+			sortedRecords = recordSorter.getList( -1 ) ;
+			
+			// now reading the end of the list, if quality<0
+			int k= sortedRecords.size()-1;
+			
+			if ((quality<0) && (k>= _MinimalSizeBeforeSplit)){
+				
+				int z=0;
+				while ((k >= _AbsoluteMinimumForSplit) && (z<countOfRecords)){
+	
+					ix = sortedRecords.get(k).getIndex();
+					rIndex = extensionality.getRecordItem(ix); 
+					
+					if (removeExports){
+						xDataVector = this.somData.getRecordByIndex( rIndex,2) ;
+						
+						extensionality.removeRecordByIndex( ix );  
+						extensionality.getStatistics().removeRecordData(xDataVector) ;
+	
+						// also recalculate intensionality = profile values vector
+						intensionality.getProfileVector().changeProfile( xDataVector ,extensionality.getCount(), -1 );
+					}
+					
+					// finally add the index of the record in the data table to the list of exported indexes
+					exportedRecords.add(rIndex);
+					z++; k--;
+				}
+	
+			} // reading from the end of the list
+			
+			
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
+		return exportedRecords;
+	}
+
+	@Override
+	public ArrayList<Integer> exportDataFromNode( double smallestPortion, double largestPortion, int quality, boolean removeExports) {
+		// 
+		ArrayList<Integer> exportedRecords = new ArrayList<Integer>();
+		
+		
+		return exportedRecords;
+	}
+
+	@Override
+	public void importDataByIndex(ArrayList<Integer> recordIndexes) {
+		// 
+		int ix, nodesize = 0;
+		ArrayList<Double> dataNewRecord ;
+		
+		nodesize = extensionality.getCount() ;
+		
+		for (int i=0;i<recordIndexes.size();i++){
+			
+			ix = recordIndexes.get(i) ;
+			if (ix>=0){
+				
+				dataNewRecord = somData.getNormalizedDataTable().getRowValuesArrayList(ix) ;
+				insertDataAndAdjust( dataNewRecord , ix);
+				 
+			}
+		} // all records to be imported to this node
+		
+	}
+
+	@Override
+	public ArrayList<Long> getExtensionRecordsIndexValues() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ArrayList<Double> getTargetVariableValues() {
+		
+		ArrayList<Double> values = new ArrayList<Double>();
+		int tvIndex, recordIndex;
+		double v;
+		
+		tvIndex = this.similarity.getIndexTargetVariable() ;
+		if (tvIndex<0){
+			return values;
+		}
+		
+		for (int i=0;i<extensionality.getCount();i++){
+			
+			recordIndex = extensionality.getRecordItem(i) ;
+			v = somData.getRecordByIndex(recordIndex, 2).get(tvIndex) ;
+			
+			if (v>=0){
+				values.add(v) ;
+			}
+			
+		}// i-> all records in container
+		
+		
+		return values;
+	}
+
+	/**
+	 * 
+	 * the basic initialization set all the profile values to some value;
+	 * yet, we do not want to see random values in fields that are excluded
+	 * 
+	 */
+	@Override
+	public void cleanInitializationByUsageVector( ArrayList<Double> usagevector) {
+
+		double v=0.0 ;
+		// calculateAllVariables = modelingSettings.calc_all_variables();
+		boolean calculateAllVariables = false ;
+
+		
+		for (int i=0;i<usagevector.size();i++){
+			
+			if (usagevector.get(i)<=0){
+				
+				if (calculateAllVariables==false){
+					v = 0.0;
+				}else{
+					v = 0.0;
+				}
+				this.intensionality.getProfileVector().getValues().set(i,v);
+			}
 		}
 		
 	}
@@ -402,7 +812,7 @@ public class MetaNode   extends
 	@Override
 	public void onSendingDataObject( Object data, DataHandlingPropertiesIntf datahandler) {
 		
-		out.print(2, "node <"+serialID+">, onSendingDataObject()");
+		out.print(3, "node <"+serialID+">, onSendingDataObject()");
 
 		// formatting the data object: here, the object contains the index pointer to the
 		// SomDataObject
@@ -410,7 +820,7 @@ public class MetaNode   extends
 		
 		
 		//  we put this index into the list
-		sdoIndexValues.add( 0L );
+		sdoIndexValues.add( 0  ); // TODO very incompelete...
 		
 		// and trigger recalculation, if immediate recalc is requested by propertized option
 		
@@ -438,7 +848,7 @@ public class MetaNode   extends
 	public void onRequestForRandomInit(Object obj ) {
 		 
 		initializeSOMnode();
-		
+		 
 											out.print(4, "task _TASK_RNDINIT> received ...");
 				
 		if (openLatticeFutureTask == NodeTask._TASK_RNDINIT){
@@ -562,15 +972,9 @@ SimilarityIntf similarity;
 		contentSensitiveInfluence = flag ;
 	}
 
-
-
-
-
-	
+ 
 
  
-	
-
 
 	 
 

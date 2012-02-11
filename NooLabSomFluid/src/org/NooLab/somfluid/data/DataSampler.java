@@ -1,9 +1,11 @@
 package org.NooLab.somfluid.data;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Random;
 
 import org.NooLab.somfluid.components.SomDataObject;
+import org.NooLab.somfluid.properties.ModelingSettings;
  
  
 
@@ -144,32 +146,49 @@ public class DataSampler {
 	
 	
 	public ArrayList<Integer> createEffectiveRecordList( int absrecordcount, int epoch, int steps, int currenteffectivecount ){
-		int i, absolute_record_count;
+		int i ,maxe;
 		ArrayList<Integer> row_IDs = new ArrayList<Integer>();
 		
 		double _scaleFactor = 1.0;
 		
-		_scaleFactor = Math.log10(currenteffectivecount) * Math.log(currenteffectivecount);
-		
-		
-		
-		if (epoch<=1) { if (steps>=3){
-			// we drastically reduce the count of records for the first pass
+		 
+		if (epoch>=0){ // creates approx the series 7%  16% 32% 100%
+			
+			// 1+(3- (3*SQRT(epoch/3))) * log10(N)
+			_scaleFactor = (1.0+((steps-1.0)- ((steps-1.0)*Math.sqrt(((double)epoch/(steps-1.0))))) * Math.log10((double)currenteffectivecount)) ;
+			
 			effectiveRecordCount = (int) Math.round(currenteffectivecount /( _scaleFactor));
 			
-			if (currenteffectivecount<100){
-				if (absrecordcount>100){
-					effectiveRecordCount=100 ;
-				}
-				else{
-					effectiveRecordCount = absrecordcount;
+			effectiveRecordCount = Math.min(effectiveRecordCount , absrecordcount) ;
+			if (epoch==0){
+				effectiveRecordCount = (int) (effectiveRecordCount/3.0) ; 
+			}
+			if (epoch>=2){
+				double p;
+				p = (double)((double)effectiveRecordCount/(double)absrecordcount) ;
+				if ((p>0.3) && (p<0.65)){
+					p = p + ((1.0-p)/2.0);
+					effectiveRecordCount = (int)Math.round( p*(double)absrecordcount);
 				}
 			}
+		}
+		if (effectiveRecordCount < 100) {
+			if (absrecordcount > 100) {
+				effectiveRecordCount = 100;
+			} else {
+				effectiveRecordCount = absrecordcount;
 			}
 		}
 		
+		
+		
 		double selectionProb = (double)(1.0*effectiveRecordCount) / (double)(1.0*absrecordcount) ;
 		boolean _select;
+		
+		if (selectionProb>0.975){
+			selectionProb = 1.0;
+		}
+		
 		
 		i = 0; 
 		while (row_IDs.size() < effectiveRecordCount) {
@@ -181,16 +200,25 @@ public class DataSampler {
 			 
 			_select = rv <= selectionProb ; 
 			
-			if (_select) {
-				row_IDs.add(i);
+			if ((_select) || (selectionProb>0.99)) {
+				if (row_IDs.indexOf(i)<0){
+					row_IDs.add(i);
+				}
 				// reflects resized data body;
 				// this now means, that all data are referenced;
 				// from this we will draw our records by random
 			}
 			
 			i++;
-		} // i ->
+			if (i>absrecordcount){
+				i=0;
+			}
+			if (((double)effectiveRecordCount*0.85)< row_IDs.size()){
+				break;
+			}
+		} // i ->, row_IDs.size() oK ?
 		
+		Collections.sort( row_IDs) ;
 		row_IDs.trimToSize();
 		
 		return row_IDs;

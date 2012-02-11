@@ -18,6 +18,9 @@ import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurface;
 import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
+import org.NooLab.somfluid.core.engines.NodeStatistics;
+import org.NooLab.somfluid.data.Variable;
+import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
 import org.NooLab.utilities.objects.StringedObjects;
@@ -26,13 +29,9 @@ import org.NooLab.utilities.objects.StringedObjects;
 /**
  * 
  * TODO necessary methods
- * LearningUpdate_by_data(double[], int, double)
+ * 
  * calcPrototypeProportion(float[] prototypes)
- * AdjustWeights( double[] datavector, 
-                		double LearningRate, 
-                		double Influence,
-                		double size_factor,
-                		int contrast_enh ){
+
  *
  *               
  *               	
@@ -71,14 +70,7 @@ public abstract class AbstractMetaNode
 	ProfileVectorIntf profileVector ;
 	
 	String targetVariableLabel="" ; 
-	
-	/** this list is pointing to the index value of records (not primary IDs!)
-	 *  for now, this requires that the table in the somData object remains ABSOLUTELY stable!!!
-	 *  later, we may refer to the index value and the row number, and mapping both onto each other
-	 *  (Apache's bidirectional maps...) 
-	 */
-	ArrayList<Long> sdoIndexValues = new ArrayList<Long>();
-	
+ 
 	
 	IntensionalitySurfaceIntf intensionality ;
 	SimilarityIntf similarity ;
@@ -179,6 +171,8 @@ public abstract class AbstractMetaNode
 	/** should be called in the name space of the node thread, so we need a private message queue here, too  */
 	public void initializeSOMnode() {
 		
+		NodeStatistics nodeStats ;
+		
 		int _vectorsize = variableLabels.size() ;
 		Random _rnd = virtualLattice.getRndInstance() ;
 		int k;
@@ -190,6 +184,14 @@ public abstract class AbstractMetaNode
 		profileVector.setVariablesStr(  new ArrayList<String>(variableLabels) );
 		int n = profileVector.getVariablesStr().size() ;
 		
+		nodeStats = extensionality.getStatistics() ;
+		
+		nodeStats.setFieldValues( new ArrayList<BasicStatisticalDescription>() );
+		
+		
+		// this.intensionality.
+		ArrayList<Variable> vars = intensionality.getProfileVector().getVariables() ;
+		
 		for (int i=0;i<n;i++){
 		
 		//  nextGaussian: centered at 0.0 with a standard deviation of 1.0, so we transform it a bit
@@ -198,6 +200,8 @@ public abstract class AbstractMetaNode
 			double vv = org.math.array.StatisticSample.randomNormal(1, 0.5, 0.32)[0];
 			
 			vv = Math.round(vv*1000000.0)/1000000.0;
+			vv = Math.min(1.0, vv);
+			vv = Math.max(0.0, vv);
 			
 			// if it is not TV, and not Index
 			boolean isFreeDataValue = true;
@@ -207,9 +211,15 @@ public abstract class AbstractMetaNode
 			}else{
 
 			}
+			
+			nodeStats.getFieldValues().add( new BasicStatisticalDescription() ) ;
+			nodeStats.setVariables(vars) ;
 		}
 											out.print(3, "node <" + serialID + "> initialized.");
 		profileVector.setLastExtDataValueIndex( profileVector.getVariablesStr().size()-1 );		
+		
+		int np = profileVector.getValues().size() ;
+		intensionality.prepareWeightVector();
 	}
  
 	
@@ -275,9 +285,7 @@ public abstract class AbstractMetaNode
 	}
 
 
-	public ArrayList<Long> getSdoIndexValues() {
-		return sdoIndexValues;
-	}
+ 
 
 
 	public IntensionalitySurfaceIntf getIntensionality() {

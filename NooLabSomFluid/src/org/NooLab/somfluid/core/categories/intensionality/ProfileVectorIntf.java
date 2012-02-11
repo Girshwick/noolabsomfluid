@@ -38,5 +38,7 @@ public interface ProfileVectorIntf {
 
 	public ArrayList<Double> getIntSomNodePropValues();
 
+	public void changeProfile( ArrayList<Double> dataVector, int count, int direction);
+
 
 }

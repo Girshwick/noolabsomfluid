@@ -31,6 +31,8 @@ public class Variable implements Serializable{
 	private boolean isTVcandidate;
 
 	private boolean isIndexcandidate;
+
+	private int isEmpty = 0 ;
 	
 	// ========================================================================
 	public Variable(){
@@ -161,6 +163,15 @@ public class Variable implements Serializable{
 	public void setIndexcandidate(boolean flag) {
 		
 		isIndexcandidate = flag ;
+	}
+
+	public void setIsEmpty(int flagValue) {
+		// 
+		isEmpty = flagValue;
+	}
+
+	public int getIsEmpty() {
+		return isEmpty;
 	}
 
 

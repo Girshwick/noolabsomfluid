@@ -1,25 +1,22 @@
 package org.NooLab.somfluid.core.engines.det;
 
-import java.util.ArrayList;
 import java.util.Random;
 
-import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
+
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidMonoTaskIntf;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidTask;
+
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
-import org.NooLab.somfluid.data.ModelingSettings;
+import org.NooLab.somfluid.core.engines.det.results.SomTargetResults;
+import org.NooLab.somfluid.core.engines.det.results.SomValidation;
+import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.utilities.logging.PrintLog;
 
-
-
-
-
-
-
+ 
 
 /**
  * 
@@ -59,6 +56,11 @@ public class DSom implements DSomIntf{
 	SomFluidMonoTaskIntf somTask; // is of mono-flavor here
 	
 	DSomCore dSomCore;
+
+	// this gets assigned in DSomCore, sine we also  need the actual record sample 
+	// (besides the total number of records))
+	SomTargetResults somResults;
+	
 	
 	String activeTvLabel ;
 	
@@ -70,7 +72,7 @@ public class DSom implements DSomIntf{
 	Random random;
 	
 	// ------------------------------------------------------------------------
-	public DSom( SomFluid sfParent ,SomDataObject sdo, VirtualLattice somlattice, SomFluidTask sfTask ) {
+	public DSom( SomFluid sfParent , SomDataObject sdo, VirtualLattice somlattice, SomFluidTask sfTask ) {
 		 
 		somFluidParent = sfParent;
 		//sfFactory = factory;	
@@ -127,6 +129,41 @@ public class DSom implements DSomIntf{
 
 	public Random getRandom() {
 		return random;
+	}
+
+
+	public ModelingSettings getModelingSettings() {
+		return modelingSettings;
+	}
+
+
+	public SomFluid getSomFluidParent() {
+		return somFluidParent;
+	}
+
+
+	public SomFluidFactory getSfFactory() {
+		return sfFactory;
+	}
+
+
+	public SomFluidProperties getSfProperties() {
+		return sfProperties;
+	}
+
+
+	public SomDataObject getSomData() {
+		return somData;
+	}
+
+
+	public VirtualLattice getSomLattice() {
+		return somLattice;
+	}
+
+
+	public PrintLog getOut() {
+		return out;
 	}
 
  

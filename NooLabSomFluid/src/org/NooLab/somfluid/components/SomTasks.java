@@ -1,7 +1,10 @@
-package org.NooLab.somfluid;
+package org.NooLab.somfluid.components;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+
+import org.NooLab.somfluid.SomFluidFactory;
+import org.NooLab.somfluid.SomFluidTask;
 
 
 

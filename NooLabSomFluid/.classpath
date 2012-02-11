@@ -18,10 +18,10 @@
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/org.NooLab/glue/java-xmlbuilder-0.4.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/org.NooLab/glue/NooLabCompare.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/org.NooLab/glue/NooLabExec.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/org.NooLab/glue/NooLabGlue.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/org.NooLab/glue/org.restlet.ext.xml.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/org.NooLab/glue/org.restlet.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/math/jmath/jmatharray.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/math/flanaganScientificLib/flanagan.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/NooLabGlue"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -1,8 +1,10 @@
-package org.NooLab.somfluid.components;
+package org.NooLab.somfluid.transformer;
 
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.SomFluidFactory;
+import org.NooLab.somfluid.components.SomDataObject;
+import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.DataTableCol;
 
@@ -23,6 +25,8 @@ public class SomTransformer {
 	DataTable dataTableNormalized ;
 	
 	
+	
+	// ========================================================================
 	public SomTransformer( SomFluidFactory factory, SomDataObject sdo) {
 
 		sfFactory = factory;
@@ -141,11 +145,11 @@ public class SomTransformer {
 	}
 
 
+	// ------------------------------------------------------------------------
 
 	public DataTable getDataTableNormalized() {
 		return dataTableNormalized;
 	}
 
-	
 	
 }

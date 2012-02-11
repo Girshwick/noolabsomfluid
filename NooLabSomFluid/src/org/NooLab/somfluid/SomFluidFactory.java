@@ -7,16 +7,18 @@ import java.util.ArrayList;
 import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.somfluid.components.PhysicalFieldFactory;
-import org.NooLab.somfluid.components.SomTransformer;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
+import org.NooLab.somfluid.env.communication.GlueClientAdaptor;
 import org.NooLab.somfluid.env.communication.LatticeProperties;
 import org.NooLab.somfluid.env.data.DataFileReceptorIntf;
 import org.NooLab.somfluid.env.data.DataReceptor;
 import org.NooLab.somfluid.storage.SomPersistence;
+import org.NooLab.somfluid.transformer.SomTransformer;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
 
-public class SomFluidFactory {
+public class SomFluidFactory  implements 	// 
+											SomFluidFactoryClientIntf{
 
 	
 	private RepulsionFieldIntf physicalField ;
@@ -27,6 +29,8 @@ public class SomFluidFactory {
 	SomFluidTask somFluidTask = null;
 	int somType = -1;
 	
+	SomFluidFactory factory;
+	int factoryMode;
 	SomFluid somFluidModule;
 	SomPersistence persistence;
 	LatticeProperties latticeProperties;
@@ -35,13 +39,22 @@ public class SomFluidFactory {
 	DataFileReceptorIntf dataReceptor;
 	SomTransformer transformer;
 	
+	GlueClientAdaptor glueClient ;
 	PrintLog out = new PrintLog(2, true);
 	
 	// ------------------------------------------------------------------------
-	private SomFluidFactory(SomFluidProperties props){
+	private SomFluidFactory(SomFluidProperties props, int factorymode){
+		
+		glueClient = new GlueClientAdaptor() ; 
+		
+		if (props.getMessagingActive()){
+			glueClient.start();
+		}
 		
 		sfProperties = props;
+		factoryMode = factorymode;
 		
+		factory = this;
 		sfProperties.setFactoryParent( this );
 		
 		persistence = new SomPersistence(sfProperties) ;
@@ -62,9 +75,28 @@ public class SomFluidFactory {
 	
 	public static SomFluidFactory get(SomFluidProperties props){
 		
-		return new SomFluidFactory( props );
+		return new SomFluidFactory( props,1 );
 	}
 	 
+	public static SomFluidFactoryClientIntf get(){
+		// we return a restricted interface ... which offers just the construction of some objects,
+		// BUT NOT of the SomFluid !!!
+		
+		SomFluidProperties sfprops = new SomFluidProperties ();
+		return  (SomFluidFactoryClientIntf)(new SomFluidFactory( sfprops,3 ));
+	}
+
+	/**
+	 * returns a factory that can be used to access a SOM for classifying data, but NOT to run modeling 
+	 * @return
+	 */
+	public static SomFluidFactoryClassifierIntf getSomClassService(){
+
+		SomFluidProperties sfprops = new SomFluidProperties ();
+		return  (SomFluidFactoryClassifierIntf)(new SomFluidFactory( sfprops,5 ));
+
+	}
+	
 	
 	protected SomFluidIntf getSomFluid(  ){
 		
@@ -95,7 +127,7 @@ public class SomFluidFactory {
 		
 		out.print(2, "starting the physical particles field... ") ;  
 		
-		physicalField = fieldFactory.createPhysicalField( somEventSink, initialNodeCount );
+		physicalField = fieldFactory.createPhysicalField( this, somEventSink, initialNodeCount );
 		
 		while (physicalFieldStarted<=0){
 			out.delay(10);
@@ -229,6 +261,19 @@ public class SomFluidFactory {
 	public void replicate() {
 		// 
 		
+	}
+
+	
+	// ------------------------------------------------------------------------
+	
+	@Override
+	public SomFluidRequestPackageIntf createRequestPackage() {
+		
+		SomFluidRequestPackage rqPackage ;
+		
+		rqPackage = new SomFluidRequestPackage(this) ; 
+		
+		return (SomFluidRequestPackageIntf) rqPackage;
 	}
  
 

@@ -9,12 +9,17 @@ import java.io.Serializable;
  * 
  * it is part of columns
  * 
+ * TODO: recalculation of statistics from within the extensionality container
+ * 
  */
 public class BasicStatisticalDescription implements Serializable {
 
 	private static final long serialVersionUID = -6837594325966248821L;
 
 	BasicStatisticalDescription bsd;
+	
+	int needForRecalc = 0;
+	int removedValues = 0;
 	
 	int histogramResolution = 100 ;
 	int polynomialFitDegree = 5;
@@ -23,8 +28,11 @@ public class BasicStatisticalDescription implements Serializable {
 	
 	int      count, mvCount, x_counter;
 
-	double   sum, qsum, mean, median, geoMean, cov, soval, // sum of values, needed for merging
+	double   sum, qsum, qqsum, mean, median, geoMean, 
+			 adjMean,  // adjusted mean : mean from (arithmet + harmonic)/2 
+			 cov, soval, // sum of values, needed for merging
 			 sovar, // sum of variances
+			 invsum , // sum of inverses (kehrwert) for harmonic means
 			 variance, autocorr, mini, maxi, skewness, kurtosis;
 	double[] modalPoints = new double[2] ;
 
@@ -55,8 +63,9 @@ public class BasicStatisticalDescription implements Serializable {
 		
 	
 		bsd.sum= inStatsDescr.sum ;
-		bsd.qsum= inStatsDescr.qsum ;
-				
+		bsd.qsum = inStatsDescr.qsum ;
+		bsd.invsum = inStatsDescr.invsum ;
+		
 		bsd.mean=inStatsDescr.mean ;
 		bsd.cov= inStatsDescr.cov ;
 		
@@ -70,6 +79,7 @@ public class BasicStatisticalDescription implements Serializable {
 		bsd.skewness = inStatsDescr.skewness ;
 		bsd.kurtosis = inStatsDescr.kurtosis ;
 		bsd.geoMean = inStatsDescr.geoMean;
+		bsd.adjMean = inStatsDescr.adjMean;
 		
 		if ((inStatsDescr.modalPoints!=null) && (inStatsDescr.modalPoints.length>0)){
 			bsd.modalPoints = new double[inStatsDescr.modalPoints.length ] ;
@@ -92,6 +102,119 @@ public class BasicStatisticalDescription implements Serializable {
 	}
 
 	
+	/** 
+	 * instead of calling all the single methods one after another,
+	 * we introduce it here in a single step 
+	 */
+	public void introduceValue(double fieldValue) {
+	 
+		if (fieldValue == -1.0){
+			mvCount++;
+			return;
+		}
+		count = count + 1;
+		sum = sum + fieldValue;
+		qsum = qsum + (double)(fieldValue * fieldValue);
+		
+		qqsum = qqsum + (double)(qsum*qsum); // for kurtosis
+		
+		if (fieldValue>0){
+			invsum = invsum + 1/(fieldValue);
+		}
+		
+		mean = sum/count;
+
+		if (invsum>0){
+			geoMean = count/invsum;
+		}else{
+			geoMean = 0;
+		}
+		
+		if (geoMean >0){
+			adjMean = (geoMean + mean)/2.0 ; 
+		}else{
+			adjMean = 0;
+		}
+
+		
+		if (count==1){
+			mini = fieldValue;
+			maxi = fieldValue;
+		}else{
+			if (mini > fieldValue){
+				mini = fieldValue;
+			}
+			if (maxi < fieldValue){
+				maxi = fieldValue;
+			}
+		}
+		
+		if (count>=3){
+			variance = lazyvariance(sum,qsum,count);
+		}else{
+			variance = -1;
+		}
+		
+	}
+	
+	public void removeValue(double fieldValue) {
+		
+		double rv;
+		
+		if (fieldValue == -1.0){
+			mvCount--;
+			return;
+		}
+		
+		count = count -1 ;
+		if (count>0){
+			mean = sum / count;
+		}else{
+			mean = -1;
+		}
+		
+		if (fieldValue>0){
+			invsum = invsum -1/fieldValue;
+		}
+		
+		if (invsum>0){
+			geoMean = count/invsum;
+		}else{
+			geoMean = 0;
+		}
+		
+		if (geoMean >0){
+			adjMean = (geoMean + mean)/2.0 ; 
+		}else{
+			adjMean = 0;
+		}
+		
+		
+		qsum = qsum - (double)(fieldValue * fieldValue);
+		
+		qqsum = qqsum - (double)(qsum*qsum); // for kurtosis
+
+		
+		
+		if (count>=3){
+			variance = lazyvariance(sum,qsum,count);
+		}else{
+			variance = -1;
+		}
+		
+		removedValues++;
+		
+		if ( (removedValues > (count*0.8)) || (mini == fieldValue) || (maxi == fieldValue)){
+			needForRecalc++;
+		}
+		
+	}
+
+	private double lazyvariance( double sum, double sqsum, int n){
+		return  sqsum /n - (sum/n)*(sum/n) ;
+	}
+	
+	
 	public void reset() {
 	
 	
@@ -106,8 +229,8 @@ public class BasicStatisticalDescription implements Serializable {
 		mean=0;
 		cov=0;
 		
-		soval =0;  // sum of values, needed for merging
-		sovar =0;  // sum of variances
+		soval =0;
+		sovar =0;  // sum of variances (in case of the comparative statistics of vectors)
 		variance=0;
 		autocorr =0;
 		mini=0;
@@ -124,6 +247,11 @@ public class BasicStatisticalDescription implements Serializable {
 		histogramPolyfitCoefficients = new double[20] ;
 		
 		
+	}
+
+	public void clear() {
+		 
+		reset();
 	}
 
 	public int getHistogramResolution() {

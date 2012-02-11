@@ -1,4 +1,4 @@
-package org.NooLab.somfluid.properties;
+package org.NooLab.somfluid.env.communication;
 
 import org.NooLab.somfluid.SomFluidProperties;
  

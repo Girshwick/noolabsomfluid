@@ -160,6 +160,36 @@ public class Similarity implements
 	}
 
 
+	public ArrayList<Double> getUseIntensity() {
+		return useIntensity;
+	}
+
+
+	public void setUseIntensity(ArrayList<Double> useIntensity) {
+		this.useIntensity = useIntensity;
+	}
+
+
+	public ArrayList<Double> getUsageIndicationVector() {
+		return usageIndicationVector;
+	}
+
+	
+	public void setUsageIndicationVector(ArrayList<Double> usageIndicationVector) {
+		this.usageIndicationVector = usageIndicationVector;
+	}
+
+	
+	public ArrayList<Double> getBlacklistIndicationVector() {
+		return blacklistIndicationVector;
+	}
+
+
+	public void setBlacklistIndicationVector( ArrayList<Double> blacklistIndicationVector) {
+		this.blacklistIndicationVector = blacklistIndicationVector;
+	}
+
+
 	class SimilarityCalculator{
 		
 		ArrayList<Double> vector1, vector2 ;
@@ -191,8 +221,8 @@ public class Similarity implements
 										 ArrayList<Double> vector2, ArrayList<Double> useIntensity) {
 
 			if (vector1.size() != vector2.size()) {
-				System.out.println( "Error! vector1.length (" + vector1.size()+""+
-									") <> vectorsize (" + vector2.size() + ")");
+				System.out.println( "Error! vector1.length (" + vector1.size()+") "+
+									"<> vectorsize (" + vector2.size() + ")");
 				return -1;
 			}
 			double c, d, d0, df, ic1 = 0, ic2 = 0, iq;

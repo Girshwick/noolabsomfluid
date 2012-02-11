@@ -2,6 +2,7 @@ package org.NooLab.somfluid;
 
 import java.io.Serializable;
 
+
 public class SomFluidTask 	implements 
 										Serializable,
 										SomFluidMonoTaskIntf,

@@ -334,7 +334,7 @@ public class VirtualLattice implements LatticeIntf{
 			
 			if (f==null){
 				out.printErr(2, "   --- --- --- LatticeFutureCountDown, guid not found: "+guid);
-				out.print(2, "   --- --- --- length of guid list : "+(openLatticeFutures.items.size())+" ,  "+openLatticeFutures.getItemsStr());
+				out.print(3, "   --- --- --- length of guid list : "+(openLatticeFutures.items.size())+" ,  "+openLatticeFutures.getItemsStr());
 				return;
 			}
 			f.nCount = f.nCount - 1 ;

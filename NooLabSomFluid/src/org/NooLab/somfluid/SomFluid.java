@@ -7,15 +7,17 @@ import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.repulsive.particles.Particle;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.components.SomTransformer;
+import org.NooLab.somfluid.components.SomTasks;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somfluid.env.communication.GlueClientAdaptor;
 import org.NooLab.somfluid.env.communication.LatticeFutureVisor;
 import org.NooLab.somfluid.env.communication.NodeTask;
 import org.NooLab.somfluid.env.communication.NodesInformer;
+import org.NooLab.somfluid.transformer.SomTransformer;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.objects.StringedObjects;
 
@@ -69,8 +71,11 @@ public class SomFluid
 	SomDataObject somDataObject;
 	
 	SomTasks somTasks;
+	
 	SomFluid sf ;
  	
+	
+	
 	boolean isActivated=false, isInitialized=false;
 	boolean processIsRunning=false;
 	Thread sfThread;
@@ -102,6 +107,8 @@ public class SomFluid
 		somDataObject.setFactory(sfFactory);
 		somDataObject.setOut(out) ;
 		
+		
+		
 		sf = this;
 		
 		out.setPrefix("[SomFluid-main]");
@@ -123,6 +130,8 @@ public class SomFluid
 		initStructures();
 		
 		somTasks = new SomTasks( sfFactory ) ;
+		
+		
 		
 	}
 	// ------------------------------------------------------------------------

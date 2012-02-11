@@ -11,5 +11,9 @@ public interface IntensionalitySurfaceIntf {
 	public void prepareWeightVector() ;
 	
 	public ArrayList<Double> getWeightsVector();
+
+	public void initializeWeightsVector( double defaultValue);
+
+	public void clear( int mode );
 	
 }

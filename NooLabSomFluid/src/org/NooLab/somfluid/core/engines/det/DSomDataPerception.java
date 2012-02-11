@@ -32,6 +32,9 @@ public class DSomDataPerception {
 	double    mapRadius, neighbourhoodRadius;
 	double    learningRate, timeConstant, neighbourhoodDecay = 1.45 ;
 	
+	double    constStartLearningRate = 0.1 ;
+	int       learningRateFixationmode = 2 ;
+	
 	PrintLog out;
 	
 	// ========================================================================
@@ -94,6 +97,7 @@ public class DSomDataPerception {
 		if ((f<0) || (ixValMap==null)){
 			return;
 		}
+		recordsConsidered=0;
 		
 		while ((recordsConsidered < sampleRecordIDs.size() ) && (parentSom.getUserbreak()==false) ) {
 			err = 2;
@@ -102,7 +106,11 @@ public class DSomDataPerception {
 			// drawing the next record ID from the preselected set of IDs by random, NOT one after each other
 			currentRecordIndex = getNextRecordId();
 			
+											if (currentRecordIndex > dtable.rowcount() ){
+												continue;
+											}
 			
+ 
 			if (currentRecordIndex<0){
 				break;
 			}
@@ -119,35 +127,86 @@ public class DSomDataPerception {
 			
 			// get the record at the index position we just determined... 
 			// respecting use vector;  (weight vector will be considered later (!) in determining the similarity)
-			testrecord = selectPreparePerceptDataRecord( currentRecordIndex );
+			testrecord = selectPreparePerceptDataRecord( currentRecordIndex, 2); // 2: normalized data
 						 				if (testrecord == null)continue;
 						 
 			winningNodeIndexes = getBestMatchingNodes( testrecord, 5, boundingIndexList);
 				         				if ((winningNodeIndexes==null) || (winningNodeIndexes.size()==0))continue;
-				        	 
-			adoptInfluenceAndReach( sampleRecordIDs.size(), recordsConsidered, somSteps ,timeConstant, neighbourhoodDecay);
-			
-			// dependent on option control and learning epoch, we may allow for multiple winners
-			
-			
-			indexedDistances = getAffectedNodes( winningNodeIndexes, 1 );
-			
-			// this affects just the profile vector ! 
-            updateNodesInVicinity( learningRate, testrecord, indexedDistances);
-			
+				         				out.print(3, "winning node index: "+ winningNodeIndexes.get(0).getIndex() );
+				         				
+            // set calculateAllVariables = true; for all nodes in the last epoch
 
-			learningRate = adjustLearningRate( learningRate, recordsConsidered, sampleRecordIDs.size(), 
-											   currentEpoch, somSteps);
+			updateWinningNode( winningNodeIndexes, testrecord, currentRecordIndex, learningRate);
+			
+		    if ((currentEpoch+1)<somSteps){ 
+		    	// this also defines the size of the neighborhood 
+		    	adoptInfluenceAndReach( sampleRecordIDs.size(), recordsConsidered, somSteps ,timeConstant, neighbourhoodDecay);
+			
+		    	// dependent on option control and learning epoch, we may allow for multiple winners
+			
+			              
+		    	indexedDistances = getAffectedNodes( winningNodeIndexes, 1 );
+		    
+			
+			
+		    	// this affects just the profile vectors of the nodes ! 
+		    	if ((currentEpoch+1)<somSteps){ // in the last step we do not adjust the vicinity any more... it is just classifying...
+				    updateNodesInVicinity( winningNodeIndexes, learningRate, testrecord, indexedDistances); // influence ?
+		    	}
+		    
+		    	learningRate = adjustLearningRate( learningRate, recordsConsidered, sampleRecordIDs.size(), currentEpoch, somSteps);
+		    }				
 
 
-				
+											out.print(3,"neighbourhoodSize : "+neighbourhoodSize);
 			recordsConsidered++;
 		} // -> 
 		
-		
+		careForCoverage( recordsConsidered, sampleRecordIDs.size(), currentEpoch, somSteps,1 );
+		err=0;
 	} // go()
 
 
+	// depending on the data, some nodes may develop into honey pots, collecting
+	private void careForCoverage(int recordsconsidered, int size, int epoch, int steps, int enforce ) {
+		
+		boolean performEqualizer;
+		
+		
+		performEqualizer = (  ((currentEpoch==0) && (recordsconsidered % 10 ==0)) ) || (enforce>0);
+			
+		
+		if (performEqualizer){
+			// TODO : make this a class ...
+			
+			
+			
+			// set selection size to 6
+			// this.parentSom.sfFactory.getPhysicalField().setSelectionSize(6);
+			// TODO: check whether this setting destroy the buffer in RF... (should not)
+			
+			for (int  i=0;i<somLattice.size();i++){
+				
+				// has this node an empty node in its vicinity ?
+				// -> get the surrounding, restrict it to 6 nodes
+				
+				
+				// check whether any of them is empty, get the one with largest size
+				// how many of the neighbors are empty? 
+				
+				
+				// remember the node which we have treated by shuffling records into it
+				// we should not tuch it any mode (...well, it is not empty any more)
+				
+			}// i-> all nodes
+			
+			
+		} // performEqualizer
+		
+	}
+	
+	
+	
 	private double getIndexValueFromRow(ArrayList<Integer> recordIndexes, int currentSampleIndex, int i) {
 		// TODO Auto-generated method stub
 		return 0;
@@ -204,49 +263,123 @@ public class DSomDataPerception {
 	}
 	
 	
-	private double adjustLearningRate(double learningrate, int recordsConsidered, int size, int currentepoch, int somsteps) {
+	private double adjustLearningRate( double learningrate, int recordsConsidered, int recordCount, int currentepoch, int somsteps) {
 		// 
+		double _LF = 1, _v, _learnrate;
 		
-		return 0;
+		// describing the scaling dynamics of the learning rate
+		if (learningRateFixationmode == 1) {
+			_LF = (recordsConsidered / recordCount);
+			_LF = (float) (0.5 + Math.sqrt(_LF) / 2);
+			_LF = 1 / _LF;
+		
+		// _Lf<0 , thus sqrt grows more for small values <0.5
+		
+		}
+		
+		if (learningRateFixationmode == 2) {
+			_LF = (recordsConsidered / recordCount);
+			_LF = (float) ((1 + Math.log(1 + _LF)) / 2);
+			_LF = 1 / _LF;
+		
+		}
+		
+		_v = (float) (constStartLearningRate * Math.exp(-(currentepoch / (somsteps + 2)) * _LF));
+		_learnrate = constStartLearningRate * Math.exp(-((3 * Math.log10(5 + recordsConsidered)) / (Math.log10(1 + recordCount))) * _LF) / 2;
+		_learnrate = (2 * _v + _learnrate) / 3;
+		
+		return   _learnrate;
+		 
 	}
 
-	private void updateNodesInVicinity( double learningrate, ArrayList<Double> datarecord, ArrayList<IndexDistanceIntf> nodesPtr) {
+	private void updateNodesInVicinity( ArrayList<IndexDistance> winningNodeIndexes, 
+										double learningrate, 
+										ArrayList<Double> datarecord, 
+										ArrayList<IndexDistanceIntf> nodesPtr) {
 
-		double maxDistInSample, nodeDistance, influence, sizeFactor=1.0;
-		int nodeIndex;
+		double maxDistInSample, nec, ne=0,crn,nodeDistance, normalizedDistance, influence, sizeFactor=1.0;
+		int nodeIndex,wNodeIndex, ixPosition,k,kn, kn6, bmuExtensionSize=0 ;
 		MetaNodeIntf node ;
-		
+		boolean closeVicinity;
+		ArrayList<Integer> emptyNeighbors = new ArrayList<Integer>(); 
 		
 		if (nodesPtr.size()<1){
 			return;
 		}
 		
-		
+		nodeIndex = nodesPtr.get(0).getIndex() ;
+		node = somLattice.getNode(nodeIndex);
+		ixPosition = node.getSimilarity().getIndexIdColumn() ;
+		k=this.currentEpoch ;
 		try{
 			// the nodelist comes in a sorted state
 			maxDistInSample = nodesPtr.get(nodesPtr.size()-1).getDistance() ;
 			
-			for (int i=0;i<nodesPtr.size();i++){
+			// 
+			kn = nodesPtr.size();
+			if (kn > neighbourhoodSize){
+				kn = neighbourhoodSize;
+			}
+			if (kn<1)kn=1;
+			if (kn>6){kn6=6;} else{kn6=kn;}
+			
+			wNodeIndex = winningNodeIndexes.get(0).getIndex() ;
+			
+			// first we count the empty nodes around the winning BMU, but only, if the BMU is larger than 10; 
+			bmuExtensionSize = somLattice.getNode(wNodeIndex).getExtensionality().getStatistics().getFieldValues().get(1).getCount() ;
+			// the same value: int n = somLattice.getNode(wNodeIndex).getExtensionality().getCount() ;
+			nec=0;
+			
+			if (bmuExtensionSize>10){
+				for (int i = 1; i < kn6; i++) { // index 0
+					nodeIndex = nodesPtr.get(i).getIndex() ;
+					crn = somLattice.getNode(nodeIndex).getExtensionality().getStatistics().getFieldValues().get(1).getCount() ;
+					
+					if (crn==0){
+						nec++;
+						emptyNeighbors.add( nodeIndex ) ;
+					}
+					
+				}
+			} // bmuExtensionSize>10
+			
+			
+			// we do not update the winner, which is at position 0 of the nodelist 
+			for (int i=1;i<kn;i++){ // index 0 
 				
+				closeVicinity = (i<=6);
+									
 				nodeIndex = nodesPtr.get(i).getIndex() ;
 				nodeDistance =nodesPtr.get(i).getDistance() ; 
+				normalizedDistance = nodeDistance/ somLattice.getAveragePhysicalDistance() ;
 				
 				node = somLattice.getNode(nodeIndex);
 				
 				node.getIntensionality().prepareWeightVector();
 				
-				influence = getInfluenceforDistance( (nodeDistance*nodeDistance), 1) ;
+				influence = getInfluenceforDistance( (normalizedDistance*normalizedDistance), 1) ;
 				
 				node.setContentSensitiveInfluence( parentSom.modelingSettings.getContentSensitiveInfluence() );
 				
+				                 // this is normalized data
+				node.adjustProfile( datarecord, nodeIndex, learningrate, influence, sizeFactor, 0);// contrast_enh, 
 				
-				node.adjustProfile( datarecord, // this is normalized data
-									learningrate, influence, sizeFactor, 0);// contrast_enh,
+				if (closeVicinity){
+					
+					
+				}
+				
+				// node.getExtensionality().addRecordByIndex( (int)Math.round(datarecord.get(ixPosition)) );
+				
 				
 			} // i->
 			
+			if ((emptyNeighbors.size()>0) && (currentEpoch<=2)){
+				// careForCoverage( recordsConsidered, sampleRecordIDs.size(), currentEpoch, somSteps,0 );
+				splitNode( wNodeIndex, emptyNeighbors, 1, MetaNodeIntf._NODE_SPLITMODE_MINIMAL ) ; 
+			}
 			
-			
+			k=0;
 			
 		}catch(Exception e){
 			
@@ -254,6 +387,7 @@ public class DSomDataPerception {
 		
 		
 	}
+	
 	
 	/** 
 	 * this returns a list of indexed distances; </br> 
@@ -294,99 +428,156 @@ public class DSomDataPerception {
 		
 		// the lattice performs the call and organizes the wait by itself, -> no complicated callbacks to here...
 		// it wraps the call through the SomFluid object : parentSom.somFluidParent.getNeighborhoodNodes( index );
-											out.print(2, "nodes selected  n = "+nodelist.size()) ;
+											out.print(3, "nodes selected  n = "+nodelist.size()) ;
+		if (nodelist.size()>neighbourhoodSize){
+			// nodelist = (ArrayList<IndexDistanceIntf>) nodelist.subList(0,nodelist.size()-1) ;
+			if ( nodelist.size()>neighbourhoodSize) {
+				for (int i=neighbourhoodSize;i<nodelist.size();i++){
+					// index not correct yet ...
+					if (nodelist.size()>=neighbourhoodSize){
+						nodelist.remove(neighbourhoodSize);
+					}
+				}
+			}
+		}
 		return nodelist;
 	}
 
-	
-	private ArrayList<IndexDistance> getBestMatchingNodes( ArrayList<Double> values, int bmuCount, ArrayList<Integer> boundingIndexList) {
+	protected void splitNode(int wNodeIndex, int newNodes ) {
+		// 
 		
-		ArrayList<Integer> bestMatches = new ArrayList<Integer> (); 
+	}
+
+	/**
+	 * 
+	 * if emptyNeighbors contains a node that is empty, the node addressed by srcNodeIndex will 
+	 * transfer some records 
+	 * 
+	 * @param wNodeIndex
+	 * @param emptyNeighbors
+	 * @param numberOfSplits
+	 */
+	protected void splitNode(int srcNodeIndex, ArrayList<Integer> emptyNeighbors, int numberOfSplits, int splitmode ) {
+		// 
+		ArrayList<IndexDistance> sortedNeighbors = new ArrayList<IndexDistance> ();
+		ArrayList<Integer> boundingIndexList = new ArrayList<Integer>();
+		ArrayList<MetaNodeIntf> nodeCollection = new ArrayList<MetaNodeIntf>(); 
 		
-		ArrayList<IndexDistance> bestMatchesCandidates = new ArrayList<IndexDistance> (); 
+		ProfileVectorMatcher bmuSearch;
 		
-		MetaNodeIntf node;
-		ProfileVectorIntf profile;
+		ArrayList<Integer> exportedRecordIndexes = new ArrayList<Integer> () ;
 		
-		int blockemptynodes = 0;
-		int num_row, n, num_col ;
-		int   err = 0 ;
-		double dsq = 999999;
-		double miniDis;
-		boolean hb, suppressSQRT = true;
-		int bmuIndex;
-	
-		miniDis = 1000000000;
-		bmuIndex = -1;
-		err = 1;
-		// comparing the imported values[] against all nodes in lattice
-		//
-		err = 1;
+		MetaNodeIntf node, bmnNode;
+		ArrayList<Double> profilevalues;
+		
+		int nos = 0, ix, bmuCount, bestMatchingNeighborIndex;
+		
+		int a=1;
+		if (a==2){
+			return;
+		}
+		
+		bmuCount = emptyNeighbors.size();
+		if (bmuCount<=1){
+			return;
+		}
 		try {
-	
 			
-			// this has to be accelerated: (1) multi-digester (MANDATORY), (2) flexibly created coarse pre-digensting SOMs, 
-			for (n = 0; n < somLattice.size(); n++) {
-	
-				node = somLattice.getNode(n);
-				err = 3;
-				if ((node == null) ){
-	
-					continue;
-				}
-	
+			for (int n = 0; n < emptyNeighbors.size(); n++) {
 				
-											SimilarityIntf simIntf = node.getSimilarity();
-											out.print(4,"similarity obj in node("+n+") = "+simIntf.toString());
-											
-				profile = node.getProfileVector();
-				dsq = node.getSimilarity().similarityWithinDomain( profile.getValues(), values, suppressSQRT) ;
-				// dsq = getAdvancedDistanceMeasure(1, SOMnodes[n].dweights, values);
-	
-	
-				if (dsq < 0) {
-					out.printErr(2,"Problem in calculating distance, node index: "+n+" , dsq<0 = " + String.valueOf(dsq));
-					return null;
-				}
-				
-				hb = (dsq >= 0) && (nodeIsCandidate( dsq, bestMatchesCandidates, bmuCount ));
-				
-				
-				
-				if (blockemptynodes > 0) {
-					if (hb == true) {
-						if (node.getExtensionality().getCount() <= (blockemptynodes - 1)) {
-							hb = false;
-						}
-					}
-				}
-				if (hb == true) {
-	
-					 
-					bestMatchesCandidates = acquireBmuCandidate( bestMatchesCandidates, bmuCount, n, dsq );
-					err = 8;
-	
-				} // dsq < miniDis ?
-	
-			} // n->
-			err = 9;
-	
-			for (int i=0;i<bestMatchesCandidates.size();i++){
-				bestMatches.add( bestMatchesCandidates.get(i).getIndex() ) ;
+				node = somLattice.getNode( emptyNeighbors.get(n) );
+			 
+				nodeCollection.add(node);
 			}
 			
-			err = 0;
+			profilevalues = somLattice.getNode(srcNodeIndex).getIntensionality().getProfileVector().getValues();
+			
+			bmuSearch = new ProfileVectorMatcher(out);
+			bmuSearch.setNodeCollection( nodeCollection).setParameters(profilevalues, bmuCount, boundingIndexList);
+			bmuSearch.createListOfMatchingUnits(1);
+			sortedNeighbors = bmuSearch.getList( -1 ) ;
+			
+			// the best matching node within this collection is on pos 0, 
+			// yet the index reported from this position refers to emptyNeighbors not to the somLattice...
+			bestMatchingNeighborIndex = sortedNeighbors.get(0).getIndex() ;
+			// ... thus we have to translate back...
+			ix = emptyNeighbors.get( bestMatchingNeighborIndex ) ;
+			// and to get the node through the translated indes
+			bmnNode = somLattice.getNode( ix ) ;
+			 
+			// next, remove some records from the source node into a local collection,
+			// either a minimal set of 3 records, or balanced (taking into consideration total variance
+			
+			if (splitmode == MetaNodeIntf._NODE_SPLITMODE_MINIMAL){
+if (currentEpoch>=2){
+	a=0;
+}
+				// those records that are least similar to the profile will be exported, the removal will adapt the basic statistics 
+				// 3 = the number of records to be transferred, 
+				// flag = whether to remove the exported indexes; if yes, the statistics will be adapted
+				node = somLattice.getNode( srcNodeIndex ) ;
+				exportedRecordIndexes = node.exportDataFromNode( 3 , -1, true) ; // -1 = least similar ones
+			} 
+			
+			if (splitmode == MetaNodeIntf._NODE_SPLITMODE_BALANCED){
+				// the allowed portion of records to be transferred
+				// the removal will adapt the basic statistics
+				exportedRecordIndexes = bmnNode.exportDataFromNode( 0.19, 0.61, -1,true) ;
+			}
+			
+			bmnNode.importDataByIndex( exportedRecordIndexes ) ;
+			
+			// and now , from all nodes in the direct neighborhood of this freshly filled node,
+			// we take just 1 record: the one that matches the profile of bmnNode most
+			int n = bmnNode.getExtensionality().getCount() ;
+			
+			n= n+1-1;
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	
+		
+	}
+	// this acts as a wrapper for "BmuIdentification{}"
+	private ArrayList<IndexDistance> getBestMatchingNodes( 	ArrayList<Double> profilevalues, 
+															int bmuCount, 
+															ArrayList<Integer> boundingIndexList) {
+		
+		ArrayList<IndexDistance> bestMatchesCandidates = new ArrayList<IndexDistance> (); 
+		ArrayList<MetaNodeIntf> nodeCollection = new ArrayList<MetaNodeIntf>(); 
+		
+		ProfileVectorMatcher bmuSearch;
+		
+		MetaNodeIntf node;
+		
+	
+		// comparing the imported values[] against all nodes in lattice
+		//
+		
+		try {
+	
+			for (int n = 0; n < somLattice.size(); n++) {
+				node = somLattice.getNode(n);
+				nodeCollection.add(node);
+			}
+			// here, nodeCollection is a sample from from somLattice, in this collection we search for 
+			// the best match for the profilevalues (format: ArrayList Double)
+			bmuSearch = new ProfileVectorMatcher(out);
+			bmuSearch.setNodeCollection(nodeCollection).setParameters(profilevalues, bmuCount, boundingIndexList);
+			bmuSearch.createListOfMatchingUnits(1); // 1=nodes -> profiles
+			bestMatchesCandidates = bmuSearch.getList( -1 ) ;
+			
+			
+			
 		}catch(Exception e){
 			e.printStackTrace();
 		}
 		finally {
-	
 		}
 		return bestMatchesCandidates ;
 	}
 
 	/**
-	 * 
 	 * 
 	 * @param actualRecordCount respective to the actual epoch after preparing the sample, which is much smaller for the first epochs
 	 * @param recordsConsidered
@@ -395,7 +586,7 @@ public class DSomDataPerception {
 	 */
 	private void adoptInfluenceAndReach( int actualRecordCount, int recordsConsidered, int steps, double timeConstant, double neighbourhoodDecay) {
 		 
-		double _sf, _Nv,  rc, _f, speed=1.0;
+		double _sf, _Nv,  rc, _f,_fx, speed=1.0;
 		int size;
 		
 		if (mapRadius<=0.01){
@@ -414,32 +605,46 @@ public class DSomDataPerception {
 		
 		// _Nv = (float) (Math.round(mapRadius * 0.92) * Math.exp(-(neighbourhoodDecay * (1.1 * Math.log10(1+1*_sf*Math.log(size)))*((recordsConsidered + 8*steps)/rc) / timeConstant)));
 	
-		_f =   (1.1f * Math.log10(1.0f+1.0f*_sf*Math.log( size)))*((recordsConsidered + 8.0f*steps)/rc) / (timeConstant * speed);
-		_f =   Math.exp(-(neighbourhoodDecay * _f)) ;
-		_Nv =  (Math.round( mapRadius * 0.92f)) * _f;
-		
-		neighbourhoodRadius =  ((neighbourhoodRadius * _Nv)); // _Nv
-		neighbourhoodRadius =  (Math.round( mapRadius * 0.92f)) * _f;
+		_f =   (1.1f * Math.log10(1.0f+1.0f*_sf*Math.log( size)))*(((double)recordsConsidered + (double)(8.0*(double)steps)/rc)) / (timeConstant * speed);
+		_fx =   Math.exp(-(neighbourhoodDecay * _f)) ;
+		_Nv =  (Math.round( mapRadius * 0.92)) * _fx;
+											
+		// neighbourhoodRadius =  Math.sqrt((neighbourhoodRadius * _Nv)); // _Nv
+		neighbourhoodRadius =  (Math.round( mapRadius * 0.92f)) * _fx;
 									    
 	    if (neighbourhoodRadius>mapRadius){
 	    	//  neighbourhoodRadius = (mapRadius * 0.94f);
 	    }
-		
-	    double ad =  somLattice.getAveragePhysicalDistance() ;
+	    									
+	    double ad; 									
+	    ad =  somLattice.getAveragePhysicalDistance() ;
 	    neighbourhoodSize =  (int) ((neighbourhoodRadius*neighbourhoodRadius) * Math.PI * 0.8)  ;
 	
-	    out.print(2, "Record # "+recordsConsidered+"  NBR scale = "+String.format("%.4f",_Nv)+
-			   		 ",   NBR = "+String.format("%.4f",neighbourhoodRadius) +
-			   		 ",   n = "+neighbourhoodSize) ;
+	    								if (recordsConsidered>176){
+	    									out.printErr(4, "calculating neighborhood : _f="+String.format("%.4f",_f)+
+	    													"  _fx="+String.format("%.4f",_fx) +"  ");
 	    
+	    									// if (recordsConsidered%10==0)
+	    									{
+	    										out.print(3, "Record # "+recordsConsidered+"   NBR scale = "+String.format("%.4f",_Nv)+"   timeConstant = "+String.format("%.4f",timeConstant)+
+	    													 ",   NBR = "+String.format("%.4f",neighbourhoodRadius) +
+	    													 ",   n = "+neighbourhoodSize) ;
+	    									}
+	    									rc=0;
+	    								}
+	    									
+	    				
 	}
 
-	private ArrayList<Double> selectPreparePerceptDataRecord(int iindex) {
+	private ArrayList<Double> selectPreparePerceptDataRecord( int iindex , int rawOrNorm) {
 		ArrayList<DataTableCol> table;
 		ArrayList<Double> rowData;
 		
-		
-		rowData = parentSom.somData.getDataTable().getDataTableRow(iindex);
+		if (rawOrNorm<=1){
+			rowData = parentSom.somData.getDataTable().getDataTableRow(iindex);
+		}else{
+			rowData = parentSom.somData.getNormalizedDataTable().getDataTableRow(iindex);
+		}
 			
 		return rowData;
 	}
@@ -453,56 +658,13 @@ public class DSomDataPerception {
 		}
 	}
 
-	private ArrayList<IndexDistance> acquireBmuCandidate( ArrayList<IndexDistance> currentBestMatches , int bmuCount,  
-														  int bmuIndex, double distanceValue){
-		
-		IndexDistance ixDist ;
-		
-		if (currentBestMatches.size()<bmuCount){
-			ixDist = new IndexDistance( bmuIndex , distanceValue, "");  
-			currentBestMatches.add(ixDist ) ;
-		}else{
-			if ( currentBestMatches.get( currentBestMatches.size()-1).getDistance() < distanceValue){
-				// no change
-				return currentBestMatches;
-			}
-			for (int i=0;i<currentBestMatches.size();i++){
-				if ( distanceValue < currentBestMatches.get(i).getDistance() ){
-					ixDist = new IndexDistance( bmuIndex , distanceValue, ""); 
-					currentBestMatches.add(i,ixDist ) ;
-					break;
-				}
-			}// i->
-			if (currentBestMatches.size()>bmuCount){
-				currentBestMatches.remove( currentBestMatches.size()-1) ;
-			}
-		}
-		
-		return currentBestMatches;
-	}
-	
-	private boolean nodeIsCandidate( double distanceValue, ArrayList<IndexDistance> candidates, int bmuCount ){
-		boolean rB = false;
-	
-		if (candidates.size()<bmuCount){
-			rB = true;
-		}else{
-			double d = candidates.get( candidates.size()-1).getDistance() ;
-			if (distanceValue < d){
-				rB=true;
-			}
-		}
-		
-		return rB;
-	}
-
 	
 	private double getInfluenceforDistance(double DistToNodeSqr, int mode) {
 
 		int return_value = -1;
 
 		double WidthSq = 1, _v, mapwidth;
-		double Influence = 0.0;
+		double influence = 0.0;
 
 		try {
 
@@ -512,43 +674,43 @@ public class DSomDataPerception {
 			
 			WidthSq = neighbourhoodRadius * neighbourhoodRadius;
 
-			Influence = (float) Math.exp(-(DistToNodeSqr) / (0.001));
+			influence = (double) Math.exp(-(DistToNodeSqr) / (0.001));
 
 			if (WidthSq <= 0) {
 				return return_value;
 			}
 
 			if (mode == 0) {
-				Influence = (float) Math.exp(-(2 * DistToNodeSqr)
-						/ (2 * WidthSq));
+				influence = (float) Math.exp(-(2 * DistToNodeSqr)/ (2 * WidthSq));
+						
 			}
 			if (mode == 1) {
-				Influence = (float) Math.exp(-(2 * (DistToNodeSqr) * Math.log(mapwidth)) / (2 * WidthSq));
+				influence = (double) Math.exp(-(2.0 * (DistToNodeSqr) * Math.log((double)mapwidth)) / (2.0 * (double)WidthSq));
 
-				if ((neighbourhoodRadius > 10)
-						&& (DistToNodeSqr / neighbourhoodRadius > 0.69)) {
-					Influence = Influence * (1.01 - (DistToNodeSqr / neighbourhoodRadius));
+				if ((neighbourhoodRadius > 10) && (DistToNodeSqr / neighbourhoodRadius > 0.69)) {
+						
+					influence = influence * (1.01 - (DistToNodeSqr / neighbourhoodRadius));
 				}
 			}
 
 			if (mode == 2) {
-				Influence = (float) Math
-						.exp(-(1.6 * Math.sqrt(DistToNodeSqr) * Math.log(mapwidth)) / (2 * WidthSq));
+				influence = (float) Math.exp(-(1.6 * Math.sqrt(DistToNodeSqr) * Math.log(mapwidth)) / (2 * WidthSq));
+						
 
-				if ( (neighbourhoodRadius > 10) && 
-					 (DistToNodeSqr / neighbourhoodRadius > 0.4)) {
-					Influence = Influence * (1.01 - (DistToNodeSqr / neighbourhoodRadius));
+				if ( (neighbourhoodRadius > 10) && (DistToNodeSqr / neighbourhoodRadius > 0.4)) { 
+					
+					influence = influence * (1.01 - (DistToNodeSqr / neighbourhoodRadius));
 				}
-				if ( (neighbourhoodRadius > 3) && (DistToNodeSqr >= 3) && 
-					 (DistToNodeSqr / neighbourhoodRadius > 0.3)) {
+				if ( (neighbourhoodRadius > 3) && (DistToNodeSqr >= 3) && (DistToNodeSqr / neighbourhoodRadius > 0.3)) {
+					 
 
 					_v = Math.exp(-(1 / (1 - (DistToNodeSqr / neighbourhoodRadius))));
-					Influence = Influence * _v;
+					influence = influence * _v;
 				}
 			}
 
 			if (mode == 3) {
-				Influence = (float) Math.exp(-(2 * DistToNodeSqr * Math.log(mapwidth * Math.sqrt(mapwidth))) / (2 * WidthSq));
+				influence = (double) Math.exp(-(2 * DistToNodeSqr * Math.log(mapwidth * Math.sqrt(mapwidth))) / (2 * WidthSq));
 			}
 			 
 			
@@ -558,11 +720,45 @@ public class DSomDataPerception {
 
 		}
 
-		return Influence;
+		return influence;
 	}
 	
-	
-	
+	private void updateWinningNode(	ArrayList<IndexDistance> winningNodeIndexes, 
+									ArrayList<Double> dataNewRecord,
+									int recordIndexInTable, 
+									double currentLearningrate) {
+		
+		int nodeindex = -1, nodeExtSize=-1;
+		MetaNodeIntf node;
+		
+		
+		try{
+			
+			
+			
+			// ... calculate new profile
+			
+			
+			// calculate new variance, CoV
+			
+			for (int i=0;i<winningNodeIndexes.size();i++){
+				
+				nodeindex = winningNodeIndexes.get(i).getIndex() ;
+				node = somLattice.getNode(nodeindex) ;	
+				
+				node.insertDataAndAdjust( dataNewRecord, recordIndexInTable, currentLearningrate);
+				 
+				break; // TODO: make this dependent from option
+			}// i-> all winningNodeIndexes
+			
+			
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
+	}
+
 	
 	
 	

@@ -15,6 +15,10 @@ import org.NooLab.somfluid.env.communication.NodeObserverIntf;
 
 public interface MetaNodeIntf extends NodeObserverIntf {
 
+	public final static int _NODE_SPLITMODE_MINIMAL  = 1;
+	public final static int _NODE_SPLITMODE_BALANCED = 3;
+	
+	
 	public long getSerialID();
 	
   
@@ -35,17 +39,40 @@ public interface MetaNodeIntf extends NodeObserverIntf {
 
 	public ExtensionalityDynamicsIntf getExtensionality()  ;
 
-	public ArrayList<Long> getSdoIndexValues() ;
+	public ArrayList<Long> getExtensionRecordsIndexValues() ;
 
 	public DataSourceIntf getSomData() ;
 
 	public String getTargetVariableLabel() ;
 
+	public void setContentSensitiveInfluence(boolean flag);
+
 	public void adjustProfile( ArrayList<Double> datarecord,
+							   int nodeIndex,
 							   double learningrate, double influence, 
 							   double sizeFactor, int i);
 
+	public void insertDataAndAdjust( ArrayList<Double> dataNewRecord,
+			 						 // int nodeIndex,
+			 						 int recordIndexInTable,
+			 						 double learningrate);
 
-	public void setContentSensitiveInfluence(boolean flag);
+	void cleanInitializationByUsageVector( ArrayList<Double> usagevector);
 
+
+	public void removeDataAndAdjust( ArrayList<Double> dataNewRecord,
+			 						 int nodeIndex,
+			 						 int recordIndexInTable,
+			 						 double learningrate ) ;
+
+
+	public ArrayList<Integer> exportDataFromNode(int countOfRecords, int quality, boolean removeExports);
+
+	public ArrayList<Integer> exportDataFromNode(double smallestPortion, double largestPortion, int quality, boolean removeExports);
+
+	public void importDataByIndex( ArrayList<Integer> recordIndexes );
+
+	public ArrayList<Double> getTargetVariableValues();
+	
+	
 }

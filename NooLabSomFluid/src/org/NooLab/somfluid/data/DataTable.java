@@ -9,10 +9,13 @@ import java.util.TreeMap;
  
 import org.NooLab.somfluid.components.MissingValues;
 import org.NooLab.somfluid.components.SomDataObject;
+import org.NooLab.somfluid.transformer.algo.Binning;
 import org.NooLab.somfluid.util.Formula;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.strings.StringsUtil;
+
+import flanagan.analysis.Stat;
 
 
  
@@ -504,6 +507,7 @@ public class DataTable implements Serializable{
 				}
 			}
 			
+			determineVarietyOfColumnData();
 			
 			createRowOrientedTable();
 			
@@ -516,6 +520,35 @@ public class DataTable implements Serializable{
 		
 	}
 	
+	/**
+	 * checks how many different values occur in a column
+	 */
+	private void determineVarietyOfColumnData() {
+		//  
+		// histogram :
+		// import flanagan.analysis.*; 
+		// Stat.histogramBins(dvs, binWidth) ;
+		DataTableCol col;
+		
+		
+		
+		for (int i=0;i<colcount;i++){
+		
+			Binning binnAlgo = new Binning();
+			
+			// if it is not index... and not empty...
+			col  = this.getColumn(i);
+			
+			binnAlgo.setValues( col.getCellValues() );
+			binnAlgo.calculate();
+			binnAlgo.getDescriptiveResults() ;
+			
+			// put it to... the statsdescription of the variable
+		}
+	}
+	
+	
+
 	private void fillColumnAsIndex(DataTableCol col, int count, int startIxVal, int increment) {
 		double value;
 		
@@ -535,7 +568,7 @@ public class DataTable implements Serializable{
 		double dv;
 		
 		try{
-		
+			dataTableRows.clear() ;
 			// ArrayList<DataTableCol> dataTable = new ArrayList<DataTableCol>() ; dataTableRows
 			// ArrayList< ArrayList<Double>>()
 			
@@ -876,7 +909,7 @@ public class DataTable implements Serializable{
 		
 		ArrayList<Double> rowData = new ArrayList<Double> ();
 		
-		if ((index>=0) && (index<dataTableRows.size())){
+		if ((index>=0) && (index< this.dataTableRows.size())){
 			rowData = dataTableRows.get(index);
 		}
 		
@@ -965,22 +998,28 @@ public class DataTable implements Serializable{
 	}
 	
 	public ArrayList<Double> getRowValuesArrayList(int index){
+		
 		ArrayList<Double> numRowArrayList = new ArrayList<Double>() ;
 		double val ;
 
 		if (index<0){
 			return numRowArrayList;
 		}
-		if (index > colcount){
+		if (colcount==0){
+			return numRowArrayList;
+		}
+		if (index > rowcount){
 			return numRowArrayList;
 		}
 		 
-		
-		for (int i=0;i<colcount;i++){
-			val = dataTable.get(i).getValue(index) ;
-			numRowArrayList.add( val);
+		if ((this.dataTableRows != null) && (dataTableRows.size() >= dataTable.get(0).rowcount-2) && (index<dataTableRows.size())) {
+			numRowArrayList = dataTableRows.get(index) ;
+		} else {
+			for (int i = 0; i < colcount; i++) {
+				val = dataTable.get(i).getValue(index);
+				numRowArrayList.add(val);
+			}
 		}
-		
 		
 		return numRowArrayList ;
 	}

@@ -1,4 +1,4 @@
-package org.NooLab.somfluid.data;
+package org.NooLab.somfluid.properties;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -6,7 +6,11 @@ import java.util.Vector;
 
 
 
+import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
 import org.NooLab.somfluid.core.engines.det.ClassesDictionary;
+import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
+import org.NooLab.somfluid.data.DataSampler;
+import org.NooLab.somfluid.data.Variables;
 import org.NooLab.utilities.xml.XmlFileRead;
 
 
@@ -14,11 +18,44 @@ import org.NooLab.utilities.xml.XmlFileRead;
 
 public class ModelingSettings {
 
+	/** 
+	 * the number of nodes remains constant, each split must be accompanied by a merge
+	 */
+	public static final int _SOM_GROWTH_NONE     = -1;
+	/** 
+	 * number of nodes may change, lattice remains 2D
+	 */
+	public static final int _SOM_GROWTH_LATERAL  =  1;
+	/** 
+	 * nodes may outgrow into 3D, replacing the extensional list by a further SOM,
+	 * that inherits the connections to the nodes neighborhood;
+	 * such an offspring may separate completely later;
+	 * it inherits the target variable, and the structure of the profile vector etc...
+	 * actually, it represents just a sampling device, 
+	*/
+	public static final int _SOM_GROWTH_VERTICAL =  3;
+	/**
+	 * The node may embed adaptively a SOM;
+	 * such a SOM remains completely hidden  
+	 */
+	public static final int _SOM_GROWTH_EMBED    =  5;
+	/**
+	 * lateral, and local outgrowth into 3D
+	 */
+	public static final int _SOM_GROWTH_FULLOUT  =  7;
+	/**
+	 * lateral, local outgrowth into 3D, and embedding
+	 */
+	public static final int _SOM_GROWTH_FULL     =  9;
+	
+	
 	// object references ..............
 	
 	// 
 	ClassesDictionary classesDictionary;
 	DataSampler dataSampler;
+	
+	ClassificationSettings classifySettings ;
 	
 	// our central random object for creating random numbers
 	Random random;
@@ -30,13 +67,24 @@ public class ModelingSettings {
 	ArrayList<String> targetVariableCandidates = new ArrayList<String> (); 
 	String activeTvLabel="" ;
 	
-	/** 0=not set, 1=TV has been set , -3 == not possible, disabled */
-	int targetedModeling = 0 ;
+	/** idf true, then "ClassificationSettings" apply */
+	boolean targetedModeling = true ; 
 	
+	int distanceMethod = SimilarityIntf._SIMDIST_ADVSHAPE ;
 	
-	int mapwidth ;	
+	/** whether the size of the map is adopted to 
+	 *  - the number of records, 
+	 *  - the number of variables 
+	 *  - the task (multi class or not)
+	 *  - the relative frequency of targets in data 
+	 */
+	boolean autoSomSizing = true ;
 	
-	boolean content_sensitive_influence ; 
+	/** whether the SOM can grow & shrink, applying adding, splitting and merging nodes */
+	boolean autoSomDifferentiate = true ;
+		
+	int somGrowthMode = _SOM_GROWTH_LATERAL;
+	 
 	
 	// sominternals ...................
 	int clustermerge = 1 ;
@@ -51,7 +99,7 @@ public class ModelingSettings {
 
 	int minimalNodeSize = 3 ;
 
-	boolean calc_all_variables ;
+	boolean calculateAllVariables ;
 	
 	// feedback, diagnosis, and debug
 	int confirmDataReading = -1;
@@ -62,7 +110,7 @@ public class ModelingSettings {
 	// 1=usagevector is available and will be provided
 	int useVectorModegetDedicated = 0; 
 	
-	boolean autoSomSizing = false ;
+	
 	
 	// values <=1 -> low priority
 	int[] threadPriorities = new int[10] ;
@@ -85,12 +133,10 @@ public class ModelingSettings {
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 	public ModelingSettings(){
-		
-		String str = this.toString() ;
+		 
+		classifySettings = new ClassificationSettings() ;
 		
 		setRandomSeed();
-		 
-		
 		threadPriorities[3] = 1 ; // [3] = Som calculations
 	}
 	
@@ -106,7 +152,7 @@ public class ModelingSettings {
 		
 		XmlFileRead xmlfile ;
 		
-		String filename, path, str ;
+		String filename,   str ;
 		
 		
 		
@@ -157,23 +203,9 @@ public class ModelingSettings {
 	 
 
 	 
-	public int getMapSideLength() {
-	
-		return mapwidth;
-	}
-	
-	public void setMapSideLength( int sidelength ) {
-		
-		mapwidth = sidelength;
-	}
-	
+ 
 
-	
-	public boolean content_sensitive_influence() {
-		 
-		return content_sensitive_influence;
-	}
-
+ 
   
 	  
 
@@ -183,6 +215,10 @@ public class ModelingSettings {
 	}
 
 
+
+	public ClassificationSettings getClassifySettings() {
+		return classifySettings;
+	}
 
 	public int getActualRecordCount() {
 
@@ -228,22 +264,14 @@ public class ModelingSettings {
 	}
 
 
-	public boolean calc_all_variables() {
-		 
-		return calc_all_variables;
-	}
-	
-	public void setcalculationtoall() {
-		
-		calc_all_variables = true;
-	}
+ 
 
-	public int getTargetedModeling() {
+	public boolean getTargetedModeling() {
 		return targetedModeling;
 	}
 
-	public void setTargetedModeling(int targetedModeling) {
-		this.targetedModeling = targetedModeling;
+	public void setTargetedModeling( boolean flag) {
+		this.targetedModeling = flag;
 	}
 
 	public String getActiveTvLabel() {
@@ -262,8 +290,8 @@ public class ModelingSettings {
 		return dataSampler;
 	}
 
-	public void setDataSampler(DataSampler dataSampler) {
-		this.dataSampler = dataSampler;
+	public void setDataSampler(DataSampler sampler) {
+		this.dataSampler = sampler;
 	}
 
 	public int getMinimalNodeSize() {
@@ -340,13 +368,27 @@ public class ModelingSettings {
 		this.maxL2LoopCount = maxL2LoopCount;
 	}
 
+	public boolean isContentSensitiveInfluence() {
+		
+		return contentSensitiveInfluence;
+	}
 	public boolean getContentSensitiveInfluence() {
 		
 		return contentSensitiveInfluence;
 	}
-
 	public void setContentSensitiveInfluence(boolean contentSensitiveInfluence) {
 		this.contentSensitiveInfluence = contentSensitiveInfluence;
+	}
+
+	
+	public boolean isCalculateAllVariables() {
+		return calculateAllVariables;
+	}
+	public boolean getCalculateAllVariables() {
+		return calculateAllVariables;
+	}
+	public void setCalculateAllVariables(boolean flag) {
+		this.calculateAllVariables = flag;
 	}
 	
 	
