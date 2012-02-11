@@ -3324,7 +3324,7 @@ if (index>nbrParticles-5){
 	 
 		avgDens = densityPerAcre;
 		
-		if (particles.size()<18){
+		if (particles.size()<28){
 			return;
 		}
 		pc = 0 ;
