@@ -2,6 +2,7 @@ package org.NooLab.repulsive;
 
 import org.NooLab.repulsive.components.RepulsionFieldProperties;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
+import org.NooLab.utilities.logging.LogControl;
 
 import tester.RequestTester;
 
@@ -23,7 +24,15 @@ public class RepulsionFieldFactory {
 		init();
 	}
 	
+	public RepulsionFieldFactory( String command , int LogControlLevel){
+		LogControl.Level = LogControlLevel;
+		baseinit( command); 
+	}
 	public RepulsionFieldFactory( String command ){
+		baseinit( command);
+	}
+	
+	private void baseinit( String command){
 		init();
 		
 		// test:RQ=100
@@ -38,8 +47,8 @@ public class RepulsionFieldFactory {
 				rqTester = new RequestTester(repulsionField, dv);
 			}
 		}
+		
 	}
-	
 	private void init(){
 		rfProperties = new RepulsionFieldProperties() ;
 		rfFactory = this;

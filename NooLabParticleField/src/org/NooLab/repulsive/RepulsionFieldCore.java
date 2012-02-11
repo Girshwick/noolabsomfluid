@@ -2567,7 +2567,9 @@ if (this.name.contains("sampler")){
 				*/
 				initialization();
 				delay(300); 
-				fieldThrd.start();
+				try{
+					fieldThrd.start();
+				}catch(Exception e){} 
 				
 				
 				out.print(3, ">>>>>>  field calculation process (and helper processes) has been re-started...") ;
@@ -3322,6 +3324,9 @@ if (index>nbrParticles-5){
 	 
 		avgDens = densityPerAcre;
 		
+		if (particles.size()<18){
+			return;
+		}
 		pc = 0 ;
 		
 		if (particles!=null){
@@ -3345,8 +3350,16 @@ if (index>nbrParticles-5){
 		boolean tooSmall = true;
 		
 		out.print(4, "densityPerAcre "+Math.round(densityPerAcre*100.0)/100.0);
+		if (defaultThresholdForDensity<10){
+			defaultThresholdForDensity=10;
+		}
 		threshold = defaultThresholdForDensity ; // usually 40.0
-		  
+		
+		if (currentBaselineDensity<0){
+			avgDens = calculateDensity( (pc+count), aW,aH,psz); 
+			currentBaselineDensity = avgDens;
+		}
+		
 		if (maxDensityDeviationPercent >0.0){
 			avgDens = calculateDensity( (pc+count), aW,aH,psz); 
 			double actualDeviationPercent = 100.0*(double)(avgDens/currentBaselineDensity) ;
@@ -3356,8 +3369,17 @@ if (index>nbrParticles-5){
 			}
 			threshold = currentBaselineDensity * (1.0+maxDensityDeviationPercent);
 		}
+		/*
+		double _radius ;
+		if ((particles!=null) && (particles.size()>0)){
+			_radius = particles.get(0).radius ;
+		}else{
+			_radius = 60.0 ;
+		}
+		*/
 		
-		while (tooSmall){
+		int z=0; 
+		while ((tooSmall) && (z<particles.size()/3)){
 			// int area = aW*aH;
 			avgDens = calculateDensity( (pc+count),aW,aH,psz); 
 			if (avgDens> threshold){
@@ -3367,16 +3389,23 @@ if (index>nbrParticles-5){
 				daH = Math.max( daH, 10);
 				aW = aW + daW;
 				aH = aH + daH;
+				/*
+				if (aW < _radius/3.0 * Math.sqrt(particles.size())){
+					aW = areaWidth;
+					aH = (int)((double)areaWidth/aspectRatio) ;
+				}
+				*/
 			}else{
 				tooSmall=false;
 			}
+			z++;
 		}
 
 		// care about aspect ratio
 		boolean arMatch=false;
 		double ar ,ri,rx,dar ;
-		ar=0;
-		while (arMatch==false){
+		ar=0; z=0;
+		while ((arMatch==false) && (z<particles.size()/3)){
 			ar = (double)aW/(double)aH;
 			aspectRatio = (double)areaWidth / (double)areaHeight;
 			
@@ -3397,7 +3426,8 @@ if (index>nbrParticles-5){
 			}else{
 				arMatch=true;
 			}
-		}
+			z++;
+		} // ->
 		if (densityPerAcre<0){
 			densityPerAcre = avgDens;
 		}

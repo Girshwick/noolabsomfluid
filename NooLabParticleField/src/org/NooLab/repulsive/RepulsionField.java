@@ -433,7 +433,7 @@ public class RepulsionField implements 	Runnable,
 			int pix;
 			int surroundN=7;
 
-												out.print(2,"getSurround("+index+"), ready to use ? -> "+isReadyToUse());
+												out.print(3,"getSurround("+index+"), ready to use ? -> "+isReadyToUse());
 			int z=0;
 			while (( isReadyToUse()==false)  && (surroundBuffers.isAllBuffersUpdating()) && (z<100)){
 				out.delay(10); z++;
@@ -620,7 +620,7 @@ public class RepulsionField implements 	Runnable,
 	public int addParticles(int count) {
 		// 
 		for (int i=0;i<count;i++){
-			addParticles(-1,-1); out.delay(10);
+			// addParticles(-1,-1); out.delay(10);
 		}
 		
  		return coreInstance.addParticles(count) ;

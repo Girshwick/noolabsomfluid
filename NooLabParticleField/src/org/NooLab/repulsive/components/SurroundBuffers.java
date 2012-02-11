@@ -225,7 +225,7 @@ public class SurroundBuffers implements Runnable{
 		
 		sb = bufferItems.get(index) ;
 		
-											out.print(2, "SurroundBuffers(), exporting buffer into <indexedDistance> ...  ");
+											out.print(3, "SurroundBuffers(), exporting buffer into <indexedDistance> ...  ");
 		
 		int k = sb.indexes.length ;
 		if (k>parentField.getSelectionSize() ){

@@ -560,11 +560,11 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 			}
 			if ((surroundBuffers!=null) && (sba) && (surroundBuffers.getBufferingSwitchedOff()==false)){
 				
-				out.print(2, "Neighborhood(), retrieving buffer into <indexedDistance> ...  ");
+				out.print(3, "Neighborhood(), retrieving buffer into <indexedDistance> ...  ");
 				
 				indexedDistances = surroundBuffers.exportBuffer( index, surroundSize , guidStr);
 				 
-				out.print(2, "\nbuffer used for request on particle "+index);
+				out.print(3, "\nbuffer used for request on particle "+index);
 				out.print(3, "Neighborhood("+surroundBuffers.neighborhood.toString()+"), retrieving buffer completed. \n"); 
 				return indexedDistances;
 			}else{
