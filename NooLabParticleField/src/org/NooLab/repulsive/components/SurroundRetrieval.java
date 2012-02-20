@@ -417,7 +417,7 @@ public class SurroundRetrieval implements Runnable {
 		
 		Particle p = particles.get( results.particleIndex ) ;
 		
-		out.print(2, "going to retrieve particles...");
+		out.print(3, "going to retrieve particles...");
 		
 		
 		indexedDistances = particleGrid.getIndexListRetriever().setConstraints( selectionConstraints ).getIndexedDistancesFromNeighboorhood( p.x, p.y, surroundN ) ;
@@ -458,12 +458,12 @@ public class SurroundRetrieval implements Runnable {
 		
 		Particle p = particles.get( index ) ;
 		
-		out.print(2, "going to retrieve particles...");
+		out.print(3, "going to retrieve particles (b)...");
 		
 		// ParticleGrid._CIRCLE == default , setShape is optional
 		indexedDistances = particleGrid.getIndexListRetriever().setConstraints( selectionConstraints ).getIndexedDistancesFromNeighboorhood( p.x, p.y, surroundN ) ;
 		
-		out.print(2, "particles retrieved ...");
+		out.print(3, "particles retrieved ...");
 		
 		if ((results!=null) && (p!=null)){
 			results.getCoordinate()[0] = p.x;
@@ -482,40 +482,7 @@ public class SurroundRetrieval implements Runnable {
 		return results;
 	}
 	
-	@SuppressWarnings("unused")
-	private SurroundResults getSurround_( int index , int surroundN ,  
-				 					     int selectMode, boolean autoselect){
-		/*
-		SurroundResults results = new SurroundResults(); 
-		 
-		Surround surround;
-		
-		if (callingStyle==1){
-			surround = new Surround(rfCore);
-		}else{
-			surround = new Surround(parentField,surroundBuffers);
-		}
-
-		results.setParticleIndexes( surround.getGeometricSurround( index ,surroundN, ParticleGrid._CIRCLE) ); 
-		results.setParticleDistances( surround.getParticleDistances()) ;
-		
-		Particle p = particles.get( results.particleIndex ) ;
-		
-		if ((results!=null) && (p!=null)){
-			results.getCoordinate()[0] = p.x;
-			results.getCoordinate()[1] = p.y;
-		}
-		
-		results.getIndexedDistances().clear();
-		if (surround.getIndexedDistance()!=null){
-			results.getIndexedDistances().addAll( surround.getIndexedDistance() ) ;
-		}
-	
-		
-		return results;
-		*/
-		return null;
-	}
+	 
 	
 	/**
 	 * changing from array[] to collection

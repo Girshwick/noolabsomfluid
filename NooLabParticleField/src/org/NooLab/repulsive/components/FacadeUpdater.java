@@ -173,7 +173,7 @@ public class FacadeUpdater implements Runnable{
 			out.print(2, "update of facade layer completed.");
 		}
 		*/
-											out.print(2,"facade updater, provideGridPerspective().");
+											out.print(3,"facade updater, provideGridPerspective().");
 		coreInstance.provideGridPerspective(true); 
 		
 		isFinished=true;

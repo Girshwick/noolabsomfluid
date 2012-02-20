@@ -3880,35 +3880,10 @@ if (index>nbrParticles-5){
 					this.statisticsCollector.explicitCall();
 				}
 				fieldLayoutFrozen=true;
-				out.print(2, "completion message after freezing the layout");
+				out.print(3, "completion message after freezing the layout");
 				 
 			}
-			/*
-			if (multipleDeletions>0){
-				surroundBuffers.setFieldFrozenMessage(false); out.delay(80);
-				out.print(3, "re-building surroundBuffers ...");
-				if (selectionBuffersActivated==true){
-					surroundBuffers = new SurroundBuffers( this ,particles, out) ;
-				}
-			}
-			multipleDeletions=0;
-			// finally, we update the SurroundBuffers for all particles in a background process
-			// while the buffer is essentialy independent and not contained as an object in the particles,
-			// each particle contains a pointer to its buffer, 
-			// the buffer itself knows whether it is available or not., thus, we can profit even if only part
-			// of the whole population has an updated buffer 
-			
-			// the surroundbuffer objects also maintain the last known frozen coordinate,  
-			if (surroundBuffers!=null){
-			     surroundBuffers.start(); // will start only if it is not yet running
-				surroundBuffers.setFieldFrozenMessage(true); // will release the brake ...
-			}else{
-				if (selectionBuffersActivated==true){
-					surroundBuffers = new SurroundBuffers( this ,particles, out) ;
-
-				}
-			}
-			*/
+			 
 			
 		} // freezeNow ?
 	
