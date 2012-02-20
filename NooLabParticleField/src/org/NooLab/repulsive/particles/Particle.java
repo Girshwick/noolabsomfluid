@@ -18,7 +18,7 @@ import org.NooLab.repulsive.intf.particles.ParticleStateIntf;
  
 
 /**
- * TODO:
+ * 
  *        
  * 
  * 
@@ -76,7 +76,7 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 	
 	ArrayList<Long> indexOfDataObject = null ;
 	
-	transient SurroundBuffer surroundBuffer; // ...its just a pointer, the Particle does not offer any functionality 
+	// transient SurroundBuffer surroundBuffer; // ...its just a pointer, the Particle does not offer any functionality 
 	// int surroundBufferIndex; // quite more complicated
 
 
@@ -99,7 +99,7 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 	// ------------------------------------------------------------------------
 	
 	
-	public Particle(int index, Particle templateparticle, SurroundBuffers sbs) {
+	public Particle(int index, Particle templateparticle) { // , SurroundBuffers sbs
 		
 		transferControlData(templateparticle);
 		
@@ -107,11 +107,13 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 		
 		transferBasicData(templateparticle);
 		
+		/*
 		if (sbs != null){
 			surroundBuffer = new SurroundBuffer(index,sbs);
 		
 			transferSurroundBuffers( templateparticle );
 		}
+		*/
 	}
 
 	
@@ -195,6 +197,7 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 	 */
 	private void transferSurroundBuffers( Particle templateparticle ){
 		int err=1;
+		/*
 		try{
 			if (templateparticle.surroundBuffer != null) {
 									
@@ -224,6 +227,7 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 			 
 			e.printStackTrace();
 		}
+		*/
 	}
 	
 	public void setDataAsCloneOf(Particle srcParticle) {
@@ -238,6 +242,7 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 	
 
 	public double calculateRadius(int countOfParticles){
+		
 		double result = width * kRadiusFactor / (4 * Math.sqrt(countOfParticles));
 		return result ;
 	}
@@ -592,12 +597,12 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 		
 	}
 
-
+	/*
 	public SurroundBuffer getSurroundBuffer() {
 		return surroundBuffer;
 	}
 
-
+	
 	public void setSurroundBuffer(SurroundBuffer sb) {
 		this.surroundBuffer = sb ;
 	}
@@ -614,7 +619,8 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 		surroundBuffer = null;
 		surroundBuffer = sb;
 	}
-
+	*/
+	
 	public double getX() {
 		return x;
 	}

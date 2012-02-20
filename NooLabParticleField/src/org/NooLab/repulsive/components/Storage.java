@@ -94,7 +94,7 @@ public class Storage {
 			ix = sbi.index ;
 			// index OK? == i
 			
-			particle.importSurroundBuffer(sbi) ;
+			// particle.importSurroundBuffer(sbi) ;
 			
 		} // i-> all IDD entries
 		

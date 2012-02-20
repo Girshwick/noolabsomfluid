@@ -27,7 +27,13 @@ public class RepulsionFieldProperties  implements Serializable{
 	Random random = new Random();
 	
 	transient public DFutils fileutil = new DFutils();
-	transient public StringsUtil strgutil = new StringsUtil(); 
+	transient public StringsUtil strgutil = new StringsUtil();
+
+	private boolean restrictSelectionSize = false;
+
+	private int selectionSizeRestriction = 1000 ;
+
+	 
 	
 	// ========================================================================
 	public RepulsionFieldProperties(){
@@ -84,6 +90,28 @@ public class RepulsionFieldProperties  implements Serializable{
 
 	public Random getRandom() {
 		return random;
+	}
+
+
+	public boolean isRestrictSelectionSize() {
+		
+		return restrictSelectionSize;
+	}
+
+
+	public int getSelectionSizeRestriction() {
+		
+		return selectionSizeRestriction;
+	}
+
+
+	public void setRestrictSelectionSize(boolean restrictsize) {
+		this.restrictSelectionSize = restrictsize;
+	}
+
+
+	public void setSelectionSizeRestriction(int sizeRestriction) {
+		this.selectionSizeRestriction = sizeRestriction;
 	}
 
 

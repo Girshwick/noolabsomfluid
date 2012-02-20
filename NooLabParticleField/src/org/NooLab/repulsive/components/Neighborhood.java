@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
-import org.NooLab.repulsive.components.data.FieldPoint;
 import org.NooLab.repulsive.components.data.IndexDistance;
 import org.NooLab.repulsive.components.data.RequestBorder;
 import org.NooLab.repulsive.components.infra.C2DComparable;
@@ -145,10 +144,12 @@ public class Neighborhood implements Runnable, Stoppable{
 	Map<String, RequestBorder> requestBorders = new HashMap<String, RequestBorder>();
 	
 	Particles particles;
-	SurroundBuffers  surroundBuffers ;
+	// SurroundBuffers  surroundBuffers ;
 	boolean buffersOpen=true;
 	
 	// --------------------------------
+	
+	SpatialGeomCalc spatialGeomCalc;
 	
 	Thread nbThrd = null;
 	boolean isRunning=false, isWorking;
@@ -158,18 +159,19 @@ public class Neighborhood implements Runnable, Stoppable{
 	PrintLog out;
 	
 	// ------------------------------------------------------------------------
-	public Neighborhood( int bordermode, SurroundBuffers sb, PrintLog outprn){
+	public Neighborhood( int bordermode,  PrintLog outprn){ // SurroundBuffers sb,
 		
 		out = outprn;
 		if (out==null){
 			out = new PrintLog(2,false) ;
 			out.setPrefix("[RF]");
 		}
-		surroundBuffers = sb;
+		/* surroundBuffers = sb;
 		
 		if (surroundBuffers!=null){
 			surroundBuffers.registerNeighborhood(this) ;
 		}
+		*/
 		
 		if ( (bordermode!=__BORDER_ALL) && (bordermode!=__BORDER_NONE)){
 			bordermode =__BORDER_ALL ;
@@ -187,9 +189,11 @@ public class Neighborhood implements Runnable, Stoppable{
 
 		xyPlane = new Plane(this,"xy");
 		
+		/*
 		if (surroundBuffers!=null){
 			particles = (Particles) surroundBuffers.parentField.getParticles();
 		}
+		*/
 		
 		if (isRunning){
 			isRunning = false;
@@ -213,7 +217,7 @@ public class Neighborhood implements Runnable, Stoppable{
 	              or we use a multi-slot storage for distance values, where the identifier of the slot (a has map) is issued
 	              by the calling instance of this routine (random guid)
 	*/
-	public int getItemsCloseTo(int xpos, int ypos ) {
+	public int getItemsCloseTo(int xpos, int ypos ) throws Exception{
 		
 		int index=-1;
 		
@@ -245,6 +249,10 @@ public class Neighborhood implements Runnable, Stoppable{
 		boolean found=false,preselect;
 		int cx=0,n;
 		double x,y,dx,dy,dc2x ;
+		
+		if (spatialGeomCalc==null){
+			spatialGeomCalc = new SpatialGeomCalc(width ,height ,borderMode) ;
+		}
 		
 		/*
 		 * xyPlane.coordinates comes in as being sorted by "x first" !
@@ -322,8 +330,8 @@ public class Neighborhood implements Runnable, Stoppable{
 			dy = Math.abs(y-ypos);
 			
 			// respects torus topology
-			dx = Math.abs( getLinearDistanceX(xpos,x) );
-			dy = Math.abs( getLinearDistanceY(ypos,y));
+			dx = Math.abs( spatialGeomCalc.getLinearDistanceX(xpos,x) );
+			dy = Math.abs( spatialGeomCalc.getLinearDistanceY(ypos,y));
 			
 			
 			preselect = false; 
@@ -341,14 +349,17 @@ public class Neighborhood implements Runnable, Stoppable{
 					double _x = c2Ds.get(c2Ds.size()-1).getXvalue();
 
 					dc2x = Math.abs(_x - xpos);
-					dc2x = Math.abs( this.getLinearDistanceX(_x,xpos));
+					dc2x = Math.abs( spatialGeomCalc.getLinearDistanceX(_x,xpos));
 				}
 				// is the last item in the sorted list extract "c2Ds" larger than the current distance?
-				preselect = (c2Ds.size()==0) || 
+				preselect = (c2Ds.size()>0) && 
 							(  (dx < averageDistance*1.8 ) && 
-							   (( dc2x > dx ) || (dx<averageDistance*0.38)));  // if yes, then put it to the 
+							   (( dc2x > dx ) || (dx<averageDistance*0.68)));  // if yes, then put it to the 
 				if ((dy > averageDistance*1.8 )){
 					preselect = false;
+				}
+				if (c2Ds.size()==0){
+					preselect = true;
 				}
 			}
 			
@@ -451,8 +462,8 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 			yd = ypos-y;
 			
 			// respects torus topology
-			xd = this.getLinearDistanceX(xpos, x);
-			yd = this.getLinearDistanceY(ypos, y);
+			xd = spatialGeomCalc.getLinearDistanceX(xpos, x);
+			yd = spatialGeomCalc.getLinearDistanceY(ypos, y);
 			
 			dx = Math.sqrt( (xd)*(xd) + (yd)*(yd));
 		
@@ -500,8 +511,8 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 			yd = ypos-y;
 			
 			// respects torus topology
-			xd = this.getLinearDistanceX( xpos, x);
-			yd = this.getLinearDistanceY( ypos, y);
+			xd = spatialGeomCalc.getLinearDistanceX( xpos, x);
+			yd = spatialGeomCalc.getLinearDistanceY( ypos, y);
 
 			dx = Math.sqrt( (xd)*(xd) + (yd)*(yd));
 		
@@ -535,29 +546,40 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 		int cix;
 		int[] areaItems = new int[0] ;
 		double sinz ,surroundRadius;
-		
+		int sbaState;
+		boolean sba ;
+
 		// we retrieve bands in x and y directions (or planes in 3d case);
 		// then we check the max distance from the anchor in both directions for each dimension
 		// finally, we select items from dimension arrays (xdim, ydim) by distance
 		
 		int xs = xyPlane.size();
 		boolean bcix = xyPlane.mapContainsIndex(index);
+		sbaState = -3;
+		
 		int sbxn = 0;
+		/*
 		if (surroundBuffers.surroundExtension != null){
 			sbxn = surroundBuffers.surroundExtension.size();
 		}
+		*/
 		if (xs!=expectedCollSize){
 			
 			out.print(4, "neighborhood.getItemsOfSurround(), checking buffer for particle "+index+", sizes:"+xs+"(+"+sbxn+") ,"+expectedCollSize+", indexed in xyPlane ? -> "+bcix);
 		}
+		
 		if ((xs+sbxn>=expectedCollSize) && ( bcix )){
+			/*
 			String sbName = surroundBuffers.parentName ;
-			int sbaState = surroundBuffers.bufferIsOfState( index, surroundSize );
-			boolean sba = sbaState>=5; 
+
+			sbaState = surroundBuffers.bufferIsOfState( index, surroundSize );
+			sba = sbaState>=5; 
+			
 			if (sba==false){
 				sba = surroundBuffers.bufferIsAvailable( index, surroundSize);
 				
 			}
+			
 			if ((surroundBuffers!=null) && (sba) && (surroundBuffers.getBufferingSwitchedOff()==false)){
 				
 				out.print(3, "Neighborhood(), retrieving buffer into <indexedDistance> ...  ");
@@ -566,16 +588,22 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 				 
 				out.print(3, "\nbuffer used for request on particle "+index);
 				out.print(3, "Neighborhood("+surroundBuffers.neighborhood.toString()+"), retrieving buffer completed. \n"); 
-				return indexedDistances;
+				if (indexedDistances.size()>0){
+					return indexedDistances;
+				}
 			}else{
 				if (index>638)
 				out.print(5, "retrieving buffer for index <"+sbName+"> into <indexedDistance> denied: "+
 							 "surroundbuffers exist? -> "+(surroundBuffers!=null)+", available? -> "+sba+" "+
 							 ",  buffer switch? -> "+surroundBuffers.getBufferingSwitchedOff()+" ...  ");
 			}
+			// buffer not switched off, but nevertheless here... ?
 			if(surroundBuffers.getBufferingSwitchedOff()==false){
-				if (index>638)
-				out.print(2, "\nbuffer (context:"+sbName+") for particle "+index+" is not available (sizes:"+xs+" ,"+expectedCollSize+"), direct retrieval will be started");
+				// if (index>638)
+				out.print(2, "\nbuffer (context:"+sbName+") for particle "+index+" is not available, state="+sbaState+" " +
+						     "(sizes:"+surroundSize+" ,"+ surroundBuffers.getActualBufferSize(index)+
+						     "), direct retrieval will be started");
+				
 			}
 			   //  (int)
 			sinz = Math.round(Math.sqrt(surroundSize)+0.3);
@@ -599,6 +627,18 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 			}catch(Exception e){
 				
 			} 
+			
+				
+			
+			
+			bcix = xyPlane.mapContainsIndex(index);
+			
+			if ((sbaState==4) && (bcix==false)){
+				// add index to xyPlane index map ...
+				// howto ?
+				out.print(2,"secondary import of surround buffer for index : "+index);
+				// surroundBuffers.importToBuffer( index, indexedDistances, surroundSize , guidStr);
+			}
 			
 			
 			int k = indexedDistances.size();  
@@ -630,20 +670,25 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 					}
 				}
 			}
-			
+			*/
+		}else{
+			// if ((xs+sbxn>=expectedCollSize) && ( bcix )) ??  abc124 ;
+			out.printErr(3, "size of xyPlane does not match for index <"+index+"> ("+xs+", expected:"+expectedCollSize+"), thus no buffer has been retrieved...");
 		}
 		 
 		if (buffersOpen){ 
 			// (selectionSize >= surroundSize)
-			if ((surroundBuffers.bufferIsAvailable( index, surroundSize))==false){
-				// This mainly happens after change of selection size
-				// we should not do it here if getBufferingSwitchedOff()==true,... if false then we are in
-				// use-mode
+			/*
+			if(surroundBuffers.getBufferingSwitchedOff()==false){
 				
-				if(surroundBuffers.getBufferingSwitchedOff()==false){
+				if ((surroundBuffers.bufferIsAvailable( index, surroundSize))==false){
+				// This mainly happens after change of selection size
+				// we should not do it here if getBufferingSwitchedOff()==true,... if false then we are in use-mode
+				
 					surroundBuffers.importIndexDistance(index, indexedDistances ) ;
 				}
 			}
+			*/
 		}
 		return indexedDistances;
 	}
@@ -676,14 +721,24 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 	 * private realization of the update action, now running in its own threaded container 
 	 * @param item
 	 */
+	@SuppressWarnings("static-access")
 	private void updateAction( PerformAction pa, Item item ){
 		/*
 		xDim.update(item.index,item.x,"x");
 		yDim.update(item.index,item.y,"y");
 		zDim.update(item.index,item.z,"z");
 		*/
-		
-		xyPlane.update( item ,"xy" );
+		pa.waitmode=1;
+		try{
+
+			while (xyPlane.isUpdating){
+				Thread.currentThread().sleep(0,10) ;
+			}
+			xyPlane.update( item ,"xy" );
+
+		}catch(Exception e){
+			
+		}
 		  
 		// signal to the main loop, that the job is done
 		pa.waitmode=0;
@@ -715,7 +770,7 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 			  	
 		}
 
-		public PerformAction goFor(QTask qTask) {
+		public PerformAction goFor(QTask qTask)throws Exception {
 			waitmode=0;
 			
 			if (qTask==null){
@@ -735,7 +790,7 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 			return this;
 		}
 
-		private void handlingPerformRequest(){
+		private void handlingPerformRequest() throws Exception{
 			
 			
 			if (qTask.actionID == __UPDATE ){
@@ -785,7 +840,7 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 			}catch(Exception e){}
 			nbThrd = null;
 			
-			nbThrd = new Thread(this,"nbThrd-"+surroundBuffers.parentName); 
+			nbThrd = new Thread(this,"nbThrd-"); 
 			
 			
 			nbThrd.start();
@@ -799,7 +854,7 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 	}
 	public void finalizeQ(int maxAllowed){
 		
-		if (taskQueue.size()>maxAllowed){
+		if ((taskQueue.size()>maxAllowed) ){ // || (xyPlane.isUpdating)
 			out.print(3, "start finalizing, size of taskQueue    : "+taskQueue.size());
 			
 			while (taskQueue.size()>0){
@@ -886,6 +941,31 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 		
 	}
 
+
+	public int updateAsCloneFrom( Neighborhood srcNB ) {
+		//
+		int r=-1;
+		try{
+			
+			
+			if ((xyPlane.coordinates == null) || (xyPlane.coordinates.size()==0) || (xyPlane.positionTableMap.values().size()==0)){
+			
+				xyPlane.coordinates = new ArrayList<Coordinate2D>(srcNB.xyPlane.coordinates ) ;
+				xyPlane.positionTableMap = new HashMap<Integer,Integer>(srcNB.xyPlane.positionTableMap);
+				
+			}else{
+	
+				xyPlane.coordinates = new ArrayList<Coordinate2D>(srcNB.xyPlane.coordinates ) ;
+				xyPlane.positionTableMap = new HashMap<Integer,Integer>(srcNB.xyPlane.positionTableMap);
+				
+			}
+			
+			r = 0;
+		}catch(Exception e){
+			r = -3;
+		}
+		return r;
+	}
 
 	public int getUpperBoundForSurround(int i, int surroundSize, int expectedCollSize) {
 	 
@@ -989,72 +1069,7 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 		requestBorders.remove(requestguid) ;
 	}
 
-	public double getLinearDistanceX(double x1, double x2){
-		return getLinearDistance(x1, x2, width);
-	}
-	public double getLinearDistanceY(double y1, double y2){
-		return getLinearDistance(y1, y2, height);
-	}
-	
-	
-	public double distance( double x1 , double y1, double x2 , double y2){
-		
-		return -1;
-	}
-	
-	public double getLinearDistance(double x1, double x2, int maxDist) {
-		double result = -1.0;
-		double xd0, w;
-		
-		
-		
-		result = ( x1 - x2) ;
-		
-		if (borderMode == __BORDER_NONE)
-		{
-			
-			
-			w = (double)(maxDist*1.0) ;
-			if ( Math.abs(result) > w / 2.0) {
-				// initial distance larger than 50% of the width of the area?
-				// -> so it could be just at the left and the right border ->
-				// subtract the area width
-				
-				xd0 = (w - Math.max(x1,x2) + (Math.min(x1,x2))) ;
-				if (Math.abs(xd0) < Math.abs(result)){
-					result = xd0;
-				}
-			}
-		}
-		
-		return result;
-	}
 
-
-	public int updateAsCloneFrom( Neighborhood srcNB ) {
-		//
-		int r=-1;
-		try{
-			
-			
-			if ((xyPlane.coordinates == null) || (xyPlane.coordinates.size()==0) || (xyPlane.positionTableMap.values().size()==0)){
-			
-				xyPlane.coordinates = new ArrayList<Coordinate2D>(srcNB.xyPlane.coordinates ) ;
-				xyPlane.positionTableMap = new HashMap<Integer,Integer>(srcNB.xyPlane.positionTableMap);
-				
-			}else{
-
-				xyPlane.coordinates = new ArrayList<Coordinate2D>(srcNB.xyPlane.coordinates ) ;
-				xyPlane.positionTableMap = new HashMap<Integer,Integer>(srcNB.xyPlane.positionTableMap);
-				
-			}
-			
-			r = 0;
-		}catch(Exception e){
-			r = -3;
-		}
-		return r;
-	}
 
 	/**
 	 * 
@@ -1168,44 +1183,6 @@ if ( ((xpos>430) && (xpos<460))	&& ((ypos<50))){
 	}
 
 
-	public double[] adjustSpatialPositionsToBorderSettings(double xpos, double ypos, double radius, int neighborhoodBorderMode) {
-		
-		double[] xyPos = new double[2] ;
-
-		if (neighborhoodBorderMode == Neighborhood.__BORDER_NONE) {
-			if (xpos > width ) {    
-				xpos = xpos - width; // screen wrap
-			} else {
-				if (xpos < 0) {
-					xpos = xpos + width;
-				}
-			}
-			if (ypos > height ) {
-				ypos = ypos - height;
-			} else {
-				if (ypos < 0) {
-					ypos = ypos + height;
-				}
-			}
-			double rf=1.6;
-			
-			// if (xpos<=1)xpos=1;
-			if (xpos<=(radius/(rf*1.1)))xpos=(radius/(rf*1.1));
-			if (xpos>=width-(radius/rf))xpos=width-(radius/rf);
-
-			//if (ypos<=1)ypos=1;
-			if (ypos<=(radius/(rf*1.1)))ypos=(radius/(rf*1.1));
-			if (ypos>=height-(radius/rf))ypos=height-(radius/rf);
-		} // __BORDER_NONE ?
-			
-		xyPos[0] = xpos ;
-		xyPos[1] = ypos ;
-		
-		return xyPos;
-	}
-
-
-	
 } // class Neighborhood
 
 

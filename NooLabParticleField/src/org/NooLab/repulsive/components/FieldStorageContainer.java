@@ -49,7 +49,7 @@ public class FieldStorageContainer implements Serializable{
 				
 				particleStore.add(particle) ;
 				
-				surroundBufferItems.add( particle.getSurroundBuffer() ) ;
+				// surroundBufferItems.add( particle.getSurroundBuffer() ) ;
 				
 			} // i-> all particles
 			

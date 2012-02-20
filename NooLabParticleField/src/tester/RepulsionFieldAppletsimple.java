@@ -14,10 +14,12 @@ import org.NooLab.repulsive.RepulsionFieldFactory;
 import org.NooLab.repulsive.components.Neighborhood;
 import org.NooLab.repulsive.components.RepulsionFieldProperties;
 import org.NooLab.repulsive.components.SurroundRetrieval;
+import org.NooLab.repulsive.components.data.PointXY;
 import org.NooLab.repulsive.components.data.SurroundResults;
 import org.NooLab.repulsive.intf.ParticleDataHandlingIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
+import org.NooLab.repulsive.intf.main.RepulsionFieldSelectionIntf;
 import org.NooLab.repulsive.intf.particles.GraphParticleIntf;
 import org.NooLab.repulsive.intf.particles.GraphParticlesIntf;
 import org.NooLab.repulsive.particles.Particles;
@@ -54,7 +56,7 @@ public class RepulsionFieldAppletsimple 	extends
 
 	RepulsionFieldFactory rfFactory;
 	RepulsionFieldIntf repulsionField;
-	
+	 
 	
 	int passes ;
 	int lastx;
@@ -672,5 +674,7 @@ public class RepulsionFieldAppletsimple 	extends
 		// TODO Auto-generated method stub
 		
 	}
+
+ 
 }
 

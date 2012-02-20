@@ -31,13 +31,17 @@ public class Plane {
 	String name;
 	Neighborhood neighborhood;
 	
+	boolean isUpdating = false;
 	
+	// ========================================================================
 	public Plane(Neighborhood nb, String name) {
 		neighborhood = nb;
 		this.name = name;
 		
 		
 	}
+	// ========================================================================
+	
 	
 	public ArrayList<IndexDistance> getSurround( int index, double surroundradius, String guidStr ){
 	
@@ -81,19 +85,26 @@ public class Plane {
 		int p;
 		int index;
 		 
-		
-		index = item.index ;
-		
-		if (mapContainsIndex(index)==false){
-			lastItem = new Coordinate2D( item.x,item.y,index,name);
-			add( lastItem  ) ;
-		}else{
-			set(index,item) ;
-			p = positionTableMap.get(index);
-			lastItem = coordinates.get(p) ; 
+		isUpdating = true;
+		try{
+
+			index = item.index ;
+			
+			if (mapContainsIndex(index)==false){
+				lastItem = new Coordinate2D( item.x,item.y,index,name);
+				add( lastItem  ) ;
+			}else{
+				set(index,item) ;
+				p = positionTableMap.get(index);
+				lastItem = coordinates.get(p) ; 
+			}
+			
+			sort(0,lastItem);
+
+		}catch(Exception e){
+			e.printStackTrace();
 		}
-		
-		sort(0,lastItem);
+		isUpdating = false;
 	}
 	 
 
@@ -154,6 +165,16 @@ public class Plane {
 				positionTableMap.put(cc.particleIndex, k);
 			}// k->
 		}
+	}
+
+
+	public boolean isUpdating() {
+		return isUpdating;
+	}
+
+
+	public void setUpdating(boolean isUpdating) {
+		this.isUpdating = isUpdating;
 	}
 
 }

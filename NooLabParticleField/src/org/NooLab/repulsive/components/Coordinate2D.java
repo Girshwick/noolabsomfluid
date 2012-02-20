@@ -29,7 +29,7 @@ public class Coordinate2D extends
 
 	Compare compare;
 
-	public Coordinate2D(double x, double y, int index, String name) {
+	public Coordinate2D(double x, double y, int index, String name) throws Exception{
 		super(index, name);
 
 		cxValue = x;
@@ -78,21 +78,28 @@ public class Coordinate2D extends
 		}
 	}
 		
-	private void createHashValue(){
+	private void createHashValue() throws Exception{
 		String strx,stry, hashStr ;
 		long hc;
 		int v;
 		
-		v = (int)Math.round(cxValue*10);
-		hc = 100000L + v;
-		strx=""+hc;
-		
-		v = (int)Math.round(cyValue*10);
-		hc = 100000L + v;
-		stry=""+hc;
-		hashStr = strx+stry;
-		
-		hashvalue = Long.parseLong(hashStr)  ;
+		try{
+
+			v = (int)Math.round(cxValue*10);
+			hc = 100000L + v;
+			strx=""+hc;
+			
+			v = (int)Math.round(cyValue*10);
+			hc = 100000L + v;
+			stry=""+hc;
+			hashStr = strx+stry;
+			
+			hashvalue = Long.parseLong(hashStr)  ;
+
+			
+		}catch(Exception e){
+			throw(new Exception("createHashValue() failed, arguments: cx="+cxValue+" ,  cy:"+cyValue));
+		}
 	}
 	
 	public double[] getXYvalue() {

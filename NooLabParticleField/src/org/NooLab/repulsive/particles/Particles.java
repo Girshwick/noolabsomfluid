@@ -24,6 +24,8 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 	
 	int nbrParticles;
 	double averageDistance=0.0, densityPerAcre=0.0 ;
+
+	private double defaultRadius;
 	
 	
 	public Particles( RepulsionFieldBasicIntf field ){ // , int nbrParticles
@@ -37,7 +39,7 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 	 * @param surroundBuffers 
 	 * @param particles
 	 */
-	public Particles(Particles templateParticles, SurroundBuffers sbs) {
+	public Particles(Particles templateParticles) { // , SurroundBuffers sbs
 		
 		Particle p;
 		particleProperties = templateParticles.particleProperties ;
@@ -48,7 +50,7 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 			if (i==641){
 				k=0;
 			}
-			p = new Particle( i, templateParticles.get(i), sbs );
+			p = new Particle( i, templateParticles.get(i) );// , sbs
 			
 			// p.isAlive = templateParticles.get(i).isAlive; // will be set to -1 if it is scheduled to be deleted
 			items.add(p);
@@ -65,7 +67,7 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 	 * @param sbs
 	 * @param beyondIndex
 	 */
-	public void updateByParticles(Particles srcParticles, SurroundBuffers sbs, int beyondIndex) {
+	public void updateByParticles(Particles srcParticles,  int beyondIndex) { // SurroundBuffers sbs,
 		Particle srcP, p;
 	 
 		
@@ -90,13 +92,13 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 			
 			if (i>items.size()-1){ 
 				// mirroring the add operation in the core 
-				p = new Particle( i ,srcP, sbs); 
+				p = new Particle( i ,srcP); // , sbs
 				p.setDataAsCloneOf( srcP );
 				items.add(p) ;
 				
 				if (beyondIndex>0){
-					sbs.getNeighborhood().update(i, p.x, p.y, p.radius);
-					sbs.updateSurroundExtension( i,p );
+					// sbs.getNeighborhood().update(i, p.x, p.y, p.radius);
+					// sbs.updateSurroundExtension( i,p );
 				}
 			}else{
 			
@@ -122,6 +124,7 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 	}
 	
 	public int size(){
+		nbrParticles = items.size();
 		return items.size();
 	}
 
@@ -132,6 +135,8 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 
 	public Particle get(int index){
 		if ((items!=null) && (index>=0) && (index<items.size())){
+			nbrParticles = items.size();
+			
 			return items.get(index);
 		}else{
 			return null;
@@ -143,9 +148,10 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 		Particle p;
 		
 		p = items.get(index) ;
-		p.surroundBuffer.clear(index); // informs its neighbors
+		// p.surroundBuffer.clear(index); // informs its neighbors
 		
-		p.surroundBuffer = null;
+		// p.surroundBuffer = null;
+		
 		items.remove(index);
 		nbrParticles = items.size() ;
 	}
@@ -178,6 +184,8 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 	public void selectSurround( int[] particleIndexes, boolean autoselect){
 		int ix;
 
+		nbrParticles = items.size();
+		
 		if (particleIndexes==null){
 			return;
 		}
@@ -230,5 +238,38 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 
 	public double getAverageDistance() {
 		return averageDistance;
+	}
+
+	public void setDefaultRadius(double radval) {
+		 
+		defaultRadius = radval ;
+	}
+
+	public double getDefaultRadius() {
+		return defaultRadius;
+	}
+
+	public RepulsionFieldBasicIntf getField() {
+		return field;
+	}
+
+	public void setField(RepulsionFieldBasicIntf field) {
+		this.field = field;
+	}
+
+	public double getDensityPerAcre() {
+		return densityPerAcre;
+	}
+
+	public void setDensityPerAcre(double densityPerAcre) {
+		this.densityPerAcre = densityPerAcre;
+	}
+
+	public String getParentName() {
+		return parentName;
+	}
+
+	public void setParticleProperties(ParticlePropertiesIntf particleProperties) {
+		this.particleProperties = particleProperties;
 	}
 }

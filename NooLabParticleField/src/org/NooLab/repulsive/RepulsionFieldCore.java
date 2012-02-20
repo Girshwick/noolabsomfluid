@@ -5,8 +5,6 @@ package org.NooLab.repulsive;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import org.math.array.StatisticSample;
-
 import org.NooLab.chord.CompletionEventMessageCallIntf;
 
 import org.NooLab.repulsive.components.CollectStatistics;
@@ -17,16 +15,19 @@ import org.NooLab.repulsive.components.LimitedNeighborhoodUpdate;
 import org.NooLab.repulsive.components.Neighborhood;
  
 import org.NooLab.repulsive.components.ActionDescriptor;
+import org.NooLab.repulsive.components.GridOptimizer;
 import org.NooLab.repulsive.components.ParticleAction;
+import org.NooLab.repulsive.components.ParticleGrid;
 import org.NooLab.repulsive.components.RepulsionFieldProperties;
 import org.NooLab.repulsive.components.SamplingField;
+import org.NooLab.repulsive.components.SelectionConstraints;
+import org.NooLab.repulsive.components.SpatialGeomCalc;
 import org.NooLab.repulsive.components.Storage;
 import org.NooLab.repulsive.components.SurroundBuffers;
 import org.NooLab.repulsive.components.SurroundRetrieval;
 import org.NooLab.repulsive.components.data.AreaPoint;
 import org.NooLab.repulsive.components.data.DislocationXY;
 import org.NooLab.repulsive.components.data.FieldPoint;
-import org.NooLab.repulsive.components.data.LineXY;
 import org.NooLab.repulsive.components.data.PointXY;
 import org.NooLab.repulsive.components.data.SurroundResults;
 import org.NooLab.repulsive.components.infra.PhysicsDigester;
@@ -186,7 +187,8 @@ public class RepulsionFieldCore implements 	Runnable,
 	double currentBaselineDensity = -1.0 ;
 	double maxDensityDeviationPercent = -1.0;
 	double densityPerAcre = -1.0 ; // 1 acre = 100*100 pix :)
-	double averageDistance = -1;
+	double averageDistance = -1.0;
+	double minimalDistance = -1.0;
 	int stabilizationCounter=0;
 	double defaultThresholdForDensity = 40.0;
 	
@@ -200,7 +202,7 @@ public class RepulsionFieldCore implements 	Runnable,
 
 	int changesInPopulation=0;
 	
-	private int neighborhoodBorderMode = Neighborhood.__BORDER_ALL ;
+	private int neighborhoodBorderMode = ParticleGrid.__BORDER_ALL ;
 	int initialLayoutMode = RepulsionField._INIT_LAYOUT_RANDOM;
 	
 	double kRadiusFactor = 1.8; // quite critical...
@@ -257,11 +259,17 @@ public class RepulsionFieldCore implements 	Runnable,
 	CollectStatistics statisticsCollector ;
 	
 	Neighborhood neighborhood;
+	SpatialGeomCalc spatialGeomCalc;
 	
 	LimitedNeighborhoodUpdate limitedAreaUpdate;
 	SurroundRetrieval surroundRetrieval; // a wrapper for get-surround methods
-	SurroundBuffers  surroundBuffers; 
-	boolean selectionBuffersActivated=true;
+	//SurroundBuffers  surroundBuffers; 
+	
+	boolean selectionBuffersActivated=false;
+	
+	SelectionConstraints selectionConstraints;
+	GridOptimizer gridOptimizer;
+	
 	int multipleDeletions=0;
 	
 	/** 
@@ -269,6 +277,9 @@ public class RepulsionFieldCore implements 	Runnable,
 	 * if issued quickly after one another, and then handled as a batch 
 	 */
 	ParticleAction particleAction;
+	
+	ParticleGrid particleGrid = null;
+	boolean particleGridIsUpdating=false ;
 	
 	/** this is a low resolution "RepulsionField" (typical n=5) to find the patches for sampling*/
 	SamplingField samplingField;
@@ -478,6 +489,8 @@ public class RepulsionFieldCore implements 	Runnable,
 		w = areaWidth;
 		h = areaHeight ;
 		
+		spatialGeomCalc = new SpatialGeomCalc( w,h, ParticleGrid.__BORDER_ALL ) ;
+
 		rf.setAreaSize(w,h);
 		
 		rf.out.setPrefix("[RF-CORE]");
@@ -493,13 +506,13 @@ public class RepulsionFieldCore implements 	Runnable,
 		
 		if (nbrParticles<0){
 			
-		}else{
+		}else{  
+											out.print(3, "creating particles population...");
 			createParticlesPopulation();
+											out.print(3, "creating particles population done.");
 		}
 		
 		rf.multiProc = multiProc;
-		
-		
 		  
 		sizefactor=1.0;
 		colormode=0;
@@ -518,16 +531,22 @@ public class RepulsionFieldCore implements 	Runnable,
 		particleAction = new ParticleAction(rf);
 		 
 		initialization();
+
+		if (this.name.toLowerCase().contains("app")){
+			gridOptimizer = new GridOptimizer( this ) ; 
+		}
+		selectionConstraints = new SelectionConstraints(this);
 		
-		 
- 
 		if (hexagonSizedSelection){
 			selectionSize = adaptSelectionSize( selectionSize);
 		}
 		
+		applySelectionSizeRestrictions();
 		
-		if (nestedInstance==0){ // 0
+		
+		if (nestedInstance==0){  
 			
+			useOfSamplesForStatistics = false;
 			
 			if ( ( (multiProc == false) && (nbrParticles > 101)) ||  
 			     ( (nbrParticles > 700) && (multiProc == true)) ){
@@ -553,10 +572,12 @@ public class RepulsionFieldCore implements 	Runnable,
 			} // mono proc or large ?
 		} // nestedInstance=0 == do not nest!
 		else{
-			surroundBuffers=null;
+			// surroundBuffers=null;
 		}
 		relocationDurationLimiter = new RelocationDurationLimiter(this) ;
 		relocationDurationLimiter.start(0);
+		
+		
 	}
 
 	public void initialization(){
@@ -571,22 +592,23 @@ public class RepulsionFieldCore implements 	Runnable,
 		}
 		
 		
-		
+		/*
 		if (selectionBuffersActivated==true){
 			surroundBuffers = new SurroundBuffers( this , particles, out) ;
 			surroundBuffers.setParentName( this.name+"."+this.getClass().getSimpleName());
 				out.print(3, "restart(context:"+this.getName()+")->initialization() : size of particles = "+particles.size());			
 		} 
 
-				
+		*/		
 		statisticsCollector = new CollectStatistics(this);
 		statisticsCollector.setShowStatisticsInfo(false) ;
 		surroundRetrieval = new SurroundRetrieval(this); 
 		
+		/*
 		neighborhood = new Neighborhood( neighborhoodBorderMode, surroundBuffers,out ) ;
 		neighborhood.setAreaSize( areaWidth, areaHeight, areaDepth);
 		neighborhood.setParentName( this.name+"."+this.getClass().getSimpleName());
-		
+		*/
 
 		rf = this;
 	}
@@ -644,16 +666,25 @@ public class RepulsionFieldCore implements 	Runnable,
 		
 	}
 	
-	
+	public void activateGridOptimizer(boolean flag){
+		if (flag){
+			gridOptimizer.setActive(flag);
+			this.gridOptimizer.start();
+		}else{
+			gridOptimizer.setActive(flag);
+			this.gridOptimizer.stop();
+		}
+	}
+
 	private double calculateForcesRandomization( double valueForRandomization, double min, double max){
 		double result = valueForRandomization;
 		// =(1/(s*SQRT(2*PI()))*EXP(-(B10-m)*(B10-m)/(2*s*s)))
 	
-		double m,s, rr , rv=1.0;
+		double m, rv=1.0;
 		
 		m= (2.0*min+max)/3.0; //  
 		
-		rr = rfProperties.getRelativeRandomness(); // by default = 1.0
+		// double rr = rfProperties.getRelativeRandomness(); // by default = 1.0
 		result = -1.0 ;
 
 		double[] rvs = org.math.array.StatisticSample.randomNormal(3, m, (m-min)/2.43);
@@ -743,7 +774,6 @@ out.print(4,"rnd : "+ (Math.round(rv*1000.0)/1000.0)+ " ,  randomized repulsion 
 				}
 			}else{
 				// single process
-
 				doPhysicsStandard();
 				
 if (this.name.contains("sampler")){
@@ -762,6 +792,7 @@ if (this.name.contains("sampler")){
 	
 	private ArrayList<Integer> getNeighboredParticlesAccelerated(int i){
 		 
+		Particle p_i,p_j;
 		double dx,dy ;
 		double _vicinity,_repulsion , _repulsionRange;
 		
@@ -777,8 +808,14 @@ if (this.name.contains("sampler")){
 
 		for (int j = 0; j < nbrParticles; j++) {
 			
-			dx = neighborhood.getLinearDistance(particles.get(i).x , particles.get(j).x, areaWidth) ;
-			dy = neighborhood.getLinearDistance(particles.get(i).y , particles.get(j).y, areaHeight) ;
+			p_i = particles.get(i);
+			p_j = particles.get(j);
+			
+			if ((p_i==null) || (p_j==null)){
+				continue;
+			}
+			dx = spatialGeomCalc.getLinearDistance(p_i.x , p_j.x, areaWidth) ;
+			dy = spatialGeomCalc.getLinearDistance(p_i.y , p_j.y, areaHeight) ;
 			
 			// boolean xNotNeighborIJ = Math.abs(dx) > particles.get(i).radius * ((repulsion*repulsionCorrection)*2.2) ;
 			// boolean yNotNeighborIJ = Math.abs(dy) > particles.get(i).radius * ((repulsion*repulsionCorrection)*2.2) ;
@@ -794,6 +831,32 @@ if (this.name.contains("sampler")){
 		 
 		
 		return neighbors;
+	}
+	
+	private double getLinearDistance(double x1, double x2, int maxDist) {
+		double result = -1.0;
+		double xd0, w;
+		
+		
+		
+		result = ( x1 - x2) ;
+	 
+		if (neighborhoodBorderMode == ParticleGrid.__BORDER_NONE){
+			
+			w = (double)(maxDist*1.0) ;
+			if ( Math.abs(result) > w / 2.0) {
+				// initial distance larger than 50% of the width of the area?
+				// -> so it could be just at the left and the right border ->
+				// subtract the area width
+				
+				xd0 = (w - Math.max(x1,x2) + (Math.min(x1,x2))) ;
+				if (Math.abs(xd0) < Math.abs(result)){
+					result = xd0;
+				}
+			}
+		}
+		
+		return result;
 	}
 	
 	private ArrayList<Integer> getNeighboredParticlesNative( int i ){
@@ -813,8 +876,8 @@ if (this.name.contains("sampler")){
 
 		for (int j = 0; j < nbrParticles; j++) {
 			
-			dx = neighborhood.getLinearDistance(particles.get(i).x , particles.get(j).x, areaWidth) ;
-			dy = neighborhood.getLinearDistance(particles.get(i).y , particles.get(j).y, areaHeight) ;
+			dx = getLinearDistance(particles.get(i).x , particles.get(j).x, areaWidth) ;
+			dy = getLinearDistance(particles.get(i).y , particles.get(j).y, areaHeight) ;
 			
 			// boolean xNotNeighborIJ = Math.abs(dx) > particles.get(i).radius * ((repulsion*repulsionCorrection)*2.2) ;
 			// boolean yNotNeighborIJ = Math.abs(dy) > particles.get(i).radius * ((repulsion*repulsionCorrection)*2.2) ;
@@ -868,8 +931,8 @@ if (this.name.contains("sampler")){
 				}
 				
 				
-				dx = neighborhood.getLinearDistance(particles.get(i).x , particles.get(j).x, areaWidth) ;
-				dy = neighborhood.getLinearDistance(particles.get(i).y , particles.get(j).y, areaHeight) ;
+				dx = getLinearDistance(particles.get(i).x , particles.get(j).x, areaWidth) ;
+				dy = getLinearDistance(particles.get(i).y , particles.get(j).y, areaHeight) ;
 
 				
 				distance = Math.sqrt(dx * dx + dy * dy);
@@ -954,9 +1017,8 @@ if (this.name.contains("sampler")){
 				calculateDislocationWithOutBorders( i, neighbors, dislocation.wt, dislocation.x, dislocation.y);
 			}
 			
-			if (i >= particles.size() - 1) {
+			if (i >= particles.size() - 1){
 				updateParticlesByDislocation();
-
 			}
  
 		} // go()
@@ -1202,28 +1264,36 @@ if (this.name.contains("sampler")){
 		 
 		
 	}
+	
+	public void updateParticlesByDislocation(int k){
+
+		double xpos = particles.get(k).x;
+		double ypos = particles.get(k).y;
+
+		double _vx = particles.get(k).vx;
+		double _vy = particles.get(k).vy;
+
+		particles.get(k).setMovedDistance(Math.sqrt(_vx * _vx + _vy * _vy));
+
+		xpos = xpos + _vx;
+		ypos = ypos + _vy;
+
+		
+		double[] spatialpos = spatialGeomCalc.adjustSpatialPositionsToBorderSettings( xpos,ypos, particles.get(k).radius, neighborhoodBorderMode);
+		xpos = spatialpos[0];
+		ypos = spatialpos[1];
+		
+		particles.get(k).x = xpos;
+		particles.get(k).y = ypos;
+
+	}
+
 	private void updateParticlesByDislocation(){
 
 		for (int k = 0; k < nbrParticles; k++) {
 
-			double xpos = particles.get(k).x;
-			double ypos = particles.get(k).y;
-
-			double _vx = particles.get(k).vx;
-			double _vy = particles.get(k).vy;
-
-			particles.get(k).setMovedDistance(Math.sqrt(_vx * _vx + _vy * _vy));
-
-			xpos = xpos + _vx;
-			ypos = ypos + _vy;
-
+			updateParticlesByDislocation(k);
 			
-			double[] spatialpos = neighborhood.adjustSpatialPositionsToBorderSettings( xpos,ypos, particles.get(k).radius, neighborhoodBorderMode);
-			xpos = spatialpos[0];
-			ypos = spatialpos[1];
-			
-			particles.get(k).x = xpos;
-			particles.get(k).y = ypos;
 		}
 	}
 	/**   
@@ -1231,7 +1301,7 @@ if (this.name.contains("sampler")){
 	 * this s used if not multithreading should be applied
 	 * 
 	 */
-	private void doPhysicsStandard() {
+	protected void doPhysicsStandard() {
 		
 		passes++;
 		if ((stepsLimit>0) && (passes>stepsLimit)){
@@ -1272,7 +1342,7 @@ if (this.name.contains("sampler")){
 				// statisticsCollector.explicitTrigger();
 			}
 			if (neighborhood == null){
-				neighborhood = new Neighborhood( neighborhoodBorderMode, surroundBuffers,out) ;
+				neighborhood = new Neighborhood( neighborhoodBorderMode, out) ;
 				// neighborhood.setBorderMode( neighborhoodBorderMode );
 			}
 		}
@@ -1309,6 +1379,83 @@ if (this.name.contains("sampler")){
 		}
 	}
 	
+	private double getMinimalObservedDistanceForParticle( int pix){
+		
+		double minDist = 999999999999.9;
+		double minObsDistance,dx,dy ,distance;
+		Particle particle_j, particle_i;
+		
+		int z,j;
+		int[] indexes;
+		
+		Vector<Neighbor> neighbors = new Vector<Neighbor>();
+		
+		
+		// 
+		neighbors.clear();
+		minObsDistance = 999999999.0;
+		z=0;
+		particle_i = particles.get(pix) ;
+		
+		// we should not loop through all particles, just through the "neighborhood", if it already exists
+		// this saves a lot of time for larger collections (>100000)
+		if (particleGrid==null){
+			if (pix<5){
+				out.print(4, "particleGrid not available yet") ;
+			}
+			// make this global, outsource it , and copy it if necessary.. (after adding?)
+			indexes = new int[particles.size()] ;
+			for (int i=0;i<particles.size();i++){ indexes[i] = i; }
+		}else{
+			// get a small surround
+			
+			indexes = new int[particles.size()] ;
+			for (int i=0;i<particles.size();i++){ indexes[i] = i; }
+			 
+			/*  SWITCH THAT !!! DEBUG ONLY !!! abc124
+			if (pix<2){
+				out.print(5, "particleGrid is now available.") ;
+			}
+			indexes = particleGrid.getIndexListRetriever().setConstraints( selectionConstraints ).getIndexesFromNeighboorhood( particle_i.x, particle_i.y, 20 ) ;
+			*/
+		}
+		
+		for (int xj=0;xj<indexes.length;xj++){
+			
+			if (pix==xj){
+				continue;
+			}
+			j = indexes[xj] ;
+			particle_j = particles.get(j);
+			if (particle_j==null){
+				continue;
+			}
+			dx = particle_i.x - particle_j.x;
+			dy = particle_i.y - particle_j.y;
+			distance = Math.sqrt(dx * dx + dy * dy);
+		
+			if ((distance < minObsDistance) && (distance>0)){
+				if (neighbors.size()==0){
+					neighbors.add(new Neighbor(j,particle_j,distance));
+				}else{
+					if (neighbors.size()>=19){
+						try{
+							neighbors.remove(19) ; // 18 items: 2 "layers" around an item in hex pattern
+						}catch(Exception e){}
+					}
+					neighbors.insertElementAt(new Neighbor(j,particle_j,distance), 0);
+				}
+				minObsDistance = distance ;
+				if ((minObsDistance < minDist) && (minObsDistance >0)){
+					minDist = minObsDistance; 
+				}
+				z++;
+			} // distance < minObsDistance ?
+			
+		} // j->
+		
+		return minDist ;
+	}
 	
 	/**
 	 * this will be called (back) by object CollectStatistics, which runs its own
@@ -1317,12 +1464,23 @@ if (this.name.contains("sampler")){
 	 * 
 	 * @param particles
 	 */
-	public void collectStatistics( Particles particles ){
+	public void collectStatistics( Particles particles){
+		collectStatistics( particles, false ) ;
+	}
+		
+	/**
+	 * 
+	 * we could creat a surrounding selection and call this explicitly, e.g. after adding , deleting
+	 *  
+	 * @param particles
+	 * @param enforce
+	 */
+	public void collectStatistics( Particles particles, boolean enforce  ){
 			 
-			double dx ,dy, distance ;
+			double dx ,dy, distance , minDistance=9999999999999.9;
 			Particle particle_i, particle_j;
 			
-			Vector<Neighbor> neighbors = new Vector<Neighbor>();
+			//Vector<Neighbor> neighbors = new Vector<Neighbor>();
 			double minObsDistance=0.0, movedDistanceSum =0.0,minDistSum=0.0, mds_sqr =0.0, var=0;
 			
 			if (statisticsCollector==null){
@@ -1331,7 +1489,7 @@ if (this.name.contains("sampler")){
 			}
 			statisticsCollector.setShowStatisticsInfo(true) ;
 			 
-			if (fieldLayoutFrozen){
+			if ((fieldLayoutFrozen) && (enforce==false)){
 				scPasses=0;
 				out.print(3,"frozen !");
 				return;
@@ -1359,6 +1517,9 @@ if (this.name.contains("sampler")){
 		// after a few passes, we will know for each particle its neighbors ... 
 			for (int i=0;i<particles.size();i++){
 				
+				if ((fieldLayoutFrozen) && (enforce==false)){
+					break;
+				}
 				particle_i = particles.get(i);
 				if (particle_i==null){
 					continue;
@@ -1370,66 +1531,26 @@ if (this.name.contains("sampler")){
 					sampler.particleIsInSample(particle_i) ; // performs a simple check on coordinates and radius
 				}
 				
+				minObsDistance = getMinimalObservedDistanceForParticle(i);
 				
-				// 
-				neighbors.clear();
-				minObsDistance = 9999.0;
-				z=0;
-				
-				// we should not loop through all particles, just through the "neighborhood", if it already exists
-				// this save a lot of time for larger collections (>100000)
-				int sp = 0;                  //  neighborhood.getLowerBoundForSurround(i,20, particles.size());
-				int ep = particles.size() ;  // neighborhood.getUpperBoundForSurround(i,20, particles.size());
-				
-				for (int j=sp;j<ep;j++){
-					
-					if (i==j){
-						continue;
-					}
-					particle_j = particles.get(j);
-					if (particle_j==null){
-						continue;
-					}
-					dx = particle_i.x - particle_j.x;
-					dy = particle_i.y - particle_j.y;
-					distance = Math.sqrt(dx * dx + dy * dy);
-				
-					if (distance < minObsDistance){
-						if (neighbors.size()==0){
-							neighbors.add(new Neighbor(j,particle_j,distance));
-						}else{
-							if (neighbors.size()>=19){
-								try{
-									neighbors.remove(19) ; // 18 items: 2 "layers" around an item in hex pattern
-								}catch(Exception e){}
-							}
-							neighbors.insertElementAt(new Neighbor(j,particle_j,distance), 0);
-						}
-						minObsDistance = distance ;
-						z++;
-					} // distance < minObsDistance ?
-					
-				} // j->
-				
+				if (minDistance>minObsDistance){
+					minDistance=minObsDistance;
+				}
 				minDistSum += minObsDistance;
 				movedDistanceSum += particle_i.getMovedDistance();
 				mds_sqr = mds_sqr + (particle_i.getMovedDistance()*particle_i.getMovedDistance()); 
-				
-				if (neighborhood!=null){
-					neighborhood.update(i, particle_i.x,particle_i.y, particle_i.radius);
-				}
-			    // neighborhood.finalizeQ(5);
+				 
 			} // i->
 			
 												out.print(3,"collecting stats: all particles visited... ");
-			// out.print(2, "finalizing ");
-			neighborhood.finalizeQ();
+			 
 			movedDistanceSum = movedDistanceSum/particles.size();
 			
 			
+			this.minimalDistance = minDistance;
 			
 			minDistSum = minDistSum/particles.size();
-			neighborhood.setAverageDistance(minDistSum) ;
+			// neighborhood.setAverageDistance(minDistSum) ;
 			averageDistance = minDistSum;
 												out.print(4,"calculating some parameters ... ");
 												
@@ -1508,7 +1629,9 @@ if (this.name.contains("sampler")){
 			    adaptMobilityCorrectionFactors(q);
 			    freezeLayout(q);
 			    
-			    
+			    if (enforce==false){
+			    	provideGridPerspective();
+			    }
 			}
 												out.print(3,"collecting stats: leaving ... ");
 			// out.print(2,"mean moved distance : "+movedDistanceSum);
@@ -1731,10 +1854,11 @@ if (this.name.contains("sampler")){
 			if (layerCount>=2){
 				selectionSize = calculatePlateletsCountInHexPattern(layerCount-1);
 				out.print(2, "selectionSize has been reduced to "+selectionSize+" particles.");
+			}else{
+				selectionSize = 7;
+				out.print(2, "selectionSize has been set to "+selectionSize+" particles.");
 			}
-			
 		}else{
-			
 		}
 		
 	}
@@ -1761,26 +1885,21 @@ if (this.name.contains("sampler")){
 			layerCount = getLayerCountOfHexPattern(selectionSize);
 			selectionSize = calculatePlateletsCountInHexPattern(layerCount+1);
 			
+			applySelectionSizeRestrictions();
+			
 			out.print(2, "selectionSize has been increased to "+selectionSize+" particles.");
-			 
+			/* 
 			if (surroundBuffers!=null){
 				surroundBuffers.update();
 			}
+			*/
 			
 		}else{
 			
 		}
 		
 	}
-
-
-	@Override
-	public void setShapeOfSelection() {
-		// TODO: offer hex , circle (=hex constrained by radius), square
-	}
-
-
-
+ 
 	
 	public void deleteParticle( int index){
 		
@@ -1818,7 +1937,7 @@ if (this.name.contains("sampler")){
 			Arrays.sort(indexes);
 			index = indexes[0];
 			// there can be problems if deletions overlap, so we wait until it is frozen, or we set it to frozen
-			if ((fieldLayoutFrozen==false) || (surroundBuffers.getUpdating()>0)){
+			if ((fieldLayoutFrozen==false) ){ // || (surroundBuffers.getUpdating()>0)
 				 
 				eventsReceptors.get(0).onActionAccepted( RepulsionFieldEventsIntf._FIELDACTION_DEL, 
 														 RepulsionFieldEventsIntf._FIELDSTATE_DLY, index) ;
@@ -1833,7 +1952,7 @@ if (this.name.contains("sampler")){
 						ad.setY( particles.get(index).y);
 						ad.setIndex(index);
 						particleAction.add(ad);
-						out.print(2, "n="+particleAction.size("d")+"  new particles are waiting to be deleted...");
+						out.print(2, "n="+particleAction.size("d")+"  further particles are waiting to be deleted...");
 					}
 				} // i->
  
@@ -1877,6 +1996,15 @@ if (this.name.contains("sampler")){
 
 			nbrParticles = particles.size();
 			
+			particleGrid.deactivate();
+			
+			if (statisticsCollector!=null){
+				this.statisticsCollector.explicitCall();
+			}
+			provideGridPerspective(true) ;
+			
+			particleGrid.reactivate();
+
 			//int dn = populationSizeBefore - nbrParticles ;
 			changesInPopulation++;
 		}
@@ -1902,11 +2030,6 @@ if (this.name.contains("sampler")){
 	}
 	
 
-	public int  addParticles( int x, int y){
-		
-		return  addParticles( new int[]{x}, new int[]{y});
-	}
-	
 	private void createUnboundedParticle( int x, int y){
 		
 		Particle p;
@@ -1926,12 +2049,13 @@ if (this.name.contains("sampler")){
 		particles.getItems().add(p);
 		
 		
-		surroundBuffers.introduceParticle(particles.size()-1);
+		// surroundBuffers.introduceParticle(particles.size()-1);
 		
 		nbrParticles += 1; 
 		
-		// now we send a message to the facade about tis add-event, providing the particle 
-		// just added as a template for updating the structures of the facade
+		particleGrid.addSingleParticle(x, y, nbrParticles-1) ;
+		// now we send a message to the facade layer (== "RepulsionField{}") about this add-event, providing the particle 
+		// just added as a template for updating the structures of the facade layer
 		
 		internalLayerEvents.onAddingParticle( this, p, particles.size()-1 );
 	}
@@ -1945,12 +2069,21 @@ if (this.name.contains("sampler")){
 		relocateParticles( particles.get(particles.size()-1) , 1) ;
 	}
 	
+	@Override
+	public int addParticles(int count) {
+		 
+		return addParticles( -1,-1 );
+	}
+	public int  addParticles( int x, int y){
+		
+		return  addParticles( new int[]{x}, new int[]{y});
+	}
 	public int addParticles( int[] x, int[] y){
 		
 		// (new ParticleAction(this)).scheduleForRemoval(index);
 		// this object then contains a waiting queue, the items of which then are removed all at once
 		// inclusive complete rebuild of surround
-
+	
 		int count = x.length ;
 		 
 		
@@ -1958,7 +2091,7 @@ if (this.name.contains("sampler")){
 		if (x.length!=y.length){return -4;}
 		
 		
-		if ((fieldLayoutFrozen==false) || (surroundBuffers.getUpdating()>0)){
+		if ((fieldLayoutFrozen==false) ){ // || (surroundBuffers.getUpdating()>0)
 			// the field is still relocating the particles, which is a critical operation;
 			// hence we have to buffer it: as soon as the field is stable again, 
 			
@@ -1995,7 +2128,7 @@ if (this.name.contains("sampler")){
 		for (int i=0;i<count;i++){
 			
 			createUnboundedParticle( x[i],y[i]);
-
+	
 			
 			isReadyToUse = false ;
 			
@@ -2011,21 +2144,18 @@ if (this.name.contains("sampler")){
 		}
 		
 		 
+		 
 		nbrParticles = particles.size() ;
 		relocateParticles( particles.get(particles.size()-1) , 1) ; 
 		
+		this.statisticsCollector.explicitCall();
+		provideGridPerspective(true); 
+		
 		eventsReceptors.get(0).onActionAccepted( RepulsionFieldEventsIntf._FIELDACTION_ADD, 
 				 								 RepulsionFieldEventsIntf._FIELDSTATE_ACC, (particles.size()-1) ) ;
-
+	
 		return (firstNewIndex);
 	}
-
-	@Override
-	public int addParticles(int count) {
-		 
-		return addParticles( -1,-1 );
-	}
-
 	@Override
 	public int splitParticle(int index, ParticleDataHandlingIntf pdataHandler) {
 	 
@@ -2230,10 +2360,7 @@ if (this.name.contains("sampler")){
 			homogenizeSizeOfParticles( radius);
 		}
 		
-		if (surroundBuffers!=null){
-			surroundBuffers.setFieldFrozenMessage(false);
-		}
-		
+		 
 											out.print(4, "particle adding, field is frozen : "+ fieldLayoutFrozen);
 											
 		if (fieldLayoutFrozen){
@@ -2254,16 +2381,13 @@ if (this.name.contains("sampler")){
 			}else{
 				setLayoutFrozenState(false);
 											out.print(3, "particle adding after freezing, calling restart()..."); 
-			    
-				if (surroundBuffers!=null){
-					surroundBuffers.setToPause(0) ;
-				}
+			   
 			    restart();
 			}
 			// it will return through the event ""
 			// 
 			// updateOnlyAroundChangeLocation=true;
-			updateNeighborhood(); // we should only update a patch around the coordinates of the new particle
+			// updateNeighborhood(); // we should only update a patch around the coordinates of the new particle
 			
 		} 
 		// limitedNeighborhoodUpdate.populationSizeBefore = particles.size();
@@ -2428,7 +2552,7 @@ if (this.name.contains("sampler")){
 		if (statisticsCollector!=null){
 			q = statisticsCollector.getTrendStabilityValue();
 		}
-		freezeLayout(q);
+		freezeLayout(q/11);
 	}
 
 
@@ -2437,9 +2561,15 @@ if (this.name.contains("sampler")){
 		if (fieldThrd==null){
 			return;
 		}
-		while (isRunning){
+		int z=0;
+		while ((isRunning) && (z<150)){
 			delay(1);
 		}
+		if (isRunning){
+			isRunning=false;
+			out.delay(50) ;
+		}
+		
 		out.print(3, "FieldThr has been stopped.");
 		fieldThrd=null;
 		
@@ -2504,14 +2634,16 @@ if (this.name.contains("sampler")){
 		if (mode>=1){
 			isStopped=false;
 			
+			/*
 			if (selectionBuffersActivated==true){
 				surroundBuffers = new SurroundBuffers( this ,particles, out) ;
 				
 			} 
-			 
+			*/
+			
 			out.print(3, "neighborhood : strictly new start...)");
 			if (neighborhood!=null){ neighborhood.stop();} ;
-			neighborhood = new Neighborhood(neighborhoodBorderMode,surroundBuffers,out) ;
+			neighborhood = new Neighborhood(neighborhoodBorderMode,out) ; // surroundBuffers,
 			neighborhood.setBorderMode( neighborhoodBorderMode );
 			 
 			statsCollector = new CollectStatistics(this); // rf); // ???
@@ -2554,7 +2686,7 @@ if (this.name.contains("sampler")){
 		if ((fieldThrd==null) || (isRunning==false)){
 											out.print(3, ">>>>>>  re-starting processes (2), in RepulsionField '"+this.name+"'  ...") ; 
 			if (multiProc){ 	
-				surroundBuffers.clear() ;
+				// surroundBuffers.clear() ;
 				
 				/*
 				if (delayedOnsetMillis>500)delayedOnsetMillis = 500;
@@ -2693,11 +2825,13 @@ if (this.name.contains("sampler")){
 			
 			
 			this.stopFieldThread();
-			this.stopThreads() ;
+			this.stopThreads(0) ;
 			relocationDurationLimiter.supervisionIsRunning=false;
+			/*
 			if (surroundBuffers!=null){
 				surroundBuffers.stop(); 
 			}
+			*/
 			delay(80);
 
 			if (multiProc){
@@ -2714,12 +2848,13 @@ if (this.name.contains("sampler")){
 			
 			particleAction = new ParticleAction(rf);
 
+			/*
 			if (selectionBuffersActivated==true){
 				surroundBuffers = new SurroundBuffers( this , particles, out) ;
 				
 			}
-			 
-			neighborhood = new Neighborhood( neighborhoodBorderMode,surroundBuffers,out ) ;
+			*/ 
+			neighborhood = new Neighborhood( neighborhoodBorderMode,out ) ; // surroundBuffers,
 			neighborhood.setAreaSize( areaWidth, areaHeight, areaDepth);
 			// neighborhood.setBorderMode( neighborhoodBorderMode );
 
@@ -2771,6 +2906,78 @@ if (this.name.contains("sampler")){
 		
 	}
 
+	@Override
+	public void provideGridPerspective() {
+		
+		provideGridPerspective(false) ;
+	}
+		
+	public void provideGridPerspective( boolean enforce) {
+		//
+		ParticleGrid pg;
+		double mindist;
+		
+		if (this.name.contains("sample")){
+			return;
+		}
+		 
+		if ((minimalDistance<=0.0) || (minimalDistance>999999999.9)){
+			this.collectStatistics(particles,true);
+			int z=0;
+			while (((this.fieldLayoutFrozen==false) || (minimalDistance<=0.0)) &&(z<500)){
+				delay(10);z++;
+			}
+			
+			mindist = getMinimalDistance();
+		}
+		if (minimalDistance<=0.0){
+			return;
+		}
+		
+		if (particleGrid!=null){ 
+			if ((enforce==false) && (particleGrid.incUpdateCounter(10)!=0)){
+				return;
+			}
+		}
+		pg = new ParticleGrid(this);
+		pg.update();
+		pg.deactivate();
+		
+		if (particleGrid!=null){
+			particleGrid.deactivate();	
+		}
+		
+		particleGridIsUpdating=true;
+											out.print(4, "ParticleGrid has been updated.");
+	 
+		{
+			if (particleGrid!=null){
+				particleGrid.clear() ;
+			}
+			particleGrid = pg ;
+			particleGrid.reactivate() ;
+			particleGridIsUpdating=false;
+		}
+		
+		/*  test
+		int pix;
+		int[] pixes;
+		
+		pix = particleGrid.getIndexNear(40.1, 25.8) ;
+			  out.print(2, "test of particleGrid, coordinates : 40.1, 25.8, index = "+ pix ) ;
+			  
+		pix = particleGrid.getIndexNear(100.4, 67.8) ;
+			  out.print(2, "test of particleGrid, coordinates : 100.4, 67.8 , index = "+ pix ) ;
+		
+		pixes = particleGrid.getIndexesFromNeighboorhood( 120 , 43.0) ;
+				String str;
+				str = arrutil.arr2text(pixes) ;
+				out.print(2, "test of particleGrid, neighborhood of index 120 (x,y="+
+						      ((int)Math.round(particles.get(120).x))+","+((int)Math.round(particles.get(120).y))+
+						      "), radius 43.0: \n    "+ str ) ;
+		*/	
+	}
+	
 	public double getDensityPerAcre() {
 		return densityPerAcre;
 	}
@@ -2782,6 +2989,12 @@ if (this.name.contains("sampler")){
 		averageDistance = averagedistance;
 	}
 	
+	public double getMinimalDistance() {
+		return minimalDistance;
+	}
+	public void setMinimalDistance(double minimalDistance) {
+		this.minimalDistance = minimalDistance;
+	}
 	
 	public double getkRadiusFactor() {
 		return kRadiusFactor;
@@ -2850,7 +3063,7 @@ if (this.name.contains("sampler")){
 	}
 
 	public SurroundBuffers getSurroundBuffers() {
-		return surroundBuffers;
+		return null; // surroundBuffers;
 	}
 
 
@@ -2934,6 +3147,9 @@ if (this.name.contains("sampler")){
 		this.nbrParticles = nbrParticles;
 	}
 	
+	public ParticleGrid getParticleGrid() {
+		return particleGrid;
+	}
 	@Override
 	public void setBorderMode(int bordermode) {
 		
@@ -3002,33 +3218,77 @@ if (this.name.contains("sampler")){
 		 
 		defaultDensity = dvalue; 
 		
-		if (defaultDensity>25){
-			defaultDensity = 25.0;
+		if (defaultDensity>60){
+			defaultDensity = 60.0;
 		}
 		if (defaultDensity<5){
 			defaultDensity = 5.0;
 		} 
 	}
 	
+	
+	@Override
+	public void setDefaultDensity(double avgDensity, int nodeCount) {
+		//  
+		if (nodeCount> 1500){
+			
+			defaultDensity = (double)nodeCount/((double)(18*14)) ;
+			averageDistance = 30.0 * 10.0/ defaultDensity ;
+			if (averageDistance<8.0)averageDistance=8.0;
+		}else{
+			defaultDensity = avgDensity;
+			averageDistance = 30.0;
+		}
+		
+	}
+	@Override
+	public double getAverageDistanceBetweenParticles() {
+		 
+		return averageDistance;
+	}
+	
+	
+	
+	/** 
+	 * 
+	 * we sould take the averge density only as "request"... 
+	 * for large particle numbers (> width/100 * height/100 * avdDensity ~ 2000) 
+	 * we have to reduce the radius and to increase density
+	 * 
+	 *            
+	 * 
+	 * */
 	@Override
 	public void setAreaSizeAuto(int nodecounttarget) {
-		double  aspectRatio = 1.666;
+		double  _defradius,aspectRatio = 1.666;
 		int w,h ;
 		
 		autoSizeNodeCounts = nodecounttarget;
-		
+		//
 		if (defaultDensity<0){
 			return;
 		}
 		
-		averageDistance = 30;
+		averageDistance = 30.0 * 10.0/ defaultDensity ;
+		if (averageDistance<8.0)averageDistance=8.0;
 		
-		w = (int)(Math.sqrt(autoSizeNodeCounts)*((1.0+aspectRatio)/2.0) * 30.0) ;
-		h = (int)(Math.sqrt(autoSizeNodeCounts)/((1.0+aspectRatio)/2.0) * 30.0) ;
+		// averageDistance = 30.0; // density = 10 per rect(w,h:100,100) 
+		
+		// averageDistance = Math.sqrt( defaultDensity*defaultDensity/Math.PI) ;
+		
+		if (particles!=null){
+			_defradius = particles.get(0).radius; // get kRadiusFactor ;
+			_defradius = _defradius * (1500/nodecounttarget) ;
+			particles.setDefaultRadius(2.0);
+		}
+		
+		w = (int)(Math.sqrt(autoSizeNodeCounts)*((1.0+aspectRatio)/2.0) * averageDistance) ;
+		h = (int)(Math.sqrt(autoSizeNodeCounts)/((1.0+aspectRatio)/2.0) * averageDistance) ;
 		
 		// double d = (100*100)*autoSizeNodeCounts/(w*h);
 		
 		areaSizeAuto = w*h;
+		
 		areaWidth = w ; 
 		areaHeight = h ;
 		
@@ -3188,9 +3448,18 @@ if (this.name.contains("sampler")){
 	public boolean isFieldLayoutFrozen() {
 		return fieldLayoutFrozen;
 	}
+	public boolean getFieldLayoutFrozen() {
+		return fieldLayoutFrozen;
+	}
+	public void setFieldLayoutFrozen(boolean fieldLayoutFrozen) {
+		this.fieldLayoutFrozen = fieldLayoutFrozen;
+	}
 
 
 	public boolean isSelectionBuffersActivated() {
+		return selectionBuffersActivated;
+	}
+	public boolean getSelectionBuffersActivated() {
 		return selectionBuffersActivated;
 	}
 
@@ -3324,7 +3593,7 @@ if (index>nbrParticles-5){
 	 
 		avgDens = densityPerAcre;
 		
-		if (particles.size()<28){
+		if ((particles==null) || (particles.size()<28)){
 			return;
 		}
 		pc = 0 ;
@@ -3529,11 +3798,11 @@ if (index>nbrParticles-5){
 	}
 	
 	
-	protected void freezeLayout(double stability  ){
+	protected void freezeLayout( double stability ){
 		freezeLayout(stability, 0);
 	}
 	 
-	protected void freezeLayout(double stability, int enforced ){
+	public void freezeLayout(double stability, int enforced ){
 		
 		boolean freezeNow ;
 		
@@ -3560,8 +3829,14 @@ if (index>nbrParticles-5){
 			out.print(3, "\nlayout for field <"+this.name+"> has been frozen (n="+particles.size()+").");
 			
 			stabilizationCounter++;
-			setLayoutFrozenState(true); // fieldLayoutFrozen = true; -> NEVER set it directly, we have to know whether it happens
+			setLayoutFrozenState(true); 
+			// fieldLayoutFrozen = true; -> NEVER set it directly, we have to know whether it happens
 			 
+			if (fieldLayoutFrozen==false){
+				// better: wait and set
+				return;
+			}
+			
 			if ((currentBaselineDensity<0) && (densityPerAcre>3.0)){
 				currentBaselineDensity = this.densityPerAcre ;
 			}
@@ -3570,13 +3845,22 @@ if (index>nbrParticles-5){
 			updateFinished = true;
 			delayedOnsetMillis = 50;
 			
-			if ((fieldLayoutFrozen) && (eventsReceptors.get(0)!=null)){
-				// we need a threaded decoupling, if the callback call fails for some reason
-				// thus we perform the callback in its own class
-				(new CallbackServer()).go(0,0);	
+			int eix;
+			if (selectionBuffersActivated==true){
+				eix=0;
+			}else{
+				eix=1;
 			}
 			
-			stopThreads();
+			if (eventsReceptors.get(0)!=null){
+				// we need a threaded decoupling, if the callback call fails for some reason
+				// thus we perform the callback in its own class
+				(new CallbackServer()).go(0,eix);	 
+			}
+			
+			
+			stopThreads(eix);
+			
 			
 			if (restoreInitialMobilityValues){
 				// true only after trembling / shaking
@@ -3585,7 +3869,21 @@ if (index>nbrParticles-5){
 				repulsionCorrection = initialRepulsionCorrection;
 				// delayedOnsetMillis = initialDelayedOnsetMillis ;
 			}
-			
+			if (selectionBuffersActivated==false){
+				 
+				// restart();
+				if (statisticsCollector==null){
+					statisticsCollector = new CollectStatistics(rf);
+				}
+				fieldLayoutFrozen=false;
+				if (this.minimalDistance<0){
+					this.statisticsCollector.explicitCall();
+				}
+				fieldLayoutFrozen=true;
+				out.print(2, "completion message after freezing the layout");
+				 
+			}
+			/*
 			if (multipleDeletions>0){
 				surroundBuffers.setFieldFrozenMessage(false); out.delay(80);
 				out.print(3, "re-building surroundBuffers ...");
@@ -3602,7 +3900,7 @@ if (index>nbrParticles-5){
 			
 			// the surroundbuffer objects also maintain the last known frozen coordinate,  
 			if (surroundBuffers!=null){
-				surroundBuffers.start(); // will start only if it is not yet running
+			     surroundBuffers.start(); // will start only if it is not yet running
 				surroundBuffers.setFieldFrozenMessage(true); // will release the brake ...
 			}else{
 				if (selectionBuffersActivated==true){
@@ -3610,11 +3908,14 @@ if (index>nbrParticles-5){
 
 				}
 			}
+			*/
 			
 		} // freezeNow ?
 	
 		
 	}
+	
+	
 
 	private void setLayoutFrozenState(boolean flag){
 		
@@ -3633,7 +3934,7 @@ if (index>nbrParticles-5){
 	void updateNeighborhood( ){ 
 		 
 		if (neighborhood==null){
-			neighborhood = new Neighborhood(neighborhoodBorderMode,surroundBuffers,out) ;
+			neighborhood = new Neighborhood(neighborhoodBorderMode,out) ; // surroundBuffers,
 			// neighborhood.setBorderMode( neighborhoodBorderMode );
 		}
 		
@@ -3656,6 +3957,9 @@ if (index>nbrParticles-5){
 		layerCount = getLayerCountOfHexPattern(selectionSize);
 		newSelectionSize = calculatePlateletsCountInHexPattern(layerCount);
 		
+		applySelectionSizeRestrictions();
+		cSelSize = selectionSize ;
+			
 		selsizes = new int[3];
 		dsizes = new int[3];
 		n4 = calculatePlateletsCountInHexPattern(3);
@@ -3689,6 +3993,24 @@ if (index>nbrParticles-5){
 	}
 
 
+	public void applySelectionSizeRestrictions() {
+		// 
+		if (rfProperties==null)rfProperties = repulsionFieldFactory.rfProperties ;
+		if (rfProperties.isRestrictSelectionSize() ){
+			int selsz = rfProperties.getSelectionSizeRestriction();
+			if ((selsz<nbrParticles*0.6) && (selsz>11)){
+				selectionSize= selsz;
+			}
+		}
+	}
+	
+	public void setRestrictSelectionSize(boolean flag) {
+		
+		if (rfProperties==null)rfProperties = repulsionFieldFactory.rfProperties ;
+		rfProperties.setRestrictSelectionSize(flag) ;
+		
+	}
+	
 	// later: put this to NumUtilities
 	public int getLayerCountOfHexPattern( int platelets){
 		
@@ -3738,7 +4060,7 @@ if (index>nbrParticles-5){
 		}
 		
 	}
-	private void stopThreads() {
+	private void stopThreads(int mode) {
 		 
 		if (statisticsCollector!=null){
 			statisticsCollector.isPhysicsProcessActivated=false;
@@ -3817,8 +4139,9 @@ if (index>nbrParticles-5){
 					
 					eventsReceptors.get(i).onLayoutCompleted(flagvalue);
 					if (selectionBuffersActivated == true) {
-						if (i==0)
-						out.print(2, "...selection buffer started to update, please wait...");	
+						if (i==0){
+							out.print(2, "...selection buffer started to update, please wait...");
+						}
 					}
 				} // eventindex=0
 				if (eventindex==1){
@@ -3826,6 +4149,7 @@ if (index>nbrParticles-5){
 					eventsReceptors.get(i).onCalculationsCompleted();
 				}
 			}
+			
 		}
 		@Override
 		public void run() {
@@ -3867,6 +4191,23 @@ if (index>nbrParticles-5){
 		fieldIsRandom = flag;
 	}
 	
+	@Override
+	public String getParticlesOfFiguratedSet( int figure, Object indexes,
+											  double thickness, double endPointRatio, boolean autoselect) {
+		//  
+		return null;
+	}
+	@Override
+	public String getParticlesOfFiguratedSet( int figure,
+											  ArrayList<PointXY> points, double thickness, double endPointRatio,
+											  boolean autoselect) {
+		//  
+		return null;
+	}
+
+
+	
+
  
 	
 	// ========================================================================
@@ -3951,9 +4292,10 @@ class RelocationDurationLimiter implements Runnable{
 		lastScheduling = System.currentTimeMillis();
 		timerIsRunning=true;
 		timers.get(timers.size()-1).schedule(new DelayedReFreezeTask(parent.name), delay);
-
-		parent.out.print(3, "A new relocation interrupt-timer (n="+timers.size()+") has been scheduled for <"+parent.name+">...");
-
+		 
+		parent.out.print(4, "A new relocation interrupt-timer (n="+timers.size()+") has been scheduled for <"+parent.name+
+				            "> with a delay of "+String.format("%.3f", (double)(delay/1000.0)).replace(".000","").replace("00", "")+" sec ...");
+		 	
 	}
 
 	class DelayedReFreezeTask extends TimerTask {
@@ -3975,12 +4317,15 @@ class RelocationDurationLimiter implements Runnable{
 			*/
 
 			// freeze only if this is the last of all overlapping timers
-			if (timers.size()==1){
-				parent.freezeLayout(parent.stability,1);
+			parent.out.print(3,"timer before sending a freeze command ...");
+			
+			if (timers.size()<=1){
+				parent.out.print(3,"timer sent a freeze command (stablity param:"+parent.stability+").");
+				parent.freezeLayout(parent.stability,2);
 			}
 			timerIsRunning=false;
 			
-			parent.out.print(4,"relocation timer interrupted the update procedure (<"+parent.name+">).") ;
+			parent.out.print(3,"relocation timer interrupted the update procedure (<"+parent.name+">).") ;
 			timerHasBeenStopping = true;
 		}
 	}
@@ -4009,84 +4354,14 @@ class RelocationDurationLimiter implements Runnable{
 			}
 
 		}catch(Exception e){}
-		parent.out.print(3,"relocation timer supervision has been stopping.");
+		parent.out.print(2,"relocation timer supervision has been stopping.");
+		if (timers.size()==0){
+			parent.out.print(2,"all relocation timer supervision processes has been stopped."); 
+			// completion message? informing parent ? freezing
+			
+		}
 	}
 }
 
-
-/*
- * 
-
-
-	@SuppressWarnings("unused")
-	private void doMagnetosphere() {
-		float force = 1; // attraction/repulsion-coefficient
-	
-		int numparticles = 9; // default particles
-		float dragfactor = 1; // stop speeds from accumumulating too much
-		int selectedindex = -1;
-	
-		for (int i = 0; i < nbrParticles; i++) {
-	
-			float xaccel = 0, yaccel = 0;
-	
-			for (int j = 0; j < nbrParticles; j++) {
-	
-				float ijdist = (float) neighborhood.distance( particles.get(i).x, particles.get(i).y,
-															  particles.get(j).x, particles.get(j).y);
-				float theta = (float) Math.atan2( particles.get(i).y - particles.get(j).y,
-												  particles.get(i).x - particles.get(j).x);
-	
-				if (ijdist > 20){ // attractive or repulsive forces depending on
-									// charges
-				
-					xaccel += particles.get(i).charge * particles.get(j).charge * (force / (ijdist * ijdist)) * Math.cos(theta);
-					yaccel += particles.get(i).charge * particles.get(j).charge * (force / (ijdist * ijdist)) * Math.sin(theta);
-				}
-	
-				else if (ijdist > 0.1f) {
-					xaccel += (force / (Math.pow(ijdist, 4))) * Math.cos(theta);
-					yaccel += (force / (Math.pow(ijdist, 4))) * Math.sin(theta);
-				}
-	
-				// particles.get(i).xspeed+=xaccel;
-				// particles.get(i).yspeed+=yaccel;
-			}
-			/*
-			 * if(particles.get(i).affected) { particles.get(i).move(); }
-			 * particles.get(i).render();
-			  
-		}
-	
-	}
-	
-		=========================================================================
-		
-			private void selectSurround( int[] particleIndexes, boolean autoselect){
-		int ix;
-
-		if (particleIndexes==null){
-			return;
-		}
-		if (autoselect){ // do this by multi-digester
-			for (int i=0;i<particles.size();i++){
-				particles.get(i).setSelected(0) ;
-				particles.get(i).resetColor();
-			}
-			for (int i=0;i<particleIndexes.length;i++){
-				ix  = particleIndexes[i] ;
-				
-				if ((ix>=0) && (ix<particles.size())){ 
-					particles.get(ix).setSelected(1) ;
-					particles.get(ix).setColor( selectionColor[0],selectionColor[1],selectionColor[2]) ;
-				}
-			} // i->
-		} // autoselect ?
-		
-		 
-	}
-
- * 
- * 
- */
+ 
  

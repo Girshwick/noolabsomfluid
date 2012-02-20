@@ -27,6 +27,7 @@ import org.NooLab.repulsive.intf.main.RepulsionFieldBasicIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.repulsive.intf.particles.ParticlesIntf;
 import org.NooLab.repulsive.particles.Particle;
+import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
 
 
@@ -59,18 +60,21 @@ public class SurroundRetrieval implements Runnable {
 	RepulsionFieldBasicIntf parentField;
 	Object objParent;
 	
-	SurroundBuffers surroundBuffers;
+	// SurroundBuffers surroundBuffers;
 	
+	ParticleGrid particleGrid;
 	ParticlesIntf particles;
 	
 	ArrayList<RetrievalParamSet> paramSets = new ArrayList<RetrievalParamSet>(); 
 	
  	Map<String,Object> resultMap = new HashMap<String,Object>();
 	  
+ 	SelectionConstraints selectionConstraints;
+ 	
 	Thread srThrd;
 	int surroundTask=-1;
 	
-	
+	PrintLog out = new PrintLog(2,true);
 	
 	public SurroundRetrieval( RepulsionFieldCore rfcore ){
 		 
@@ -87,12 +91,14 @@ public class SurroundRetrieval implements Runnable {
 		particles = parentField.getParticles();
 	}
 	 
-	public SurroundRetrieval( Object parent , SurroundRetrievalObserverIntf observer ){
+	
+	public SurroundRetrieval( Object parent , ParticleGrid pg, SurroundRetrievalObserverIntf observer ){
 		
 		if (parent==null){
 			return;
 		}
 		
+		particleGrid = pg;
 		callingStyle = 2;
 		RepulsionFieldBasicIntf rfcore = (RepulsionFieldBasicIntf) parent ; 
 		RepulsionFieldObjectsIntf rfObjects = (RepulsionFieldObjectsIntf)parent ;
@@ -103,7 +109,7 @@ public class SurroundRetrieval implements Runnable {
 		parentField = rfcore;
 		particles = parentField.getParticles();
 		
-		surroundBuffers = rfObjects.getSurroundBuffers() ;  
+		// surroundBuffers = rfObjects.getSurroundBuffers() ;  
 	}
 	
 	// for selecting a single particle, results returned via interfaced event
@@ -150,7 +156,7 @@ public class SurroundRetrieval implements Runnable {
 		return index;
 	}
 	
-	
+	public void setParticleGrid( ParticleGrid pg ){ particleGrid = pg; }
 	public int addRetrieval( int xpos, int ypos , int surroundN ,  
 			  				 int selectMode, boolean autoselect){
 		
@@ -218,7 +224,7 @@ public class SurroundRetrieval implements Runnable {
 	@Override
 	public void run() {
 		
-		surroundBuffers.out.delay(5);
+		// surroundBuffers.out.delay(5);
 		
 		if (surroundTask<=_TASK_PARTICLE){
 			getParticle( surroundTask );
@@ -251,21 +257,26 @@ public class SurroundRetrieval implements Runnable {
 		Surround surround;
 		SurroundResults results = new SurroundResults();
 		
+		/*
 		if (callingStyle==1){
 			surround = new Surround(rfCore);
 		}else{
 			surround = new Surround(parentField,surroundBuffers);
 		}
+		*/
 		
 		RetrievalParamSet rps = paramSets.get(paramSets.size()-1) ;
 		
 		xpos = rps.xpos ; 
 		ypos = rps.ypos ;
 		
-		
-		results.particleIndex = surround.getParticleAt( xpos, ypos, -1);// particles.get(0).radius );
-			
+		out.print(4, "going to retrieve particle...");
+		// results.particleIndex = surround.getParticleAt( xpos, ypos, -1);// particles.get(0).radius );
+		//  care about deactivated particleGrid !!! also, the reference might (have) change(d) due to the update
+		results.particleIndex = particleGrid.getIndexNearLocation( xpos, ypos) ;
  
+		out.print(4, "particle retrieved.  ");
+		
 		p = particles.get( results.particleIndex ) ;
 		
 		if ((results!=null) && (p!=null)){
@@ -389,21 +400,29 @@ public class SurroundRetrieval implements Runnable {
 	
 	private SurroundResults getSurround( int xpos, int ypos , int surroundN ,  
 			  							 int selectMode, boolean autoselect){
-
+		int ix;
 		SurroundResults results = new SurroundResults(); 
-		Surround surround;
+		// Surround surround;
 		
-		if (callingStyle==1){
-			surround = new Surround(rfCore);
-		}else{
-			surround = new Surround(parentField,surroundBuffers);
+		ArrayList<IndexDistance> indexedDistances ;
+		 
+		
+		ix = particleGrid.getIndexNearLocation( xpos, ypos) ;
+		
+		if (ix<0){
+			return null ;
 		}
-
-
-		results.setParticleIndexes( surround.getGeometricSurround( xpos, ypos ,surroundN,Surround._CIRCLE ) ); 
-		results.setParticleDistances( surround.getParticleDistances() );
+		results.particleIndex = ix;
+		// get circle, or any other figure
 		
 		Particle p = particles.get( results.particleIndex ) ;
+		
+		out.print(2, "going to retrieve particles...");
+		
+		
+		indexedDistances = particleGrid.getIndexListRetriever().setConstraints( selectionConstraints ).getIndexedDistancesFromNeighboorhood( p.x, p.y, surroundN ) ;
+
+		out.print(2, "particles retrieved (n="+indexedDistances.size()+")...");
 		
 		if ((results!=null) && (p!=null)){
 			results.getCoordinate()[0] = p.x;
@@ -411,17 +430,62 @@ public class SurroundRetrieval implements Runnable {
 		}
 		
 		results.getIndexedDistances().clear();
-		if (surround.getIndexedDistance()!=null){
-			results.getIndexedDistances().addAll( surround.getIndexedDistance() ) ;
+		 
+		
+		if ((indexedDistances!=null) && (indexedDistances.size()>0)){
+			results.getIndexedDistances().addAll( indexedDistances ) ;
+			
+			results.setParticleIndexes( particleGrid.extractIndexesFromIndexedDistances(indexedDistances) );
 		}
 
+		
 		return results;
 		
 	}
 	
 	private SurroundResults getSurround( int index , int surroundN ,  
-				 					     int selectMode, boolean autoselect){
+		     							 int selectMode, boolean autoselect){
 		
+		double x,y ;
+		SurroundResults results = new SurroundResults(); 
+		// Surround surround;
+		
+		ArrayList<IndexDistance> indexedDistances ;
+		
+		// results.particleIndex = particleGrid.getIndexNear( particles.get(index).x , particles.get(index).y);
+		
+		// get circle, or any other figure
+		
+		Particle p = particles.get( index ) ;
+		
+		out.print(2, "going to retrieve particles...");
+		
+		// ParticleGrid._CIRCLE == default , setShape is optional
+		indexedDistances = particleGrid.getIndexListRetriever().setConstraints( selectionConstraints ).getIndexedDistancesFromNeighboorhood( p.x, p.y, surroundN ) ;
+		
+		out.print(2, "particles retrieved ...");
+		
+		if ((results!=null) && (p!=null)){
+			results.getCoordinate()[0] = p.x;
+			results.getCoordinate()[1] = p.y;
+		}
+		
+		results.getIndexedDistances().clear();
+
+
+		if ((indexedDistances!=null) && (indexedDistances.size()>0)){
+			results.getIndexedDistances().addAll( indexedDistances ) ;
+			
+			results.setParticleIndexes( particleGrid.extractIndexesFromIndexedDistances(indexedDistances) );
+		}
+
+		return results;
+	}
+	
+	@SuppressWarnings("unused")
+	private SurroundResults getSurround_( int index , int surroundN ,  
+				 					     int selectMode, boolean autoselect){
+		/*
 		SurroundResults results = new SurroundResults(); 
 		 
 		Surround surround;
@@ -432,7 +496,7 @@ public class SurroundRetrieval implements Runnable {
 			surround = new Surround(parentField,surroundBuffers);
 		}
 
-		results.setParticleIndexes( surround.getGeometricSurround( index ,surroundN,Surround._CIRCLE ) ); 
+		results.setParticleIndexes( surround.getGeometricSurround( index ,surroundN, ParticleGrid._CIRCLE) ); 
 		results.setParticleDistances( surround.getParticleDistances()) ;
 		
 		Particle p = particles.get( results.particleIndex ) ;
@@ -446,9 +510,11 @@ public class SurroundRetrieval implements Runnable {
 		if (surround.getIndexedDistance()!=null){
 			results.getIndexedDistances().addAll( surround.getIndexedDistance() ) ;
 		}
-
+	
 		
 		return results;
+		*/
+		return null;
 	}
 	
 	/**
@@ -518,6 +584,12 @@ public class SurroundRetrieval implements Runnable {
 
 	public void setResultMap(Map<String, Object> resultMap) {
 		this.resultMap = resultMap;
+	}
+
+
+	public void setSelectionConstraints( SelectionConstraints selectconstraints) {
+		// 
+		selectionConstraints = selectconstraints;
 	}
 	
 }	

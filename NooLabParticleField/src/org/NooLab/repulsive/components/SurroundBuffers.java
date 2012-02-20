@@ -38,7 +38,8 @@ public class SurroundBuffers implements Runnable{
 	String parentName = "";
 	
 	// RepulsionFieldCore parentField;
-	RepulsionFieldBasicIntf parentField;
+	RepulsionFieldBasicIntf parentField; 
+	// RepulsionFieldSelectionIntf parentField;
 
 	Neighborhood neighborhood;
 	LimitedNeighborhoodUpdate limitedAreaUpdate;
@@ -117,7 +118,8 @@ public class SurroundBuffers implements Runnable{
 
 	// this creates a collection that runs PARALLEL to the particles collection -> care about deletion, adding !! 
 	private void init(){
-		
+		return;
+		/*
 		if (particles != null){
 			for (int i = 0; i < particles.size(); i++) {
 				introduceParticle(i);
@@ -125,6 +127,7 @@ public class SurroundBuffers implements Runnable{
 		}
 		sbsThrd = new Thread (this,"sbsThrd") ;
 		bufferingSwitchedOff = true;
+		*/
 	}
 	
 	public void introduceParticles(){
@@ -139,7 +142,7 @@ public class SurroundBuffers implements Runnable{
 		sb = new SurroundBuffer( particleIndex , this);
 		bufferItems.add(sb) ;
 		
-		particles.get(particleIndex).registerBufferReference(sb);
+		// particles.get(particleIndex).registerBufferReference(sb);
 		
 	}
 	
@@ -212,6 +215,45 @@ public class SurroundBuffers implements Runnable{
 		return extendedIxDist;
 	}
 
+	
+	/**
+	 * this is being mostly used in case a buffer was not available and then it has has been directly retrieved;
+	 * to avoid repeated direct retrieval, we store now the indexed distances to the relevant buffers
+	 * 
+	 * @param index
+	 * @param indexedDistances
+	 * @param surroundSize
+	 * @param guidStr
+	 */
+	public void importToBuffer( int index, ArrayList<IndexDistance> indexedDistances, int surroundSize, String guidStr) {
+
+		int n;
+		SurroundBuffer sb;
+
+		try{
+			// get the buffer item we have to feed...
+			sb = bufferItems.get(index) ;
+			
+			n = indexedDistances.size() ;
+			
+			sb.indexes = new int[n];
+			sb.distances = new double[n] ;
+			
+			for (int i=0;i<n;i++){
+				
+				sb.indexes[i]   = indexedDistances.get(i).getIndex() ;
+				sb.distances[i] = indexedDistances.get(i).getDistance() ;
+			}
+			
+			
+		}catch(Exception e){
+			e.printStackTrace() ;
+		}
+		
+	}
+	
+	
+	
 	public ArrayList<IndexDistance> exportBuffer(int index, int surroundSize, String guidStr){
 	
 		ArrayList<IndexDistance> indexedDistances = new ArrayList<IndexDistance>() ;
@@ -233,7 +275,7 @@ public class SurroundBuffers implements Runnable{
 		}
 		
 		if (index==641){
-			ix=0;
+			// ix=0;
 		}
 		for (int i=0;i<k;i++){
 			
@@ -261,6 +303,7 @@ public class SurroundBuffers implements Runnable{
 				indexedDistances.add(ixDist) ;
 			}
 		}
+		
 		ixsex = getIxDisFromSurroundExtension( index,dvMax,indexedDistances,guidStr );
 		if ((ixsex!=null) && (ixsex.size()>0)){
 			indexedDistances.addAll( ixsex );
@@ -275,15 +318,15 @@ public class SurroundBuffers implements Runnable{
 		
 		SurroundBuffer sb;
 		
-		sb = particles.get(particleIndex).getSurroundBuffer();
+		// sb = particles.get(particleIndex).getSurroundBuffer();
 		 
-		sb.clear();
+		// sb.clear();
 		if ((indexedDistances != null) && (indexedDistances.size()>0)) {
 			// updating that buffer element
-			sb.index = particleIndex;
-			sb.importSurrounding(indexedDistances);
+			// sb.index = particleIndex;
+			// sb.importSurrounding(indexedDistances);
 			
-			sb.parent = this;
+			// sb.parent = this;
 		}
 		
 	}
@@ -294,7 +337,12 @@ public class SurroundBuffers implements Runnable{
 	}
 
 	/**
-	 * call this after initial calculation of the field has been completed for the first time
+	 * call this after initial calculation of the field has been completed for the first time;
+	 * 
+	 * it is called by:
+	 * freezeLayout() in RepulsionFieldCore()
+	 * 
+	 * 
 	 */
 	public void start(){
 		try{
@@ -305,7 +353,7 @@ public class SurroundBuffers implements Runnable{
 				
 				bufferingSwitchedOff = true;
 			
-				sbsThrd.start() ;
+				// sbsThrd.start() ;
 			} 
 		}catch(Exception e){
 			
@@ -381,11 +429,14 @@ public class SurroundBuffers implements Runnable{
 	 * @param sourceBuffers
 	 */
 	public void updateFromSurroundBuffers( Particles targetParticles, SurroundBuffers sourceBuffers, int transferDataFlag ) {
-		 
+		/* 
 		int index;
 		Particle particle;
 		SurroundBuffer srcSB, targetSB ;
 		
+		if (sourceBuffers==null){
+			return;
+		}
 		
 		int i=0;
 		while (i<targetParticles.size()){
@@ -402,8 +453,8 @@ public class SurroundBuffers implements Runnable{
 			
 			// boundingBox[]
 
-			targetSB = particle.getSurroundBuffer();
-			srcSB = sourceBuffers.bufferItems.get(index);
+			// targetSB = particle.getSurroundBuffer();
+			// srcSB = sourceBuffers.bufferItems.get(index);
 
 			
 			if (transferDataFlag>=1){
@@ -412,8 +463,8 @@ public class SurroundBuffers implements Runnable{
 				// the Particle of index i
 				 
 				if (targetSB == null) {
-					particle.registerBufferReference(new SurroundBuffer( index, this));
-					targetSB = particle.getSurroundBuffer();
+					// particle.registerBufferReference(new SurroundBuffer( index, this));
+					// targetSB = particle.getSurroundBuffer();
 				}
 				 
 				targetSB.importSurrounding( srcSB.indexes, srcSB.distances );
@@ -435,9 +486,11 @@ public class SurroundBuffers implements Runnable{
 		} // i-> all particles, all positions
 	
 		bufferPositionBeingUpdated = -1;
+		*/
 	}
 
-	private void performFor( int index ){
+	private int performFor( int index ) throws Exception{
+		int resultState = -1;
 		
 		int pointIndex;
 		Particle particle;
@@ -447,15 +500,18 @@ public class SurroundBuffers implements Runnable{
 		Surround surround ;
 		int k;
 		
+		
 		if (index==641){
 			k=0;
 		}
 		
 		particle = particles.get(index);
 		if ((particle==null) || (switchedOFF) || (particle.isFrozen())){
-			return;
+			
+			return 1;
 		}
 		
+		resultState = 5;
 		boolean accessForUpdate = true;
 		
 		if ((limitedAreaUpdate!=null) && (limitedAreaUpdate.centerpointsOfChangedRegion.size()>0)){
@@ -466,7 +522,7 @@ public class SurroundBuffers implements Runnable{
 		}
 		
 		if (accessForUpdate == false){
-			return;
+			return -3;
 		}
 		// getting the indexes of the surrounding particles
 		// surround = new Surround(parentField);
@@ -475,29 +531,46 @@ public class SurroundBuffers implements Runnable{
 		
 		surrounding = surround.getGeometricSurround( index, selectionSize, Surround._CIRCLE);
 		surroundDistances = surround.getParticleDistances();
-
+							if (surrounding.length==0){
+								out.printErr(3, "surround.getGeometricSurround() unexpectedly returned a 0-surround for index <"+index+">...") ;
+							}
+							if (surrounding.length!=selectionSize){
+								// this regularly happens in large maps if we have a border topology, 
+								// then due to the criterion of the limiting radius
+								// we accept a reduction down to 34% (corners in a rectangle), if we still have >80 nodes in the vicinity 
+								out.printErr(4, "surround.getGeometricSurround() unexpectedly returned a buffer of wrong length for index <"+index+"> : "+
+												surrounding.length+" instead of "+selectionSize+"   ...") ;
+							}
 		// retrieving the reference of the buffer that is attached to
 		// the Particle of index i
-		sb = particle.getSurroundBuffer();
+											resultState = 7;
+		/*								
+        sb = particle.getSurroundBuffer();
 		if (sb == null) {
 			particle.registerBufferReference(new SurroundBuffer( index, this));
 			sb = particle.getSurroundBuffer();
 		}
+		
 		sb.clear();
 		if (surrounding != null) {
 			// updating that buffer element
 			sb.index = index;
 			sb.importSurrounding(surrounding, surroundDistances);
 			sb.parent = this;
+			sb.size = sb.indexes.length;
+		}else{
+			return -4;
 		}
 		sb.index = index;
-		
+		*/
 		if (index>bufferItems.size()-1){
-			bufferItems.add(sb);
+			// bufferItems.add(sb);
 		}else{
-			bufferItems.set(index, sb);
+			// bufferItems.set(index, sb);
 		}
+		resultState = 0;
 		surround = null;
+		return resultState ;
 	}
 	
 	
@@ -547,49 +620,87 @@ public class SurroundBuffers implements Runnable{
 	 */
 	private void perform(){
 		 
-		int i=0, err=1;
+		int i=0,r, err=1;
 		 
 		if ((selectionSize<=0) || (switchedOFF)){
 			return;
 		}
 		try{
 											out.print(3,"updating the surround buffers..."); err = 2;
-		bufferingSwitchedOff = true;
-		surroundSizeChanged = selectionSize != parentField.getSelectionSize() ;
-		selectionSize = parentField.getSelectionSize() ;
-		updating=1;
-		
-		if (startingIndex>=particles.size()-1){startingIndex=0;}
-		i = Math.max( 0,startingIndex) ;
-		
+			bufferingSwitchedOff = true;
+			surroundSizeChanged = selectionSize != parentField.getSelectionSize();
+			
+			selectionSize = parentField.getSelectionSize();
+			updating = 1;
+
+			int xysz = neighborhood.getXyPlane().size() ;
+			
+			
+			
+			if (startingIndex >= particles.size() - 1) {
+				startingIndex = 0;
+			}
+			i = Math.max(0, startingIndex);
+
 			// "fieldIsStable" mirrors frozen state
-			while ((i < particles.size()) && (fieldIsStable)) {
+			if (fieldIsStable) {
+				while ((i < particles.size())) {
 											err = 3;
-				performFor( i ); 
-				
-				i++;
+					try {
+											if ((i==1) || (i>501) && (i%50==0)){
+												out.print(3,"performing buffer creation (size:"+selectionSize+") for particle index <"+i+"> ");
+											}
+						r = performFor(i);
+						
+							if (r!=0){
+								out.printErr(2, "surround buffer not correctly set up for particle index <"+i+"> ...");
+							}
+						
+						
+						i++;
+
+					} catch (Exception e) {
+						out.printErr(1,"critical problem (a) while creating surround buffer for particle <"+ i + ">");
+						i++;
+					}
+				}
 			}
 											err = 4;
 			if (i < particles.size() - 2) {
-				out.print(2,"updating the surround buffers has been interrupted (at index pos. "+i+" of "+particles.size()+")");
+											out.printErr(1, "updating the surround buffers has been interrupted (at index pos. "+ i + 
+															" of " + particles.size()+ 
+															"), fieldIsStable? -> " + fieldIsStable);
 				startingIndex = Math.max(0, i - 1);
+
+				selectionSize = parentField.getSelectionSize();
 
 			} else {
 											err = 6;
-				out.print(2, "updating the surround buffers has been completed");
+				out.print(2, "updating the surround buffers has been completed ");
 				anythingChanged = false;
 				startingIndex = 0;
 											err = 7;
 				selectionSize = parentField.getSelectionSize();
-				updating=0;
+				updating = 0;
 											err = 8;
-				
-			
-											err = 10;
+
+				err = 10;
 				parentFieldObserver.onSurroundBufferUpdateCompletion( parentField.getName(), particles.size());
+				
 			}
+			
+			// TODO check again for all particles the selection size abc124
+			
+			for (int k=0;k<particles.size();k++){
+				
+				int sbaState = bufferIsOfState( k, selectionSize );
+				if (sbaState<5){
+					out.printErr(3, "creating surround buffer for particle <"+k+"> failed (state="+sbaState+")");
+				}
+			}
+			
 		} catch (Exception e) {
-			out.printErr(2, "\ncritical error (err:"+err+") in sbs.perform() on index = " + i + "\n");
+			out.printErr(2, "\ncritical error (err:" + err + ") in sbs.perform() on index = " + i + "\n");
 			e.printStackTrace();
 		} finally {
 			bufferingSwitchedOff = false;
@@ -656,6 +767,18 @@ public class SurroundBuffers implements Runnable{
 		
 	}
 
+	public int getActualBufferSize(int index) {
+		int sz = -1;
+		SurroundBuffer sb;
+		 
+		if (bufferItems!=null){
+			sb = bufferItems.get(index);
+			sz = sb.indexes.length;
+		}
+		
+		return sz;
+	}
+	
 	public boolean bufferIsAvailable(int index, int surroundSize) {
 		boolean rB=false;
 		
@@ -663,8 +786,9 @@ public class SurroundBuffers implements Runnable{
 		
 		return rB;
 	}
+	
 	public int bufferIsOfState(int index, int surroundSize) {
-		boolean rB;
+		boolean rB, sizeOK;
 		int stateResult;
 		SurroundBuffer sb;
 		Particle particle;
@@ -681,12 +805,27 @@ public class SurroundBuffers implements Runnable{
 				if (sb.index == index) {
 					stateResult = 4;
 					particle = particles.get(index);
+					/*
 					if (particle.getSurroundBuffer() == sb) {
-						if (sb.indexes.length >= surroundSize) {
+						
+						sizeOK = (sb.indexes.length >= surroundSize); 
+						if (sizeOK==false){
+							
+							if (surroundSize >20){
+								sizeOK = (sb.indexes.length >= (int)((double)surroundSize/2.5) );
+							}
+							
+						}
+							
+						if (sizeOK){
 							stateResult=5;
 							rB = true;
+						}else{
+							out.print(4, "surround buffer for particle index <"+index+">is too small (x:"+surroundSize+", o:"+sb.indexes.length+")");
+							
 						}
 					}
+					*/
 				} else {
 					// msg about mismatch of indices
 				}
@@ -813,7 +952,14 @@ public class SurroundBuffers implements Runnable{
 		// the processID is just for fun... (and supervision)
 		public void perform( int processID, int id ) {
  
-			performFor( id );
+			try{
+			
+				performFor( id );
+				
+			}catch(Exception e){
+				out.printErr(1, "critical problem (b) while creating surround buffer for particle <"+id+">");
+			}
+			
 			
 			// out.print(2, "spp("+processID+") - id : "+id);
 			
@@ -831,6 +977,8 @@ public class SurroundBuffers implements Runnable{
 		}
 
 	} // inner class Digester
+
+
 
 	
 
