@@ -8,6 +8,7 @@ import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceI
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
 import org.NooLab.somfluid.core.engines.Assignates;
 import org.NooLab.somfluid.core.engines.det.results.SomTargetResults;
+import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.data.DataSampler;
 import org.NooLab.somfluid.data.DataTable;
@@ -321,6 +322,7 @@ public class DSomCore {
 			if (limitforConsideredRecords > 1) {
 				actualRecordCount = limitforConsideredRecords;
 			}
+			int globalLimit =  -1; // 1239 ;
 			 
 			
 			while ((currentEpoch < somSteps) && (dSom.getUserbreak()==false)) {
@@ -330,7 +332,7 @@ public class DSomCore {
 				clearNodesExtension( currentEpoch );
 				
 				// sample size is dependent on epoch and number of records
-				adjustSampleAndSteps( currentEpoch, absoluteRecordCount ); // second epoch much too small... 
+				adjustSampleAndSteps( currentEpoch, absoluteRecordCount, globalLimit ); // 
 				actualRecordCount = sampleRecordIDs.size() ;
 				
 				adjustIntensityParameters( currentEpoch, actualRecordCount ) ;
@@ -347,19 +349,27 @@ public class DSomCore {
 				
 			} // currentEpoch -> maxSomEpochCount 
 			
+			if (modelingSettings.getMinimalNodeSize()>0){
+				careForMinimalFill( modelingSettings.getMinimalNodeSize() ) ;
+			}
+			
 			
 			if ( (dSom.sfProperties.getSomType()==SomFluidProperties._SOMTYPE_MONO) && 
 				 (modelingSettings.getTargetedModeling() )){
 			 
+				// TODO: ECR is not respected for ppv
 				dSom.somResults = new SomTargetResults( dSom, sampleRecordIDs, modelingSettings);
 				dSom.somResults.prepare();
 				
-			 
-				if (classifySettings.isFullSpelaDiagnostics()) {
+				if (classifySettings.isExtendedResultsRequested()) {
+					// e.g. mis-classifications, RoC, Spela, ...
+					
 					// list of results from multiple modeling, based on variation of central parameters 
 					// resolution, ECR, alpha/beta target, samples, 
 					// available only after evolutionary optimization
+					
 				}
+				
 				
 			} // is it a targeted modeling?
 			
@@ -383,6 +393,39 @@ public class DSomCore {
 
  
 
+	protected void careForMinimalFill( int minimalNodeSize ) {
+		// 
+		int n,ix;
+		ArrayList<Integer> inactivedNodesIndexes = new ArrayList<Integer> ();
+		ArrayList<MetaNode>  nodes;
+
+		
+		nodes = dSom.somLattice.getNodes();
+
+		// get the list of nodes as index, together with their count,
+		// that are small than the required threshold
+		
+		for (int i=0;i<nodes.size();i++){
+			
+			n = nodes.get(i).getExtensionality().getCount() ;
+			if ((n>0) && (n<minimalNodeSize)){
+				// send records to other nodes in the lattice;
+				// 1. mark this node as inactive
+				nodes.get(i).setActivation(-1) ;
+				// 2. get indexes of record, 
+				
+				// send them to the lattice
+				
+			}
+			
+		} // i-> all nodes
+		
+		// activate all nodes
+		for (int i=0;i<inactivedNodesIndexes.size();i++){
+			ix = inactivedNodesIndexes.get(i) ;
+			nodes.get(i).setActivation(1) ;
+		}
+	}
 
 	private void consoleDisplay() {
 		MetaNodeIntf  node;
@@ -406,17 +449,36 @@ public class DSomCore {
 	// ========================================================================
 	
 	
-	private void  adjustSampleAndSteps( int currentEpoch, int actualRecordCount)  {
-	
-		sampleRecordIDs = dataSampler.createEffectiveRecordList( absoluteRecordCount, currentEpoch, somSteps ,  actualRecordCount);
+	private void  adjustSampleAndSteps( int currentEpoch, int actualRecordCount, int globalLimit)  {
+		int dsomSize,targetcount ;
+		double dsomT= 2.0;
+		boolean adjustDefaultStepCount=false;
 		
-		if ((currentEpoch <= 1) && (actualRecordCount < (dSom.getSize()*6))){
-			somSteps = somSteps + (Math.round(( dSom.getSize()*6)/(actualRecordCount)));
+		dsomSize = dSom.getSize();
+		dsomT = Math.log10( 10+dsomSize ) ;
+		
+		if ((globalLimit>15) && (globalLimit < absoluteRecordCount)){
+			targetcount = globalLimit;
+		}else{
+			targetcount = absoluteRecordCount;
+		}
+		
+		// contians potential info about master samples, absolut record count limits, etc.
+		dataSampler.setModelingSettings( this.dSom.modelingSettings ) ;
+		
+		sampleRecordIDs = dataSampler.createEffectiveRecordList( 0, targetcount, currentEpoch, somSteps ); // actualRecordCount
+		double x = ((double)actualRecordCount)/ (dsomSize/dsomT);
+		adjustDefaultStepCount = x < 11.0;
+		
+		if ((currentEpoch <= 1) || (adjustDefaultStepCount)){
+			somSteps = somSteps + (int)(Math.round(( dsomSize)/(actualRecordCount)));
+			if (somSteps<3)somSteps=3;
+			if (somSteps>5)somSteps=5;
 		}
 	
 	}
-
-
+ 
+	
 	private void adjustIntensityParameters( int currentEpoch, int actualRecordCount){
 		
 		double d, _f, speed2=1.0;
@@ -426,13 +488,16 @@ public class DSomCore {
 		
 		mapsize = Math.sqrt( nodecount ) ;
 			
+		mapRadius = mapsize * 0.4 ;
+		
 		if (mapRadius > 1.3) {
 			d = 0;
 		} else {
 			d = 1;
 		}
-		
-		timeConstant =  ((d + actualRecordCount * Math.pow(mapRadius, 0.25)) / (d + Math.log10(mapRadius)));
+		//                            n = 100 -> 74.5  , 250 -> 107, 850 -> 160
+		// timeConstant =  ((d + actualRecordCount * Math.pow(mapRadius, 0.25)) / (d + Math.log10(mapRadius)));
+        timeConstant =  ((d + Math.log( actualRecordCount)* Math.log( actualRecordCount) * Math.pow(mapRadius, 0.45)) / (d + Math.log10(mapRadius)));
 		
 		if (somSteps + 1 > 1) {
 	
@@ -443,7 +508,7 @@ public class DSomCore {
 			learningRate = (double) ( (initialLearningRate *(currentEpoch))* (1.0f * _f) + learningRate + 0.02f);
 		}
 	                                     // out.print(2," _f : "+_f+ "   NeighbourhoodRadius "+NeighbourhoodRadius+ "    LearningRate "+LearningRate);
-		mapRadius = mapsize/3.0f;
+		
 		 
 	}
 
@@ -548,8 +613,9 @@ public class DSomCore {
 	
 	public void perform() {
 		 
-		new DsomStarter();
+		// new DsomStarter(); // switched off only for DEBUG !!! abc124
 		
+		performDSom();
 	}
 	
 	// jst for starting in its own thread, but hiding the Runnable interface from/for the outside

@@ -37,7 +37,7 @@ public class PhysicalFieldFactory {
 	
 	public RepulsionFieldIntf createPhysicalField( SomFluidFactory sfFactory, RepulsionFieldEventsIntf eventSink, int nbrparticles ){
 	 
-		int runRequestTester=0;
+		int runRequestTester=0,  selszLimit ;
 		
 		// TODO: properties offered by static create(s) and interface
 		//       which then are part of SomFluidProperties 
@@ -45,18 +45,21 @@ public class PhysicalFieldFactory {
 		if (runRequestTester>0){
 			// for testing, 100 = 100ms delay between calls, pres +/. to ac-/decelerate
 			rfFactory = new RepulsionFieldFactory("test:RQ=1000", 1); // , LogControl.Level);
+			
+			int pp=0;
+			if (sfFactory.getSfProperties().isMultithreadedProcesses()){
+				pp=1;
+			}
 			repulsionField = rfFactory.getRepulsionField() ;
 			
 		}else{
 			// simple call 
-			repulsionField = (new RepulsionFieldFactory()).getRepulsionField() ;
+			rfFactory = new RepulsionFieldFactory();
+			repulsionField = rfFactory.getRepulsionField() ;
 		}
-		
-		int pp=0;
-		if (sfFactory.getSfProperties().isMultithreadedProcesses()){
-			pp=1;
-		}
-		repulsionField.useParallelProcesses(pp); // set to 0 for debugging
+		 
+		// repulsionField.useParallelProcesses(pp); // set to 0 for debugging
+		repulsionField.useParallelProcesses(0);
 		
 		repulsionField.registerEventMessaging( eventSink );
 		repulsionField.setName("somfluid-app") ;
@@ -64,12 +67,14 @@ public class PhysicalFieldFactory {
 
 		repulsionField.setInitialLayoutMode(RepulsionField._INIT_LAYOUT_REGULAR);
 		
+		
+		
 		nbrParticles = nbrparticles;
 		
 		if (nbrParticles<100){
 			repulsionField.setAreaSizeMin();
 		} else{
-			repulsionField.setDefaultDensity(12);
+			repulsionField.setDefaultDensity(12, nbrParticles);
 			repulsionField.setAreaSizeAuto( nbrParticles );	
 			width  = repulsionField.getAreaSize()[0] +10;
 			height = repulsionField.getAreaSize()[1] +10;
@@ -90,15 +95,23 @@ public class PhysicalFieldFactory {
 		
 		int _selectionsize = (int) (Math.round((rad * rad)*Math.PI)*0.82)  ;
 		
-		if (_selectionsize>2000){
-			_selectionsize = 2000 ; // maxSelectionSize 1000, 5000
+		if ((nbrParticles>500) && (_selectionsize>nbrParticles*0.4)){
+			_selectionsize = (int) (nbrParticles*0.4) ; // maxSelectionSize 1000, 5000
+		}
+		 
+		selszLimit = sfFactory.getSfProperties().getRestrictionForSelectionSize();
+		
+		if (selszLimit>11){
+			repulsionField.setSelectionSizeRestriction(selszLimit) ;
+		}else{
+			repulsionField.setSelectionSizeRestriction(-1) ;
 		}
 
 		// this will calculate the next larger number for a hexagonal pattern;
 		// i.e. for the acual selection we have to truncate the selected collection
 		// which is not a problem, because it is returned in ordered fashion
 	
-		repulsionField.setSelectionSize( _selectionsize ); 
+		repulsionField.setSelectionSize( _selectionsize ); // will be confined by setSelectionSizeRestriction()
 		_selectionsize = repulsionField.getSelectionSize() ;
 		
 		// this populates the field, set "nbrParticles" to 0 if you will import coordinates or a field
@@ -120,6 +133,8 @@ public class PhysicalFieldFactory {
 		
 		
 		repulsionField.setDelayedOnset(1000);
+		
+		repulsionField.update();
 		
 		return (RepulsionFieldIntf)repulsionField;
 	}

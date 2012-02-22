@@ -28,6 +28,7 @@ public class DataSampler {
 	// for identifying this one in a set of data samplers
 	String name = "" ;
 	
+	ArrayList<Integer> masterSamples = new ArrayList<Integer>() ;
 	
 	int[] currentPosition = new int[3] ;
 	
@@ -145,13 +146,21 @@ public class DataSampler {
 	}
 	
 	
-	public ArrayList<Integer> createEffectiveRecordList( int absrecordcount, int epoch, int steps, int currenteffectivecount ){
-		int i ,maxe;
+	public ArrayList<Integer> createEffectiveRecordList( int masterSampleID, int absrecordcount, int epoch, int steps ){
+		int i ,maxe,rr;
+		int absoluteRecordCount = absrecordcount ;
+		int currenteffectivecount;
+		
 		ArrayList<Integer> row_IDs = new ArrayList<Integer>();
 		
 		double _scaleFactor = 1.0;
 		
+		if (masterSamples.size()>1){
+			// adjust absoluteRecordCount
+		}
 		 
+		currenteffectivecount = absoluteRecordCount ;
+		
 		if (epoch>=0){ // creates approx the series 7%  16% 32% 100%
 			
 			// 1+(3- (3*SQRT(epoch/3))) * log10(N)
@@ -159,16 +168,16 @@ public class DataSampler {
 			
 			effectiveRecordCount = (int) Math.round(currenteffectivecount /( _scaleFactor));
 			
-			effectiveRecordCount = Math.min(effectiveRecordCount , absrecordcount) ;
+			effectiveRecordCount = Math.min(effectiveRecordCount , absoluteRecordCount) ;
 			if (epoch==0){
 				effectiveRecordCount = (int) (effectiveRecordCount/3.0) ; 
 			}
 			if (epoch>=2){
 				double p;
-				p = (double)((double)effectiveRecordCount/(double)absrecordcount) ;
+				p = (double)((double)effectiveRecordCount/(double)absoluteRecordCount) ;
 				if ((p>0.3) && (p<0.65)){
 					p = p + ((1.0-p)/2.0);
-					effectiveRecordCount = (int)Math.round( p*(double)absrecordcount);
+					effectiveRecordCount = (int)Math.round( p*(double)absoluteRecordCount);
 				}
 			}
 		}
@@ -176,47 +185,99 @@ public class DataSampler {
 			if (absrecordcount > 100) {
 				effectiveRecordCount = 100;
 			} else {
-				effectiveRecordCount = absrecordcount;
+				effectiveRecordCount = absoluteRecordCount;
 			}
 		}
 		
 		
 		
-		double selectionProb = (double)(1.0*effectiveRecordCount) / (double)(1.0*absrecordcount) ;
+		double selectionProb = (double)(1.0*effectiveRecordCount) / (double)(1.0*absoluteRecordCount) ;
 		boolean _select;
 		
 		if (selectionProb>0.975){
 			selectionProb = 1.0;
 		}
 		
-		
+		// if selectionProb > 0.6 -> invert the procedure --- remove particles instead of drawing them
 		i = 0; 
-		while (row_IDs.size() < effectiveRecordCount) {
-			// do it randomly, and respect blocks in case of relational/time series data
-			_select = false;
-			
-			
-			double rv = _random.nextDouble() ;
-			 
-			_select = rv <= selectionProb ; 
-			
-			if ((_select) || (selectionProb>0.99)) {
-				if (row_IDs.indexOf(i)<0){
-					row_IDs.add(i);
+		if (selectionProb<0.72){
+		
+			while (row_IDs.size() < effectiveRecordCount) {
+				// do it randomly, and respect blocks in case of relational/time series data
+				_select = false;
+				
+				
+				double rv = _random.nextDouble() ;
+				 
+				_select = rv <= selectionProb ; 
+				
+				if ((_select) || (selectionProb>0.99)) {
+					if (row_IDs.indexOf(i)<0){
+						row_IDs.add(i);
+					}
+					// reflects resized data body;
+					// this now means, that all data are referenced;
+					// from this we will draw our records by random
 				}
-				// reflects resized data body;
-				// this now means, that all data are referenced;
-				// from this we will draw our records by random
+				
+				i++;
+				if (i>absrecordcount){
+					i=0;
+				}
+				if ((row_IDs.size() > (double)effectiveRecordCount*1.02)){
+					break;
+				}
+			} // i ->, row_IDs.size() oK ?
+		}else{
+			for (int k=0;k<effectiveRecordCount;k++){
+					row_IDs.add( k) ;
 			}
-			
-			i++;
-			if (i>absrecordcount){
-				i=0;
+			if (selectionProb<0.999){
+				double deselectionProb = 1.0-selectionProb;
+				
+				while (row_IDs.size() > effectiveRecordCount) {
+					// do it randomly, and respect blocks in case of relational/time series data
+					_select = false;
+					rr=0;
+					for (int k=0;k<row_IDs.size();k++){
+						
+
+						double rv = _random.nextDouble() ;
+						 
+						_select = rv <= selectionProb ; 
+						
+						if ((_select) || (selectionProb>0.99)) {
+							if (row_IDs.indexOf(i)<0){
+								row_IDs.set(i,-1); 
+								rr++;
+							}
+							// reflects resized data body;
+							// this now means, that all data are referenced;
+							// from this we will draw our records by random
+						}
+						if (row_IDs.size()-rr<=effectiveRecordCount){
+							break;
+						}
+					} // k->
+					
+					int r=row_IDs.size()-1;
+					while (r>=0){
+						if (row_IDs.get(r)<0){
+							row_IDs.remove(r) ;
+						}
+					}
+					
+					i++;
+					if (i>absrecordcount){
+						i=0;
+					}
+					if ((row_IDs.size() > (double)effectiveRecordCount*1.02)){
+						break;
+					}
+				} // i ->, row_IDs.size() oK ?
+				
 			}
-			if (((double)effectiveRecordCount*0.85)< row_IDs.size()){
-				break;
-			}
-		} // i ->, row_IDs.size() oK ?
+		}
 		
 		Collections.sort( row_IDs) ;
 		row_IDs.trimToSize();

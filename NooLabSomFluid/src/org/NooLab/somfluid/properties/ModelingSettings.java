@@ -1,5 +1,6 @@
 package org.NooLab.somfluid.properties;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Vector;
@@ -11,13 +12,16 @@ import org.NooLab.somfluid.core.engines.det.ClassesDictionary;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.data.DataSampler;
 import org.NooLab.somfluid.data.Variables;
+import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.xml.XmlFileRead;
 
 
 
 
-public class ModelingSettings {
+public class ModelingSettings implements Serializable{
 
+	private static final long serialVersionUID = -464934381782562062L;
+	
 	/** 
 	 * the number of nodes remains constant, each split must be accompanied by a merge
 	 */
@@ -26,6 +30,7 @@ public class ModelingSettings {
 	 * number of nodes may change, lattice remains 2D
 	 */
 	public static final int _SOM_GROWTH_LATERAL  =  1;
+	
 	/** 
 	 * nodes may outgrow into 3D, replacing the extensional list by a further SOM,
 	 * that inherits the connections to the nodes neighborhood;
@@ -48,17 +53,26 @@ public class ModelingSettings {
 	 */
 	public static final int _SOM_GROWTH_FULL     =  9;
 	
+	public static final int _SOM_GROWTH_CTRL_AUTO = 1;
 	
 	// object references ..............
 	
 	// 
 	ClassesDictionary classesDictionary;
-	DataSampler dataSampler;
-	
+	transient DataSampler dataSampler;
+
+	//various setting sub-domains
 	ClassificationSettings classifySettings ;
 	
+	SpriteSettings spriteSettings ;
+	OptimizerSettings optimizerSettings ;
+	SpelaSettings spelaSettings ;
+	
+	SomBagSettings somBagSettings;
+	
+	
 	// our central random object for creating random numbers
-	Random random;
+	transient Random random;
 	
 	
 	// main variables / properties ....
@@ -83,21 +97,57 @@ public class ModelingSettings {
 	/** whether the SOM can grow & shrink, applying adding, splitting and merging nodes */
 	boolean autoSomDifferentiate = true ;
 		
-	int somGrowthMode = _SOM_GROWTH_LATERAL;
-	 
+	/** 
+	 * the mode of growth for the SOM lattice; use the pre-defined constants;</br>
+	 * the growth is automatically controlled by some relative measures on variance (intra-/inter-node,) 
+	 * and size of nodes, where relative means "compared to the SOM lattice averages" 
+	 */
+	int somGrowthMode = _SOM_GROWTH_NONE;
+	/** if not "auto",, then it will require parameters to be defined and stored to the list "somGrowthControlParams" */
 	
+	int somGrowthControl = _SOM_GROWTH_CTRL_AUTO;
+	/** these parameters control the growth, they include (in this order):  ;
+	 *  use -3.0 if you do not want to apply a certain dimension
+	 */
+	ArrayList<Double> somGrowthControlParams = new ArrayList<Double>() ;
+	
+	 
 	// sominternals ...................
 	int clustermerge = 1 ;
+	/** 
+	 * respects the minimal cluster size and minimalSplitSize, whatever comes first;
+	 * splitting nodes occurs only in the third pass 
+	 */
 	int clustersplit = 1 ;
+	/** the minimal size of nodes before they are considered to be split */
+	int minimalSplitSize = 15; 
+	
+	/** 
+	 * values: <=0  : off; </br>
+	 *           1  : only after epoch 3+, but not the last epoch step;</br>
+	 *           2+ : is interpreted as a percentage value, such that [p] percent of updates are followed
+	 *                by a check for split, growth; note, that this may reduce speed considerably !</br>
+	 *                will be applied only in epoch 3+, but not the last epoch step;</br></br>
+	 *                
+	 * if  somGrowthMode changes from none to any other, this will be set to 1, if it was <0=switched off
+	 */
+	int intensityForRearrangements = -1 ;
+	
+	
 	
 	Growth growth = new Growth();
 	   
+	int restrictionForSelectionSize = -1;
+
+	int minimalNodeSize = 3 ;
+
+	/** 1=single winner, 2+ multiple winners (influence degrades) */
+	int winningNodesCount = 1; 
+	
 	
 	// ................................
 	// constants ......................
 
-
-	int minimalNodeSize = 3 ;
 
 	boolean calculateAllVariables ;
 	
@@ -109,14 +159,12 @@ public class ModelingSettings {
 	
 	// 1=usagevector is available and will be provided
 	int useVectorModegetDedicated = 0; 
-	
-	
+	 
 	
 	// values <=1 -> low priority
 	int[] threadPriorities = new int[10] ;
 	
-	
-	
+	 
 	
 	// volatile variables .............
 	// only local , for speeding repeated request   .  .  .  .  .  .  .  .  .     
@@ -129,12 +177,23 @@ public class ModelingSettings {
 	
 	private boolean contentSensitiveInfluence;
 	
-	 
+	transient public ArrUtilities arrutil = new ArrUtilities();
+
+	
+
+	
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 	public ModelingSettings(){
 		 
-		classifySettings = new ClassificationSettings() ;
+		classifySettings = new ClassificationSettings(this) ;
+		
+		spriteSettings = new SpriteSettings (this) ;
+		optimizerSettings = new OptimizerSettings (this) ;
+		spelaSettings = new SpelaSettings(this) ;
+		
+		somBagSettings = new SomBagSettings(this) ;
+
 		
 		setRandomSeed();
 		threadPriorities[3] = 1 ; // [3] = Som calculations
@@ -302,6 +361,14 @@ public class ModelingSettings {
 		this.minimalNodeSize = minimalNodeSize;
 	}
 
+	public int getMinimalSplitSize() {
+		return minimalSplitSize;
+	}
+
+	public void setMinimalSplitSize(int minimalSplitSize) {
+		this.minimalSplitSize = minimalSplitSize;
+	}
+
 	public boolean mergeNodes(){
 		return clustermerge>0;
 	}
@@ -390,6 +457,190 @@ public class ModelingSettings {
 	public void setCalculateAllVariables(boolean flag) {
 		this.calculateAllVariables = flag;
 	}
+
+
+	public void setRestrictionForSelectionSize(int sizevalue) {
+		 
+		restrictionForSelectionSize = sizevalue;
+	}
+
+	public int getRestrictionForSelectionSize() {
+		return restrictionForSelectionSize;
+	}
+
+	public ClassesDictionary getClassesDictionary() {
+		return classesDictionary;
+	}
+
+	public void setClassesDictionary(ClassesDictionary classesDictionary) {
+		this.classesDictionary = classesDictionary;
+	}
+
+	public Variables getVariables() {
+		return variables;
+	}
+
+	public void setVariables(Variables variables) {
+		this.variables = variables;
+	}
+
+	public int getDistanceMethod() {
+		return distanceMethod;
+	}
+
+	public void setDistanceMethod(int distanceMethod) {
+		this.distanceMethod = distanceMethod;
+	}
+
+	public boolean isAutoSomDifferentiate() {
+		return autoSomDifferentiate;
+	}
+
+	public void setAutoSomDifferentiate(boolean autoSomDifferentiate) {
+		this.autoSomDifferentiate = autoSomDifferentiate;
+	}
+
+	public int getSomGrowthMode() {
+		return somGrowthMode;
+	}
+
+	public void setSomGrowthMode(int somGrowthMode) {
+		this.somGrowthMode = somGrowthMode;
+	}
+
+	public int getSomGrowthControl() {
+		return somGrowthControl;
+	}
+
+	public void setSomGrowthControl(int somGrowthControl) {
+		this.somGrowthControl = somGrowthControl;
+	}
+
+	public ArrayList<Double> getSomGrowthControlParams() {
+		return somGrowthControlParams;
+	}
+
+	public void setSomGrowthControlParams(ArrayList<Double> somGrowthControlParams) {
+		this.somGrowthControlParams = somGrowthControlParams;
+	}
+
+	public int getClustermerge() {
+		return clustermerge;
+	}
+
+	public void setClustermerge(int clustermerge) {
+		this.clustermerge = clustermerge;
+	}
+
+	public int getClustersplit() {
+		return clustersplit;
+	}
+
+	public void setClustersplit(int clustersplit) {
+		this.clustersplit = clustersplit;
+	}
+
+	public int getIntensityForRearrangements() {
+		return intensityForRearrangements;
+	}
+
+	public void setIntensityForRearrangements(int intensityForRearrangements) {
+		this.intensityForRearrangements = intensityForRearrangements;
+	}
+
+	public int getConfirmDataReading() {
+		return confirmDataReading;
+	}
+
+	public void setConfirmDataReading(int confirmDataReading) {
+		this.confirmDataReading = confirmDataReading;
+	}
+
+	public int getUseVectorModegetDedicated() {
+		return useVectorModegetDedicated;
+	}
+
+	public void setUseVectorModegetDedicated(int useVectorModegetDedicated) {
+		this.useVectorModegetDedicated = useVectorModegetDedicated;
+	}
+
+	public int[] getThreadPriorities() {
+		return threadPriorities;
+	}
+
+	public void setThreadPriorities(int[] threadPriorities) {
+		this.threadPriorities = threadPriorities;
+	}
+
+	public Vector<String> getVariableLabels() {
+		return variableLabels;
+	}
+
+	public void setVariableLabels(Vector<String> variableLabels) {
+		this.variableLabels = variableLabels;
+	}
+
+	public void setClassifySettings(ClassificationSettings classifySettings) {
+		this.classifySettings = classifySettings;
+	}
+
+	public void setTargetVariableCandidates(
+			ArrayList<String> targetVariableCandidates) {
+		this.targetVariableCandidates = targetVariableCandidates;
+	}
+
+	public void setGrowth(Growth growth) {
+		this.growth = growth;
+	}
+
+	public void setActualRecordCount(int actualRecordCount) {
+		this.actualRecordCount = actualRecordCount;
+	}
+
+	public void setMaxSomEpochCount(int maxSomEpochCount) {
+		this.maxSomEpochCount = maxSomEpochCount;
+	}
+
+	public void setWinningNodesCount(int winnocount) {
+		winningNodesCount = Math.max( 1, Math.min( 5,winnocount));
+	}
+
+	public int getWinningNodesCount() {
+		return winningNodesCount;
+	}
+
+	public SpriteSettings getSpriteSettings() {
+		return spriteSettings;
+	}
+
+	public void setSpriteSettings(SpriteSettings spriteSettings) {
+		this.spriteSettings = spriteSettings;
+	}
+
+	public OptimizerSettings getOptimizerSettings() {
+		return optimizerSettings;
+	}
+
+	public void setOptimizerSettings(OptimizerSettings optimizerSettings) {
+		this.optimizerSettings = optimizerSettings;
+	}
+
+	public SpelaSettings getSpelaSettings() {
+		return spelaSettings;
+	}
+
+	public void setSpelaSettings(SpelaSettings spelaSettings) {
+		this.spelaSettings = spelaSettings;
+	}
+
+	public SomBagSettings getSomBagSettings() {
+		return somBagSettings;
+	}
+
+	public void setSomBagSettings(SomBagSettings somBagSettings) {
+		this.somBagSettings = somBagSettings;
+	}
+
 	
 	
 }

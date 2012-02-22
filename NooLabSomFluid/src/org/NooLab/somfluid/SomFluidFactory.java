@@ -17,6 +17,13 @@ import org.NooLab.somfluid.transformer.SomTransformer;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
 
+/**
+ * 
+ * 
+ * 
+ * 
+ * 
+ */
 public class SomFluidFactory  implements 	// 
 											SomFluidFactoryClientIntf{
 
@@ -238,22 +245,52 @@ public class SomFluidFactory  implements 	//
 	 */
 	public  void produce( Object sfTask ) {
 	
-		SomFluidTask somFluidfTask ;
+		SomFluidTask somFluidTask ;
 		
 		// First caring about the data, using the transformer module
 		
 		
 		
 		// now heading towards the SomFluid
-		somFluidfTask = (SomFluidTask)sfTask;
+		somFluidTask = (SomFluidTask)sfTask;
 		getSomFluid();
-		somFluidModule.start();   // nothing happens without providing a task
 		
-
-		
-		somFluidModule.addTask(  somFluidfTask );
+		if (somFluidTask.getStartMode() == 1){
+			
+			somFluidModule.start();   // nothing happens without providing a task
+			somFluidModule.addTask(  somFluidTask );
+			
+		}else{
+			if (somFluidTask.getStartMode() >=100){
+				// set a delayed start in a dedicated process
+				InternalSomFluidModuleStarter _starter = new InternalSomFluidModuleStarter( somFluidTask ); 
+			}
+		}
 	}
 
+	class InternalSomFluidModuleStarter implements Runnable {
+		
+		Thread sfmStarter;
+		int _delay;
+		SomFluidTask somFluidTask;
+		
+		public InternalSomFluidModuleStarter( SomFluidTask sft ){
+		
+			somFluidTask = sft; 
+			_delay = somFluidTask.getStartMode() ;
+			
+			sfmStarter = new Thread(this,"sfmStarter") ;
+			sfmStarter.start() ;
+		}
+
+		@Override
+		public void run() {
+			 
+			out.delay(_delay) ;
+			somFluidModule.start();   // nothing happens without providing a task
+			somFluidModule.addTask( somFluidTask );
+		}
+	}
 	/**
 	 *  it will create a spin-off, almost (!) as a copy (except more or less small random variations),
 	 *  if it is the first offspring, or as a weighted cross-over with a rather similar one 

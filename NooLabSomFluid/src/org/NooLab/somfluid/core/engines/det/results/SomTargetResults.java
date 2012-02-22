@@ -9,6 +9,7 @@ import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.properties.ModelingSettings;
+import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
 
 
@@ -41,6 +42,7 @@ public class SomTargetResults {
 	
 	
 	// ------------------------------------------
+	ArrUtilities arrutil;
 	PrintLog out;
 	
 	// ========================================================================
@@ -63,6 +65,8 @@ public class SomTargetResults {
 		
 		latticeClassDescription = new LatticeClassDescription();
 		out = somData.getOut() ;
+		
+		arrutil =  modelingSettings.arrutil ;
 	}
 	
 	private void prepareExpectedValueCodes() {
@@ -96,13 +100,17 @@ public class SomTargetResults {
 			}
 			
 			int tm = classifySettings.getTargetMode();
-			
+			if (classifySettings==null){
+				
+			}
 			singleModeUndefined = ( classifySettings.getActiveTargetVariable().length()==0) ||
 								  ( classifySettings.getTargetGroupDefinition() == null ) ||
 								  ( classifySettings.getTargetGroupDefinition().length==0) ;
 			
 			if ((tm == ClassificationSettings._TARGETMODE_SINGLE) && (singleModeUndefined==false)){
 				validateSingleTarget();
+				
+				displayResultsOnNodes();
 				return;
 			}  
 			
@@ -153,14 +161,14 @@ public class SomTargetResults {
 			v = node.getExtensionality().getMajorityValueIdentifier();
 			str = str + " ,  majority for target value : "+String.format("%.3f",v);
 			
-			
-			nrc = node.getExtensionality().getCount() ;
-			if (nrc>0){
-				out.print(2,true, "i "+i+"  ---  [n:"+nrc+"] "+str ); // output suppressing the prefix ...
-			}else{
-				out.print(2,true, "i "+i+"  ---  [n:"+nrc+"] ");
+			if (node.getActivation()>=0){
+				nrc = node.getExtensionality().getCount() ;
+				if (nrc>0){
+					out.print(2,true, "i "+i+"  ---  [n:"+nrc+"] "+str ); // output suppressing the prefix ...
+				}else{
+					out.print(2,true, "i "+i+"  ---  [n:"+nrc+"] ");
+				}
 			}
-			
 			
 		} // i -> all nodes
 		
@@ -174,6 +182,8 @@ public class SomTargetResults {
 											out.print(2, "checking for results on SOM by assuming mode = _TARGETMODE_SINGLE");
 		try{
 			
+			majorities = new Majorities();
+			majorities.determineTargetGroups();
 			
 		}catch(Exception e){
 			
@@ -273,6 +283,49 @@ public class SomTargetResults {
 			// put this info as a property to the lattice
 			
 		}
+		
+		public void determineTargetGroups(){
+			
+			MetaNodeIntf node;
+			ArrayList<Double> tvValues  ;
+			
+			for (int i=0;i<somLattice.size();i++){
+				
+				node = somLattice.getNode(i) ;
+				
+				// get target variable column from extensionality container
+				tvValues = node.getTargetVariableValues();
+
+				frequencyList = new FrequencyList( ((FrequencyListGeneratorIntf)this) ) ;
+				frequencyList.listIndex = i ;
+				frequencyList.serialID = node.getSerialID() ;
+				
+				// now check this list of values for the target group
+				
+				frequencyList.digestValuesForTargets( tvValues, 
+													  classifySettings.getTargetGroupDefinition(), 
+													  classifySettings.getTGlabels() );
+				
+				evaluateByEcrRiskMeasure();
+				
+				minorityFrequencies.add(frequencyList) ;
+
+				
+				node.getExtensionality().setPPV( frequencyList.ppv ) ;
+				node.getExtensionality().setMajorityValueIdentifier( frequencyList.majority.observedValue );
+
+				lcd.ccSum = lcd.ccSum + (frequencyList.ppv * node.getExtensionality().getCount() ) ;
+				lcd.rnSum = lcd.rnSum + node.getExtensionality().getCount() ;
+				
+			} // -> all nodes
+			
+			createGlobalDescription();
+			
+			
+			determineROCvalues();
+		}
+		
+		
 
 		private void createGlobalDescription(){
 			
@@ -285,7 +338,7 @@ public class SomTargetResults {
 			
 			MetaNodeIntf node;
 			ArrayList<Double> tvValues  ;
-			
+			double v;
 			
 			tvValues = new ArrayList<Double>() ;
 			
@@ -295,23 +348,83 @@ public class SomTargetResults {
 			}
 			
 			lcd.overallFrequencyList = new FrequencyList( ((FrequencyListGeneratorIntf)this) ) ;
-			lcd.overallFrequencyList.digestValues( tvValues );
+			
+			if (classifySettings.getTargetMode() ==ClassificationSettings._TARGETMODE_SINGLE){
+				lcd.overallFrequencyList.digestValuesForTargets( tvValues, 
+																 classifySettings.getTargetGroupDefinition(), 
+																 classifySettings.getTGlabels()) ;
+			}
+			if (classifySettings.getTargetMode() ==ClassificationSettings._TARGETMODE_MULTI){
+				lcd.overallFrequencyList.digestValues( tvValues );
+			}
+
 			
 			lcd.ppv = lcd.ccSum/((double)lcd.rnSum) ;
 			
+			lcd.totalRecordCount = tvValues.size() ;
 			
+			lcd.tpSingularity = getTpSingularity();
 			
-			String str="" ;
+			int tv_fqsum=0, fq ;
+			String str="",tvInfoStr="" ;
+			
 			for (int i=0;i<lcd.overallFrequencyList.itemFrequencies.items.size();i++){
-				double v = lcd.overallFrequencyList.itemFrequencies.items.get(i).observedValue ;
-				str = str + "("+lcd.overallFrequencyList.itemFrequencies.items.get(i).frequency+","+String.format("%.2f",v)+")  ";
+				 
+				v = lcd.overallFrequencyList.itemFrequencies.items.get(i).observedValue ;
+				fq = lcd.overallFrequencyList.itemFrequencies.items.get(i).frequency;
+				str = str + "("+fq+","+String.format("%.2f",v)+")  ";
+				
+				if (classifySettings.getTargetMode() ==ClassificationSettings._TARGETMODE_SINGLE){
+					if (v>=0){
+						tv_fqsum = tv_fqsum+fq ;    
+						tvInfoStr = "   for target  : "+ tv_fqsum+"\n" ;
+					}
+				}
 			}
 			out.printErr(2, "overall ...\n"+
-					        "   ppv         : "+ String.format("%.2f",lcd.ppv)+
-		     			    "   frequencies : "+ str) ;
+					        "   ppv         : "+ String.format("%.2f",lcd.ppv)+"\n"+
+		     			    "   frequencies : "+ str+"\n"+ tvInfoStr +
+		     			    "   tp singular : " +String.format("%.2f",lcd.tpSingularity)+" \n ") ; 
+			
+			
 		}
 		
-		
+		/**
+		 * 
+		 * TP without FP. PPV without risk, 
+		 * starting point of ROC
+		 * 
+		 * @return
+		 */
+		public double getTpSingularity(){
+			double result=0;
+			int nrc, rsum=0;
+			double v, ppv;
+			String str;
+			
+			MetaNodeIntf node;
+			
+			
+			for (int i=0;i<somLattice.size();i++){
+				
+				node = somLattice.getNode(i) ;
+				
+				ppv = node.getExtensionality().getPPV() ;
+				
+				v = node.getExtensionality().getMajorityValueIdentifier();
+				
+				nrc = node.getExtensionality().getCount() ;
+
+				if (ppv==1.0){
+					rsum = rsum+ nrc; 
+				}
+				
+			} // i -> all nodes
+			
+			result = (double)rsum/lcd.totalRecordCount;
+			
+			return result;
+		}
 		// ........................................................................
 			
 		

@@ -21,6 +21,8 @@ public interface MetaNodeIntf extends NodeObserverIntf {
 	
 	public long getSerialID();
 	
+	
+	public int getActivation() ;
   
 	public <T> T getInfoFromNode(Class<T> theClass, int infoID ) throws IllegalAccessException, 
 																		InstantiationException  ;
@@ -55,7 +57,9 @@ public interface MetaNodeIntf extends NodeObserverIntf {
 	public void insertDataAndAdjust( ArrayList<Double> dataNewRecord,
 			 						 // int nodeIndex,
 			 						 int recordIndexInTable,
-			 						 double learningrate);
+			 						 int ithWinner,
+			 						 double learningrate,
+			 						 int fillingLimitForMeanStyle);
 
 	void cleanInitializationByUsageVector( ArrayList<Double> usagevector);
 

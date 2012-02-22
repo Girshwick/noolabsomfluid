@@ -2,6 +2,8 @@ package org.NooLab.somfluid.core.engines.det.results;
 
 import java.util.ArrayList;
 
+import org.NooLab.utilities.ArrUtilities;
+
 
 
 public class FrequencyList {
@@ -24,6 +26,7 @@ public class FrequencyList {
 	
 	int majorityIsActive = -3;
 	
+	transient public ArrUtilities arrutil = new ArrUtilities();
 	
 	// ========================================================================
 	public FrequencyList( FrequencyListGeneratorIntf freqlistuser){
@@ -58,6 +61,10 @@ public class FrequencyList {
 				
 				v = values.get(i) ;
 				
+				if (v==-1.0){
+					continue;
+				}
+				
 				fValue = _frequencies.containsValue(v, resolution, -9.99) ;
 				if ( fValue != -9.99 ){
 					_frequencies.updateValue( fValue );
@@ -90,6 +97,74 @@ public class FrequencyList {
 		
 	}
 
+	public void digestValuesForTargets( ArrayList<Double> values,
+										double[][] targetGroups, String[] tgLabels) {
+		// 
+		
+		int p ;
+		String groupLabel;
+		double v, fValue,ttv ;
+		ItemFrequencies _frequencies = new ItemFrequencies() ;
+		ItemFrequency itemFreq ;
+		
+		v=0;
+		
+		if (values.size()==0){
+			majority = new ItemFrequency( );
+			ppv = -1.0;
+			return;
+		}
+		
+		
+		try{
+			
+
+			for (int i=0;i<values.size();i++){
+				
+				v = values.get(i) ;
+				
+				if (v==-1.0){
+					continue;
+				}
+				
+				p = arrutil.intervalIndexOf( v, targetGroups,0);
+				groupLabel = "" ;
+				
+				if (p>=0){
+					ttv = (targetGroups[p][0] + targetGroups[p][1])/2.0 ;
+					ttv = Math.round(ttv*1000.0)/1000.0 ;
+					if (p<tgLabels.length){
+						groupLabel = tgLabels[p] ;
+					}
+				} // in some of the target group intervals ?
+				else{
+					ttv = -3.0 ; 
+					groupLabel = "non-TV";
+				}
+				
+				fValue = _frequencies.containsValue(ttv, resolution, -9.99) ;
+				if ( fValue != -9.99 ){
+					_frequencies.updateValue( fValue, groupLabel );
+				}else{
+					_frequencies.introduceValue( ttv, groupLabel );
+				}
+				
+			} // i -> all values
+			itemFrequencies = new ItemFrequencies(_frequencies);
+
+			sortFrequenciesItems();
+			
+			majority = new ItemFrequency( itemFrequencies.items.get(0) );
+			
+			// this we need for the ROC
+			ppv = (double)majority.frequency / (double)values.size();
+			
+			
+		}catch(Exception e){
+			e.printStackTrace() ;
+		}
+		
+	}
 
 	private void sortFrequenciesItems() {
 		 
@@ -189,6 +264,9 @@ public class FrequencyList {
 	public ItemFrequency getMajority() {
 		return majority;
 	}
+
+
+
 	
 	
 	

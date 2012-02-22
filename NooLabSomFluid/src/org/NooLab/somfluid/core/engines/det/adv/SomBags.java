@@ -1,5 +1,8 @@
 package org.NooLab.somfluid.core.engines.det.adv;
 
+import org.NooLab.somfluid.SomFluid;
+import org.NooLab.somfluid.SomFluidProperties;
+
 /**
  *
  *  SomBags are collections of Som models that have been created on different
@@ -15,12 +18,45 @@ package org.NooLab.somfluid.core.engines.det.adv;
  *  - is able to abstract, since the SomBag is built from a SOM that evaluates
  *    the classification (and the deviation from the targets) instead of the data
  *
- *  SomBags will(shaould be positioned within SomFactory 
+ *  SomBags will(should) be positioned within SomFactory 
  *
  */
 public class SomBags {
 
-	public SomBags(){
+	SomFluid somFluid;
+	SomFluidProperties sfProperties ;
+	
+	
+	// ========================================================================
+	public SomBags(SomFluid somfluid, SomFluidProperties sfprop){
+		
+		sfProperties = sfprop ;
+		somFluid = somfluid;
+		
 		
 	}
+	// ========================================================================
+
+	/**
+	 * 
+	 * creates data samples and parameterization packs
+	 * 
+	 */
+	public void createBags() {
+		// 
+		
+	}
+
+	/**
+	 * running the parametrization packs for bagging
+	 * 
+	 */
+	public void runBags() {
+		// 
+		
+		
+	}
+	
+	
+	
 }

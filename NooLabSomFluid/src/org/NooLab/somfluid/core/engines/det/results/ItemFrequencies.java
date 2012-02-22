@@ -45,6 +45,14 @@ public class ItemFrequencies {
 	
 	
 	public void updateValue(double value) {
+	
+		updateValue(value,"");
+	}
+	
+	
+	
+	public void updateValue(double value, String groupLabel) {
+		 
 		boolean rB=false;
 		double dv;
 		 
@@ -54,22 +62,24 @@ public class ItemFrequencies {
 			
 			if (dv<0.00000001){
 				items.get(i).increment(1);
+				items.get(i).itemLabel = groupLabel ;
 				break ;
 			}
 		}  
-		
+	}
+	public void introduceValue(double value) {
+		 
+		introduceValue(value,"");
 	}
 	
-	
-	
-	public void introduceValue(double value) {
+	public void introduceValue(double value, String groupLabel) {
 		//  
 		ItemFrequency item = new ItemFrequency();
 		double rv = 1000000000.0;
 		
 		item.observedValue = Math.round( value * rv)/rv ;
 		item.frequency = 1 ;
-		
+		item.itemLabel = groupLabel ;
 		items.add(item) ;
 		
 	}

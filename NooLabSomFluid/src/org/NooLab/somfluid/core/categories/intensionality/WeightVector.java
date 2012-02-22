@@ -16,9 +16,11 @@ import java.util.ArrayList;
  */
 public class WeightVector {
 
-	ArrayList<Double> values = new ArrayList<Double> ();
+	ArrayList<Double> _values = new ArrayList<Double> ();
 	
 	public WeightVector(){
 		
 	}
+	
+	
 }

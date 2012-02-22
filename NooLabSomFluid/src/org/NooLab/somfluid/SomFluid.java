@@ -10,6 +10,7 @@ import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.SomTasks;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.engines.det.DSom;
+import org.NooLab.somfluid.core.engines.det.adv.SomBags;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.data.Variables;
@@ -43,6 +44,7 @@ import org.NooLab.utilities.objects.StringedObjects;
 public class SomFluid 
                       extends
                       			 NodesInformer
+                      			 
                       implements Runnable,
 								 SomFluidIntf,
 								 
@@ -62,7 +64,7 @@ public class SomFluid
 	LatticePropertiesIntf latticeProperties;
 	
 	/** 
-	 * VirtualLattice is essentially an  ArrayList of &lt;MetaNodeIntf&gt;
+	 * VirtualLattice is essentially an ArrayList of &lt;MetaNodeIntf&gt;
 	 * we never can call the routines of the MetaNode directly, we always have
 	 * to to use an event mechanism  
 	 */
@@ -72,6 +74,8 @@ public class SomFluid
 	
 	SomTasks somTasks;
 	
+	SomBags somBags;
+	
 	SomFluid sf ;
  	
 	
@@ -80,7 +84,7 @@ public class SomFluid
 	boolean processIsRunning=false;
 	Thread sfThread;
 	
-	StringedObjects so = new StringedObjects();
+	StringedObjects sob = new StringedObjects();
 	PrintLog out = new PrintLog(2, true);
 	
 	// ------------------------------------------------------------------------
@@ -108,6 +112,7 @@ public class SomFluid
 		somDataObject.setOut(out) ;
 		
 		
+		somBags = new SomBags(this, sfProperties) ;
 		
 		sf = this;
 		
@@ -152,11 +157,11 @@ public class SomFluid
 		MetaNode mnode;
 		long idbase;
 		Particle particle;
-		
+											out.print(2, "creating the physical node field for "+initialNodeCount+" particles...");
 		// we need to harvest the events here!
 		particleField = sfFactory.createPhysicalField( this, initialNodeCount);
 		 
-											out.print(2, "creating the logical som lattice...");
+											out.print(2, "creating the logical som lattice for "+initialNodeCount+" nodes...");
 		for (int i=0;i<initialNodeCount;i++){
 			
 			mnode = new MetaNode( virtualLatticeNodes, somDataObject  );
@@ -232,7 +237,7 @@ public class SomFluid
 		latticeFutureVisor = new LatticeFutureVisor(virtualLatticeNodes,  NodeTask._TASK_SETVAR );
 		 
 											out.print(4, "before task sending...");
-		task = new NodeTask( NodeTask._TASK_SETVAR, (Object)so.encode( (Object)vars.getActiveVariableLabels()) );
+		task = new NodeTask( NodeTask._TASK_SETVAR, (Object)sob.encode( (Object)vars.getActiveVariableLabels()) );
 		// do it for all nodes
 		this.notifyAllNodes( task );
 											out.print(4, "returned from task sending...  -> now waiting");
@@ -241,7 +246,7 @@ public class SomFluid
 	 
 											out.print(4, "continue, next task...");
 		// set target variable ... TODO other messages about dynamic configuration : blacklist, whitelist, sim function 
-		task = new NodeTask( NodeTask._TASK_SETTV, (Object)so.encode( (Object)vars.getActiveTargetVariable()) );
+		task = new NodeTask( NodeTask._TASK_SETTV, (Object)sob.encode( (Object)vars.getActiveTargetVariable()) );
 		// do it for all nodes
 		this.notifyAllNodes( task );
 		
@@ -289,9 +294,19 @@ public class SomFluid
 		activeTvLabel = sfProperties.getModelingSettings().getActiveTvLabel() ; // "TV"
 		// TargetVariable  targetVariable;
 		
-		// dSom = new DSom( sfFactory, somDataObject, virtualLatticeNodes, sfTask );
-		dSom = new DSom( this, somDataObject, virtualLatticeNodes, sfTask );
-		dSom.performTargetedModeling();
+		if (sfProperties.getModelingSettings().getSomBagSettings().getApplySomBags()==false){
+			// no bagging, just standard normal som-ing 
+			dSom = new DSom( this, somDataObject, virtualLatticeNodes, sfTask );
+			dSom.performTargetedModeling();
+			
+		}else{
+			// we create bags according to parameters, eachbag will run a DSom then...
+			// results will be collected by SomBag, and meta-results will be evaluated also there
+			somBags.createBags();
+			
+			somBags.runBags();
+		}
+		
 		
 	}
 
@@ -395,12 +410,12 @@ public class SomFluid
 	}
 
 
-	public String getNeighborhoodNodes( int nodeindex ) {
+	public String getNeighborhoodNodes( int nodeindex, int surroundN ) {
 		int particleindex=nodeindex;
 		
 		// we need a map that translates between nodes and particles
 		
-		
+		particleField.setSelectionSize( surroundN ) ;
 		// asking for the surrounding, -> before start set the selection radius == new API function
 		String guid = particleField.getSurround( particleindex, 1, true);
 		
@@ -419,22 +434,37 @@ public class SomFluid
 		return sfProperties;
 	}
 
+	// ------------------------------------------------------------------------
+	
 	@Override
-	public void onSelectionRequestCompleted(Object resultsObj) {
+	public void onSelectionRequestCompleted( Object resultsObj ) {
 		
 		// TODO: this should be immediately forked into objects, since the requests could be served in parallel
-		SurroundResults results;
+		SurroundResults results, clonedResults;
 		String str ;
 		int[] particleIndexes;
 		
-		results = (SurroundResults)resultsObj;
+		results = (SurroundResults)resultsObj;  
+		
+		/*
+		 *  here we have to use a message queue running in its own process, otherwise
+		 *  the SurroundRetrieval Process will NOT be released...
+		 *  We have a chain of direct calls
+		 *  
+		 */
 		
 		// we have to prepare the results in the particlefield!
 		// we need the list of lists: 
 		// for each particle he have a list of indexes ArrayList<Long> getIndexesOfAllDataObject()
 		particleIndexes = results.getParticleIndexes();
 		
-		virtualLatticeNodes.digestParticleSelection(results);
+		clonedResults = (SurroundResults) sob.decode( sob.encode(results) );
+		
+		virtualLatticeNodes.getSelectionResultsQueue().add( clonedResults );
+		
+		// this result will then be taken as a FiFo by a digesting process, that
+		// will call the method "digestParticleSelection(results);"
+		// yet, it is completely decoupled, such that the current thread can return and finish
 		
 		return; 
 	}

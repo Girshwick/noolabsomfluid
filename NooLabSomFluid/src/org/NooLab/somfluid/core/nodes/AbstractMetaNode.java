@@ -79,6 +79,8 @@ public abstract class AbstractMetaNode
 	
 	Autonomy autonomy;
 	
+	int activationState = 0;
+	
 	String openLatticeFutureGuid ="";
 	int openLatticeFutureTask = -1 ;
 	
@@ -269,6 +271,15 @@ public abstract class AbstractMetaNode
 		
 	}
 
+	/** ony nodes with an activationState>=0 will be considered in any learning */
+	public void setActivation(int stateflag) {
+		 
+		activationState = stateflag;
+	}
+	
+	public int getActivation() {
+		return activationState ;
+	}
 
 	public DataSourceIntf getSomData() {
 		return somData;

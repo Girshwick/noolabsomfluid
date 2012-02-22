@@ -7,6 +7,7 @@ import java.util.Random;
 
 
 import org.NooLab.repulsive.components.data.IndexDistance;
+import org.NooLab.repulsive.components.data.IndexDistanceIntf;
 import org.NooLab.repulsive.intf.DataObjectIntf;
 import org.NooLab.somfluid.components.DataSourceIntf;
 import org.NooLab.somfluid.components.VirtualLattice;
@@ -119,6 +120,8 @@ public class MetaNode   extends
 	int _MinimalSizeBeforeSplit = 10 ;
 	int _AbsoluteMinimumForSplit = 5 ;
 	
+	
+	
 	// TODO for those contexts as represented by these interfaces, we need 
 	//      the respective properties Objects for persistence
 	
@@ -137,6 +140,8 @@ public class MetaNode   extends
 	}
 	// ------------------------------------------------------------------------	
 	  
+
+
 	// use it like so: (resource: http://tutorials.jenkov.com/java-generics/methods.html)
 	// WeightVector weightVector   = getInfoFromNode( WeightVector.class, 1);
 	@Override
@@ -303,13 +308,13 @@ public class MetaNode   extends
 						if (recordcount == 0) {
 							// in the beginning = the first updates, we scale the new record much higher (ratio 4:1),
 							// if we have updated it often, this difference decreases more and more
-							// TODO: we chould scale 
+							// TODO: we should scale 
 							double imprintingRatioScale = Math.sqrt(0.01 * (double)virtualRecordCount);
 							_new_w = (double)( (nodeProfile.get(w)* (double)(1.0+imprintingRatioScale) + 
 									           (vector2.get(w) * (4.0+imprintingRatioScale))))/(5.0+(imprintingRatioScale*2.0));
 							// _new_w = vector2.get(w);
 							nodeProfile.set(w, _new_w) ; //
-							// vector2.get(w))
+							
 						} else {
 							_new_w = vector2.get(w) + change;
 						}
@@ -327,7 +332,8 @@ if ((_new_w<0) || (_new_w>1.04)){
 						if (_new_w > 1) {
 											err = 15;
                        		out.printErr(1,"\nProblem in AdjustWeights(a): "+
-                       				           "\n   position   = "+w +
+                       						   "\n   node index = "+nodeIndex +
+                       						   "\n   position   = "+w +
                        		                   "\n   new weight = "+String.format("%4.3f", _new_w)+
                        		                   "\n   LR         = "+String.format("%4.3f", _LR)+
                        		                   "\n   Influence  = "+String.format("%4.3f", influence)+
@@ -364,7 +370,7 @@ if ((_new_w<0) || (_new_w>1.04)){
 			// from "nodeProfile" (=clone of original vector of the profile in the lattice!)
 			// back to the node, 
 			if (err==0){
-				// TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				//
 				intensionality.getProfileVector().setValues(nodeProfile) ;
 			}
 			
@@ -376,15 +382,18 @@ if ((_new_w<0) || (_new_w>1.04)){
 	
 	public void insertDataAndAdjust( ArrayList<Double> dataNewRecord, int recordIndexInTable) {
 
-		insertDataAndAdjust( dataNewRecord,recordIndexInTable,1.0 ) ;
+		insertDataAndAdjust( dataNewRecord,recordIndexInTable,1, 1.0, -1 ) ;
 	}
-	
-	
+
+	 
+ 
 	@Override
 	public void insertDataAndAdjust( ArrayList<Double> dataNewRecord,
 									 // int nodeIndex,
 									 int recordIndexInTable,
-									 double learningrate ) {
+									 int ithWinner,
+									 double learningrate ,
+									 int fillingLimitForMeanStyle) {
 		
 		int nodeExtSize, recordcount=0,_d, err=1;
 		double _old_pv , _new_pv, fieldValue ;
@@ -405,7 +414,9 @@ if ((_new_w<0) || (_new_w>1.04)){
 		//  the weight vector is NOT the use vector, the weight vector describes the weight of a variable IFF used
 		//  the use vector is in the similarity part : SimilarityIntf simIntf ;
 											
-			weightvector = intensionality.getWeightsVector(); // not used so far, has the wrong length (much too long)...
+			weightvector = intensionality.getWeightsVector(); //  
+			
+			//fillingLimitForMeanStyle 
 			
 			usevector = this.similarity.getUsageIndicationVector() ;
 			nodeProfile = new  ArrayList<Double>(intensionality.getProfileVector().getValues()) ;
@@ -447,8 +458,7 @@ if ((_new_w<0) || (_new_w>1.04)){
 						// we may update all variables, the distance will be
 						// calc'd only for used ones anyway !
 						if (w == similarity.getIndexTargetVariable()) {
-							calcThis = false; // always to exclude: the index
-												// column
+							calcThis = false; // always to exclude: the index column
 						}
 						if (somData.getVariables().getItem(w).getIsEmpty()>0 ){
 							calcThis = false;
@@ -470,9 +480,9 @@ if ((_new_w<0) || (_new_w>1.04)){
 							// after initialization
 							_old_pv = nodeProfile.get(w);
 
-							// we replace the random value by the real value of
-							// the first observation that we add to this node
-							// fieldValue derives indeed from  "dataNewRecord" ! 
+							// for the first real data record, we replace the random value by the real value of
+							// the first observation that we add to this node ;
+							// ( fieldValue derives indeed from  "dataNewRecord" !) 
 							nodeProfile.set(w, fieldValue );
 											err = 12;							
 							fieldStats.clear();
@@ -483,10 +493,19 @@ if ((_new_w<0) || (_new_w>1.04)){
 											err = 14;
 							_new_pv = dataNewRecord.get(w);
 							
-							fieldStats.introduceValue( fieldValue );
+							fieldStats.introduceValue( fieldValue ); // fieldValue = dataNewRecord.get(w); 
 							_new_pv = fieldStats.getMean() ; 
 							// _new_pv will be set as the profile value at pos w (see below)
 							// ongoing update of more complicated stats, like skewness, kurtosis
+							
+							// we keep a small trace of the last profile value
+							
+							if (ithWinner==0){
+								double nlw = 6.0;
+								nlw = (double) (nlw - (ithWinner + 1));
+								_new_pv = ((nodeProfile.get(w)) + nlw * _new_pv) / (nlw + 1.0);
+							}
+							
 						}
 
 						 
@@ -572,7 +591,7 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 		ArrayList<Double> profilevalues, xDataVector = null ;
 		int rcount, rIndex,ix;
 		
-		ArrayList<IndexDistance> sortedRecords = new ArrayList<IndexDistance> ();
+		ArrayList<IndexDistanceIntf> sortedRecords = new ArrayList<IndexDistanceIntf> ();
 		SimilarityIntf simIntf;
 		
 		try{
@@ -971,6 +990,13 @@ SimilarityIntf similarity;
 		
 		contentSensitiveInfluence = flag ;
 	}
+
+
+
+
+
+
+
 
  
 

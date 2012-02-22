@@ -50,6 +50,8 @@ public class VirtualLattice implements LatticeIntf{
 	OpenLatticeFutures openLatticeFutures = new OpenLatticeFutures();
 	
 	
+	ArrayList<SurroundResults> selectionResultsQueue = new ArrayList<SurroundResults>(); 
+	SelectionResultsQueueDigester selectionResultsQueueDigester;
 	
 	Map<String, Object> selectionResultsQueryMap = new HashMap<String, Object>()  ;
 	
@@ -80,6 +82,8 @@ public class VirtualLattice implements LatticeIntf{
 	PrintLog out ;
 
 	private double averagePhysicalDistance = 1.0;
+
+	public boolean bmuBufferActivated = false;
 	
 	// ========================================================================
 	public VirtualLattice(SomFluid parent, LatticePropertiesIntf latticeProps){
@@ -90,6 +94,10 @@ public class VirtualLattice implements LatticeIntf{
 		somData = somFluidParent.getSomDataObject() ; 
 		
 		extensionalityDynamics = new ExtensionalityDynamics(somData) ; 
+		
+		// ..........................................................
+		
+		selectionResultsQueueDigester = new SelectionResultsQueueDigester() ;
 		
 		
 		rndInstance.setSeed(1234);
@@ -127,7 +135,7 @@ public class VirtualLattice implements LatticeIntf{
 		 */
 		
 		// forking the request immediately to its own name space  
-		selectedNodes = (new ParticleSelectionQuery()).getNodes(index );
+		selectedNodes = (new ParticleSelectionQuery()).getNodes( index, (int) (nodeCount*1.3) );
 		
 		 
 		return selectedNodes;
@@ -149,25 +157,33 @@ public class VirtualLattice implements LatticeIntf{
 			 
 		}
 
-		public ArrayList<IndexDistanceIntf> getNodes(int index) {
+		public ArrayList<IndexDistanceIntf> getNodes(int index, int surroundN) {
 			 
 			ArrayList<IndexDistanceIntf> particlesIntf = new ArrayList<IndexDistanceIntf>();
 			ArrayList<IndexDistance> particles = new ArrayList<IndexDistance>();
 			
+			// TODO define selection size, otherwise the field will tak ethe default !!!
 			// this call returns immediately, providing the GUID as issued by the RepulsionField
-			queryGuid = somFluidParent.getNeighborhoodNodes( index );
+			queryGuid = somFluidParent.getNeighborhoodNodes( index ,surroundN);
 			
 			// putting this to a map <guid,null>, the matching result object will contain the same Guid
 			selectionResultsQueryMap.put(queryGuid,null) ;
 			
 			// now waiting here
-			while (selectionResultsQueryMap.get(queryGuid)==null){
-				out.delay(1);
+			int z=0;
+			while ((z<10000) && (selectionResultsQueryMap.get(queryGuid)==null)){ // (z<300) && // activate for NON _DEBUG abc124
+				minidelay(100); 
+				z++;
 			}
 			
-			results = (SurroundResults) selectionResultsQueryMap.get(queryGuid);
+			if (selectionResultsQueryMap.containsKey(queryGuid)){
+				results = (SurroundResults) selectionResultsQueryMap.get(queryGuid);
+			}else{
+				// create an empty dummy
+				return particlesIntf;
+			}
 			
-			if (results.getParticlesAsIndexedDistances()!=null){
+			if ((results!=null) && (results.getParticlesAsIndexedDistances()!=null)){
 				particles = results.getParticlesAsIndexedDistances();
 				particlesIntf = new ArrayList<IndexDistanceIntf>( particles );
 			}else{
@@ -175,10 +191,18 @@ public class VirtualLattice implements LatticeIntf{
 				results.getParticleDistances();
 			}
 			
+			results = null;
 			latticeQuery = 0;
 			return particlesIntf;
 		}
-		
+	
+		@SuppressWarnings("static-access")
+		public void minidelay(int nanos){
+			try {
+				Thread.currentThread().yield();
+				Thread.currentThread().sleep(0,nanos);
+			} catch (Exception e) {}
+		}
 	} // inner class ParticleSelectionQuery
 	
 	// ..........................................
@@ -191,10 +215,18 @@ public class VirtualLattice implements LatticeIntf{
 	public void clear(){
 		nodes.clear();
 	}
-	public MetaNodeIntf getNode( int index ){
+	
+
+
+	public MetaNode getNode( int index ){
 		return nodes.get(index) ;
 	}
 	
+	public ArrayList<MetaNode> getNodes() {
+		return nodes;
+	}
+
+
 	public void indexOf( MetaNode node){
 		nodes.indexOf(node);
 	}
@@ -349,6 +381,7 @@ public class VirtualLattice implements LatticeIntf{
 
 	}
 
+	// the event arrives in SomFluid, which is calling this method here
 	public void digestParticleSelection( SurroundResults results ) {
 		// SurroundResults contains particle indexes, distances to request center, and the request GUID !
 		
@@ -358,6 +391,70 @@ public class VirtualLattice implements LatticeIntf{
 		
 		new ParticleSelectionDispatcher( results );
 		 
+	}
+	
+	public ArrayList<SurroundResults> getSelectionResultsQueue() {
+		return selectionResultsQueue;
+	}
+
+	public void stop(){
+		selectionResultsQueueDigester.isRunning = false;
+	}
+	
+	
+	/**
+	 * 
+	 * this class is the backbone for the acceptance of messages issued by the RepulsionField about
+	 * the selected indexes of nodes
+	 * 
+	 */
+	class SelectionResultsQueueDigester implements Runnable{
+
+		boolean isRunning =false, isWorking=false;
+		
+		Thread vslSelectionDigest;
+		
+		SurroundResults _results ;
+		
+		public SelectionResultsQueueDigester(){
+		
+			vslSelectionDigest = new Thread (this,"vslSelectionDigest");
+			vslSelectionDigest.start() ;
+		}
+		@Override
+		public void run() {
+			isRunning = true;
+			int dt;
+			
+			try{
+				while (isRunning){
+					
+					if (isWorking==false){
+						isWorking = true;
+						
+						if (selectionResultsQueue.size()>0){
+							_results = selectionResultsQueue.get(0) ;
+							digestParticleSelection(_results) ;
+							
+							selectionResultsQueue.remove(0) ;
+						}
+						
+						isWorking = false;
+					}
+					if (selectionResultsQueue.size()==0){
+						dt = 5 ;
+					}else{
+						dt = 0 ;
+					}
+					out.delay(dt);
+				}// -> isRunning?
+				
+			}catch(Exception e){
+				
+			}
+			
+		}
+		
 	}
 	
 	class ParticleSelectionDispatcher{

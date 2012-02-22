@@ -8,7 +8,13 @@ public class SomFluidTask 	implements
 										SomFluidMonoTaskIntf,
 										SomFluidProbTaskIntf{
 
+	private static final long serialVersionUID = -532876083346213662L;
+
+	
 	String guidID="";
+	
+	int startingMode = -1;
+	
 	boolean isCompleted=false;
 	int somType;
 	
@@ -40,22 +46,30 @@ public class SomFluidTask 	implements
 
 	@Override
 	public void setContinuity(int level, int numberOfRuns) {
-		// TODO Auto-generated method stub
+		//  
 		
+	}
+
+ 
+
+	@Override
+	public void setStartMode(int startingmode) {
+		
+		startingMode = startingmode;
 	}
 
 
 
 	@Override
-	public void setStart(int startingMode) {
-		// TODO Auto-generated method stub
+	public int getStartMode() {
 		
+		return startingMode;
 	}
-
-	 
 	
 
 	// -----------------------------------
+ 
+
 
 	@Override
 	public void setResultsReceptor(SomFluidResultsIntf deliveryTarget) {

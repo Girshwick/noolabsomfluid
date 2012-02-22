@@ -18,7 +18,10 @@ public class IntensionalitySurface implements 	Serializable ,
 	/** a compound object that holds several aspects of a profile vector   */
 	ProfileVector profileVector = new ProfileVector() ;
 
-	/**   the weight vector is NOT the use vector, the weight vector describes the weight of a variable IFF used  */
+	/**  
+	 * the weight vector is NOT the use vector, the weight vector describes the weight of a variable IFF used
+	 * the usevector  is also part of similarity class, accessible via" similarity.getUsageIndicationVector()" 
+	 */
 	ArrayList<Double> useWeights = new ArrayList<Double>();
 	
 	
@@ -30,8 +33,8 @@ public class IntensionalitySurface implements 	Serializable ,
 
 	/**   the weight vector is NOT the use vector, the weight vector describes the weight of a variable IFF used  */
 	public void prepareWeightVector(){
-		
-		for (int i=0;i<profileVector.values.size();i++){
+		int n = profileVector.values.size();
+		for (int i=0;i<n;i++){
 			useWeights.add(1.0) ;
 		}
 	}
@@ -61,6 +64,14 @@ public class IntensionalitySurface implements 	Serializable ,
 	public void initializeWeightsVector(double defaultValue) {
 		prepareWeightVector();
 		
+	}
+
+	public ArrayList<Double> getUseWeights() {
+		return useWeights;
+	}
+
+	public void setUseWeights(ArrayList<Double> useWeights) {
+		this.useWeights = useWeights;
 	}
 	
 }

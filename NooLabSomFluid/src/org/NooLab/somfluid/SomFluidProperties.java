@@ -4,6 +4,7 @@ import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
 import org.NooLab.somfluid.env.communication.GlueConnection;
 import org.NooLab.somfluid.properties.ModelingSettings;
+import org.NooLab.somfluid.properties.SettingsTransporter;
 
 
 											//  as usual, we offer particular views on this container
@@ -12,6 +13,8 @@ public class SomFluidProperties implements 	//
 											// 
 												LatticePropertiesIntf{
 
+	static SomFluidProperties sfp; 
+	
 	public final static int _SOMTYPE_MONO = 1; 
 	public final static int _SOMTYPE_PROB = 2;
 	
@@ -31,32 +34,75 @@ public class SomFluidProperties implements 	//
 	// that is for _SOMTYPE_MONO only ! 
 	ModelingSettings modelingSettings = new ModelingSettings() ;
 	
+		
 	// lattice
 	int somType = -1; // mandatory 
 	int initialNodeCount = -1;
 	boolean messagingActive = true;
 	boolean multithreadedProcesses=false;
+	private int restrictionForSelectionSize = -1;
 	
-	
+	static SettingsTransporter settingsTransporter;
 	
 	
 	// ========================================================================
-	public SomFluidProperties(){
+	protected SomFluidProperties(){
 		
 	}
 	// ========================================================================
 	
 	
+	public static SomFluidProperties getInstance() {
+		
+		sfp = new SomFluidProperties(); 
+		return sfp;
+	}
+	/**   */
+	public static SomFluidProperties getInstance( String xmlSettingsStack ) {
+	 
+		sfp = new SomFluidProperties();
+		
+		settingsTransporter = new SettingsTransporter( sfp );
+		
+		return sfp;
+	}
+	
+	public void importSettings(){
+		
+		
+	}
+
+	
+	public String exportSettings(){
+		String xmlSettingsStr = "";
+		
+		settingsTransporter = new SettingsTransporter( sfp );
+		settingsTransporter.export();
+		
+		return xmlSettingsStr;
+	}
+
+	/**
+	 * this creates an XML string with all parameters and their default values
+	 * (and probably also with comments describing possible alternative values...)
+	 * 
+	 * @return the xml string
+	 */
+	public String getDefaultExport() {
+	 
+		return null;
+	}
+
+
 	public void setFactoryParent(SomFluidFactory factory) {
 		sfFactory = factory;
-		
 	}
-	
 	
 	public SomFluidFactory getSfFactory() {
 		return sfFactory;
 	}
-
+	// ------------------------------------------------------------------------
+	
 
 	public GlueConnection getGlueConnection( int gluetype) {
 		glueType = gluetype;	 
@@ -172,6 +218,36 @@ public class SomFluidProperties implements 	//
 	}
 	public void setMultithreadedProcesses(boolean flag) {
 		this.multithreadedProcesses = flag;
+	}
+
+
+	public void setRestrictionForSelectionSize(int sizevalue) {
+		//  
+		restrictionForSelectionSize = sizevalue ;
+		modelingSettings.setRestrictionForSelectionSize( sizevalue ) ;
+	}
+
+
+	public int getRestrictionForSelectionSize() {
+		return restrictionForSelectionSize;
+	}
+
+
+	public void defineSomBags(int recordsPerNode, int maxNodeCount, int maxRecordCount) {
+		modelingSettings.getSomBagSettings().setSombagRecordsPerNode(recordsPerNode) ;
+		modelingSettings.getSomBagSettings().setSombagMaxNodeCount(maxNodeCount) ;
+		modelingSettings.getSomBagSettings().setSombagMaxRecordCount(maxRecordCount) ;
+		
+	}
+	public void applySomBags(boolean flag) {
+		modelingSettings.getSomBagSettings().setApplySomBags( flag );
+	}
+
+
+	public void setMultipleWinners(int winnocount) {
+		// 
+		modelingSettings.setWinningNodesCount( winnocount ) ;
+		
 	}
 
 

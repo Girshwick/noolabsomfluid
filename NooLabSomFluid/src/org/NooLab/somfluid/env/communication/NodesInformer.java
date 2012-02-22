@@ -132,7 +132,7 @@ public class NodesInformer {
 
 				if (taskID== NodeTask._TASK_ADAPT){
 					// sends a WeightVectorIntf, together with some params
-					observingNode.onRequestForAdaptingWeightVector( task.obj1 , task.obj1);
+					observingNode.onRequestForAdaptingWeightVector( task.obj1 , task.obj1 );
 				}
 					 
 				if (taskID== NodeTask._TASK_UPDATE){

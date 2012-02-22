@@ -819,7 +819,7 @@ public class SomDataObject 	implements
 
 			// it also checks wether ther eis a candidate column for an index, and, if
 			// there is none, it will insert one as column 0
-											out.print(2, "importDataTable() into SOmDataObject...");
+											out.print(2, "importDataTable() into SomDataObject...");
 			data.importTable(datatable, importSettings);
 			data.createRowOrientedTable() ;
 			// TODO check here for buffered transformed data

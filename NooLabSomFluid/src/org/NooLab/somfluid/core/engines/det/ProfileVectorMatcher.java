@@ -3,6 +3,7 @@ package org.NooLab.somfluid.core.engines.det;
 import java.util.ArrayList;
 
 import org.NooLab.repulsive.components.data.IndexDistance;
+import org.NooLab.repulsive.components.data.IndexDistanceIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.categories.similarity.Similarity;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
@@ -28,10 +29,13 @@ import org.NooLab.utilities.logging.PrintLog;
  */
 public class ProfileVectorMatcher{
 	
-	ArrayList<MetaNodeIntf> nodeCollection = new ArrayList<MetaNodeIntf>(); 
+	ArrayList<MetaNode> nodeCollection = new ArrayList<MetaNode>(); 
+	
+	ArrayList<Integer> nodeCollectionIndexes = new ArrayList<Integer>() ;
+	
 	ArrayList<ArrayList<Double>> dataVectorCollection = new ArrayList<ArrayList<Double>>();
 	
-	ArrayList<IndexDistance> bestMatchesCandidates = new ArrayList<IndexDistance> ();
+	ArrayList<IndexDistanceIntf> bestMatchesCandidates = new ArrayList<IndexDistanceIntf> ();
 	ArrayList<Integer> boundingIndexList = new ArrayList<Integer>();
 	
 	ArrayList<Double> profileValues;
@@ -49,11 +53,16 @@ public class ProfileVectorMatcher{
 		out = outprn;
 	}	// ..........................................................
 	
-	public ProfileVectorMatcher setNodeCollection( ArrayList<MetaNodeIntf> nodecollection ){
-		nodeCollection = new ArrayList<MetaNodeIntf> (nodecollection); mode = 1;
+	public ProfileVectorMatcher setNodeCollection( ArrayList<MetaNode> nodecollection ){
+		nodeCollection = new ArrayList<MetaNode> (nodecollection); 
+		mode = 1;
 		return this;
 	}
 	
+	public void setNodeCollectionByIndex(ArrayList<Integer> nodeIndexCollection) {
+		// TODO Auto-generated method stub
+		nodeCollectionIndexes.addAll(nodeIndexCollection) ;
+	}
 	public void addNodeToCollection( MetaNode nodeForCollection ){
 		nodeCollection.add(nodeForCollection) ; mode = 1;
 	}
@@ -76,7 +85,7 @@ public class ProfileVectorMatcher{
 		return this;
 	}
 	
-	public ArrayList<IndexDistance> getList( int sizeRestriction ){
+	public ArrayList<IndexDistanceIntf> getList( int sizeRestriction ){
 		
 		return bestMatchesCandidates;
 	}
@@ -89,7 +98,7 @@ public class ProfileVectorMatcher{
 		ProfileVectorIntf profile;
 		
 		int blockemptynodes = 0;
-		int n ;
+		int n,nodix ;
 		int err = 0 ;
 		double dsq = 999999;
 		
@@ -104,12 +113,16 @@ public class ProfileVectorMatcher{
 			// this has to be accelerated: (1) multi-digester (MANDATORY), (2) flexibly created coarse pre-digensting SOMs, 
 			
 			// for (n = 0; n < somLattice.size(); n++) {
-			for (n = 0; n < nodeCollection.size(); n++) {
+			for (n = 0; n < nodeCollectionIndexes.size(); n++) {
 				
-				node = nodeCollection.get(n);
+				nodix = nodeCollectionIndexes.get(n);
+				
+				if ((nodix<0) || (nodix>nodeCollection.size()-1)){
+					continue ;
+				}
+				node = nodeCollection.get( nodix);
 				err = 3;
-				if ((node == null) ){
-	
+				if ((node == null) || (node.getActivation() < 0)){
 					continue;
 				}
 	
@@ -236,7 +249,7 @@ public class ProfileVectorMatcher{
 		
 	}
 	
-	private boolean nodeIsCandidate( double distanceValue, ArrayList<IndexDistance> candidates, int bmuCount ){
+	private boolean nodeIsCandidate( double distanceValue, ArrayList<IndexDistanceIntf> candidates, int bmuCount ){
 		boolean rB = false;
 	
 		if (candidates.size()<bmuCount){
@@ -252,7 +265,7 @@ public class ProfileVectorMatcher{
 	}
 	
 
-	private ArrayList<IndexDistance> acquireBmuCandidate( ArrayList<IndexDistance> currentBestMatches , int bmuCount,  
+	private ArrayList<IndexDistanceIntf> acquireBmuCandidate( ArrayList<IndexDistanceIntf> currentBestMatches , int bmuCount,  
 														  int bmuIndex, double distanceValue){
 		
 		IndexDistance ixDist ;
@@ -303,7 +316,7 @@ public class ProfileVectorMatcher{
 		//
 		ArrayList<Integer> bestMatches = new ArrayList<Integer> (); 
 		
-		IndexDistance ixDist ;
+		IndexDistanceIntf ixDist ;
 		int k;
 		boolean done=false;
 		double v1,v2 ;
@@ -337,6 +350,10 @@ public class ProfileVectorMatcher{
 		for (int i=0;i<bestMatchesCandidates.size();i++){
 			bestMatches.add( bestMatchesCandidates.get(i).getIndex() ) ;
 		}
+		
+	}
+	public void linkNodeCollection(ArrayList<MetaNode> nodes) {
+		nodeCollection = nodes; 
 		
 	}
 	

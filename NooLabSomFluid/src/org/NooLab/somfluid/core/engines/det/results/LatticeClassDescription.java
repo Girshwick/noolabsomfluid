@@ -9,6 +9,8 @@ public class LatticeClassDescription {
 	// helpers
 	double ccSum=0.0;
 	int rnSum = 0;
+	int totalRecordCount;
+	double tpSingularity;
 	
 	// ========================================================================
 	public LatticeClassDescription(){

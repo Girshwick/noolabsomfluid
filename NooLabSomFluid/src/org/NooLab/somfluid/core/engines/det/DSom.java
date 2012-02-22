@@ -20,6 +20,13 @@ import org.NooLab.utilities.logging.PrintLog;
 
 /**
  * 
+ * TODO: we need a SampleOrganizer class (SomBag?) before this dsom, in order
+ *       to be able to apply hard cuts for sampling data;
+ *       such the DSom would see only a part of the world, without realizing
+ *       that it is only a part of it
+ *       
+ *        
+ * 
  * This class organizes as a container for a SOM that is suitable for
  * target oriented modeling;
  * 
@@ -57,6 +64,8 @@ public class DSom implements DSomIntf{
 	
 	DSomCore dSomCore;
 
+	public BmuBuffer bmuBuffer;
+	
 	// this gets assigned in DSomCore, sine we also  need the actual record sample 
 	// (besides the total number of records))
 	SomTargetResults somResults;
@@ -70,6 +79,7 @@ public class DSom implements DSomIntf{
 	public boolean loweredPriority = false ;
 
 	Random random;
+
 	
 	// ------------------------------------------------------------------------
 	public DSom( SomFluid sfParent , SomDataObject sdo, VirtualLattice somlattice, SomFluidTask sfTask ) {
@@ -86,6 +96,7 @@ public class DSom implements DSomIntf{
 		random.setSeed(3579) ;
 		
 		
+		bmuBuffer = new BmuBuffer(this, somData.getRecordCount() ) ;
 		
 		activeTvLabel = sfProperties.getModelingSettings().getActiveTvLabel() ;
 		

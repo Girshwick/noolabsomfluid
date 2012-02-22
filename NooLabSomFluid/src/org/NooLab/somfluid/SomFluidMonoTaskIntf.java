@@ -12,10 +12,9 @@ public interface SomFluidMonoTaskIntf extends ModelingSettingsIntf,
 	
 	public void setContinuity(int level, int numberOfRuns);
 
-	public void setStart(int startingMode);
-
+	public void setStartMode(int startingMode);
 	
-
+	public int getStartMode();
 	
 	
 }
