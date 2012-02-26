@@ -1,0 +1,810 @@
+package org.NooLab.somfluid.properties;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.Vector;
+
+
+
+import org.NooLab.somfluid.SomFluidFactory;
+import org.NooLab.somfluid.components.DataFilter;
+import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
+import org.NooLab.somfluid.core.engines.det.ClassesDictionary;
+import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
+import org.NooLab.somfluid.data.DataSampler;
+import org.NooLab.somfluid.data.Variables;
+import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.xml.XmlFileRead;
+
+
+
+
+public class ModelingSettings implements Serializable{
+
+	private static final long serialVersionUID = -464934381782562062L;
+	
+	/** 
+	 * the number of nodes remains constant, each split must be accompanied by a merge
+	 */
+	public static final int _SOM_GROWTH_NONE      = -1;
+	
+	public static final int _SOM_GROWTH_PRESELECT =  2;
+	
+	/** 
+	 * number of nodes may change, lattice remains 2D
+	 */
+	public static final int _SOM_GROWTH_LATERAL   =  2;
+	
+	/** 
+	 * nodes may outgrow into 3D, replacing the extensional list by a further SOM,
+	 * that inherits the connections to the nodes neighborhood;
+	 * such an offspring may separate completely later;
+	 * it inherits the target variable, and the structure of the profile vector etc...
+	 * actually, it represents just a sampling device, 
+	*/
+	public static final int _SOM_GROWTH_VERTICAL  =  3;
+	/**
+	 * The node may embed adaptively a SOM;
+	 * such a SOM remains completely hidden  
+	 */
+	public static final int _SOM_GROWTH_EMBED     =  5;
+	/**
+	 * lateral, and local outgrowth into 3D
+	 */
+	public static final int _SOM_GROWTH_FULLOUT   =  7;
+	/**
+	 * lateral, local outgrowth into 3D, and embedding
+	 */
+	public static final int _SOM_GROWTH_FULL      =  9;
+	
+	/**
+	 * applies any, based on default values;
+	 */
+	public static final int _SOM_GROWTH_CTRL_AUTO  = 21;
+	
+	// object references ..............
+	
+	// 
+	ClassesDictionary classesDictionary;
+	transient DataSampler dataSampler;
+
+	//various setting sub-domains
+
+	/**    */
+	ClassificationSettings classifySettings ;
+	
+	/**    */
+	SpriteSettings spriteSettings ;
+	
+	/**    */
+	OptimizerSettings optimizerSettings ;
+	
+	/**    */
+	SpelaSettings spelaSettings ;
+
+	/**    */
+	SomBagSettings somBagSettings;
+	
+	/**    */
+	ValidationSettings validationSettings;
+
+	/**    */
+	CrystalizationSettings crystalSettings;
+	
+	// our central random object for creating random numbers
+	transient Random random;
+	
+	
+	// main variables / properties ....
+	Variables variables;
+	 
+	ArrayList<String> targetVariableCandidates = new ArrayList<String> (); 
+	String activeTvLabel="" ;
+	
+	/** idf true, then "ClassificationSettings" apply */
+	boolean targetedModeling = true ; 
+	
+	int distanceMethod = SimilarityIntf._SIMDIST_ADVSHAPE ;
+	
+	double maxMissingValuePortionPerNode = 0.79 ;
+	double defaultDistanceContributionBetweenMV = 0.11 ;
+	
+	/** whether the size of the map is adopted to 
+	 *  - the number of records, 
+	 *  - the number of variables 
+	 *  - the task (multi class or not)
+	 *  - the relative frequency of targets in data
+	 *  - the quality of the model 
+	 */
+	boolean autoSomSizing = true ;
+	
+	/** whether the SOM can grow & shrink, applying adding, splitting and merging nodes */
+	boolean autoSomDifferentiate = true ;
+	
+	boolean somCrystalization = false ;
+		
+	/** 
+	 * the mode of growth for the SOM lattice; use the pre-defined constants;</br>
+	 * the growth is automatically controlled by some relative measures on variance (intra-/inter-node,) 
+	 * and size of nodes, where relative means "compared to the SOM lattice averages" 
+	 */
+	int somGrowthMode = _SOM_GROWTH_NONE;
+	/** if not "auto",, then it will require parameters to be defined and stored to the list "somGrowthControlParams" */
+	
+	int somGrowthControl = _SOM_GROWTH_CTRL_AUTO;
+	/** these parameters control the growth, they include (in this order):  ;
+	 *  use -3.0 if you do not want to apply a certain dimension
+	 */
+	ArrayList<Double> somGrowthControlParams = new ArrayList<Double>() ;
+	boolean activationOfGrowing = true ;
+	 
+	// sominternals ...................
+	int clusterMerge = 1 ;
+	/** 
+	 * respects the minimal cluster size and minimalSplitSize, whatever comes first;
+	 * splitting nodes occurs only in the third pass 
+	 */
+	int clusterSplit = 1 ;
+	/** the minimal size of nodes before they are considered to be split */
+	int minimalSplitSize = 15; 
+	
+	/** 
+	 * values: <=0  : off; </br>
+	 *           1  : only after epoch 3+, but not the last epoch step;</br>
+	 *           2+ : is interpreted as a percentage value, such that [p] percent of updates are followed
+	 *                by a check for split, growth; note, that this may reduce speed considerably !</br>
+	 *                will be applied only in epoch 3+, but not the last epoch step;</br></br>
+	 *                
+	 * if  somGrowthMode changes from none to any other, this will be set to 1, if it was <0=switched off
+	 */
+	int intensityForRearrangements = -1 ;
+	
+	
+	
+	Growth growth = new Growth();
+	   
+	int restrictionForSelectionSize = -1;
+
+	int minimalNodeSize = 3 ;
+
+	/** 1=single winner, 2+ multiple winners (influence degrades) */
+	int winningNodesCount = 1; 
+	
+	private int absoluteRecordLimit = -1;
+	// ................................
+	// constants ......................
+
+
+	boolean calculateAllVariables ;
+	
+	// feedback, diagnosis, and debug
+	int confirmDataReading = -1;
+	
+	// dependent on user/agent-based & project-wide setting
+	int actualRecordCount = 0 ; 
+	
+	// 1=usagevector is available and will be provided
+	int useVectorModegetDedicated = 0; 
+	 
+	
+	// values <=1 -> low priority
+	int[] threadPriorities = new int[10] ;
+	
+	 
+	
+	// volatile variables .............
+	// only local , for speeding repeated request   .  .  .  .  .  .  .  .  .     
+	Vector<String> variableLabels = new Vector<String>() ;
+	private int maxSomEpochCount = 4 ;
+	private boolean evolutionaryAssignateSelection = false ;
+	private boolean spriteAssignateDerivation = false ;
+	
+	/** 
+	 * the level 2 loop in modeling is concerned about the selection of features;
+	 * we may use evolutionary optimization together with the derivation of additional assignates 
+	 * 
+	 * SpriteAssignateDerivation() 
+	 * 
+	 * further description are to be found here: 
+	 * http://theputnamprogram.wordpress.com/2011/12/21/technical-aspects-of-modeling/      
+	 */
+	private int maxL2LoopCount = -1;
+	
+	private boolean contentSensitiveInfluence;
+	
+	transient public ArrUtilities arrutil = new ArrUtilities();
+
+	private DataFilter dataFilter;
+
+	
+
+	
+	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+	public ModelingSettings(){
+		 
+		classifySettings = new ClassificationSettings(this) ;
+		
+		spriteSettings = new SpriteSettings (this) ;
+		optimizerSettings = new OptimizerSettings (this) ;
+		spelaSettings = new SpelaSettings(this) ;
+		
+		somBagSettings = new SomBagSettings(this) ;
+		validationSettings = new ValidationSettings(this) ;
+		
+		
+		
+		setRandomSeed();
+		threadPriorities[3] = 1 ; // [3] = Som calculations
+	}
+	
+	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+	
+	/**
+	 * 
+	 * this loads a .mxs file, which is a xml file containing the modeling settings
+	 * 
+	 * 
+	 */
+	public void load( String workspacepath, String projectName ){
+		
+		XmlFileRead xmlfile ;
+		
+		String filename,   str ;
+		
+		
+		
+		try{
+			
+			
+ 			filename = workspacepath + projectName + ".mxs" ;
+			
+			xmlfile = new XmlFileRead( filename) ;
+			
+			str = xmlfile.getXmlTagData("variables", "blacklist", "labels") ;
+			      if (str.length()>0){
+			    	  
+			      }
+		 
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
+		str = "" ;
+	}
+	
+	
+	
+	public void setRandomSeed(){
+		
+		
+		random = new Random();
+		random.setSeed(1234) ;
+		
+	}
+
+	public void setRandomSeed(int seed){
+		random = new Random();
+		random.setSeed(1+Math.abs(seed)) ;
+		
+	}
+
+	
+	// setters / getters   . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+
+	public Random getRandom() {
+		return random;
+	}
+
+	 
+
+	 
+ 
+
+ 
+  
+	  
+
+	public int  confirmDataReading() {
+		 
+		return confirmDataReading;
+	}
+
+	private void updateGrowthModesIndicators(int growthMode, int i) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public ClassificationSettings getClassifySettings() {
+		return classifySettings;
+	}
+
+	public int getActualRecordCount() {
+
+		return actualRecordCount;
+	}
+
+  
+ 
+	public int UseVectorModegetDedicated() {
+	 
+		return useVectorModegetDedicated;
+	}
+
+ 
+	public boolean getAutoSomSizing() {
+		 
+		return autoSomSizing;
+	}
+
+ 
+	public void setAutoSomSizing(boolean autoMode) {
+		autoSomSizing = autoMode;
+		
+	}
+
+
+	
+	public void setSomClassesDictionary(ClassesDictionary classDict) {
+		classesDictionary = classDict;
+	}
+
+ 
+	public ClassesDictionary getSomClassesDictionary() {
+		 
+		return classesDictionary;
+	}
+	
+
+
+	public int getThreadPriority( int targetindex){
+		
+		return threadPriorities[targetindex] ;
+	}
+
+
+ 
+
+	public boolean getTargetedModeling() {
+		return targetedModeling;
+	}
+
+	public void setTargetedModeling( boolean flag) {
+		this.targetedModeling = flag;
+	}
+
+	public String getActiveTvLabel() {
+		return activeTvLabel;
+	}
+
+	public void setActiveTvLabel(String activeTvLabel) {
+		this.activeTvLabel = activeTvLabel;
+	}
+
+	public ArrayList<String> getTargetVariableCandidates() {
+		return targetVariableCandidates;
+	}
+
+	public DataSampler getDataSampler() {
+		return dataSampler;
+	}
+
+	public void setDataSampler(DataSampler sampler) {
+		this.dataSampler = sampler;
+	}
+
+	public int getMinimalNodeSize() {
+		return minimalNodeSize;
+	}
+
+	public void setMinimalNodeSize(int minimalNodeSize) {
+		this.minimalNodeSize = minimalNodeSize;
+	}
+
+	public int getMinimalSplitSize() {
+		return minimalSplitSize;
+	}
+
+	public void setMinimalSplitSize(int minimalSplitSize) {
+		this.minimalSplitSize = minimalSplitSize;
+	}
+
+	public boolean mergeNodes(){
+		return clusterMerge>0;
+	}
+	
+	public boolean splitNodes(){
+		return clusterSplit>0;
+	}
+	
+	
+	public int getClusterMerge() {
+		return clusterMerge;
+	}
+
+	public void setClusterMerge(int clustermerge) {
+		clusterMerge = clustermerge;
+	}
+
+	public int getClusterSplit() {
+		return clusterSplit;
+	}
+
+	public void setClusterSplit(int clustersplit) {
+		clusterSplit = clustersplit;
+	}
+
+	public Growth getGrowth() {
+		return growth;
+	}
+
+	public int getMaxSomEpochCount() {
+		return maxSomEpochCount;
+	}
+
+	public double getInitialLearningRate() {
+
+		return 0.2;
+	}
+
+	public boolean getEvolutionaryAssignateSelection() {
+		 
+		return evolutionaryAssignateSelection;
+	}
+
+	public void setEvolutionaryAssignateSelection(
+			boolean evolutionaryAssignateSelection) {
+		this.evolutionaryAssignateSelection = evolutionaryAssignateSelection;
+	}
+
+	public boolean getSpriteAssignateDerivation() {
+		 
+		return spriteAssignateDerivation;
+	}
+
+	public void setSpriteAssignateDerivation(boolean spriteAssignateDerivation) {
+		this.spriteAssignateDerivation = spriteAssignateDerivation;
+	}
+
+	/**  */
+	public int getMaxL2LoopCount() {
+		// 
+		return maxL2LoopCount;
+	}
+	/** 
+	 * the level 2 loop in modeling is concerned about the selection of "features";
+	 * 
+	 * @param maxL2LoopCount
+	 */
+	public void setMaxL2LoopCount(int maxL2LoopCount) {
+		this.maxL2LoopCount = maxL2LoopCount;
+	}
+
+	public boolean isContentSensitiveInfluence() {
+		
+		return contentSensitiveInfluence;
+	}
+	public boolean getContentSensitiveInfluence() {
+		
+		return contentSensitiveInfluence;
+	}
+	public void setContentSensitiveInfluence(boolean contentSensitiveInfluence) {
+		this.contentSensitiveInfluence = contentSensitiveInfluence;
+	}
+
+	
+	public boolean isCalculateAllVariables() {
+		return calculateAllVariables;
+	}
+	public boolean getCalculateAllVariables() {
+		return calculateAllVariables;
+	}
+	public void setCalculateAllVariables(boolean flag) {
+		this.calculateAllVariables = flag;
+	}
+
+
+	public void setRestrictionForSelectionSize(int sizevalue) {
+		 
+		restrictionForSelectionSize = sizevalue;
+	}
+
+	public int getRestrictionForSelectionSize() {
+		return restrictionForSelectionSize;
+	}
+
+	public double getMaxMissingValuePortionPerNode() {
+		return maxMissingValuePortionPerNode;
+	}
+
+	public void setMaxMissingValuePortionPerNode(
+			double maxMissingValuePortionPerNode) {
+		this.maxMissingValuePortionPerNode = maxMissingValuePortionPerNode;
+	}
+
+	public double getDefaultDistanceContributionBetweenMV() {
+		return defaultDistanceContributionBetweenMV;
+	}
+
+	public void setDefaultDistanceContributionBetweenMV(
+			double defaultDistanceContributionBetweenMV) {
+		this.defaultDistanceContributionBetweenMV = defaultDistanceContributionBetweenMV;
+	}
+
+	public ClassesDictionary getClassesDictionary() {
+		return classesDictionary;
+	}
+
+	public void setClassesDictionary(ClassesDictionary classesDictionary) {
+		this.classesDictionary = classesDictionary;
+	}
+
+	public Variables getVariables() {
+		return variables;
+	}
+
+	public void setVariables(Variables variables) {
+		this.variables = variables;
+	}
+
+	public int getDistanceMethod() {
+		return distanceMethod;
+	}
+
+	public void setDistanceMethod(int distanceMethod) {
+		this.distanceMethod = distanceMethod;
+	}
+
+	public boolean isAutoSomDifferentiate() {
+		return autoSomDifferentiate;
+	}
+
+	public void setAutoSomDifferentiate(boolean autoSomDifferentiate) {
+		this.autoSomDifferentiate = autoSomDifferentiate;
+	}
+
+	public int getSomGrowthMode() {
+		return somGrowthMode;
+	}
+
+	/**
+	 * use negative values to remove a particular growthmode from the list, i-e- to deactivate a particular growth mode 
+	 * 
+	 * @param growthMode
+	 */
+	public void setSomGrowthMode(int growthMode) {
+		// it is not a simple variable, but a bit index that indicates modes
+		updateGrowthModesIndicators( growthMode,1 ) ;
+		
+		// somGrowthMode reflects the most general mode, which includes modes of lower power
+		// but for actually retrieving the info, a targeted query has to be called
+		somGrowthMode = growthMode;
+	}
+	
+
+
+	public int getSomGrowthControl() {
+		return somGrowthControl;
+	}
+
+	public void setSomGrowthControl(int growthControl) {
+		this.somGrowthControl = growthControl;
+	}
+
+	public ArrayList<Double> getSomGrowthControlParams() {
+		return somGrowthControlParams;
+	}
+
+	public void setSomGrowthControlParams(double[] growthControlParams) {
+		ArrayList<Double> controlParams ;
+		
+		controlParams = new ArrayList<Double>() ;
+		
+		for (int i=0;i<growthControlParams.length;i++){
+			controlParams.add( growthControlParams[i]) ;
+		}
+		
+		this.somGrowthControlParams = controlParams;
+	}
+	public void setSomGrowthControlParams(ArrayList<Double> somGrowthControlParams) {
+		this.somGrowthControlParams = somGrowthControlParams;
+	}
+	
+	
+	public int getClustermerge() {
+		return clusterMerge;
+	}
+
+	public void setClustermerge(int clustermerge) {
+		clusterMerge = clustermerge;
+	}
+
+	public void setClustersplit(int clustersplit) {
+		clusterSplit = clustersplit;
+	}
+
+	public int getIntensityForRearrangements() {
+		return intensityForRearrangements;
+	}
+
+	public void setIntensityForRearrangements(int intensityForRearrangements) {
+		this.intensityForRearrangements = intensityForRearrangements;
+	}
+
+	public int getConfirmDataReading() {
+		return confirmDataReading;
+	}
+
+	public void setConfirmDataReading(int confirmDataReading) {
+		this.confirmDataReading = confirmDataReading;
+	}
+
+	public int getUseVectorModegetDedicated() {
+		return useVectorModegetDedicated;
+	}
+
+	public void setUseVectorModegetDedicated(int useVectorModegetDedicated) {
+		this.useVectorModegetDedicated = useVectorModegetDedicated;
+	}
+
+	public int[] getThreadPriorities() {
+		return threadPriorities;
+	}
+
+	public void setThreadPriorities(int[] threadPriorities) {
+		this.threadPriorities = threadPriorities;
+	}
+
+	public Vector<String> getVariableLabels() {
+		return variableLabels;
+	}
+
+	public void setVariableLabels(Vector<String> variableLabels) {
+		this.variableLabels = variableLabels;
+	}
+
+	public void setClassifySettings(ClassificationSettings classifySettings) {
+		this.classifySettings = classifySettings;
+	}
+
+	public void setTargetVariableCandidates(
+			ArrayList<String> targetVariableCandidates) {
+		this.targetVariableCandidates = targetVariableCandidates;
+	}
+
+	
+	// ....................................................
+	// see also the local class "Growth"
+	public void setGrowth(Growth growth) {
+		this.growth = growth;
+	}
+	
+	public void setActivationOfGrowing(boolean flag) {
+		activationOfGrowing = flag;
+	}
+	public boolean isActivationOfGrowing() {
+		return activationOfGrowing;
+	}
+	public boolean getActivationOfGrowing() {
+		return activationOfGrowing;
+	}
+	// ....................................................
+
+	
+	public void setActualRecordCount(int actualRecordCount) {
+		this.actualRecordCount = actualRecordCount;
+	}
+
+	public void setMaxSomEpochCount(int maxSomEpochCount) {
+		this.maxSomEpochCount = maxSomEpochCount;
+	}
+
+	public void setWinningNodesCount(int winnocount) {
+		winningNodesCount = Math.max( 1, Math.min( 5,winnocount));
+	}
+
+	public int getWinningNodesCount() {
+		return winningNodesCount;
+	}
+
+	public void setAbsoluteRecordLimit(int count) {
+		absoluteRecordLimit = count ;
+	}
+
+	public int getAbsoluteRecordLimit() {
+		return absoluteRecordLimit  ;
+	}
+
+	public SpriteSettings getSpriteSettings() {
+		return spriteSettings;
+	}
+
+	public void setSpriteSettings(SpriteSettings spriteSettings) {
+		this.spriteSettings = spriteSettings;
+	}
+
+	public ValidationSettings getValidationSettings() {
+		return validationSettings;
+	}
+
+	public void setValidationSettings(ValidationSettings validationSettings) {
+		this.validationSettings = validationSettings;
+	}
+
+	public OptimizerSettings getOptimizerSettings() {
+		return optimizerSettings;
+	}
+
+	public void setOptimizerSettings(OptimizerSettings optimizerSettings) {
+		this.optimizerSettings = optimizerSettings;
+	}
+
+	public SpelaSettings getSpelaSettings() {
+		return spelaSettings;
+	}
+
+	public void setSpelaSettings(SpelaSettings spelaSettings) {
+		this.spelaSettings = spelaSettings;
+	}
+
+	public SomBagSettings getSomBagSettings() {
+		return somBagSettings;
+	}
+
+	public void setSomBagSettings(SomBagSettings somBagSettings) {
+		this.somBagSettings = somBagSettings;
+	}
+
+	
+	public void setValidationActive(boolean flag) {
+		 
+		this.validationSettings.setActivation(flag) ;
+	}
+	public boolean getValidationActive() {
+		return validationSettings.getActivation();
+	}
+	public boolean isValidationActive() {
+		return validationSettings.getActivation();
+	}
+
+	public void setValidationParameters(double[] parameters) {
+		 
+		validationSettings.setParameters(parameters);
+	}
+
+	public DataFilter getDataFilter(SomFluidFactory factory) {
+		 
+		if (dataFilter==null){
+			dataFilter = new  DataFilter(factory,this) ;
+		}
+		return dataFilter;
+	}
+
+	public boolean getSomCrystalization() {
+		return somCrystalization;
+	}
+
+	
+	
+}
+
+
+class Growth{
+	
+	public int metatree = 0 ;    
+	public int metacrosslevellinking = 0 ;      
+	public int vertical = 0 ;     
+	public int horizontal = 0 ;     
+	public int vLevels = 1;     
+	public int hMaxSize = 10000 ;     
+
+	
+	public Growth(){
+		
+	}
+	
+}
+
