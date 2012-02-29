@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/apacheTools/commons-lang/commons-lang3-3.0-beta/commons-lang3-3.0.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/C:/Programs/dev/eclipse/xlibs/apacheTools/commons-lang/commons-lang3-3.0-beta/commons-lang3-3.0-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/apacheTools/collections/commons-collections-3.2.1.jar"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/httpc/htmlparse/jsoup/jsoup-1.6.0.jar"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/apacheTools/xmlrpc313/apache-xmlrpc-3.1.3/lib/log4j/log4j-1.2.16.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/NooLabChord"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/xml/xmlbuilder/java-xmlbuilder-0.4.jar"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/javax/javax.servlet.jar"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/httpc/htmlparse/tidy/jtidy-r938.jar"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/apacheTools/services/cxf/apache-cxf/lib/cxf-manifest.jar"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/textworx/utils/apache-nutch-1.3-bin/nutch-1.3/runtime/local/plugins/lib-xml/jdom-1.1.jar"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/apacheTools/commons-io-2.0.1.jar"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/apacheTools/xml/xalan/xalan-j_2_7_1/lib/xercesImpl.jar"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/apacheTools/xml/xalan/xalan-j_2_7_1/lib/xml-apis.jar"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/apacheTools/xml/xalan/xalan-j_2_7_1/serializer.jar"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/textworx/utils/apache-nutch-1.3-bin/nutch-1.3/runtime/local/lib/xercesImpl-2.9.1.jar"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/textworx/utils/apache-nutch-1.3-bin/nutch-1.3/runtime/local/lib/xmlenc-0.52.jar"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/textworx/utils/apache-nutch-1.3-bin/nutch-1.3/runtime/local/lib/xmlParserAPIs-2.6.2.jar"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/textworx/utils/apache-nutch-1.3-bin/nutch-1.3/runtime/local/lib/xml-apis-1.3.04.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/uuid-3.2.jar"/>
+	<classpathentry kind="lib" path="/Users/kwa/dev/Eclipse/xlibs/apacheTools/xml/mjxml.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/C:/Programs/dev/eclipse/xlibs/apacheTools/xml/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xalan/xalan-j_2_7_1/xalan.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/commons-codec/commons-codec-1.5/commons-codec-1.5.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/apache-httpclient"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/nets/nat/jNAT-PMPlib.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
