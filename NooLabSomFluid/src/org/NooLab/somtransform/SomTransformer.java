@@ -3,10 +3,12 @@ package org.NooLab.somtransform;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.SomFluidFactory;
+import org.NooLab.somfluid.components.IndexedDistances;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.DataTableCol;
+import org.NooLab.somfluid.data.Variables;
 
 
 
@@ -78,11 +80,12 @@ public class SomTransformer {
 
 
 
-	public DataTable normalizeData() {
+	public DataTable normalizeData( Variables variables) {
 		int z;
 		DataTableCol col, colNorm;
 		ArrayList<DataTableCol> inDataTable = dataTableObj.getDataTable();
 		ArrayList<DataTableCol> normDataTable;
+		
 		
 		try{
 			
@@ -130,7 +133,7 @@ public class SomTransformer {
 				}else{
 					col.setRecalculationIndicator(-3); // ignore, like blacklisted variables
 				}
-				
+				colNorm.setSerialID(i) ;
 				normDataTable.add(colNorm);
 			} // all columns
 			
@@ -149,6 +152,14 @@ public class SomTransformer {
 
 	public DataTable getDataTableNormalized() {
 		return dataTableNormalized;
+	}
+
+
+	// send candidates into SomTransformer, they will be put just to a queue, 
+	// but NOTHING will be changed regarding the transformations...  
+	public void perceiveCandidateTransformations(IndexedDistances candidates) {
+		 
+		
 	}
 
 	

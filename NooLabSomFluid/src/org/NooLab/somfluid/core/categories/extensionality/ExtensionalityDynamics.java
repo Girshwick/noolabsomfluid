@@ -51,7 +51,7 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	NodeStatistics statistics ;
 
 	/** the positive predictive value of the node */
-	double ppv;
+	double ppv = -1.0, npv = -1.0;
 	double majorityValueIdentifier = -1.0 ;
 	
 	// ========================================================================
@@ -136,6 +136,16 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 
 	public void setStatistics(NodeStatistics statistics) {
 		this.statistics = statistics;
+	}
+
+	@Override
+	public void setNPV(double npv) {
+		this.npv = npv ;
+	}
+
+	@Override
+	public double getNPV() {
+		return npv;
 	}
 
 	 

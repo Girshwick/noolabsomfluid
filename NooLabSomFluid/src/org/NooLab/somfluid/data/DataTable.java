@@ -11,6 +11,9 @@ import org.NooLab.somfluid.components.MissingValues;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.util.Formula;
 import org.NooLab.somtransform.algo.Binning;
+import org.NooLab.somtransform.algo.NomValEnum;
+import org.NooLab.somtransform.algo.NveMapping;
+import org.NooLab.somtransform.algo.NveMappings;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.strings.StringsUtil;
@@ -40,6 +43,24 @@ public class DataTable implements Serializable{
 
 	private static final long serialVersionUID = 3655282650007767562L;
 
+	public static final String __MV_TEXTUAL   = "-M.V.";
+	
+	public static final double __MV_RAW       = -999999.090901;
+	public static final double __MV_TRANSFORM = -1.0;
+	
+	public static final int __FORMAT_ID     = 0;
+	public static final int __FORMAT_NUM    = 1;
+	public static final int __FORMAT_INT    = 2;
+	public static final int __FORMAT_ORGINT = 3;
+	public static final int __FORMAT_BIN    = 4;
+	
+	public static final int __FORMAT_DATE   = 6;
+
+	public static final int __FORMAT_STR    = 8;
+	public static final int __FORMAT_TXT    = 9;
+	public static final int __FORMAT_BINSTR = 10;
+
+	
 	// not avail: ExecSettings (config for diagnostic printouts etc.) settings ;
 	// =================================
 	
@@ -82,6 +103,8 @@ public class DataTable implements Serializable{
 	boolean isNumeric ;
 	int maxScanRows = 200 ;
 	
+	// NVE : config: max number of groups
+	int maxNveGroupCount = 32 ; // the original is DataTransformationSettings
 	NveMappings nveMaps;
 	ArrayList<Integer> derivedColumns = new ArrayList<Integer>();
 	
@@ -132,6 +155,8 @@ public class DataTable implements Serializable{
 		missingValues = somData.getMissingValues() ;
 		
 		nveMaps = new NveMappings(this) ;
+		
+		
 	}
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 	
@@ -322,7 +347,7 @@ public class DataTable implements Serializable{
 		ArrayList<Integer> potentialNVEcols  ;  
 		ArrayList<String> sdl  ;
 		
-		
+		// there are problems with empty cells... the resulting column is too short
 		
 		                               err = 1;
 		try{
@@ -355,8 +380,7 @@ public class DataTable implements Serializable{
 				} // i-> n, all headers
 				
 			}
-			
-			  
+			 
 			newColumn = new DataTableCol(dt,-1) ;
 			
 			formats = new int[n] ;
@@ -365,14 +389,22 @@ public class DataTable implements Serializable{
 															if (out!=null){ out.print(3,"\ncheck format of columns...");};
 			
 			indexColPresent = false;												
-			for (i=0;i<n;i++){  // TODO make this multidigested ...
+			for (i=0;i<n;i++){  // TODO make this multidigested if there are many variables (n>80), and many rows, such that even scanrow is large...
 															if (out!=null){ out.printprc(3, i, n, n/10, "") ;};
 				column = importTable.getColumn(i) ;
 				column.setMaxScanRows( importTable.getMaxScanRows() );
-				
-				// determine format
+if (i>=9){
+	nn=0; 
+}
+				// determine format, should take into account __MV_TEXTUAL ("M.V.") as a marker:
 				_dataformat = column.determineFormat(tableHasHeader) ;
-				   
+				/*
+
+					check whether there is a unique ID as integer
+
+					NVE : config: max number of groups  
+				 */
+				
 				formats[i] = _dataformat ;  
 				
 				if (indexColPresent==false){
@@ -383,17 +415,36 @@ public class DataTable implements Serializable{
 															if (out!=null){ out.print(3,"\nimporting columns...");};
 			// if necessary, apply nve
 			i=0;  // TODO make this multidigested ...
-			for (i=0;i<n;i++){
+			for (i=0;i<n;i++){ // -> all variables
 				
 				column = importTable.getColumn(i) ;
+				// only if it is num?
+				// column = translateMvToNum(column); not necessary, will be accomplished elsewhere ("makeNumeric()")
+				column.dataFormat = formats[i]; 
 															if (out!=null){ out.printprc(3, i, n, n/5, "") ;};
-				if (formats[i]>2){
-															
-				// some of the values can be replaced with a true num value, others will be replaced by "-1"
-				// new values to -> newColumn
+														
+				if (formats[i]== DataTable.__FORMAT_ORGINT){
+					// sort the data, and check for "groups" within the organizational codes 
+					// could also be a date without dots, like so: 20080923
+					/*
+					  	later in makenumeric(): 
+						some kind of semantic organization indicator, typically not nominal though,
+					   	but "grouped", so we could "nominalize" them (1.interperting as string, 2. nve)
 
-	 				// 
-					if (formats[i] == 8){ // simple string ?
+							-> treat as strings, with constrained similarity from the beginning
+							-> try to split off first 4 or last 4 digits
+					 */
+				}
+				
+				if (formats[i]>=DataTable.__FORMAT_DATE){
+					
+					// some of the values can be replaced with a true num value, others will be replaced by "-1"
+					// new values to -> newColumn
+ 
+					if (formats[i] >= DataTable.__FORMAT_STR){ // simple string ?
+						
+						
+						
 						// it could be still boolean, like yes/no, true/false etc...
 						sdl = column.getStringsDiffList( tableHasHeader, 500, importTable.getMaxScanRows()); 
 						
@@ -416,7 +467,7 @@ public class DataTable implements Serializable{
 					
 					// if date, then serialize to start date
 
-					if (formats[i] == 4){  
+					if (formats[i] == DataTable.__FORMAT_DATE){  
 						// column.serializeDateEntries(tableHasHeader);
 						// we create new columns: inverse value = age, month, day of month, week, year
 					}
@@ -434,7 +485,7 @@ public class DataTable implements Serializable{
 					
 					
 					// if boolean, replace with 0 and 1
-					if (formats[i] == 3){  
+					if (formats[i] == DataTable.__FORMAT_BIN){  
 						// it could be 1,0 yes/no true/false t/f  y/n, ja/nein j/n s/n o/n +/- 
 						column.recodeBinaryEntries(tableHasHeader);
 					}
@@ -445,6 +496,7 @@ public class DataTable implements Serializable{
 					
 					
 				}
+				
 				
 				column.setFormat(formats[i]);
 				column.makeNumeric( tableHasHeader ) ;
@@ -506,7 +558,7 @@ public class DataTable implements Serializable{
 				}
 			}
 			
-			determineVarietyOfColumnData();
+			// determineVarietyOfColumnData();
 			
 			createRowOrientedTable();
 			
@@ -519,8 +571,10 @@ public class DataTable implements Serializable{
 		
 	}
 	
+ 
+
 	/**
-	 * checks how many different values occur in a column
+	 * checks how many different values occur in a column ... obsolete, is done elsewhere
 	 */
 	private void determineVarietyOfColumnData() {
 		//  
@@ -560,11 +614,13 @@ public class DataTable implements Serializable{
 		
 	}
 
-	public void createRowOrientedTable(){
+	public void createRowOrientedTable(  ){
 		
 		ArrayList<Double> rowdata;
-		int rc ;
+		int cc=-1,rc = -1, ir=-1,ic=-1 ;
 		double dv;
+		 
+		
 		
 		try{
 			dataTableRows.clear() ;
@@ -572,13 +628,16 @@ public class DataTable implements Serializable{
 			// ArrayList< ArrayList<Double>>()
 			
 			rc = dataTable.get(0).getCellValues().size();
+			cc = dataTable.size();
 			
 			for (int r=0;r<rc;r++){
-				
+				ir=r;
 				rowdata = new ArrayList<Double>(); 
-				
-				for (int c=0;c<dataTable.size();c++){
-					
+if (ir==670){
+	dv=0;
+}
+				for (int c=0;c<cc;c++){
+					ic=c;
 					dv = dataTable.get(c).getCellValues().get(r) ;
 					rowdata.add(dv);
 				}
@@ -588,7 +647,7 @@ public class DataTable implements Serializable{
 			
 			
 		}catch (Exception e){
-			
+			out.printErr(1, "Crtical error in <createRowOrientedTable()>, r,c: "+ir+","+ic+" ,  while max is: "+rc+", "+dataTable.size());
 			e.printStackTrace() ;
 		}
 		rc=0;
@@ -648,7 +707,7 @@ public class DataTable implements Serializable{
 		this.maxScanRows = maxScanRows;
 	}
 
-	@SuppressWarnings("unchecked")
+
 	private boolean hasHeader() {
 		boolean rB=false ;
 		int n;
@@ -665,7 +724,7 @@ public class DataTable implements Serializable{
 		 */
 		row = (ArrayList<String>)getRowValuesArrayList(0,String.class);
 		
-		dcs[0] = arrutil.checkTypeOfListItems( (Object)row, String.class, Double.class);
+		dcs[0] = arrutil.checkTypeOfListItems( (Object)row, String.class, Double.class );
 		
 		for (int i=1;i<rowsToCheck;i++){
 			row = (ArrayList<String>)getRowValuesArrayList(i,String.class);
@@ -833,7 +892,7 @@ public class DataTable implements Serializable{
 			}
 			
 			if (val.length() == 0){
-				val = "M.V." ;
+				val = __MV_TEXTUAL ; // e.g. "M.V."
 			}
 			
 			if (i< colcount()){

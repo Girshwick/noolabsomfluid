@@ -69,7 +69,7 @@ public class ProfileVectorMatcher{
 	}
 	
 	public void setNodeCollectionByIndex(ArrayList<Integer> nodeIndexCollection) {
-		// TODO Auto-generated method stub
+		 
 		nodeCollectionIndexes.addAll(nodeIndexCollection) ;
 	}
 	public void addNodeToCollection( MetaNode nodeForCollection ){
@@ -146,6 +146,7 @@ public class ProfileVectorMatcher{
 	
 				if (dsq < 0) {
 					out.printErr(2,"Problem in calculating distance, relative node index: "+n+" , dsq<0 = " + String.valueOf(dsq));
+					dsq = node.getSimilarity().similarityWithinDomain( profile.getValues(), profileValues, suppressSQRT) ; // XXX DEBUG ONLY
 					return  ;
 				}
 				

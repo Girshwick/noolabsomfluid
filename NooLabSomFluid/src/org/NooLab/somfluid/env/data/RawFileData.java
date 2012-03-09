@@ -1,18 +1,27 @@
 package org.NooLab.somfluid.env.data;
 
+
+
+
+
 import java.io.*;
 
 import java.util.*;
 
 
+import org.NooLab.utilities.strings.StringsUtil;
+
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.Variable;
+
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.files.FileDataSource;
+
 import org.NooLab.utilities.logging.PrintLog;
-import org.NooLab.utilities.strings.StringsUtil;
-import org.NooLab.utilities.xml.XmlFileRead;
+
+
+//import org.NooLab.utilities.xml.XmlFileRead;
 
 /**
  * 
@@ -238,3 +247,7 @@ public class RawFileData {
 	}
 
 }
+
+
+
+

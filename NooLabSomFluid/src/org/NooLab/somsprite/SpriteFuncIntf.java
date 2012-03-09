@@ -10,7 +10,8 @@ public interface SpriteFuncIntf {
 	public void  setMissingValue( double missingvalue );
 	
 	
-	public double calculate( double... values) throws Exception;
+	public Object calculate( double... values) throws Exception;
 	public void allowVariablesCountMismatch(boolean flag);
 	
+	public FunctionCohortParameterSet getCohortParameterSet() ;
 }

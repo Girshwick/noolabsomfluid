@@ -133,6 +133,7 @@ public class MetaNode   extends
 	boolean calculateAllVariables=false;
 	private ArrayList<Integer> sdoIndexValues = new ArrayList<Integer>();
 	
+	/**   ??? */
 	ArrayList<IndexDistanceIntf> listOfQualifiedIndexes = new ArrayList<IndexDistanceIntf>();
 	
 	
@@ -1069,6 +1070,19 @@ SimilarityIntf similarity;
 		return extensionality;
 	}
 
+	// for copying nodes, we transfer basic structures
+	public void importExtensionalityDynamics( ExtensionalityDynamicsIntf extension ) {
+		extensionality = extension;
+	}
+	public void importIntensionalitySurface( IntensionalitySurfaceIntf intension ) {
+		intensionality = intension;
+	}
+	public void importSimilarity( SimilarityIntf simile ) {
+		similarity = simile;
+	}
+ 
+		
+	// for basic initialization, the node fetches structures from the lattice
 	@Override
 	public ExtensionalityDynamicsIntf importExtensionalityDynamics(long serialID) {
 		ExtensionalityDynamicsIntf extensionality;

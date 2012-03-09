@@ -6,6 +6,11 @@ SomFluid contains to very different SOM-engines:
 - the probabilistic SOM (prespecific storage), and 
 - the deterministic SOM (modeling/classification)
 
+small, but important note:
+SomFluid is not concerned with any administrative task, and it also does not
+organize issues around the application of models (or their general life cycle), 
+all of which is done by package NooLabSomOrganizer
+
 
 Environmental Organization
 ---------------------------

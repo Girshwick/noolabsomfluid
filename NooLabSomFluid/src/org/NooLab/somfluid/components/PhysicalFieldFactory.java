@@ -7,6 +7,8 @@ import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.utilities.logging.LogControl;
+import org.NooLab.utilities.logging.PrintLog;
+
 
 
 
@@ -18,6 +20,7 @@ import org.NooLab.utilities.logging.LogControl;
 
  */
 public class PhysicalFieldFactory {	
+	
 	RepulsionFieldFactory rfFactory;
 	RepulsionField repulsionField; 
 
@@ -28,6 +31,9 @@ public class PhysicalFieldFactory {
 	int nbrParticles = 661 ;
 	
 	int width, height;
+	
+	boolean initComplete = false;
+	private PrintLog out = new PrintLog(2,true);
 	
 	// ------------------------------------------------------------------------
 	public PhysicalFieldFactory(){
@@ -131,11 +137,29 @@ public class PhysicalFieldFactory {
 		// repulsionField.init(repulsionField,1 );
 		// repulsionField.importField();
 		
+		initComplete=false;
+		repulsionField.setDelayedOnset(50);
 		
-		repulsionField.setDelayedOnset(1000);
+		out.delay(200) ;
+											out.print(4, "updating field of particles ... ") ;
+		for (int i=0;i<1;i++)
+		{ // makes it more regular... but the more regular the less the quality of the model
+			repulsionField.update();out.delay(10) ;
+		} 
 		
-		repulsionField.update();
+		while (initComplete==false){
+			 out.delay(10) ;
+		}
+											
+		 
+		repulsionField.releaseShakeIt(0,5000 );
 		
+		initComplete=false; int z=0;
+		while ((initComplete==false) && (z<12000)){
+			repulsionField.out.delay(10) ;
+			z++;
+		}
+											out.print(3, "updating field of particles done. ") ;
 		return (RepulsionFieldIntf)repulsionField;
 	}
 	
@@ -158,6 +182,14 @@ public class PhysicalFieldFactory {
 
 	public void setHeight(int height) {
 		this.height = height;
+	}
+
+	public boolean isInitComplete() {
+		return initComplete;
+	}
+
+	public void setInitComplete(boolean initComplete) {
+		this.initComplete = initComplete;
 	}
  
 }

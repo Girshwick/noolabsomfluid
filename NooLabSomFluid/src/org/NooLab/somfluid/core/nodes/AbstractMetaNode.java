@@ -24,7 +24,9 @@ import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
 import org.NooLab.utilities.objects.StringedObjects;
+import org.math.array.StatisticSample;
 
+ 
 
 /**
  * 
@@ -37,18 +39,12 @@ import org.NooLab.utilities.objects.StringedObjects;
  *               	
  * 
  */
-public abstract class AbstractMetaNode 
+public abstract class AbstractMetaNode  extends 
+                                                    BasicNodeAbs
 										implements  
 											        // basic access to structures
 													MetaNodeIntf,
-													// profiles, weights, usevectors = variable selection, optionally specific for each node
-													IntensionalitySurfaceImportIntf,
-													// in-process preparations of dynamic variables that are derived from 
-													// the actual list represented by the node: correlations between vars, statistical properties
-													ExtensionalityDynamicsImportIntf,
-													// the similarity functional 
-													SimilarityImportIntf,
-													// degree, style + principles, topology and range of connections
+													
 													MetaNodeConnectivityImportIntf
 													// for messages from the network level... (assemption: everything on the same machine)
 													// direct commands, data uptake, electrical waves, chemical stimuli, activity triggers, polarity
@@ -58,24 +54,14 @@ public abstract class AbstractMetaNode
 	LatticePropertiesIntf latticeProperties;
 	VirtualLattice virtualLattice;
 	
-	DataSourceIntf somData;
+	 
 	
 	long serialID=1;
 	long numID ;
 	
-	ArrayList<String> variableLabels = new ArrayList<String>();
-	// needs to get translated into index values that refer to the DataTable
 	
-	// everything is in a dedicated interface
-	ProfileVectorIntf profileVector ;
 	
-	String targetVariableLabel="" ; 
- 
-	
-	IntensionalitySurfaceIntf intensionality ;
-	SimilarityIntf similarity ;
-	MetaNodeConnectivityIntf metaNodeConnex ; 
-	ExtensionalityDynamicsIntf extensionality ; 
+
 	
 	Autonomy autonomy;
 	
@@ -84,12 +70,15 @@ public abstract class AbstractMetaNode
 	String openLatticeFutureGuid ="";
 	int openLatticeFutureTask = -1 ;
 	
+	StatisticSample sampler;
+	Random nRandom ;
 	StringedObjects sobj = new StringedObjects();
 	PrintLog out ;
 	
 	
 	// ========================================================================
 	public AbstractMetaNode( VirtualLattice vnodes , DataSourceIntf somdata){
+		super();
 		
 		numID = SerialGuid.numericalValue() ;
 		
@@ -101,16 +90,21 @@ public abstract class AbstractMetaNode
 			serialID = virtualLattice.getNode( virtualLattice.size()-1).getSerialID()+1 ;
 		}
 	
+		initializeStructures(serialID);
 		
-		// we have to make the similarity 
-		similarity     = importSimilarityConcepts(serialID);  // Similarity@1db6942
-
-		intensionality = importIntensionalitySurface(serialID); // IntensionalitySurface@1042fcc
-
-		IntensionalitySurfaceIntf  intensy = importIntensionalitySurface();
-		String str = intensy.toString();  // IntensionalitySurface@8f3d27
 		
-		extensionality = importExtensionalityDynamics(serialID) ;
+		if (virtualLattice.getRndInstance()!=null){ // && stability requirement Option  
+			nRandom = virtualLattice.getRndInstance() ;
+		}else{
+			nRandom = new Random();
+			nRandom.setSeed( serialID );
+		}
+		if (virtualLattice.getRndSamplerInstance()!=null){
+			sampler = virtualLattice.getRndSamplerInstance();
+		}else{
+			sampler = new StatisticSample(4359) ;
+		}
+		
 		metaNodeConnex = importMetaNodeConnectivity(serialID); 
 		
 		/*
@@ -124,7 +118,7 @@ public abstract class AbstractMetaNode
 		
 		
 		// just an abbreviation
-		profileVector = intensionality.getProfileVector(); 
+		
 		
 		out = virtualLattice.getOut();
 		autonomy = new Autonomy(this);
@@ -173,14 +167,29 @@ public abstract class AbstractMetaNode
 
 	
 	
+	public void setSerialID(long serialID) {
+		this.serialID = serialID;
+	}
+
+
+
+
+
+	public void setNumID(long numID) {
+		this.numID = numID;
+	}
+
+
+
+
+
 	/** should be called in the name space of the node thread, so we need a private message queue here, too  */
 	public void initializeSOMnode() {
 		
 		NodeStatistics nodeStats ;
 		
-		int _vectorsize = variableLabels.size() ;
-		Random _rnd = virtualLattice.getRndInstance() ;
-		int k;
+		// int _vectorsize = variableLabels.size() ;
+		
 		
 		/*
 		 * 	ArrayList<Variable> variables = new ArrayList<Variable>(); 
@@ -194,6 +203,8 @@ public abstract class AbstractMetaNode
 		nodeStats.setFieldValues( new ArrayList<BasicStatisticalDescription>() );
 		
 		
+		 
+		
 		// this.intensionality.
 		ArrayList<Variable> vars = intensionality.getProfileVector().getVariables() ;
 		
@@ -204,8 +215,15 @@ public abstract class AbstractMetaNode
 			
 			// there is a tendency that a smaller std dev here leads to smaller TP-zero values...
 			// would have expected sth different
-			double vv = org.math.array.StatisticSample.randomNormal(1, 0.5, 0.36)[0];
 			
+			
+			double sd = virtualLattice.getStDevForNodeInitialization()  * virtualLattice.getInitialRandomDivergence(); 
+			//            default = 0.26;                                     default = 1.0
+			
+			// org.math.array.StatisticSample.
+			
+			double vv = sampler.randomnormal(1, 0.5, sd)[0];
+			// comes from JMathTools:  http://jmathtools.berlios.de/doku.php
 			
 			vv = Math.round(vv*1000000.0)/1000000.0;
 			double v0 = vv;

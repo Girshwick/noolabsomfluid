@@ -2,6 +2,7 @@ package org.NooLab.somfluid.core.engines.det.adv;
 
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.core.engines.det.DSom;
 
 /**
  *
@@ -41,8 +42,13 @@ public class SomBags {
 	 * 
 	 * creates data samples and parameterization packs
 	 * 
+	 * will put the bags as samples into object "dataSampler{}"
+	 * 
+	 * 
+	 * @param dSom 
+	 * 
 	 */
-	public void createBags() {
+	public void createBags(DSom dSom) {
 		// 
 		
 	}

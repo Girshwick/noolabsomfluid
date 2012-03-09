@@ -43,8 +43,13 @@ public interface ExtensionalityDynamicsIntf {
 	
 	public double getPPV() ;
 
+	public void setNPV(double npv);
+	
+	public double getNPV() ;
+
+	
 	public double getMajorityValueIdentifier() ;
 
 	public void setMajorityValueIdentifier(double majorityValueIdentifier) ;
-	
+
 }

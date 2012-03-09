@@ -92,6 +92,7 @@ class ProfileVector implements Serializable, ProfileVectorIntf {
 	}
 
 
+
 	public void setVariables(ArrayList<Variable> variables) {
 		this.variables = variables;
 	}
@@ -100,6 +101,9 @@ class ProfileVector implements Serializable, ProfileVectorIntf {
 	public ArrayList<Double> getValues() {
 		return values;
 	}
+
+
+	
 
 
 	public void setValues(ArrayList<Double> invalues) {

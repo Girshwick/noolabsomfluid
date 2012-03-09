@@ -12,8 +12,8 @@ import org.NooLab.somfluid.SomFluidTask;
 
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
+import org.NooLab.somfluid.core.application.SomValidation;
 import org.NooLab.somfluid.core.engines.det.results.SomTargetResults;
-import org.NooLab.somfluid.core.engines.det.results.SomValidation;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.utilities.logging.PrintLog;
@@ -64,6 +64,8 @@ public class DSom implements DSomIntf{
 
 	SomFluidMonoTaskIntf somTask; // is of mono-flavor here
 	
+	SomTargetedModeling somTargetedModeling;  
+	
 	DSomCore dSomCore;
 
 	public BmuBuffer bmuBuffer;
@@ -87,8 +89,9 @@ public class DSom implements DSomIntf{
 	public DSom( SomFluid sfParent , SomDataObject sdo, VirtualLattice somlattice, SomFluidTask sfTask ) {
 		 
 		somFluidParent = sfParent;
-		//sfFactory = factory;	
 		sfProperties = somFluidParent.getSfProperties();
+		sfFactory = sfProperties.getSfFactory() ;
+		
 		somData = sdo;
 		somLattice = somlattice ;
 		
@@ -122,7 +125,9 @@ public class DSom implements DSomIntf{
 	}
 
 
-
+	// ========================================================================
+	
+	
 	public int getTargetVariableColumn() {
 		// dependent on modelingSettings
 		
@@ -177,8 +182,23 @@ public class DSom implements DSomIntf{
 	}
 
 
+	public DSomCore getdSomCore() {
+		return dSomCore;
+	}
+
+
 	public PrintLog getOut() {
 		return out;
+	}
+
+
+	public void setEmbeddingInstance(SomTargetedModeling targetedModeling) {
+		 
+		somTargetedModeling  = targetedModeling;
+	}
+	public SomTargetedModeling getEmbeddingInstance() {
+		 
+		return somTargetedModeling;
 	}
 
  

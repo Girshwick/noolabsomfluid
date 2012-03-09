@@ -18,16 +18,18 @@ public interface ProfileVectorIntf {
 
 	public void setVariables(ArrayList<Variable> variables);
 
+	/** return the complete profile */
 	public ArrayList<Double> getValues();
-
+ 
 	public void setValues(ArrayList<Double> values);
 
 	public int getLastExtDataValueIndex();
 
 	public void setLastExtDataValueIndex(int lastExtDataValueIndex);
 
+	/** return the labels of all variables */
 	public ArrayList<String> getVariablesStr();
-
+ 
 	public void setVariablesStr(ArrayList<String> variablesStr);
 
 	public ArrayList<Double> getCompoundValues();

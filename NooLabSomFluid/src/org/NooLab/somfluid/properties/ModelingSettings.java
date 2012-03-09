@@ -1,12 +1,16 @@
 package org.NooLab.somfluid.properties;
 
+
+
+
+import org.NooLab.utilities.ArrUtilities;
+
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.Vector;
-
-
 
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.components.DataFilter;
@@ -15,8 +19,19 @@ import org.NooLab.somfluid.core.engines.det.ClassesDictionary;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.data.DataSampler;
 import org.NooLab.somfluid.data.Variables;
-import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.somfluid.properties.CrystalizationSettings;
+import org.NooLab.somfluid.properties.OptimizerSettings;
+import org.NooLab.somfluid.properties.SomBagSettings;
+import org.NooLab.somfluid.properties.SpelaSettings;
+import org.NooLab.somfluid.properties.SpriteSettings;
+import org.NooLab.somfluid.properties.ValidationSettings;
 import org.NooLab.utilities.xml.XmlFileRead;
+
+
+
+
+
+
 
 
 
@@ -87,11 +102,16 @@ public class ModelingSettings implements Serializable{
 	/**    */
 	SomBagSettings somBagSettings;
 	
-	/**    */
+	/** parameters for validation, such like sample sizes COOS validation , block sampling (important for time series)  */
 	ValidationSettings validationSettings;
 
-	/**    */
+	/** for idealization processes */
 	CrystalizationSettings crystalSettings;
+	
+	/** e.g. parameters about NVE */
+	DataTransformationSettings transformationSettings ;
+	
+	
 	
 	// our central random object for creating random numbers
 	transient Random random;
@@ -102,6 +122,7 @@ public class ModelingSettings implements Serializable{
 	 
 	ArrayList<String> targetVariableCandidates = new ArrayList<String> (); 
 	String activeTvLabel="" ;
+	String tvTargetGroupLabelColumnHeader = "" ;
 	
 	/** idf true, then "ClassificationSettings" apply */
 	boolean targetedModeling = true ; 
@@ -176,7 +197,8 @@ public class ModelingSettings implements Serializable{
 	// ................................
 	// constants ......................
 
-
+	int somType;
+	
 	boolean calculateAllVariables ;
 	
 	// feedback, diagnosis, and debug
@@ -221,6 +243,8 @@ public class ModelingSettings implements Serializable{
 	
 
 	
+
+	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 	public ModelingSettings(){
 		 
@@ -233,7 +257,10 @@ public class ModelingSettings implements Serializable{
 		somBagSettings = new SomBagSettings(this) ;
 		validationSettings = new ValidationSettings(this) ;
 		
+		crystalSettings = new CrystalizationSettings(this) ;
 		
+		/** e.g. parameters about NVE */
+		transformationSettings = new DataTransformationSettings(this)  ;
 		
 		setRandomSeed();
 		threadPriorities[3] = 1 ; // [3] = Som calculations
@@ -382,6 +409,19 @@ public class ModelingSettings implements Serializable{
 
 	public void setActiveTvLabel(String activeTvLabel) {
 		this.activeTvLabel = activeTvLabel;
+	}
+
+	public void setTvGroupLabels(String tvColLabel){
+		tvTargetGroupLabelColumnHeader = tvColLabel ;
+	}
+	
+	public String getTvTargetGroupLabelColumnHeader() {
+		return tvTargetGroupLabelColumnHeader;
+	}
+
+	public void setTvTargetGroupLabelColumnHeader(
+			String tvTargetGroupLabelColumnHeader) {
+		this.tvTargetGroupLabelColumnHeader = tvTargetGroupLabelColumnHeader;
 	}
 
 	public ArrayList<String> getTargetVariableCandidates() {
@@ -785,6 +825,43 @@ public class ModelingSettings implements Serializable{
 
 	public boolean getSomCrystalization() {
 		return somCrystalization;
+	}
+
+	public CrystalizationSettings getCrystalSettings() {
+		return crystalSettings;
+	}
+
+	public void setCrystalSettings(CrystalizationSettings crystalSettings) {
+		this.crystalSettings = crystalSettings;
+	}
+
+	public DataTransformationSettings getTransformationSettings() {
+		return transformationSettings;
+	}
+
+	public void setTransformationSettings(
+			DataTransformationSettings transformationSettings) {
+		this.transformationSettings = transformationSettings;
+	}
+
+	public DataFilter getDataFilter() {
+		return dataFilter;
+	}
+
+	public void setDataFilter(DataFilter dataFilter) {
+		this.dataFilter = dataFilter;
+	}
+
+	public void setSomCrystalization(boolean somCrystalization) {
+		this.somCrystalization = somCrystalization;
+	}
+
+	public void setSomType(int somtype) {
+		somType = somtype;
+	}
+
+	public int getSomType() {
+		return somType;
 	}
 
 	

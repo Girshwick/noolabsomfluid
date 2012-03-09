@@ -3,6 +3,7 @@ package org.NooLab.somfluid.core.engines.det;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.components.SomVariableHandling;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
@@ -21,11 +22,19 @@ import org.NooLab.somfluid.env.communication.NodeTask;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somscreen.SomScreening;
 import org.NooLab.somsprite.SomSprite;
+import org.NooLab.somtransform.algo.AdaptiveDiscretization;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
 
  
-
+/**
+ * 
+ * this impementation claims to contain ensemble based feature selection
+ * http://java-ml.sourceforge.net/api/0.1.6/
+ * 
+ * @author kwa
+ *
+ */
 public class DSomCore {
 
 	DSom dSom;
@@ -258,6 +267,8 @@ public class DSomCore {
 		int loopcount=0;
 		boolean done=false;
 		
+		SomVariableHandling variableHandling;
+		
 		SomTargetResults somResults;
 		
 		SomSprite somSprite ;
@@ -265,7 +276,48 @@ public class DSomCore {
 		
 		SomMapTable somMapTable ;
 		
+		variableHandling = new SomVariableHandling( dSom );
+		variableHandling.determineSampleSizes() ;
 		
+		
+		// before starting with our L2-process, we need the info about ClassificationSettings.getTargetGroupDefinition()
+		// which we have to set empirically if we are in multi-mode
+		int tm = modset.getClassifySettings().getTargetMode();
+		
+		if (tm == ClassificationSettings._TARGETMODE_MULTI){ // TODO: needed an option which blocks the recalc of TGs! 
+			// check if targetgoupdefs are false, or auto = true, if not: do nothing here, even if we have to stop 
+			
+			
+			variableHandling.getEmpiricTargetGroups(  true ); 
+			// there are different flavors of that, actually, it also can perform "adaptive binning" into a number of groups,
+			// perhaps based on mono-variate clustering (in turn based on the spatial distribution of distances)
+			
+			
+			double[][] tGdefinition = variableHandling.getTargetGroups();
+			this.classifySettings.setTGdefinition(tGdefinition);
+		}
+		
+		
+		if (modset.getSomType() == SomFluidProperties._SOMTYPE_MONO ){
+			// if we are "modeling" i.e. working guided by a target variable, we have to distribute the use vector
+			 ArrayList<Double> usevector = null ;
+			 MetaNode  node;
+			 int  tix ;
+			 
+			 for (int i=0; i<dSom.getSomLattice().size();i++){
+				 node = dSom.getSomLattice().getNode(i);
+				 usevector = new ArrayList<Double>(node.getSimilarity().getUsageIndicationVector()) ;
+				 tix =  node.getSimilarity().getIndexTargetVariable() ;
+				 usevector.set(tix, 0.0) ;
+				 node.getIntensionality().setUsageIndicationVector(usevector) ;
+				 node.getIntensionality().setTargetVariableIndex(tix) ;
+				 // the list of used variables is an important aspect of an intension and should be made available there
+				 // fromhere it is used by SomApplication (app, validation), 
+				 // note that the usevector in intension excludes the TV !!! 
+				 // it is also part of "node.similarity", which uses it for learning
+			 }
+			   
+		}
 		
 		while ((done==false) && (dSom.getUserbreak()==false)){
 		
@@ -282,11 +334,14 @@ public class DSomCore {
 			
 			// ......................................
 			
-			somResults = new SomTargetResults( dSom, dataSampler, modelingSettings );
+			// this will put the results into the "som": the lattice will kow about the mode, the TV and the TG, and the nodes will know
+			// about their ppv regarding those definitions
+			somResults = new SomTargetResults( this, dataSampler, modelingSettings );
 			
-			somResults.prepare();
+			// performs a validation if the validation sample is present, and collects the results for both samples
+			somResults.prepare(); 
 
-			consoleDisplay();
+			// consoleDisplay(); // of profile values for nodes
 			// TODO: release event message
 			
 			// ......................................
@@ -306,9 +361,8 @@ public class DSomCore {
 					somSprite = new SomSprite( dSom , modelingSettings );
 				 
 					// export maptable, or data, dependent on record number, to the sprite
-					somMapTable = exportSomMapTable();
- 					
-					somSprite.acquireMapTable( somMapTable );
+					// somMapTable = exportSomMapTable();
+					somSprite.acquireMapTable( exportSomMapTable() );
 					
 					somSprite.startSpriteProcess(1); 
 					// 1 = will wait for completion , but may react to messages and requests
@@ -331,6 +385,12 @@ public class DSomCore {
 					 *  (new ExecuteSom( params )).go().prepareResults() ;
 					*/
 					
+					// let SomTransformer implement the waiting candidate transformations
+					
+					   // TODO ....
+					
+					
+					// 
 					somScreening = new SomScreening( dSom , modelingSettings );
 					somScreening.setModelResultSelection( new int[]{SomScreening._SEL_TOP, SomScreening._SEL_DIVERSE} ) ;
 					somScreening.setModelResultSelectionSize(20) ;
@@ -505,7 +565,7 @@ public class DSomCore {
 		dsomSize = dSom.getSize();
 		dsomT = Math.log10( 10+dsomSize ) ;
 		
-		if ((globalLimit>15) && (globalLimit < baseSet.size() )){
+		if ((globalLimit>=11) && (globalLimit < baseSet.size() )){
 			targetcount = globalLimit;
 		}else{
 			targetcount = baseSet.size();
@@ -813,6 +873,11 @@ public class DSomCore {
 
 	public DataSampler getDataSampler() {
 		return dataSampler;
+	}
+
+
+	public DSom getParent() {
+		return dSom;
 	}
 	
 	

@@ -22,6 +22,7 @@ import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurface;
 import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceIntf;
 import org.NooLab.somfluid.core.categories.similarity.Similarity;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
+import org.NooLab.somfluid.core.engines.det.results.ModelProperties;
 import org.NooLab.somfluid.core.nodes.LatticeIntf;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
@@ -32,11 +33,14 @@ import org.NooLab.utilities.ArrUtilities;
  
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
+import org.math.array.StatisticSample;
 
 
 
 
 public class VirtualLattice implements LatticeIntf{
+
+	public static final double __DEFAULT_NODE_INIT_STDEV = 0.16;
 
 	LatticePropertiesIntf latticeProperties;
 
@@ -50,11 +54,12 @@ public class VirtualLattice implements LatticeIntf{
 	
 	OpenLatticeFutures openLatticeFutures = new OpenLatticeFutures();
 	
-	
 	ArrayList<SurroundResults> selectionResultsQueue = new ArrayList<SurroundResults>(); 
 	SelectionResultsQueueDigester selectionResultsQueueDigester;
 	
 	Map<String, Object> selectionResultsQueryMap = new HashMap<String, Object>()  ;
+	
+	private ModelProperties  modelProperties; 
 	
 	// ------------------------------------------
 	// initialize imports of external structural components
@@ -77,6 +82,9 @@ public class VirtualLattice implements LatticeIntf{
 	
 	// ------------------------------------------
 	
+	int surroundError=0;
+	
+	StatisticSample statsSampler;
 	Random rndInstance = new Random();
 	
 	ArrUtilities arrutil = new ArrUtilities (); 
@@ -85,6 +93,10 @@ public class VirtualLattice implements LatticeIntf{
 	private double averagePhysicalDistance = 1.0;
 
 	public boolean bmuBufferActivated = false;
+
+	private double initialRandomDivergence = 0.2;
+	private double stDevForNodeInitialization = __DEFAULT_NODE_INIT_STDEV ;
+	
 	
 	// ========================================================================
 	public VirtualLattice(SomFluid parent, LatticePropertiesIntf latticeProps){
@@ -97,13 +109,20 @@ public class VirtualLattice implements LatticeIntf{
 		extensionalityDynamics = new ExtensionalityDynamics(somData) ; 
 		
 		// ..........................................................
+		out = parent.getOut();
 		
 		selectionResultsQueueDigester = new SelectionResultsQueueDigester() ;
+		out.delay(60);
 		
+		/*
+		 * the properties of the lattice if used/interpreted as a model
+		 */
+		modelProperties = new ModelProperties() ; 
 		
-		rndInstance.setSeed(1234);
+		int seed = 9357;
+		rndInstance.setSeed( seed );
+		statsSampler = new StatisticSample( seed ) ;
 		
-		out = parent.getOut();
 		
 	}
 	// ========================================================================
@@ -163,17 +182,17 @@ public class VirtualLattice implements LatticeIntf{
 			ArrayList<IndexDistanceIntf> particlesIntf = new ArrayList<IndexDistanceIntf>();
 			ArrayList<IndexDistance> particles = new ArrayList<IndexDistance>();
 			
-			// TODO define selection size, otherwise the field will tak ethe default !!!
+			// TODO define selection size, otherwise the field will take the default !!!
 			// this call returns immediately, providing the GUID as issued by the RepulsionField
-			queryGuid = somFluidParent.getNeighborhoodNodes( index ,surroundN);
+			queryGuid = somFluidParent.getNeighborhoodNodes( index ,surroundN);  // XXX
 			
 			// putting this to a map <guid,null>, the matching result object will contain the same Guid
 			selectionResultsQueryMap.put(queryGuid,null) ;
 			
 			// now waiting here
 			int z=0;
-			while ((z<10000) && (selectionResultsQueryMap.get(queryGuid)==null)){ // (z<300) && // activate for NON _DEBUG abc124
-				minidelay(100); 
+			while ((z<2000) && (selectionResultsQueryMap.get(queryGuid)==null)){ // (z<300) && // activate for NON _DEBUG abc124
+				minidelay(10); 
 				z++;
 			}
 			
@@ -189,6 +208,7 @@ public class VirtualLattice implements LatticeIntf{
 				particlesIntf = new ArrayList<IndexDistanceIntf>( particles );
 			}else{
 				out.printErr(3, "retrieval of surround for index <"+index+"> was unexpectedly empty.");
+				surroundError++;
 			}
 			
 			results = null;
@@ -216,8 +236,39 @@ public class VirtualLattice implements LatticeIntf{
 		nodes.clear();
 	}
 	
+	public MetaNode getNodeByNumId( long nodeID ){
+		
+		MetaNode node= null, _node;
+		
+		// TODO: use a TreeMap for this instead...
+		for (int i=0;i<nodes.size();i++){
+			_node = nodes.get(i);
+			if (_node.getNumID()==nodeID){
+				node = _node;
+				break;
+			}
+		}
+		
+		return node;
+	}
 
+	public MetaNode getNodeBySerialId( long serid ){
+		
+		MetaNode node= null, _node;
+		
+		// TODO: use a TreeMap for this instead...
+		for (int i=0;i<nodes.size();i++){
+			_node = nodes.get(i);
+			if (_node.getSerialID()==serid){
+				node = _node;
+				break;
+			}
+		}
+		
+		return node;
+	}
 
+	
 	public MetaNode getNode( int index ){
 		return nodes.get(index) ;
 	}
@@ -289,6 +340,21 @@ public class VirtualLattice implements LatticeIntf{
 	public double getAveragePhysicalDistance() {
 		return averagePhysicalDistance;
 	}
+	public SimilarityIntf getSimilarityConcepts() {
+		return similarityConcepts;
+	}
+
+
+	public int getSurroundError() {
+		return surroundError;
+	}
+
+
+	public void setSurroundError(int surroundError) {
+		this.surroundError = surroundError;
+	}
+
+
 	public PrintLog getOut() {
 		return out;
 	}
@@ -397,11 +463,41 @@ public class VirtualLattice implements LatticeIntf{
 		return selectionResultsQueue;
 	}
 
+	public LatticePropertiesIntf getLatticeProperties() {
+		return latticeProperties;
+	}
+
+
+	public void setLatticeProperties(LatticePropertiesIntf latticeProperties) {
+		this.latticeProperties = latticeProperties;
+	}
+
+
+	public ModelProperties  getModelProperties() {
+		return modelProperties;
+	}
+
+
+	public void setModelProperties(ModelProperties modelProperties) {
+		this.modelProperties = modelProperties;
+	}
+
+
 	public void stop(){
 		selectionResultsQueueDigester.isRunning = false;
 	}
-	
-	
+	public boolean selectionResultsQueueDigesterAlive(){
+		boolean hb = (selectionResultsQueueDigester!=null) && (selectionResultsQueueDigester.isRunning) ; 
+		       	
+		if (hb){
+			hb = (selectionResultsQueueDigester.vslSelectionDigest.isAlive()) ;
+		}
+		
+		return hb ;
+	}
+	public void startSelectionResultsQueueDigester(){
+		selectionResultsQueueDigester = new SelectionResultsQueueDigester() ;
+	}
 	/**
 	 * 
 	 * this class is the backbone for the acceptance of messages issued by the RepulsionField about
@@ -425,24 +521,35 @@ public class VirtualLattice implements LatticeIntf{
 		public void run() {
 			isRunning = true;
 			int dt;
+			isWorking=false;
+			
+			selectionResultsQueue = new ArrayList<SurroundResults>();
 			
 			try{
 				while (isRunning){
 					
+					if (selectionResultsQueue.size()>0){
+						out.print(5, "... selections waiting : "+selectionResultsQueue.size());
+					}
 					if (isWorking==false){
 						isWorking = true;
 						
-						if (selectionResultsQueue.size()>0){
-							_results = selectionResultsQueue.get(0) ;
-							digestParticleSelection(_results) ;
+						try{
 							
-							selectionResultsQueue.remove(0) ;
-						}
+							if (selectionResultsQueue.size()>0){
+								_results = selectionResultsQueue.get(0) ;
+								
+								digestParticleSelection(_results) ;
+								
+								selectionResultsQueue.remove(0) ;
+							}
+						}catch(Exception e){}
 						
 						isWorking = false;
-					}
+					} // isWorking ?
+					
 					if (selectionResultsQueue.size()==0){
-						dt = 5 ;
+						dt = 2 ;
 					}else{
 						dt = 0 ;
 					}
@@ -465,10 +572,15 @@ public class VirtualLattice implements LatticeIntf{
 			
 			guidStr = results.getGuid();
 			
+											out.print(5, "   - - - lattice is now checking match for results by guid="+guidStr);
+			
 			if (selectionResultsQueryMap.containsKey(guidStr)){
 				// we may even introduce a local selection buffer here, too !
 				selectionResultsQueryMap.put(guidStr, results);
-				// the map serves as a queue for named items ! 
+				// the map serves as a queue for named items !
+											out.print(5, "   - - - ...match found!");
+			}else{
+				out.printErr(4, "   - - - lattice could not qualify results-guid = "+guidStr);	
 			}
 		}
 		
@@ -593,6 +705,32 @@ public class VirtualLattice implements LatticeIntf{
 		
 	}
 
+
+	public double getInitialRandomDivergence() {
+		return initialRandomDivergence;
+	}
+
+	public void setInitialRandomDivergence(double initialRndDiv) {
+		this.initialRandomDivergence = initialRndDiv;
+	}
+
+
+	public double getStDevForNodeInitialization() {
+		return stDevForNodeInitialization;
+	}
+
+
+	public void setStDevForNodeInitialization(double stDevForNodeInitialization) {
+		this.stDevForNodeInitialization = stDevForNodeInitialization;
+	}
+
+
+	public StatisticSample getRndSamplerInstance() {
+		return statsSampler;
+	}
+
+	
+	
 		
 }
 

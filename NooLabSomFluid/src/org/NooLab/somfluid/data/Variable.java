@@ -8,8 +8,17 @@ public class Variable implements Serializable{
 	
 	private static final long serialVersionUID = 4793294807647874956L;
 
+	public static final int _VARIABLE_SCALE_REAL     = 1 ;
+	public static final int _VARIABLE_SCALE_NOMINAL  = 2 ;
+	public static final int _VARIABLE_SCALE_BINARY   = 3 ;
+	public static final int _VARIABLE_SCALE_CIRCULAR = 5 ;
+	public static final int _VARIABLE_SCALE_COMPLEX  = 7 ;
+	
+	
 	private int index ; 
 
+	private int valueScaleNiveau = 0 ;
+	
 	private double minimum;
 	private double maximum;
 	private double weight;
@@ -33,6 +42,8 @@ public class Variable implements Serializable{
 	private boolean isIndexcandidate;
 
 	private int isEmpty = 0 ;
+
+	private int serialID = -1 ;
 	
 	// ========================================================================
 	public Variable(){
@@ -172,6 +183,27 @@ public class Variable implements Serializable{
 
 	public int getIsEmpty() {
 		return isEmpty;
+	}
+
+	public int getValueScaleNiveau() {
+		return valueScaleNiveau;
+	}
+
+	public void setValueScaleNiveau(int valueScaleNiveau) {
+		this.valueScaleNiveau = valueScaleNiveau;
+	}
+
+	public void setVariableSerialID(int idv) {
+		 
+		serialID = idv ;
+	}
+
+	public int getSerialID() {
+		return serialID;
+	}
+
+	public void setSerialID(int serialID) {
+		this.serialID = serialID;
 	}
 
 

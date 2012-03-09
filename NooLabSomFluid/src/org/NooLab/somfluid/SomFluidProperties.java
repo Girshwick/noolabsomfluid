@@ -9,6 +9,7 @@ import org.NooLab.somfluid.properties.DataUseSettings;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.SettingsTransporter;
 import org.NooLab.somfluid.properties.SpriteSettings;
+import org.NooLab.somfluid.properties.ValidationSettings;
 
 
 											//  as usual, we offer particular views on this container
@@ -153,6 +154,7 @@ public class SomFluidProperties implements 	//
 
 	public void setSomType(int somType) {
 		this.somType = somType;
+		modelingSettings.setSomType(somType);
 	}
 
 
@@ -328,15 +330,38 @@ public class SomFluidProperties implements 	//
 	public String[] getGrowthModesAsStr(){
 		return null;
 	}
-
+	public void removeGrowthMode( int growthMode){
+		
+	}
+	
 	public void setValidationActive(boolean flag, double... params) {
  		modelingSettings.setValidationActive(flag) ;
 	}
 
-
-	public void setValidationParameters(int vStale, int repeats, double... params) {
+	public void setValidationStyle( int vStyle) {
+		modelingSettings.getValidationSettings().setValidationStyle(vStyle);
+	}
+	
+	public void setValidationSampleSizeAutoAdjust( boolean flag){
+		modelingSettings.getValidationSettings().setSampleSizeAutoAdjust(flag) ;
+	}
+	
+	public void setValidationParameters( int repeats, double... params) {
+		setValidationParameters( ValidationSettings._VALIDATE_SINGLE_SAMPLE_PROB, repeats, params);
+	}
+	
+	/**
+	 * parameters for validation: p1=style, p2:n repeats p3+=sample sizes to keep for validation
+	 * 
+	 * @param vStyle   
+	 * @param repeats  
+	 * @param params   
+	 */
+	public void setValidationParameters(int vStyle, int repeats, double[] params) {
 		double[] parameters ;
 		
+		modelingSettings.getValidationSettings().setValidationStyle(vStyle);
+		modelingSettings.getValidationSettings().setRepeats(repeats);
 		
 		if ((params!=null) && (params.length>0)){
 			
@@ -404,6 +429,44 @@ public class SomFluidProperties implements 	//
 	public void setSimulationMode(int simulationmode, double... params) {
 		dataUseSettings.setSimulationMode(simulationmode, params);
 		
+	}
+	
+	/**
+	 *
+	 *  mode : </br>
+	 *   - 0 = 0/0-model, plain normal noise</br>
+	 *   - 1 = 0-model, no consideration of correlation structure, but according to empiric distribution</br>
+	 *   - 2 = consideration of correlation structure, only top-2 related variable</br>
+	 *   - 3 = consideration of correlation structure, all variables in use vector,</br></br>
+	 *   
+	 *  modes 2,3 use cholesky decomposition </br></br>
+	 *  
+	 * @param addedPortion amount of records to add as a fraction of the original sample
+	 * @param noiseIntensity amount of noise as fraction of stdev per variable
+	 * @param mode of simulation
+	 */
+	public void addSurrogatedSimulationData(double addedPortion, double noiseIntensity, int mode) {
+		
+	}
+
+	/**
+	 * global on/off, initial modeling on/off, optimizing on/off;
+	 *  
+	 * @param global
+	 * @param firstModel
+	 * @param optimization
+	 */
+	public void surrogateAppMode(int global, int firstModel, int optimization) {
+		
+		
+	}
+
+	/**
+	 *  5=normal, 1=greedy -> large nodes, rather small lattice, 10=allowing sparsely filled nodes
+	 * 
+	 */
+	public void setGrowthSizeAdaptationIntensity(int adaptionintensity) {
+		 
 	}
 
 

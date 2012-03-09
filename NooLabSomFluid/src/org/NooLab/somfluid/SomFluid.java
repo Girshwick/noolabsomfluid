@@ -9,7 +9,12 @@ import org.NooLab.repulsive.particles.Particle;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.SomTasks;
 import org.NooLab.somfluid.components.VirtualLattice;
+import org.NooLab.somfluid.core.application.SomAppUsageIntf;
+import org.NooLab.somfluid.core.application.SomAppValidationIntf;
+import org.NooLab.somfluid.core.application.SomApplication;
+import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.core.engines.det.DSom;
+import org.NooLab.somfluid.core.engines.det.SomTargetedModeling;
 import org.NooLab.somfluid.core.engines.det.adv.SomBags;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
@@ -39,6 +44,8 @@ import org.NooLab.utilities.objects.StringedObjects;
  * SomFluid does not possess any capabilities for graphical output.
  * The graphics is a separate module hosted by the SomFactory, to which the Fluid connects via port sending;
  * format of exchange is standardized, such the displayed info can be switched easily 
+ * 
+ * 
  * 
  */
 public class SomFluid 
@@ -78,7 +85,7 @@ public class SomFluid
 	
 	SomFluid sf ;
  	
-	
+	SomApplication somApplication;
 	
 	boolean isActivated=false, isInitialized=false;
 	boolean processIsRunning=false;
@@ -199,115 +206,24 @@ public class SomFluid
 		
 	}
 
-	protected void initializeNodesWithData(){
-	
-		// "by index" refers to 
-		// this.notifyNodeByIndex(1, new NodeTask( NodeTask._TASK_SETDATA, variablesSetupDef, null) );
-		// this.notifyNodeBySerial( virtualLatticeNodes.getNode(5).getSerialID(), new NodeTask( NodeTask._TASK_SETDATA, new String("123-"+i)) );
 
-		// TODO: we may perform a PCA, thus deriving a weight vector (NOT: profile vector!!!)
-		//       that would prepare the SOM into the direction of the main dimensions
-		
-		
-	}
 	
 	
-	protected void initializeNodesWithRandomvalues(){
-
-		NodeTask task;
-		Variables vars;
-		String guid; 
-		LatticeFutureVisor latticeFutureVisor;
-		
-		
-		vars = somDataObject.getActiveVariables() ;
-		
-		if (vars.size()<=1){
-			return;
-		}
-		if (virtualLatticeNodes==null){
-			return;
-		}
-		 
-											out.print(2, "loading data definitions to Som-Lattice...");
-											
-		// initialize feature vectors : only active variables , WITHOUT id, tv !!!
-		
-		
-		latticeFutureVisor = new LatticeFutureVisor(virtualLatticeNodes,  NodeTask._TASK_SETVAR );
-		 
-											out.print(4, "before task sending...");
-		task = new NodeTask( NodeTask._TASK_SETVAR, (Object)sob.encode( (Object)vars.getActiveVariableLabels()) );
-		// do it for all nodes
-		this.notifyAllNodes( task );
-											out.print(4, "returned from task sending...  -> now waiting");
-		latticeFutureVisor.waitFor(); // it will wait for completion of "_TASK_SETVAR", for all nodes since we did not define a particular one		
-
-	 
-											out.print(4, "continue, next task...");
-		// set target variable ... TODO other messages about dynamic configuration : blacklist, whitelist, sim function 
-		task = new NodeTask( NodeTask._TASK_SETTV, (Object)sob.encode( (Object)vars.getActiveTargetVariable()) );
-		// do it for all nodes
-		this.notifyAllNodes( task );
-		
-		 
-											out.print(3, "loading data definitions done.");
-											out.print(3, "initializing nodes...");
-											
-		latticeFutureVisor = new LatticeFutureVisor(virtualLatticeNodes,  NodeTask._TASK_RNDINIT );
-		
-		
-		// ATTENTION: we have to wait !!! The informer immediately returns, then the init is sent before the node initialized!
-		// the need for waiting until a process is completed is quite rare, and should occur only in the startup phase,
-		// even on loading data into the SOM (learning) there should be no need to wait
-		task = new NodeTask( NodeTask._TASK_RNDINIT  );
-		this.notifyAllNodes( task );
-		
-		latticeFutureVisor.waitFor(); delay(100); 
-											out.print(1, "initialization of SomFluid done.");
-											
-											
-	}
 	
-	
-	// strat this through message queue and task process,  
+	/**
+	 * start this through message queue and task process,  
+	 * 
+	 * @param sfTask
+	 */
 	private void performTargetedModeling( SomFluidTask sfTask ) {
-		String activeTvLabel;
-		DSom dSom ;
+		// since we need this also for evo-optimization, we put it to a small class  
+		// ther we use a different constructor (taking a copy from this basic instance...)
 		
+		SomTargetedModeling targetedModeling;
 		
-		// now, the somDataObject knows about the DataTable
-		// if there is some data in SomDataObject, it will be loaded into nodes
-		
-		// we have to remove empty columns, blacklisted columns, columns that are excluded dynamically 
-		// by criteria like derivation level 
-		somDataObject.determineActiveVariables();
-		
+		targetedModeling = new SomTargetedModeling( this, sfProperties, somDataObject, virtualLatticeNodes, sfTask);
+		targetedModeling.init().perform();
 		 
-		
-		initializeNodesWithRandomvalues(); // adopting feature vectors, not yet the data of course
-		
-		initializeNodesWithData(); 
-		
-		  
-		
-		activeTvLabel = sfProperties.getModelingSettings().getActiveTvLabel() ; // "TV"
-		// TargetVariable  targetVariable;
-		
-		if (sfProperties.getModelingSettings().getSomBagSettings().getApplySomBags()==false){
-			// no bagging, just standard normal som-ing 
-			dSom = new DSom( this, somDataObject, virtualLatticeNodes, sfTask );
-			dSom.performTargetedModeling();
-			
-		}else{
-			// we create bags according to parameters, eachbag will run a DSom then...
-			// results will be collected by SomBag, and meta-results will be evaluated also there
-			somBags.createBags();
-			
-			somBags.runBags();
-		}
-		
-		
 	}
 
 	// ========================================================================
@@ -416,9 +332,12 @@ public class SomFluid
 		// we need a map that translates between nodes and particles
 		
 		particleField.setSelectionSize( surroundN ) ;
+		
 		// asking for the surrounding, -> before start set the selection radius == new API function
 		String guid = particleField.getSurround( particleindex, 1, true);
 		
+		// will immediately return, the selection will be sent 
+		// through event callback to "onSelectionRequestCompleted()" below 
  		return  guid;
 	}
 	
@@ -432,6 +351,22 @@ public class SomFluid
 
 	public SomFluidProperties getSfProperties() {
 		return sfProperties;
+	}
+
+	// ,
+  	// these are public, but clients anyway have access only through the factory,
+	// and the factory provides only the usage interface
+	public SomAppValidationIntf getSomValidationInstance(){
+		if (somApplication==null){
+			somApplication = new SomApplication();
+		}
+		return (SomAppValidationIntf)somApplication ;
+	}
+	public SomAppUsageIntf getSomUsageInstance(){
+		if (somApplication==null){
+			somApplication = new SomApplication();
+		}
+		return (SomAppUsageIntf)somApplication ;
 	}
 
 	// ------------------------------------------------------------------------
@@ -459,12 +394,25 @@ public class SomFluid
 		particleIndexes = results.getParticleIndexes();
 		
 		clonedResults = (SurroundResults) sob.decode( sob.encode(results) );
-		
-		virtualLatticeNodes.getSelectionResultsQueue().add( clonedResults );
+											
+											int n = clonedResults.getParticleIndexes().length   ;
+											str = clonedResults.getGuid() ;
+												
+											out.print(5, "particlefield delivered a selection (n="+n+") for GUID="+str);
+
 		
 		// this result will then be taken as a FiFo by a digesting process, that
 		// will call the method "digestParticleSelection(results);"
 		// yet, it is completely decoupled, such that the current thread can return and finish
+		
+		if (virtualLatticeNodes.selectionResultsQueueDigesterAlive()==false){
+											out.print(3, "restarting selection-results queue digester...");
+			virtualLatticeNodes.startSelectionResultsQueueDigester();
+			delay(50);
+		}
+		
+		ArrayList<SurroundResults> rQueue = virtualLatticeNodes.getSelectionResultsQueue(); 
+		rQueue.add( clonedResults );
 		
 		return; 
 	}
@@ -487,16 +435,19 @@ public class SomFluid
 	@Override
 	public void onLayoutCompleted(int flag) {
 		
-		out.print(2,"Layout of particle field has been completed.");
+		out.print(3,"Layout of particle field has been completed.");
 	}
 
 	@Override
 	public void onCalculationsCompleted() {
 
 		if (sfFactory.physicalFieldStarted==0){
-			out.print(2,"Calculations in particle field have been completed.");
+			out.print(4,"Calculations in particle field have been completed.");
+			
 		}
 		sfFactory.physicalFieldStarted=1;
+		
+		sfFactory.getFieldFactory().setInitComplete(true);
 	}
 
 	public PrintLog getOut() {

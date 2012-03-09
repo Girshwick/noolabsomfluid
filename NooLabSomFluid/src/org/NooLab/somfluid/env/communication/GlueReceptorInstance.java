@@ -19,6 +19,7 @@ import org.NooLab.glue.subscription.publisher.SubscriptionPublisher;
 import org.NooLab.glue.transaction.Transaction;
 import org.NooLab.utilities.logging.PrintLog;
 
+
 public class GlueReceptorInstance implements Runnable, SubscribersIntf{
 
     

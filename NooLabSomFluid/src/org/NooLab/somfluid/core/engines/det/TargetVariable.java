@@ -1,5 +1,12 @@
 package org.NooLab.somfluid.core.engines.det;
 
+import java.util.ArrayList;
+
+import org.NooLab.somfluid.core.engines.det.results.FrequencyList;
+import org.NooLab.somfluid.core.engines.det.results.FrequencyListGeneratorIntf;
+import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
+import org.NooLab.somtransform.algo.AdaptiveDiscretization;
+
 
 
 public class TargetVariable {
@@ -15,6 +22,12 @@ public class TargetVariable {
 
 	}
 	// ------------------------------------------------------------------------
-	
+
 	
 }
+
+
+
+
+
+

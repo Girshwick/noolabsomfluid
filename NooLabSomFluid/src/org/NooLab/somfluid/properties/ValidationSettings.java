@@ -7,11 +7,17 @@ public class ValidationSettings  implements Serializable{
 
 	private static final long serialVersionUID = -5840636933514195606L;
 	
+	/**  classic split of data into 2 parts, for training and validation */
 	public static final int _VALIDATE_SINGLE_SAMPLE_PROB  = 1;
-	public static final int _VALIDATE_SINGLE_SAMPLE_BLOCK = 3;
-	public static final int _VALIDATE_SINGLE_SAMPLE_META  = 5;
-
 	
+	/**  additionally (!) classic 2-sample split: constraints from where to draw the sample;
+	 *  to useful for time series analysis */
+	public static final int _VALIDATE_SINGLE_SAMPLE_BLOCK = 3;
+	
+	/** ?  */
+	public static final int _VALIDATE_SINGLE_SAMPLE_META  = 5;
+	
+	 
 	
 	boolean activation = false;
 	
@@ -23,6 +29,10 @@ public class ValidationSettings  implements Serializable{
 	int sampleNotBeyondIndex = -1;
 
 	double[] vParameters;
+
+	private int repeats;
+
+	private boolean sampleSizeAutoAdjust;
 	
 	
 	// ========================================================================
@@ -80,6 +90,31 @@ public class ValidationSettings  implements Serializable{
 			System.arraycopy(parameters, 0, vParameters, 0, parameters.length );
 		}
 		  
+	}
+
+	public void setRepeats(int repeats) {
+
+		this.repeats = repeats;
+	}
+
+	public int getRepeats() {
+		return repeats;
+	}
+
+	public void setSampleSizeAutoAdjust(boolean flag) {
+		sampleSizeAutoAdjust = flag;
+	}
+
+	public boolean isSampleSizeAutoAdjust() {
+		return sampleSizeAutoAdjust;
+	}
+
+	public double[] getvParameters() {
+		return vParameters;
+	}
+
+	public void setvParameters(double[] vParameters) {
+		this.vParameters = vParameters;
 	}
 
 	

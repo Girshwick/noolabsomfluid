@@ -22,17 +22,18 @@ import org.NooLab.somfluid.properties.ModelingSettings;
 
  
 
-public class DSomDataPerception implements FrequencyListGeneratorIntf{
+public class DSomDataPerception 
+									extends 
+												DSomDataPerceptionAbstract 
+									implements 
+												FrequencyListGeneratorIntf{
 
+	
 	boolean _DEBUG = true;
 	
-	
-	DSom           parentSom;
-	SomDataObject  somData;
-	VirtualLattice somLattice;
-	
+ 
+
 	ArrayList<Integer> sampleRecordIDs, volatileSample;
-	
 	
 	int       currentEpoch, somSteps, neighbourhoodSize=1 ;
 	double    mapRadius, neighbourhoodRadius;
@@ -41,21 +42,14 @@ public class DSomDataPerception implements FrequencyListGeneratorIntf{
 	double    constStartLearningRate = 0.25 ;
 	int       learningRateFixationmode = 2 ;
 	
-	PrintLog out;
+	
 	
 	// ========================================================================
 	public DSomDataPerception( DSom dsom , ArrayList<Integer> sampleRecords) {
+		super(dsom) ;
 		 
-		parentSom = dsom ;
-		
-		somData = dsom.somData ;
-		
 		sampleRecordIDs = new ArrayList<Integer>(sampleRecords);
 		volatileSample  = new ArrayList<Integer>(sampleRecords);
-		
-		somLattice = parentSom.somLattice;
-		
-		out = dsom.out ;
 	}
 	// ========================================================================	
 
@@ -127,7 +121,7 @@ public class DSomDataPerception implements FrequencyListGeneratorIntf{
 			}
 			
 											if (currentRecordIndex > dtable.rowcount() ){
-												continue;
+												break; // continue;
 											}
 			
  
@@ -148,7 +142,11 @@ public class DSomDataPerception implements FrequencyListGeneratorIntf{
 			// get the record at the index position we just determined... 
 			// respecting use vector;  (weight vector will be considered later (!) in determining the similarity)
 			testrecord = selectPreparePerceptDataRecord( currentRecordIndex, 2); // 2: normalized data
-						 				if (testrecord == null)continue;
+			
+						 				if (testrecord == null){
+						 					recordsConsidered++;
+						 					continue;
+						 				}
 				 		 
 			winningNodeIndexes = getBestMatchingNodes( currentRecordIndex, testrecord, 5, boundingIndexList);
 			
@@ -843,7 +841,7 @@ if (extSizeInNeighbors.size()>0){
 		// the object needs a callback up to SomFluid, which in turn collects the events from RepulsionField
 		
 		while (parentSom.somLattice.getLatticeQuery()>0){ // just for DEBUG ONLY
-			out.delay(1000) ;
+			out.delay(10) ;
 		}
 		// the query can be performed through the virtual lattice
 		// selection results arrive in "SomFluid.onSelectionRequestCompleted ()" and 
@@ -1048,115 +1046,6 @@ if (currentEpoch>=2){
 	
 
 	
-	/**
-	 * 
-	 * Creates a sorted list of nodes that match a givn vector of values best;
-	 * blacklist of variables, target variables and index variables are not considered;
-	 * 
-	 * the activated similarity measure will be applied. 
-	 * 
-	 * 
-	 * @param dataRowIndex
-	 * @param profilevalues
-	 * @param bmuCount
-	 * @param boundingIndexList
-	 * @return
-	 */
-	// this acts as a wrapper for "BmuIdentification{}"
-	private ArrayList<IndexDistanceIntf> getBestMatchingNodes( 	int dataRowIndex,
-																ArrayList<Double> profilevalues, 
-																int bmuCount, 
-																ArrayList<Integer> boundingIndexList) {
-		
-		ArrayList<IndexDistanceIntf> bestMatchesCandidates = new ArrayList<IndexDistanceIntf> (); 
-		ArrayList<MetaNodeIntf> nodeCollection = new ArrayList<MetaNodeIntf>(); 
-		ArrayList<Integer> nodeIndexCollection = new ArrayList<Integer>()  ;
-		ProfileVectorMatcher bmuSearch;
-		
-		
-			 
-		boolean bmuBufferAvailable;
-		// comparing the imported values[] against all nodes in lattice
-		//
-		
-		try {
-			
-			/*
-			 * we refer to the AreaPerspective of the field, from where we determine the indexes of the nodes
-			 * within a given radius around a given coordinate.
-			 * 
-			 */
-			
-			// for sufficiently developed maps, we store the last 2 or three BMU to the record (separate structure)
-			// from this then we can derive a surround, such that the search time remains alsmost constant (slow linear O(n)) 
-			// even for large maps 
-			
-			bmuBufferAvailable=false ;
-			// is the BMU buffer available ?
-			// yes...
-			if (bmuBufferAvailable){
-				if (somLattice.bmuBufferActivated){
-					parentSom.bmuBuffer.isBufferavailable(dataRowIndex);
-				
-				}
-			}  // else: advanced pre-processing which we can use to determine a sub-area
-			if (bmuBufferAvailable == false) {
-				// no: we have to search through the whole map for the given record
-				for (int n = 0; n < somLattice.size(); n++) {
-					// MetaNodeIntf node = somLattice.getNode(n);
-					// we should not allocate the whole node, since they are large...
-					// we just should add the indexes
-					// nodeCollection.add(node);
-					nodeIndexCollection.add(n);
-				}
-
-			}
-
-			
-			// here, nodeCollection is a sample from from somLattice, in this collection we search for 
-			// the best match for the profilevalues (format: ArrayList Double)
-			bmuSearch = new ProfileVectorMatcher(out);
-			
-			// this provides just the reference, NOT copies !
-			bmuSearch.linkNodeCollection( somLattice.getNodes());
-			
-			// and this provides the selection, which is either all, or reduced by some preprocessing or buffering
-			bmuSearch.setNodeCollectionByIndex(nodeIndexCollection);
-			
-			bmuSearch.setParameters(profilevalues, bmuCount, boundingIndexList);
-			
-			// this respects deactivated nodes
-			bmuSearch.createListOfMatchingUnits(1); // 1=nodes -> profiles
-			bestMatchesCandidates = bmuSearch.getList( -1 ) ;
-			
-			
-			double cr = (((double)(currentEpoch))/(double)somSteps);
-			double rr = (((double)(sampleRecordIDs.size()))/(double)somData.getRecordCount() ) ;  
-												// not quite correct, should be the size of the master sample
-			
-			if ((cr>=0.42) || (rr>0.28)){                    
-				somLattice.bmuBufferActivated = true;
-			}
-			somLattice.bmuBufferActivated = false;
-			
-			if (somLattice.bmuBufferActivated){
-				// ArrayList<IndexDistance>
-				// we take the first two BMU candidates into the buffer
-				// parentSom.bmuBuffer.add( dataRowIndex, bestMatchesCandidates.get(0)) ;
-				// parentSom.bmuBuffer.add( dataRowIndex, bestMatchesCandidates.get(1)) ;
-			}
-			
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-		finally {
-			nodeCollection.clear();
-			nodeCollection = null;
-			nodeIndexCollection.clear();
-			nodeIndexCollection=null;
-		}
-		return bestMatchesCandidates ;
-	}
 
 	/**
 	 * 

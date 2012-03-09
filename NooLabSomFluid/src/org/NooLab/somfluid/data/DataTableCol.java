@@ -11,6 +11,8 @@ import org.NooLab.somfluid.components.MissingValues;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatistics;
 import org.NooLab.somfluid.util.Formula;
+import org.NooLab.somtransform.algo.NomValEnum;
+import org.NooLab.somtransform.algo.NveMapping;
 
 
 
@@ -203,7 +205,10 @@ public class DataTableCol implements Serializable{
 	}
 
 	public void recodeBinaryEntries(boolean tableHasHeader) {
-		// TODO Auto-generated method stub
+		 
+		// measure the entries into an array list, 
+		//   if num, take the smaller a 0 the larger as 1
+		//   if str, check for y,j,d,s <-> n, n->0, other as 1
 		
 	}
 
@@ -286,7 +291,12 @@ public class DataTableCol implements Serializable{
 		
 		int i,n ,rcount ;
 		String str ;
-		int emptyCells =0, dates=0, nums=0, strs=0, txts=0 ;
+		int emptyCells =0, dates=0, nums=0, strs=0, txts=0,intnums=0 ,minNumStrLen = 999;
+		long minNum=999999999999999999L;
+		
+		ArrayList<String> strValueVariety = new ArrayList<String>();
+		ArrayList<Double> numValueVariety = new ArrayList<Double>();
+		
 		boolean isNumericx , isMonotonic=true;
 		
 		double lastNum = 0, d,v,sumOfDifferences=0;
@@ -311,12 +321,17 @@ public class DataTableCol implements Serializable{
 			
 			str = cellValueStr.get(i) ;
 			
-			if ( (str.length()==0) ){
+			
+			
+			if ( (str.length()==0) || ((str.contentEquals( DataTable.__MV_TEXTUAL )))){ // "M.V."
 				emptyCells++ ;
 				continue ;
 			} 
+
+			if (minNumStrLen > str.length()){
+				minNumStrLen = str.length();
+			}
 			
-				
 			isNumericx = strgutil.isNumericX(str) ;
 			if ( isNumericx == true){
 				 
@@ -330,8 +345,23 @@ public class DataTableCol implements Serializable{
 				}
 				lastNum = v; zd++;	
 				
+				if (v == (Math.round(v))){
+					intnums++;
+				}
+				
+				if (minNum > v){
+					minNum = (long) v;
+				}
+
+				// we count the variety of values
+				if (numValueVariety.contains(v)==false){
+					numValueVariety.add(v);
+				}
+				
 				continue;
-			} 
+			} // end any num kind 
+			
+			str = new String(str.trim() ) ;
 			
 			if (strgutil.isDateX(str)){
 				
@@ -344,9 +374,15 @@ public class DataTableCol implements Serializable{
 				if (str.indexOf(" ")>0){
 					txts++ ;
 				} else {
+					// is it nearly a num, just 1 char not num?
+					// nearNumStrs++
 					strs++ ;
-				}
 					
+					// we count the variety of values
+					if (strValueVariety.contains(str)==false){
+						strValueVariety.add(str);
+					}
+				} // string ? could be yes/no etc...
 				
 			}
 				 
@@ -356,18 +392,29 @@ public class DataTableCol implements Serializable{
 		formatIndicator = -1;
 		
 		if (n == (emptyCells+nums+startRowIndex) ){
-			formatIndicator = 1 ;
+			formatIndicator = DataTable.__FORMAT_NUM ; // 1
 			
 			d = Math.abs(sumOfDifferences/(zd-1) ) ;
 			d = d - 1.0;
 			if ( d <= (0.001/rcount) && (isMonotonic)){
-				formatIndicator = 0 ;
+				formatIndicator = DataTable.__FORMAT_ID; // 0 ;
 			}
-		}
+			
+			if ((nums == intnums) && (formatIndicator>0)){
+				formatIndicator = DataTable.__FORMAT_INT; // 2 ;
+				if (minNumStrLen>=7){
+					formatIndicator = DataTable.__FORMAT_ORGINT ;	
+				}
+			}
+			
+			if (numValueVariety.size()==2){
+				formatIndicator = DataTable.__FORMAT_BIN;
+			}
+		} // some kind of num
 		
 		if (formatIndicator<0){
 			if ((dates + emptyCells + startRowIndex == n)) {
-				formatIndicator = 4;
+				formatIndicator = DataTable.__FORMAT_DATE; // 4;
 			}
 		}
 		if (formatIndicator<0){
@@ -377,12 +424,19 @@ public class DataTableCol implements Serializable{
 			}
 			else{
 				if ((strs > 0) && (txts > 0)) {
-					formatIndicator = 9;
+					formatIndicator = DataTable.__FORMAT_TXT; // 9;
 				}else{
-					formatIndicator = 8;
+					formatIndicator = DataTable.__FORMAT_STR;// 8;
+					
+					if (strValueVariety.size()==2){
+						formatIndicator = DataTable.__FORMAT_BINSTR;
+					}
 				}
 			}
 		}
+		
+		strValueVariety.clear();
+		numValueVariety.clear();
 		
 		return formatIndicator;
 	}
@@ -397,7 +451,7 @@ public class DataTableCol implements Serializable{
 	 * @return
 	 */
 	public int makeNumeric( boolean hasHeader ){
-		int i , r= -1 ;
+		int i , r= -1,cs=-1 ;
 		String str ;
 		double val ;
 		boolean isNumAll = true ;
@@ -409,12 +463,14 @@ public class DataTableCol implements Serializable{
 			if (hasHeader){
 				hoffset =1;
 			}
+			cs = cellValueStr.size();
+			
 			// first checking 
-			for (i=0+hoffset;i<cellValueStr.size();i++){
+			for (i=0+hoffset;i<cs;i++){ // make multi-digest, if there are a lot of records (>1000)
 				
 				str = cellValueStr.get(i) ;
 				
-				if ( (str.length()==0) ||  (str.toLowerCase().contentEquals("m.v."))
+				if ( (str.length()==0) ||  (str.toLowerCase().contentEquals(DataTable.__MV_TEXTUAL.toLowerCase()))
 						                                             ){
 					str = "-1.0" ;
 				}
@@ -431,7 +487,7 @@ public class DataTableCol implements Serializable{
 				str = cellValueStr.get(i) ;
 				
 				if ( (str.length()==0) || 
-					 (str.toLowerCase().contentEquals("m.v."))
+					 (str.toLowerCase().contentEquals(DataTable.__MV_TEXTUAL.toLowerCase()))
 					                                             ){
 					val= -1.0 ;
 				} else {
@@ -441,9 +497,8 @@ public class DataTableCol implements Serializable{
 						val = Double.parseDouble(str) ;
 					}
 					
-					setValue(i-hoffset,val) ;
 				}
-				
+				setValue(i-hoffset,val) ;
 			}
 			r = this.cellValues.size();
 			 

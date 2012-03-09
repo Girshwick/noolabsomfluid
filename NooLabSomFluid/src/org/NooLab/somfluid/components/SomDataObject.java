@@ -8,6 +8,11 @@ import java.util.*;
 
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
+import org.NooLab.somfluid.core.engines.det.results.FrequencyList;
+import org.NooLab.somfluid.core.engines.det.results.FrequencyListGeneratorIntf;
+import org.NooLab.somfluid.core.engines.det.results.LatticeClassDescription;
+import org.NooLab.somfluid.core.engines.det.results.RocCurve;
+import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
 
 import org.NooLab.somfluid.data.DataTable;
@@ -17,6 +22,8 @@ import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somtransform.SomTransformer;
+import org.NooLab.somtransform.algo.AdaptiveDiscretization;
+import org.NooLab.somtransform.algo.EmpiricDistribution;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.files.FileDataSource;
@@ -52,9 +59,11 @@ public class SomDataObject 	implements
 	transient FileDataSource filesource;
 	transient XmlFileRead xmlFile ;
 	
+	
 	// main variables / properties ....
 	
-	DataTable data=null, normalizedSomData=null ;
+	transient DataTable data=null ;
+	transient DataTable normalizedSomData=null ;
 	
 	Variables variables = new Variables() ;
 	Variables activeVariables;
@@ -97,11 +106,11 @@ public class SomDataObject 	implements
 		missingValues = new MissingValues(this);
 		data = new DataTable( this, true ); // true: isnumeric, Som data objects always contain numeric data
 		
-		
+	 
 	}
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 	 
-	 
+	
 	public void setFactory(SomFluidFactory factory) {
 		sfFactory = factory;
 		
@@ -156,6 +165,7 @@ public class SomDataObject 	implements
 				
 				readData( filename );
 				rb = data.isFilled() ;
+				
 				
 			} // fil ?
 			
@@ -434,6 +444,20 @@ public class SomDataObject 	implements
 		return  ;
 	}
 
+	
+	/**
+	 *  for simulating surrogated data that match these profiles such
+	 *  that the SOM trained with it will be able to recognize these profiles
+	 *  
+	 *  -> adding some noise to make robust models
+	 *
+	 */
+	public int readProfileDefinitions( String _filename,
+            						   boolean simulateData ){
+		
+		
+		return -1;
+	}
 	/*
 	  
 	 
@@ -821,8 +845,11 @@ public class SomDataObject 	implements
 			// there is none, it will insert one as column 0
 											out.print(2, "importDataTable() into SomDataObject...");
 			data.importTable(datatable, importSettings);
+			 
+			
 			data.createRowOrientedTable() ;
 			// TODO check here for buffered transformed data
+			
 			
 			// creating variables objects
 			actualizeVariables();
@@ -840,9 +867,9 @@ public class SomDataObject 	implements
 			// normalizing data: only now the data are usable
 			// note that index columns and string columns need to be excluded
 			// which we can do via the format[] value : use onls 1<= f <= 7, exclude otherwise
-			normalizedSomData = transformer.normalizeData();
+			normalizedSomData = transformer.normalizeData(variables);   
 			
-			normalizedSomData.createRowOrientedTable() ;
+			normalizedSomData.createRowOrientedTable( ) ;
 			
 			normalizedSomData.createIndexValueMap();
 			
@@ -893,6 +920,23 @@ public class SomDataObject 	implements
 	}
 	
 	
+	public void inferTargetGroups( ModelingSettings modset ) {
+
+		SomVariableHandling variableHandling;
+		ClassificationSettings cs;
+		String tvLabel ;
+		
+		tvLabel = modset.getActiveTvLabel() ;
+		
+		variableHandling = new SomVariableHandling( this, modset );
+		
+		variableHandling.getEmpiricTargetGroups(  true ); // flag : enforceRecalc
+		  
+		
+		double[][] tgdefinition = variableHandling.getTargetGroups();
+		this.classifySettings.setTGdefinition(tgdefinition);
+		
+	}
 	// ------------------------------------------------------------------------
 	
 	public void determineActiveVariables() {
@@ -906,12 +950,20 @@ public class SomDataObject 	implements
 		 
 		return activeVariables;
 	}
+ 
 
-
+	// ........................................................................
 	private void actualizeVariables() {
 		Variables vs;
 		Variable v;
 		DataTableCol  column ;
+		
+		boolean  idcolFound=false ;
+		
+		String tvstr = modelingSettings.getActiveTvLabel();
+		
+		// if there is then only 1 we set this one as active...
+		 
 		
 		int nh = data.getColumnHeaders().size();
 		
@@ -924,6 +976,7 @@ public class SomDataObject 	implements
 			v.setLabel( data.getColumnHeader(i)) ;
 			if ((column.getDataFormat()==0) || (column.isIndexColumnCandidate())){
 				v.setID(true);
+				idcolFound=true;
 			}
 			
 			v.setIndexcandidate( column.isIndexColumnCandidate()) ;
@@ -933,8 +986,22 @@ public class SomDataObject 	implements
 				(v.getLabel().startsWith("TV")) || 
 				(v.getLabel().endsWith("TV"))){
 				v.setTV(true);
+				
+				if (tvstr.contains("*")){
+					modelingSettings.setActiveTvLabel( v.getLabel() ) ;
+				}
 			}
+			v.setVariableSerialID(i);
 			variables.additem(v);
+		}
+		
+		if (idcolFound==false){
+			// is there some org id?
+		}
+		
+		if (idcolFound==false){
+			// set a global flag to add an ID col
+			
 		}
 		
 	}

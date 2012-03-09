@@ -1,6 +1,8 @@
 package org.NooLab.somfluid.core.engines.det.results;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.NooLab.utilities.ArrUtilities;
 
@@ -22,7 +24,10 @@ public class FrequencyList {
 	
 	
 	FrequencyListGeneratorIntf freqlistUser;
-	double ppv;
+	
+	double ppv, npv;
+	// for multi-target case, we have to collect the npv for any of the other groups, that are not identical to the majority class
+	Map<Integer,Double> npvs = new HashMap<Integer,Double>() ; 
 	
 	int majorityIsActive = -3;
 	
@@ -40,7 +45,12 @@ public class FrequencyList {
 	// ========================================================================
 	
 	
-	// knowing nothing about the possible values
+	/** 
+	 * knowing nothing about the possible values
+	 * 
+	 * assumption: the values are on an ordinal niveau, or can be smoothly rendered into an ordinal scale 
+	 * 
+	 */
 	public void digestValues(ArrayList<Double> values) {
 
 		double v, fValue ;
@@ -97,14 +107,25 @@ public class FrequencyList {
 		
 	}
 
-	public void digestValuesForTargets( ArrayList<Double> values,
+	private int valueBelongsToTargetGroup(){
+	
+		int identifiedTargetGroup = -1;
+		
+		
+		return identifiedTargetGroup;
+	}
+	
+	public void digestValuesForTargets( ArrayList<Double> values, double ecr,
 										double[][] targetGroups, String[] tgLabels) {
 		// 
 		
-		int p ;
+		int p,targetFreq=0 ,nontargetFreq=0;
 		String groupLabel;
-		double v, fValue,ttv ;
+		double v, fValue,ttv , nonTgObservedValue, tgObservedValue;
+		
 		ItemFrequencies _frequencies = new ItemFrequencies() ;
+		ItemFrequencies _frequencies_of_TG = new ItemFrequencies() ;
+		ItemFrequencies _frequencies_of_nonTG = new ItemFrequencies() ;
 		ItemFrequency itemFreq ;
 		
 		v=0;
@@ -118,7 +139,7 @@ public class FrequencyList {
 		
 		try{
 			
-
+			v=0;
 			for (int i=0;i<values.size();i++){
 				
 				v = values.get(i) ;
@@ -131,40 +152,86 @@ public class FrequencyList {
 				groupLabel = "" ;
 				
 				if (p>=0){
-					ttv = (targetGroups[p][0] + targetGroups[p][1])/2.0 ;
+					ttv = ( targetGroups[p][0] + targetGroups[p][1])/2.0 ;
 					ttv = Math.round(ttv*1000.0)/1000.0 ;
 					if (p<tgLabels.length){
 						groupLabel = tgLabels[p] ;
 					}
+					targetFreq++;
+					registerValue( _frequencies_of_TG, v, groupLabel);
 				} // in some of the target group intervals ?
 				else{
 					ttv = -3.0 ; 
-					groupLabel = "non-TV";
+					groupLabel = "non-TV"; 
+					nontargetFreq++;
+					registerValue( _frequencies_of_nonTG, v, groupLabel);
 				}
 				
-				fValue = _frequencies.containsValue(ttv, resolution, -9.99) ;
-				if ( fValue != -9.99 ){
-					_frequencies.updateValue( fValue, groupLabel );
-				}else{
-					_frequencies.introduceValue( ttv, groupLabel );
-				}
+				registerValue( _frequencies, ttv, groupLabel);
 				
 			} // i -> all values
+			
+			
 			itemFrequencies = new ItemFrequencies(_frequencies);
 
 			sortFrequenciesItems();
 			
 			majority = new ItemFrequency( itemFrequencies.items.get(0) );
 			
-			// this we need for the ROC
-			ppv = (double)majority.frequency / (double)values.size();
+			nonTgObservedValue = getAverageValueFromFreqList( _frequencies_of_nonTG );
+			tgObservedValue = getAverageValueFromFreqList( _frequencies_of_TG );
 			
+			
+			// this we need for the ROC
+			if (ecr<0){
+				ppv = (double)majority.frequency / (double)values.size();
+				npv = (double)(values.size() - majority.frequency )/ (double)values.size();
+			}else{
+				ppv = (double)targetFreq/ (double)values.size();
+				npv = (double)nontargetFreq/ (double)values.size();
+				//
+				if (ecr > (1-ppv)){ // 1-ppv expresses the risk 
+					majority.observedValue = tgObservedValue ;
+				}else{
+					majority.observedValue = nonTgObservedValue ;
+				}
+			}
 			
 		}catch(Exception e){
 			e.printStackTrace() ;
 		}
 		
 	}
+	
+	private double getAverageValueFromFreqList( ItemFrequencies _freqs  ){
+		double avgResult = -1.0, vsum=0.0;
+		ItemFrequency item;
+		int n=0;
+		
+		for (int i=0;i<_freqs.size();i++){
+			item = _freqs.items.get(i) ;
+			vsum = vsum + (item.observedValue * (double)item.frequency) ;
+			n = n + item.frequency;
+		}
+		if (n>0){
+			avgResult = vsum/n;
+		}
+		
+		return avgResult;
+	}
+	
+	private void registerValue( ItemFrequencies _frequencies, double v, String groupLabel){
+		double fValue;
+		
+		fValue = _frequencies.containsValue(v, resolution, -9.99) ;
+		if ( fValue != -9.99 ){
+			_frequencies.updateValue( fValue, groupLabel );
+		}else{
+			_frequencies.introduceValue( v, groupLabel );
+		}
+
+	}
+
 
 	private void sortFrequenciesItems() {
 		 

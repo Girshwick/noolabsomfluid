@@ -1,0 +1,49 @@
+
+these results are obtained with math.random() for x,y-pos 
+... each trial a bit different
+
+quality @ ecr, mode count n=5 ,  tp=47, fp=4 ,  AuC 0.9501   
+quality @ ecr, mode count n=4 ,  tp=44, fp=8 ,  AuC 0.9218   
+quality @ ecr, mode count n=4 ,  tp=29, fp=0 ,  AuC 0.8899   
+quality @ ecr, mode count n=4 ,  tp=55, fp=0 ,  AuC 0.9489  <<<<<<<<<<<<  
+quality @ ecr, mode count n=4 ,  tp=40, fp=6 ,  AuC 0.9378   
+
+
+from now on stabilized by using statsSample of jmathtools
+
+quality @ ecr, mode count n=1 ,  tp=33, fp=6 ,  AuC 0.9075   
+quality @ ecr, mode count n=1 ,  tp=33, fp=6 ,  AuC 0.9075   
+
+quality @ ecr, mode count n=4 ,  tp=48, fp=0 ,  AuC 0.9318  
+quality @ ecr, mode count n=4 ,  tp=48, fp=0 ,  AuC 0.9318   
+
+
+--- fully developed particle field, after shaking 5
+quality @ ecr, mode count n=2 ,  tp=35, fp=8 ,  AuC 0.9280   
+quality @ ecr, mode count n=2 ,  tp=35, fp=8 ,  AuC 0.9280   
+
+
+
+--- fully developed particle field, after z-shaking 
+    (intensity = 0, just letting rearrange...)
+
+quality @ ecr, mode count n=5 ,  tp=61, fp=2 ,  AuC 0.9514   
+quality @ ecr, mode count n=5 ,  tp=61, fp=2 ,  AuC 0.9514   
+quality @ ecr, mode count n=5 ,  tp=61, fp=2 ,  tp singularity =0.264 ,  AuC 0.9514 
+
+ 
+shake 0, updateN=1
+quality @ ecr, mode count n=5 ,  tp=61, fp=2 ,  AuC 0.9514   
+
+shake 0, updateN=2
+quality @ ecr, mode count n=3 ,  tp=11, fp=2 ,  AuC 0.9273   
+
+shake 0, updateN=20
+quality @ ecr, mode count n=3 ,  tp=14, fp=0 ,  AuC 0.9237   
+
+
+
+
+
+
+

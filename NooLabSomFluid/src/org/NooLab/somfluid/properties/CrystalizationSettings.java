@@ -18,7 +18,7 @@ public class CrystalizationSettings implements Serializable{
 
 	
 	// ========================================================================
-	public CrystalizationSettings(){
+	public CrystalizationSettings(ModelingSettings modelingSettings){
 		
 	}
 	// ========================================================================

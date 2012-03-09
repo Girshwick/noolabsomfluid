@@ -96,15 +96,18 @@ public class ClassificationSettings implements Serializable{
 	double[][] 		TGdefinition ;
 	/**   */
 	String[] 		TGlabels;
+	/** */
+	boolean automaticTargetGroupDefinition = true;
+	
 	
 	/** 
 	 * value for the accepted error-cost-ratio, which controls the acceptance of nodes as part of a predictive model;
 	 * requires a target variable
 	 */
-	double 			ecr=0.2f;   // actually, this could be an array too, since for various
+	double 			ecr = 0.2f;   // actually, this could be an array too, since for various
 							    // classes in an ordinally segmented TV, we could have different tolerances !!!
 	/**   */
-	double[] 		ECRs=null;  // for _TARGETMODE_MULTI 
+	double[] 		ECRs = null;  // optional for _TARGETMODE_MULTI 
 	
 	/**   */
 	int maxTypeIcount  = -1;
@@ -129,7 +132,7 @@ public class ClassificationSettings implements Serializable{
 		return targetMode;
 	}
 
-
+	
 	public void setTargetMode(int targetedModeling) {
 		this.targetMode = targetedModeling;
 	}
@@ -165,10 +168,98 @@ public class ClassificationSettings implements Serializable{
 		return true;
 	}
 	
+	public void setTargetGroupDefinitionAuto(boolean flag){
+		
+		if (targetMode == ClassificationSettings._TARGETMODE_SINGLE){
+			return;
+		}
+		if (targetMode == ClassificationSettings._TARGETMODE_MULTI){
+			TGdefinition = new double[0][0];
+			automaticTargetGroupDefinition = flag;
+		}
+		// as soon as data are available, the target groups will be inferred ...
+	}
+	
+	/**
+	 * if there is more than 1 interval, the right side is excluded except for the left-most interval;
+	 * the left border is always included in the interval
+	 * 
+	 * @param intervalBorders
+	 * @return
+	 */
+	public boolean setTargetGroupDefinition(double[] intervalBorders){
+		String[] labels = new String[intervalBorders.length+1] ;
+		return setTargetGroupDefinition(intervalBorders, labels);
+	}
+	
+	public boolean setTargetGroupDefinition(double[] intervalBorders, String[] labels){
+		
+		if (targetMode == _TARGETMODE_SINGLE){
+			// logico-performative mode mismatch, nothing will be done
+			return false;
+		}
+		
+		TGdefinition = new double[0][0];
+		int ibCount = intervalBorders.length-1;
+		double min,max ;
+		String str;
+		
+		if ((intervalBorders==null) || ((intervalBorders.length<=1) && (intervalBorders[intervalBorders.length-1]<1.0))){
+			automaticTargetGroupDefinition = true;
+			return false;
+		}
+		
+		automaticTargetGroupDefinition = false;
+		
+		 
+		TGdefinition = new double[ibCount][2];
+		TGlabels  = new String[ibCount] ;
+		
+		for (int i=0;i<ibCount;i++){
+			min = intervalBorders[i];
+			if (min<1.0){
+				if (i<intervalBorders.length-1){
+					max = intervalBorders[i + 1];
+				}else{
+					max = 1.0;
+				}
+				if (max==1.0)max=1.0000000001;
+				
+				TGdefinition[i][0] = min;
+				TGdefinition[i][1] = max;
+				
+				if (i<labels.length){
+					str = labels[i]; if ((str==null) || (str.length()==0)){str="target-group-"+(i+1);}
+					TGlabels[i] = str;
+				}else{
+					TGlabels[i] = "target-group-"+i;
+				}
+			}
+		}
+		 
+		return true;
+	}
+	
+	public void setTargetGroupDefinitionExclusions( double[] targetExclusions){
+		
+	}
+	
+	/**
+	 * both borders of the interval are included 
+	 * 
+	 * @param min
+	 * @param max
+	 */
 	public void setSingleTargetGroupDefinition(double min, double max) {
 		setSingleTargetGroupDefinition(min, max, "mono target") ;
 	}
 	public void setSingleTargetGroupDefinition(double min, double max, String label) {
+		
+		if (targetMode == _TARGETMODE_MULTI ){
+			// nothing happens... mode mismatch
+			return;
+		}
+		
 		TGdefinition = new double[1][2];
 		
 		TGdefinition[0][0] = min;
@@ -176,6 +267,7 @@ public class ClassificationSettings implements Serializable{
 		
 		TGlabels = new String[1] ;
 		TGlabels[0] = label;
+		
 	}
 	
 	public void addSingleTargetGroupDefinition(double min, double max, String label) {
@@ -233,6 +325,20 @@ public class ClassificationSettings implements Serializable{
 		addSingleTargetGroupDefinition(min,max,"target <#>");
 	}
 
+
+
+
+	public boolean isAutomaticTargetGroupDefinition() {
+		return automaticTargetGroupDefinition;
+	}
+	public boolean getAutomaticTargetGroupDefinition() {
+		return automaticTargetGroupDefinition;
+	}
+
+	public void setAutomaticTargetGroupDefinition(
+			boolean automaticTargetGroupDefinition) {
+		this.automaticTargetGroupDefinition = automaticTargetGroupDefinition;
+	}
 
 
 

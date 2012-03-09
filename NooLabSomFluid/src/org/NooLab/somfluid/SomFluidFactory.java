@@ -2,12 +2,14 @@ package org.NooLab.somfluid;
 
  
 import java.util.ArrayList;
-
-
+ 
+ 
 import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.somfluid.components.PhysicalFieldFactory;
-import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
+import org.NooLab.somfluid.core.application.SomAppUsageIntf;
+import org.NooLab.somfluid.core.application.SomAppValidationIntf;
+ 
 import org.NooLab.somfluid.env.communication.GlueClientAdaptor;
 import org.NooLab.somfluid.env.communication.GlueBindings;
 import org.NooLab.somfluid.env.communication.LatticeProperties;
@@ -179,6 +181,10 @@ public class SomFluidFactory  implements 	//
 	
 	public int getPhysicalFieldStarted() {
 		return physicalFieldStarted;
+	}
+
+	public PhysicalFieldFactory getFieldFactory() {
+		return fieldFactory;
 	}
 
 	public SomFluidProperties getSfProperties() {
@@ -360,7 +366,19 @@ public class SomFluidFactory  implements 	//
 	public void setglueModuleMode(int gluemode) {
 		this.glueModuleMode = gluemode;
 	}
- 
+
+	public LatticeProperties getLatticeProperties() {
+		return latticeProperties;
+	}
+
+	public SomAppUsageIntf getSomApplication() {
+		
+		return somFluidModule.getSomUsageInstance();
+	}
+	
+	public SomAppValidationIntf getSomValidator() {
+		return somFluidModule.getSomValidationInstance();
+	}
 
 
 	

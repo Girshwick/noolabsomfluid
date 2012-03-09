@@ -2,6 +2,8 @@ package org.NooLab.somfluid.util;
 
 import java.io.Serializable;
 
+import org.NooLab.somtransform.algo.EmpiricDistribution;
+
 /**
  * 
  * simply a container for calculated values of an basic entity like a column: NO
@@ -34,10 +36,12 @@ public class BasicStatisticalDescription implements Serializable {
 			 sovar, // sum of variances
 			 invsum , // sum of inverses (kehrwert) for harmonic means
 			 variance, autocorr, mini, maxi, skewness, kurtosis;
+	
 	double[] modalPoints = new double[2] ;
 
 	double[][] histogramValues;
 
+	EmpiricDistribution empiricDistribution;
 	/** 
 	 * this describes the polynomial fit to the histogram;
 	 * this is important for the ability to learn what to do on which data
@@ -96,6 +100,12 @@ public class BasicStatisticalDescription implements Serializable {
 			bsd.histogramPolyfitCoefficients = new double[inStatsDescr.histogramPolyfitCoefficients.length] ;
 			System.arraycopy( inStatsDescr.histogramPolyfitCoefficients, 0, bsd.histogramPolyfitCoefficients, 0, inStatsDescr.histogramPolyfitCoefficients.length) ;
 		}
+		if ((bsd!=null) && (bsd.empiricDistribution!=null)){
+			empiricDistribution = new EmpiricDistribution (bsd.empiricDistribution);
+		}else{
+			empiricDistribution = new EmpiricDistribution ();
+		}
+		
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -246,6 +256,7 @@ public class BasicStatisticalDescription implements Serializable {
 
 		histogramPolyfitCoefficients = new double[20] ;
 		
+		empiricDistribution = new EmpiricDistribution(); 
 		
 	}
 

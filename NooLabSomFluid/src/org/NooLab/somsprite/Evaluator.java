@@ -30,21 +30,27 @@ public class Evaluator {
 	}
 	// ========================================================================
 	
-	public double eval(String expressionName, double... arguments){
+	public Object eval(String expressionName, double... arguments){
 	
 		SpriteFuncIntf func;
-		double result = 0.0;
+		
+		Object resultObj = (Object)SpriteFuncIntf.__MISSING_VALUE;
 		
 		try{
-			
+
+
 			func = (SpriteFuncIntf) functions.get(expressionName) ;
-			result = func.calculate(arguments) ;
+			resultObj = func.calculate(arguments) ;
 			
 		}catch(Exception e){
-			e.printStackTrace() ;
+			String estr = ""+e.getMessage();
+			if ((estr!=null) && (estr.contains("topNode parameter is null"))){
+				estr = estr+".\n"+"You may check syntax and brackets of the expression!";
+			}
+			System.err.println(estr+"\nin method <Evaluator.eval()> while calling func.calculate(<"+expressionName+">)..."); // expressionName
 		}
 		
-		return result ;
+		return resultObj ;
 	}
 	
 	public String[] getArgumentsOfExpr(String expression){
@@ -97,11 +103,51 @@ public class Evaluator {
 			return;
 		}
 		
-		func = new XFunction( expression );
+		if ((functions==null) || (functions.size()==0) || (functions.containsKey(name)==false)){
+
+			func = new XFunction( expression );
+			func.setName(name);
+			
+			functions.put(name, func) ;
+			expressions.put(name, expression) ;
+			xList.add(name) ;
+		}
+	}
+
+	
+	public void createFunction( String name, String expression, FunctionCohortParameters fcp){
+		
+		SpriteFuncIntf func;
+		 
+		if ((expression.length()==0) || (name).length()==0){
+			return;
+		}
+		
+		func = new XFunction( expression, fcp);
 		
 		functions.put(name, func) ;
 		expressions.put(name, expression) ;
 		xList.add(name) ;
+	}
+	
+	/**
+	 * 
+	 * 
+	 * @param name
+	 * @param intermediateVar
+	 * @param expression
+	 * @param avoidValues those values are excluded both for provided variables as well as for intermediate,
+	 *        as it is necesary e.g. for log()
+	 */
+	public void createCompundFunction( String name, String intermediateVar, String expression, double[] avoidValues) {
+		
+		
+	}
+
+	// these functions are not used for dependency checking, but may be used by other functions
+	public void createServiceFunction(String string, String string2) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 	
