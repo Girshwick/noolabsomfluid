@@ -1,0 +1,58 @@
+
+
+General Description
+===================
+
+The SomOrganizer organizes issues around the application of models (or their general life cycle), 
+or administrative tasks, e.g. around storage (directories, space, archiving)
+
+It does not know anything about the data itself, i.e. it does neither provide
+facilities to transform the data or to model it;
+
+However, it provides interfaces to other packages such as Weka, which can be used
+to read the data source
+
+It provides interfaces for notifications based on event-like triggers
+(via callbacks, or via Java-Observer-pattern)
+
+
+it should also know about remote SOM engines, and consequently
+it has to implement a Glue Source instance 
+("source", because it is a "sensory" as data are flowing in and out here!) 
+
+
+Glue 
+====
+
+From the perspective of Glue, the SomOrganizer is a source, yet from
+the perspective of the Som environment, the SomOrganizer is a server
+In other words, Glue is just a communication layer.
+
+The Organizer announces its presence through a Glue-server by means of a
+particular message, that is, a message that exhibits a particular 
+"document class" : "presence".
+The encoded data part of this message then contains data about 
+role, capacity, etc.
+
+Such, the SomOrganizer triggers a response from the remote instances of
+Som-engines (SomFluid's)
+
+
+
+
+
+-----------------------------------------------------------------
+factory class
+properties class
+basic operations on "project" level, such as 
+ - new, 
+ - load, 
+ - close, 
+ - archive, 
+ - import, 
+ - export
+ - local mirroring of remote SomFluid instances
+
+
+we use Weka - stuff for import issues
+  
