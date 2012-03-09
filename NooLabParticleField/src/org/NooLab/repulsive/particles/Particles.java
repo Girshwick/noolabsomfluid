@@ -50,7 +50,7 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 			if (i==641){
 				k=0;
 			}
-			p = new Particle( i, templateParticles.get(i) );// , sbs
+			p = new Particle( templateParticles.size(),i, templateParticles.get(i) );// , sbs
 			
 			// p.isAlive = templateParticles.get(i).isAlive; // will be set to -1 if it is scheduled to be deleted
 			items.add(p);
@@ -92,7 +92,7 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 			
 			if (i>items.size()-1){ 
 				// mirroring the add operation in the core 
-				p = new Particle( i ,srcP); // , sbs
+				p = new Particle( items.size(), i ,srcP); // , sbs
 				p.setDataAsCloneOf( srcP );
 				items.add(p) ;
 				

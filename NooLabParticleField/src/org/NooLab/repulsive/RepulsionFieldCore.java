@@ -47,6 +47,7 @@ import org.NooLab.repulsive.particles.Particle;
 import org.NooLab.repulsive.particles.Particles;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
+import org.math.array.StatisticSample;
 
 
 /**
@@ -243,7 +244,7 @@ public class RepulsionFieldCore implements 	Runnable,
 	
 	int[] selectionColor = RepulsionField._OUT_SELECTCOLOR ;
 	int selectionSize = 61;
-	boolean hexagonSizedSelection=true;
+	boolean hexagonSizedSelection=false;
 	
 	
 	double sizefactor=1.0; 
@@ -312,6 +313,8 @@ public class RepulsionFieldCore implements 	Runnable,
 	boolean fieldIsRandom = false;
 	RepulsionFieldProperties rfProperties;
 	Storage storage;
+	
+	StatisticSample statsSampler; // from adapted JMathTools which allows for an external seed
 	
 	ArrUtilities arrutil = new ArrUtilities();
 	public PrintLog out = new PrintLog(2,true);
@@ -484,7 +487,7 @@ public class RepulsionFieldCore implements 	Runnable,
 	private void performInitForInstance( RepulsionFieldCore rf, int nbrParticles,  double energy, double repulsion,  double deceleration){
 		int w, h;
 		
-		
+		statsSampler = new StatisticSample(9437);
 		 
 		w = areaWidth;
 		h = areaHeight ;
@@ -526,6 +529,9 @@ public class RepulsionFieldCore implements 	Runnable,
 		 
 		Runtime runtime = Runtime.getRuntime();
 		threadcount = Math.min( 8,Math.max(2,runtime.availableProcessors()-2)); //processorcount
+		if (this.multiProc==false){
+			threadcount = 1;
+		}
 		
 		limitedAreaUpdate = new LimitedNeighborhoodUpdate( this, out ) ;
 		particleAction = new ParticleAction(rf);
@@ -638,7 +644,7 @@ public class RepulsionFieldCore implements 	Runnable,
 			}
 			
 	
-			p = new Particle(areaWidth, areaHeight, kRadiusFactor, nbrParticles, repulsion, sizefactor, colormode);
+			p = new Particle( i, areaWidth, areaHeight, kRadiusFactor, nbrParticles, repulsion, sizefactor, colormode);
 			if (initialLayoutMode == RepulsionField._INIT_LAYOUT_REGULAR){
 				
 				
@@ -649,8 +655,8 @@ public class RepulsionFieldCore implements 	Runnable,
 				a = positions[2];
 				b = positions[3];
 				
-				AreaPoint.x += (Math.random()*((double)areaWidth/(a+1.0)))/(3.5*rf);
-				AreaPoint.y += (Math.random()*((double)areaHeight/(b+1.0)))/(3.5*rf);
+				AreaPoint.x += (statsSampler.randomUniSimple()*((double)areaWidth/(a+1.0)))/(3.5*rf);
+				AreaPoint.y += (statsSampler.randomUniSimple()*((double)areaHeight/(b+1.0)))/(3.5*rf);
 				
 				if ( ((AreaPoint.x>0) && (AreaPoint.x<areaWidth)) &&
 					 ((AreaPoint.y>0) && (AreaPoint.y<areaHeight)) ){
@@ -686,8 +692,8 @@ public class RepulsionFieldCore implements 	Runnable,
 		
 		// double rr = rfProperties.getRelativeRandomness(); // by default = 1.0
 		result = -1.0 ;
-
-		double[] rvs = org.math.array.StatisticSample.randomNormal(3, m, (m-min)/2.43);
+		
+		double[] rvs = statsSampler.randomnormal(3, m, (m-min)/2.43);
 		
 		for (int i=0;i<rvs.length;i++){
 			rv = rvs[i];
@@ -1603,7 +1609,7 @@ if (this.name.contains("sampler")){
 	 			statisticsCollector.setCurrentMovedDistanceSum( movedDistanceSum);
 	 			// here it is alrady the average
 	 			if ((movedDistanceSum>3) && (particles.size()<15)){
-	 				stability = stability * 10+ 5*Math.random();
+	 				stability = stability * 10+ 5* statsSampler.randomUniSimple() ;
 	 				out.print(3,"movedDistanceSum = "+movedDistanceSum);
 	 			}
 			    statisticsCollector.setCurrentStability(stability);
@@ -2038,7 +2044,7 @@ if (this.name.contains("sampler")){
 			return  ;
 		}
 		
-		p = new Particle(areaWidth, areaHeight, kRadiusFactor, nbrParticles, repulsion, sizefactor, 0);
+		p = new Particle( particles.getItems().size() ,areaWidth, areaHeight, kRadiusFactor, nbrParticles, repulsion, sizefactor, 0);
 		
 		if ((x>0) && (y>0)){
 			if (x>areaWidth) {x = (int) (areaWidth*0.98);}
@@ -2168,8 +2174,8 @@ if (this.name.contains("sampler")){
 		}
 		particle = particles.get(index);
 		
-		x = (int) (particle.x + ((Math.random()-0.5) * averageDistance/3) + (averageDistance/10));
-		y = (int) (particle.y + ((Math.random()-0.5) * averageDistance/3) + (averageDistance/10)) ;
+		x = (int) (particle.x + ((statsSampler.randomUniSimple()-0.5) * averageDistance/3) + (averageDistance/10));
+		y = (int) (particle.y + ((statsSampler.randomUniSimple()-0.5) * averageDistance/3) + (averageDistance/10)) ;
 		
 		// int n = particles.size();
 		
@@ -2333,7 +2339,11 @@ if (this.name.contains("sampler")){
 		
 		(new Shaker(particles,intensity)).go();
 	}
-
+	@Override
+	public void releaseShakeIt(int intensity, int maxTime) {
+		 
+		(new Shaker(particles,intensity,maxTime)).go();
+	}
 
 	private void relocateParticles( Particle lastOfParticles, int direction){
 		
@@ -2399,15 +2409,25 @@ if (this.name.contains("sampler")){
 
 
 	class Shaker implements Runnable{
+		
+		int maxTime = -1;
 		int intensity;
 		Thread shakThrd;
 	
 		RestoreInitialValues restoreTask ; 
 		Timer rivTimer ;
 		
-		
+		public Shaker( Particles particles, int intensity, int maxTime){
+			init(particles, intensity, maxTime);
+		}
 		public Shaker( Particles particles, int intensity){
+			init(particles, intensity, 15);
+		}
+		
+		private void init( Particles particles, int intensity,int maxTime ){
+			
 			this.intensity = intensity;
+			this.maxTime = maxTime;
 			
 			if (intensity<0)intensity=1;
 			if (intensity>10)intensity=10;
@@ -2448,10 +2468,10 @@ if (this.name.contains("sampler")){
 			
 			for (int i=0;i<particles.size();i++){
 				p = particles.get(i);
-					ds = ((Math.random()-0.5)* p.radius* deloc  ) ; 
+					ds = ((statsSampler.randomUniSimple()-0.5)* p.radius* deloc  ) ; 
 				p.x += ds  ;
 				
-					ds = ((Math.random()-0.5)* p.radius*0.6 ) ; 
+					ds = ((statsSampler.randomUniSimple()-0.5)* p.radius*0.6 ) ; 
 				p.y += ds;
 			}
 			
@@ -4166,6 +4186,9 @@ if (index>nbrParticles-5){
 		fieldIsRandom = flag;
 	}
 	
+	public StatisticSample getStatsSampler() {
+		return statsSampler;
+	}
 	@Override
 	public String getParticlesOfFiguratedSet( int figure, Object indexes,
 											  double thickness, double endPointRatio, boolean autoselect) {
@@ -4179,6 +4202,7 @@ if (index>nbrParticles-5){
 		//  
 		return null;
 	}
+	
 
 
 	

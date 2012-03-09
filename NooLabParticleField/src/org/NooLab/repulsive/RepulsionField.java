@@ -487,6 +487,7 @@ public class RepulsionField implements 	Runnable,
 				surroundN = coreInstance.getSelectionSize();
 
 				if (surroundRetrieval==null){
+					out.print(3,"getSurround(), NEW SurroundRetrieval");
 					surroundRetrieval = new SurroundRetrieval( rField, coreInstance.particleGrid,  (SurroundRetrievalObserverIntf)rField) ;
 				}
 
@@ -914,8 +915,9 @@ public class RepulsionField implements 	Runnable,
 
 	@Override
 	public void useParallelProcesses(int flag) {
-		// 
+		
 		coreInstance.useParallelProcesses(flag);
+		coreInstance.setMultiProc( (flag>=1) );
 	}
 
 
@@ -1038,9 +1040,14 @@ public class RepulsionField implements 	Runnable,
 	@Override
 	public void releaseShakeIt(int intensity) {
 		// 
-		coreInstance.releaseShakeIt( intensity);
+		coreInstance.releaseShakeIt( intensity,-1);
 	}
-
+	@Override
+	public void releaseShakeIt(int intensity, int maxTime) {
+		// 
+		coreInstance.releaseShakeIt( intensity, maxTime);
+	}
+	
 	@Override
 	public void setAdaptiveBehavior(boolean flag) {
 		// 
@@ -1195,15 +1202,15 @@ public class RepulsionField implements 	Runnable,
 			result.arrutil = arrutil;
 			
 			if (result.getParamSet().getTask() >= SurroundRetrieval._TASK_SURROUND_C) {
-				particles.selectSurround( result.getParticleIndexes(), result.getParamSet().isAutoselect());
+				// particles.selectSurround( result.getParticleIndexes(), result.getParamSet().isAutoselect());
 			}
 
 			if (result.getParamSet().getTask() <= SurroundRetrieval._TASK_PARTICLE) {
 				result.setParticleIndexes( new int[] { (int) result.particleIndex });
-				particles.selectSurround(result.getParticleIndexes(), result.getParamSet().isAutoselect());
+				// particles.selectSurround(result.getParticleIndexes(), result.getParamSet().isAutoselect());
 				
 				if (result.getParamSet().getTask() <= SurroundRetrieval._TASK_PARTICLE) {
-					particles.selectSurround(result.getParticleIndexes(), result.getParamSet().isAutoselect());
+					// particles.selectSurround(result.getParticleIndexes(), result.getParamSet().isAutoselect());
 				}
 			}
 

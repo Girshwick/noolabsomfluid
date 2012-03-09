@@ -9,7 +9,7 @@
 	<classpathentry kind="lib" path="C:/Programs/dev/processing-1.5/modes/java/libraries/NooLabParticleField/library/javaGeom-0.10.1.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/processing-1.5/modes/java/libraries/NooLabParticleField/library/NooLabChord.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/processing-1.5/modes/java/libraries/NooLabParticleField/library/NooLabGraph.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/processing-1.5/modes/java/libraries/NooLabParticleField/library/NooLabUtilities.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/math/jmath/jmatharray.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/NooLabUtilities"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/JMathTools"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

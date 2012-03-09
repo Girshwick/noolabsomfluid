@@ -2,11 +2,8 @@ package org.NooLab.repulsive.particles;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
-import org.NooLab.repulsive.components.SurroundBuffer;
-import org.NooLab.repulsive.components.SurroundBuffers;
 import org.NooLab.repulsive.components.topology.ParticleBondsIntf;
 import org.NooLab.repulsive.components.topology.ParticleLinkage;
 import org.NooLab.repulsive.components.topology.ParticleLinkages;
@@ -30,6 +27,7 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 
 	
 	String label="" ;
+	int particleIndex = -1;
 	
 	public double x, y, z, vx, vy,vz, radius;
 	   
@@ -83,7 +81,7 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 	public int charge = 1 ;
 	
 	// ------------------------------------------------------------------------
-	public Particle( int w, int h, double kRadiusFactor,int nbrParticles, double repulsion, double sizemode, int colormode){
+	public Particle( int index, int w, int h, double kRadiusFactor,int nbrParticles, double repulsion, double sizemode, int colormode){
 		
 		width = w; 
 		height = h;
@@ -93,13 +91,16 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 		this.colormode = colormode;
 		this.sizemode = sizemode;
 		this.isAlive = 1;
+		
+		particleIndex = index;
+		
 		initParticle();
 	}
 	
 	// ------------------------------------------------------------------------
 	
 	
-	public Particle(int index, Particle templateparticle) { // , SurroundBuffers sbs
+	public Particle( int pIndex, int index, Particle templateparticle) { // , SurroundBuffers sbs
 		
 		transferControlData(templateparticle);
 		
@@ -107,6 +108,7 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 		
 		transferBasicData(templateparticle);
 		
+		particleIndex = pIndex;
 		/*
 		if (sbs != null){
 			surroundBuffer = new SurroundBuffer(index,sbs);
@@ -119,7 +121,10 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 	
 	private void initParticle(){
 		
-
+		Random random = new Random();
+		random.setSeed( 9347 + 97*particleIndex) ;
+		random.nextGaussian() ;
+		
 		mainColor.r = (float) Math.random()*0.3f;
 		mainColor.g = (float) Math.random();
 		mainColor.b = (float) Math.random();
@@ -130,19 +135,21 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 		
 		
 		
-		// determining the position, coupling the colr to the position
+		// determining the position, coupling the color to the position
 		// hsv = Conversion.rgbToHSV(r, g, b);
 		// x = hsv[0] * (float)(width * kRadiusFactor * 0.5 / 360.0);
 		// y = hsv[1] * (float)height;  Random random = new Random();
 		// Random random = new Random();random.nextDouble()
 		
-		x = (((float) Math.random())*(0.96* width))  + (0.02*width);
-		y = (((float) Math.random())*(0.96* height)) + (0.02*height);
+		for (int i=0;i<10;i++)random.nextDouble();
+		
+		x = (((float) random.nextDouble())*(0.96* width))  + (0.02*width);
+		y = (((float) random.nextDouble())*(0.96* height)) + (0.02*height);
 			
 		// determining the size relative to number and window size
 		radius = calculateRadius(nbrParticles)  ; 
 		if ((sizemode!=0) && (sizemode!=1.0)){
-			radius += (int)(  Math.round( Math.random()* sizemode * ((int) (radius )) ));
+			radius += (int)(  Math.round( random.nextDouble()* sizemode * ((int) (radius )) ));
 		}											
 		 
 		if (colormode==0){
@@ -154,6 +161,8 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 		// ----------------------------------
 		
 		particleLinkages = new ParticleLinkages(this);
+		
+		random = null;
 	}
 	
 	private void transferBasicData( Particle templateparticle ){
@@ -196,7 +205,7 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 	 * @param templateparticle
 	 */
 	private void transferSurroundBuffers( Particle templateparticle ){
-		int err=1;
+		
 		/*
 		try{
 			if (templateparticle.surroundBuffer != null) {

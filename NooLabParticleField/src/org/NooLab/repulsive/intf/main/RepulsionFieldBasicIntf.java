@@ -121,6 +121,10 @@ public interface RepulsionFieldBasicIntf extends RepulsionFieldSelectionIntf{
 	/** intensity is from 1..10 */
 	public void releaseShakeIt(int intensity);
 	
+	public void releaseShakeIt(int intensity, int maxTime);
+	
+	
+	
 	public void setAdaptiveBehavior(boolean flag);
 	 
 	/** in case of multi-threaded and separated processes, this returns always true on direct call,

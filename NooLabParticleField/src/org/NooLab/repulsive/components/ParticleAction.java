@@ -68,8 +68,10 @@ public class ParticleAction {
 			
 			for (int i=0;i<addQueue.size();i++){
 				if ( (ad.x>0) && (addQueue.get(i).x==ad.x) && (ad.y>0) &&(addQueue.get(i).y==ad.y)){
-					ad.x = ad.x + Math.random()*15;
-					ad.y = ad.y + Math.random()*15;
+					// ad.x = ad.x + Math.random()*15;
+					// ad.y = ad.y + Math.random()*15;
+					ad.x = ad.x + rfield.getStatsSampler().randomUniSimple()*15;
+					ad.y = ad.y + rfield.getStatsSampler().randomUniSimple()*15;
 				}
 			}
 			addQueue.add(ad);

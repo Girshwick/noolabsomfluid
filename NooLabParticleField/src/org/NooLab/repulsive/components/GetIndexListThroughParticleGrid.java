@@ -274,7 +274,7 @@ public class GetIndexListThroughParticleGrid {
 				}
 			} // j->all col in patch
 		} // i-> all rows in patch
-		 
+		dx=0; 
 	}
 
 	private int[] retrieveListOfParticles( int c, int r, double _px, double _py){
@@ -376,7 +376,7 @@ public class GetIndexListThroughParticleGrid {
 				if (zz>3){
 					break;
 				}
-				nbv.clear() ;
+				nbv.clear() ; indexedDistances.clear() ;
 				zz++;
 			}else{
 				selectionSizeOk=true; 

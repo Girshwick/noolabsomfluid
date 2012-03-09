@@ -71,11 +71,14 @@ public class SurroundRetrieval implements Runnable {
 	  
  	SelectionConstraints selectionConstraints;
  	
-	Thread srThrd;
+	Thread rfSurrThrd;
 	int surroundTask=-1;
+	
+	Map<String,Thread> threadMap = new HashMap<String,Thread>();
 	
 	PrintLog out = new PrintLog(2,true);
 	
+	// ========================================================================
 	public SurroundRetrieval( RepulsionFieldCore rfcore ){
 		 
 		rfCore = rfcore;
@@ -111,6 +114,8 @@ public class SurroundRetrieval implements Runnable {
 		
 		// surroundBuffers = rfObjects.getSurroundBuffers() ;  
 	}
+	// ========================================================================
+	
 	
 	// for selecting a single particle, results returned via interfaced event
 	public int addRetrieval(int xpos, int ypos, boolean autoselect) {
@@ -195,6 +200,16 @@ public class SurroundRetrieval implements Runnable {
 		return index;
 	}
 
+	/**
+	 * 
+	 * the mistake is to put the Runnable ontop to the public class
+	 * instead to create a worker (inner) class for each request
+	 * 
+	 * @param paramSetIndex
+	 * @param task
+	 * @param guidStr
+	 * @return
+	 */
 	public String go( int paramSetIndex, int task , String guidStr) {
 		
 		surroundTask = task;
@@ -202,9 +217,11 @@ public class SurroundRetrieval implements Runnable {
 		paramSets.get(paramSetIndex).task = task;
 		paramSets.get(paramSetIndex).guid = guidStr;
 		
-		srThrd = new Thread(this,"srThrd");
+		rfSurrThrd = new Thread(this,"rfSurrThrd-"+guidStr);
 		 
-		srThrd.start();
+		threadMap.put(guidStr, rfSurrThrd);
+		rfSurrThrd.setPriority(8) ;
+		rfSurrThrd.start();
 		
 		return guidStr;
 	}
@@ -300,6 +317,13 @@ public class SurroundRetrieval implements Runnable {
 			}
 			
 		}
+		
+		Thread thrd = threadMap.get(rps.guid);
+		 		 
+		threadMap.remove(rps.guid);
+		
+		thrd = null;
+
 	}
 
 	private void getSpanningTree(){
@@ -395,6 +419,22 @@ public class SurroundRetrieval implements Runnable {
 
 			srObserver.surroundRetrievalUpdate(this, p.guid);
 		}
+		
+		Thread thrd = threadMap.get(p.guid);
+	 
+		// out.print(2, "nulling thread of guid: "+p.guid) ;
+		 
+		threadMap.remove(p.guid);
+		thrd.setPriority(1) ;  // type "rfSurrThrd"
+		// ClassLoader cl = thrd.getContextClassLoader();
+		ThreadGroup tg = thrd.getThreadGroup();
+		tg.setMaxPriority(8);
+
+		try{
+			thrd.interrupt();
+			thrd = null;
+
+		}catch(Exception e){}
 	}
 	
 	

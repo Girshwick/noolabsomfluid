@@ -132,7 +132,7 @@ public class FieldSampler{
 			y = Math.round(particles.get(i).y);
 			r = Math.round(particles.get(i).radius);
 			
-			particle = new Particle( w,h, parentField.getkRadiusFactor(), n,parentField.getRepulsion(),1.0,1);
+			particle = new Particle( i,w,h, parentField.getkRadiusFactor(), n,parentField.getRepulsion(),1.0,1);
 			samplePatchCenterParticles.add(particle) ;
 			
 		} // i->

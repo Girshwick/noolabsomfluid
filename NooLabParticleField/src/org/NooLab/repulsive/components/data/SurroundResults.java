@@ -1,5 +1,6 @@
 package org.NooLab.repulsive.components.data;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 import math.geom2d.conic.Ellipse2D;
@@ -9,7 +10,10 @@ import math.geom2d.polygon.Polygon2D;
 import org.NooLab.repulsive.components.topology.ResultObjekt;
 import org.NooLab.utilities.ArrUtilities;
 
-public class SurroundResults {
+
+public class SurroundResults implements Cloneable,Serializable{
+
+	private static final long serialVersionUID = -2479510886006188766L;
 
 	/** a guid that has been created by the */
 	String guid="";
@@ -29,7 +33,7 @@ public class SurroundResults {
 
 	public long timeflag;
 
-	public ArrUtilities arrutil;
+	transient public ArrUtilities arrutil;
 
 	 
 
@@ -126,9 +130,34 @@ public class SurroundResults {
 		}
 		*/
 	}
+	
+	// ========================================================================
+
+	
 	public ArrayList<IndexDistance> getParticlesAsIndexedDistances() {
 		
 		return indexedDistances;
 	}
+	public long getContextKey() {
+		return contextKey;
+	}
+	public void setContextKey(long contextKey) {
+		this.contextKey = contextKey;
+	}
+	public ArrayList<ResultObjekt> getObjects() {
+		return objects;
+	}
+	public void setObjects(ArrayList<ResultObjekt> objects) {
+		this.objects = objects;
+	}
+	public void setParticleIndex(int particleIndex) {
+		this.particleIndex = particleIndex;
+	}
+	public void setTimeflag(long timeflag) {
+		this.timeflag = timeflag;
+	}
+	
+	
+	
 
 }
