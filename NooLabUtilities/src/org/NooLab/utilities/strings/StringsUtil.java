@@ -14,6 +14,7 @@ import java.util.regex.*;
 
 // import org.NooLab.utilities.*;
 
+import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.inifile.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.*;
@@ -3175,17 +3176,27 @@ if (str.contains("1. 5")){
 	public boolean isDateX(String str){
 		boolean return_value = false;
 		
-		String regex_for_date = "^[-+]?\\d+([.,]?\\d+)?$";
-		String regex_for_num  = "^[-+]?\\d+([.,]?\\d+)?$";
+		// dd[-./]mm[-./]yyyy ... d[-./]m[-./]yy
+		String regex_for_date  = "[1,2,3]?((\\d{2})|([1-9]{1}))([/.-])(([0-2]?\\d{1})|([3][0,1]{1}))([/.-])((\\d{2})|(\\d{4}))$";
 		
+		// yyyy[-./]mm[-./]dd ... yy[-./]m[-./]d
+		String regex_for_dater = "((\\d{2})|(\\d{4}))([/.-])(([0-2]?\\d{1})|([3][0,1]{1}))([/.-])([1,2,3]?((\\d{2})|([1-9]{1})))$";
+			 
 		try{
 			
 			str = str.replace(",",".");
-			if ( (str.matches(regex_for_date)==false) &&
-				 (str.matches(regex_for_num)) && 
+			// we should extract the date if it is present...
+			if ( ((str.matches(regex_for_date)) || (str.matches(regex_for_dater))) && 
 				 (str.length()>0)){
 				
-				return_value = true;
+				int[] fop = frequenciesOfParticles(str, new String[]{".","-","/"});
+				int fopx = ArrUtilities.arrayMaxpos(fop);
+				if (fopx>=0){
+					int frqval = fop[fopx];
+					if (frqval==2){
+						return_value=true;
+					}
+				}
 			}
 
 		}

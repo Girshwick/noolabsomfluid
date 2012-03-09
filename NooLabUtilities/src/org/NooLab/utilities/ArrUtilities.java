@@ -55,9 +55,14 @@ public class ArrUtilities {
 		 }
 		return return_value;
 	}
+
+	public String arr2text( double[] vector , int fracdigits){
+		return arr2Text(vector , fracdigits);
+	}
 	
-	public String arr2text( double[] vector ,
-	                        int fracdigits){
+	public static String arr2Text( double[] vector ,
+	                        	   int fracdigits){
+		
 		String return_value="";
 		int i;
 		
@@ -385,7 +390,20 @@ public class ArrUtilities {
 		return strval ;
 	}
 	
+	 
+	public static ArrayList<Double> changeArraystyle(double[] values) {
+		ArrayList<Double> xa = new ArrayList<Double>();
+		
+		for (int i=0;i<values.length;i++){
+			xa.add(values[i]) ;
+		}
+		return xa;
+	}
 	
+	public ArrayList<Double> changeArrayStyle(double[] values) {
+		return changeArraystyle(values);
+	}
+
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public ArrayList<Integer> importObjectedIntList( Object objindexes){
@@ -523,8 +541,10 @@ public class ArrUtilities {
 		
 	}
 	
-	
 	public int arrValuePos( int[] valarr, double value){
+		return arrValuepos(valarr, value);
+	}
+	public static int arrValuepos( int[] valarr, double value){
 		
 		int pos=-1;
 		
@@ -600,26 +620,6 @@ public class ArrUtilities {
 		return pos;
 	}
 	
-	public double arrayMax( double[] valarr, double defaultValue){
-		double return_value=0.0, max = -9999999999.9;
-		int i;
-		
-		i=0;
-		for ( i = 0; i < valarr.length; i++) {
-			  if (max<valarr[i]){
-				  max = valarr[i] ;
-			  }
-		}
-		if (max == -9999999999.9){
-			max = defaultValue;
-		}
-		return_value = max ;
-		
-		return return_value;		
-		
-		
-	}
-    
 	public double arrayMin( double[] valarr, double defaultValue){
 		double return_value=0.0, min =  9999999999.9;
 		int i;
@@ -644,6 +644,88 @@ public class ArrUtilities {
 		return arrayMin( valarr ,-1);
 	}
 
+	public int arrayMin( int[] valarr, int defaultValue){
+		int return_value = defaultValue, min =  999999999;
+		int i;
+		
+		if ((valarr==null) || (valarr.length==0)){
+			return return_value;
+		}
+		i=0;
+		for ( i = 0; i < valarr.length; i++) {
+			  if (min>valarr[i]){
+				  min = valarr[i] ;
+			  }
+		}
+		if (min ==  999999999){
+			min = defaultValue;
+		}
+		return_value = min ;
+		
+		return return_value;		
+		
+		
+	}
+
+
+	public double arrayMin( Vector<Double> valarr, double defaultValue){
+		
+		if ((valarr==null) || (valarr.size()==0)){
+			return defaultValue;
+		}
+		
+		
+		double[] varr ;
+		
+		varr = this.changeArrayStyle(valarr, 0.0) ;
+		
+		return arrayMin( varr, defaultValue) ;
+	}
+
+
+	public int arrayMin( Vector<Integer> valarr, int defaultValue){
+		
+		if ((valarr==null) || (valarr.size()==0)){
+			return defaultValue;
+		}
+		
+		
+		int[] varr = new int[valarr.size()];
+		
+		for (int i=0;i<varr.length;i++){
+			varr[i] = (int)(valarr.get(i));
+		}
+		return arrayMin( varr, defaultValue) ;
+	}
+
+	public double arrayMax( double[] valarr){
+		return arrayMax( valarr, -1.0) ;
+	}
+	
+	public double arrayMax( double[] valarr, double defaultValue){
+		double return_value=0.0, max = -9999999999.9;
+		int i;
+		
+		i=0;
+		for ( i = 0; i < valarr.length; i++) {
+			  if (max<valarr[i]){
+				  max = valarr[i] ;
+			  }
+		}
+		if (max == -9999999999.9){
+			max = defaultValue;
+		}
+		return_value = max ;
+		
+		return return_value;		
+		
+		
+	}
+
+	public static int arraymax( int[] valarr ){
+		return arraymax( valarr ,-1);
+	}
+	
 	public int arrayMax( int[] valarr ){
 		return arrayMax( valarr ,-1);
 	}
@@ -651,6 +733,9 @@ public class ArrUtilities {
 
 
 	public int arrayMax( int[] valarr, int defaultValue){
+		return arraymax( valarr ,-1);
+	}
+	public static int arraymax( int[] valarr, int defaultValue){
 		int return_value = defaultValue, max =  -999999999;
 		int i;
 		
@@ -674,35 +759,6 @@ public class ArrUtilities {
 	}
 	
 
-	public int arrayMin( Vector<Integer> valarr, int defaultValue){
-		
-		if ((valarr==null) || (valarr.size()==0)){
-			return defaultValue;
-		}
-		
-		
-		int[] varr = new int[valarr.size()];
-		
-		for (int i=0;i<varr.length;i++){
-			varr[i] = (int)(valarr.get(i));
-		}
-		return arrayMin( varr, defaultValue) ;
-	}
-	
-	public double arrayMin( Vector<Double> valarr, double defaultValue){
-		
-		if ((valarr==null) || (valarr.size()==0)){
-			return defaultValue;
-		}
-		
-		
-		double[] varr ;
-		
-		varr = this.changeArrayStyle(valarr, 0.0) ;
-		
-		return arrayMin( varr, defaultValue) ;
-	}
-
 	public double arrayMax( Vector<Double> valarr, double defaultValue){
 		
 		if ((valarr==null) || (valarr.size()==0)){
@@ -716,7 +772,23 @@ public class ArrUtilities {
 		return arrayMax( varr, defaultValue) ;
 	}
 	
+	public int arrayMax( Vector<Integer> valarr, int defaultValue){
+		
+		if ((valarr==null) || (valarr.size()==0)){
+			return defaultValue;
+		}
+		 
+		int[] varr ;
+		
+		varr = this.changeArrayStyle(valarr, 0) ;
+		
+		return arrayMax( varr, defaultValue) ;
+	}
 	
+	public int arrayMaxPos( ArrayList<Double> valarr  ){
+		Vector<Double> vvalarr = new Vector<Double> (valarr) ;
+		return arrayMaxPos(vvalarr);
+	}
 	public int arrayMaxPos( Vector<Double> valarr  ){
 		
 		int pos =-1;
@@ -737,7 +809,29 @@ public class ArrUtilities {
 		return pos ;
 	}
 	
-	public int arrayMaxPos( int[] valarr  ){
+
+	public int arrayMaxPos( Vector<Integer> valarr, int marker ){
+		
+		int pos =-1;
+		int defaultValue, maxval;
+		
+		if ((valarr==null) || (valarr.size()==0)){
+			return -1;
+		}
+		 
+		int[] varr ;
+		
+		varr = this.changeArrayStyle(valarr, 0) ;
+		
+		maxval = arrayMax( varr, 0) ;
+		
+		pos = arrValuePos( varr, maxval);
+		
+		return pos ;
+	}
+	
+
+	public int arrayMaxPos( double[] valarr, double defaultValue  ){
 		
 		int pos =-1;
 		double maxval;
@@ -746,11 +840,31 @@ public class ArrUtilities {
 			return -1;
 		}
 		  
-		maxval = arrayMax( valarr ) ;
+		maxval = arrayMax( valarr,0.0 ) ;
 		
 		pos = arrValuePos( valarr, maxval);
 		
 		return pos ;
+	}
+	
+	public static int arrayMaxpos( int[] valarr  ){
+		int pos =-1;
+		double maxval;
+		
+		if ((valarr==null) || (valarr.length==0)){
+			return -1;
+		}
+		  
+		maxval = arraymax( valarr ) ;
+		
+		pos = arrValuepos( valarr, maxval);
+		
+		return pos ;
+		
+	}
+	public int arrayMaxPos( int[] valarr  ){
+		
+		return arrayMaxpos(valarr)  ;
 	}
 	
 	public int arrayMinPos( int[] valarr  ){
@@ -769,27 +883,20 @@ public class ArrUtilities {
 		return pos ;
 	}
 	
-	public int arrayMin( int[] valarr, int defaultValue){
-		int return_value = defaultValue, min =  999999999;
-		int i;
+	public int arrayMinPos( double[] valarr  ){
+		
+		int pos =-1;
+		double  maxval;
 		
 		if ((valarr==null) || (valarr.length==0)){
-			return return_value;
+			return -1;
 		}
-		i=0;
-		for ( i = 0; i < valarr.length; i++) {
-			  if (min>valarr[i]){
-				  min = valarr[i] ;
-			  }
-		}
-		if (min ==  999999999){
-			min = defaultValue;
-		}
-		return_value = min ;
+		  
+		maxval = arrayMin( valarr ,0.0) ;
 		
-		return return_value;		
+		pos = arrValuePos( valarr, maxval);
 		
-		
+		return pos ;
 	}
 	public int arraySum( int[] int_arr){
 		int return_value=0;
@@ -800,8 +907,6 @@ public class ArrUtilities {
 			 return_value = return_value + int_arr[i];
 		}
 		return return_value;		
-		
-		
 	}
 
 	
@@ -818,8 +923,83 @@ public class ArrUtilities {
 		
 	}
 	
+	public int arraySum( ArrayList<Integer> int_arr){
+		int return_value=0;
+		int i;
+		
+		i=0;
+		for ( i = 0; i < int_arr.size(); i++) {
+			 return_value = return_value + int_arr.get(i);
+		}
+		return return_value;		
+	}
+	public int arraySum( Vector<Integer> int_arr){
+		int return_value=0;
+		int i;
+		ArrayList<Integer> int_arl = new ArrayList<Integer>(int_arr);
+
+		return arraySum(int_arl);		
+	}
+
 	
+	public int valueFrequency( Vector<Integer> vilist, int dpi) {
+		int freq = 0;
+		
+		for (int i=0;i<vilist.size();i++){
+			if (vilist.get(i)==dpi){
+				freq++;
+			}
+		}
+		
+		return freq;
+	}
+
+
+	public double[][] arrayTranspose(double[] values) {
 	
+		return null;
+	}
+
+
+	public double[][] arrayTranspose(double[][] values) {
+		double[][] tdata = new double[0][0];
+		double v;
+		int c,r ;
+		
+		try{
+			
+			c = values.length ;
+			r = values[0].length ;
+			
+			tdata = new double[r][c];
+			
+			for (int i=0;i<c;i++){
+				
+				for (int j=0;j<r;j++){
+					v = values[i][j] ;
+					tdata[j][i] = v;
+				}
+			}
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
+		return tdata;
+	}
+
+
+	public int[] arrScale(int[] arrvalues, int scaleratio) {
+		int[] resultValues = new int[arrvalues.length] ;
+		
+		
+		for (int i=0;i<arrvalues.length;i++){
+			resultValues[i] = (int) Math.round( (double)arrvalues[i] * scaleratio) ;
+		}
+		return resultValues;
+	}
+
+
 	public boolean intervalContains( int value, Map<Integer,Integer> intervals){
 		boolean rb=false, hb;
 		
@@ -1308,6 +1488,30 @@ public class ArrUtilities {
     }
 
 
+    public  int checkTypeOfListItems( Object arrObject){
+    	
+    	int result = -1;
+    	Object object ;
+    	ArrayList<Object> arr;
+    	String cname ;
+    	try {
+			
+    		arr = (ArrayList<Object>) arrObject;
+    	
+    		for (int i=0;i<arr.size();i++){
+    			object = arr.get(i); // T1
+    			cname = object.getClass().getName();
+    			
+    		}
+    		
+    	}catch(Exception e){
+    		e.printStackTrace() ;
+    	}
+    	
+    	
+    	return result;
+    }
+    		
     /**
      * 
      * 
@@ -1318,7 +1522,7 @@ public class ArrUtilities {
      * @return
      */
 	@SuppressWarnings("unchecked")
-	public <T1,T2> int checkTypeOfListItems( Object arrObject, 
+	public  <T1,T2>  int checkTypeOfListItems( Object arrObject, 
 											 Class<T1> clazzFormatToCheckFor , 
 											 Class<T2> clazzFormatToAvoid){
 												 
@@ -1381,6 +1585,61 @@ public class ArrUtilities {
 	 
 		
 		return deniedConversions;
+	}
+
+
+	public double[][] changeDimensions(double[][] values, int dimension, int newSize, int offset) {
+							   	// other flavors:	defining columns directly : int[] columns
+								// 					start, end
+		double[][] tdata = new double[0][0] ;
+		
+		if (dimension==0){
+			tdata = new double[newSize][values[0].length];
+			
+			for (int i=offset;i<newSize+offset;i++){
+				System.arraycopy(values[i], 0, tdata[i-offset], 0, values[i].length);
+			}
+		}
+		if (dimension==1){
+			tdata = new double[values.length][newSize];
+
+			for (int i=0;i<values.length;i++){
+				System.arraycopy(values[i], 0, tdata[i], offset, values[i].length-offset);
+			}
+			
+		}
+		
+		
+		return tdata;
+	}
+
+	public double[] fillArray( int steps, double lo, double hi) {
+		
+		return fillarray( steps, lo, hi);
+	}
+	
+	public static double[] fillarray(int steps, double lo, double hi) {
+		double[] values = new double[steps+1];
+		double ddx,dx;
+		
+		try{
+			
+			dx  = (hi-lo)/((double)steps) ;
+			ddx = (hi-lo) ;
+			
+			values[steps] = hi;
+			for (int i=steps-1;i>0;i--){
+				values[i] = values[i+1] - (values[i+1]-lo)/2.0;
+			}
+			values[0] = lo;
+			
+		}catch(Exception e){
+			
+		}
+		
+		
+		
+		return values;
 	}
 
 
