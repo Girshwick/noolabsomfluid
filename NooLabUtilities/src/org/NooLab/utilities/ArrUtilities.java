@@ -75,8 +75,10 @@ public class ArrUtilities {
 		return return_value.trim().replace(",",".");
 	}
 
-	 
 	public String arr2text(ArrayList<Double> vector, int fracdigits) {
+		return arr2Text(vector, fracdigits);
+	}
+	public static String arr2Text(ArrayList<Double> vector, int fracdigits) {
 		String return_value = "";
 		int i;
 
@@ -352,13 +354,26 @@ public class ArrUtilities {
 	
  
 	
-	public double[] changeArrayStyle( Vector<Double> strvec, double i ){
+	public double[] changeArrayStyle( Vector<Double> vvec, double i ){
 		double[] strval ;
 		 
-		strval = new double[strvec.size()];
-		if (strvec.size() > 0) {
-			for (int k = 0; k < strvec.size(); k++) {
-				strval[k] = strvec.get(k);
+		strval = new double[vvec.size()];
+		if (vvec.size() > 0) {
+			for (int k = 0; k < vvec.size(); k++) {
+				strval[k] = vvec.get(k);
+			}
+		}
+		return strval ;
+	}
+	
+	public double[] changeArrayStyle( ArrayList<Double> vvec ){
+		double[] strval ;
+		 
+		 
+		strval = new double[vvec.size()];
+		if (vvec.size() > 0) {
+			for (int k = 0; k < vvec.size(); k++) {
+				strval[k] = vvec.get(k);
 			}
 		}
 		return strval ;
@@ -377,6 +392,25 @@ public class ArrUtilities {
 		return strval ;
 	}
 
+	/**
+	 * inclusive type conversion
+	 * 
+	 * @param ivalues
+	 * @param i
+	 * @return
+	 */
+	public ArrayList<Double> changeArrayStyle( ArrayList<Integer> ivalues, int i ){
+		ArrayList<Double>  dval = new ArrayList<Double>();
+		 
+		if (ivalues.size() > 0) {
+			for (int k = 0; k < ivalues.size(); k++) {
+				dval.add( (double)ivalues.get(k) );
+			}
+		}
+
+		return dval ;
+	}
+	
 	public long[] changeArrayStyle( Vector<Long> strvec, long i ){
 		long[] strval ;
 		 
@@ -390,7 +424,16 @@ public class ArrUtilities {
 		return strval ;
 	}
 	
-	 
+	public static int[] changeArraystyle(  ArrayList<Integer> values) {
+		
+		int[] vi = new int[values.size()];
+		
+		for(int i=0;i<vi.length;i++){
+			vi[i] = values.get(i) ;
+		}
+		
+		return vi;
+	}
 	public static ArrayList<Double> changeArraystyle(double[] values) {
 		ArrayList<Double> xa = new ArrayList<Double>();
 		
@@ -400,10 +443,23 @@ public class ArrUtilities {
 		return xa;
 	}
 	
+	public static ArrayList<Integer> changeArraystyle(int[] values) {
+		ArrayList<Integer> xa = new ArrayList<Integer>();
+		
+		for (int i=0;i<values.length;i++){
+			xa.add(values[i]) ;
+		}
+		return xa;
+	}
 	public ArrayList<Double> changeArrayStyle(double[] values) {
 		return changeArraystyle(values);
 	}
 
+	public ArrayList<Integer> changeArrayStyle( int[] values) {
+		return changeArraystyle(values);
+	}
+
+	
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public ArrayList<Integer> importObjectedIntList( Object objindexes){
@@ -911,6 +967,11 @@ public class ArrUtilities {
 
 	
 	public double arraySum( double[] d_arr){
+		return arraysum(d_arr);
+	}
+
+	public static double arraysum( double[] d_arr){
+
 		double return_value=0;
 		int i;
 		
@@ -1643,6 +1704,46 @@ public class ArrUtilities {
 	}
 
 
+	public static String arrayToString( double[]... v ) {
+		String outStr = "", rStr, vs;
+
+		try{
+
+			for (int i = 0; i < v.length; i++) {
+				rStr = "" ;
+				for (int j = 0; j < v[i].length ; j++){
+					vs = String.format( "%.4f",v[i][j]);
+					if (v[i][j]>0)vs=" "+vs ;
+					rStr = rStr + vs + " ";
+				}
+				
+				outStr = outStr + rStr ;
+				if (i < v.length)
+					outStr = outStr + "\n" ;
+			}
+			
+		}catch(Exception e){
+			outStr = "failure in attempting to create a string from array !";
+		}
+		
+		return outStr;
+	}
+
+
+	public static String toString(double[]... v) {
+		String outStr="" ;
+		
+		StringBuffer str = new StringBuffer();
+		for (int i = 0; i < v.length; i++) {
+			for (int j = 0; j < v[i].length - 1; j++)
+				str.append(v[i][j] + " ");
+			str.append(v[i][v[i].length - 1]);
+			if (i < v.length - 1)
+				str.append("\n");
+		}
+		outStr = str.toString() ;
+		return outStr ;
+	}
 
 
 	

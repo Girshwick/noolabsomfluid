@@ -40,6 +40,19 @@ public class Watch{
 	public void start(int pid){
 		watchProcesses[pid].isActive=true;
 	}
+	public void stop(int pid){
+		if ((watchProcesses!=null)&&(pid<watchProcesses.length))
+		watchProcesses[pid].isRunning=false;
+	}
+	
+	public void stopAll(){
+		if (watchProcesses!=null){
+			for (int i=0;i<watchProcesses.length;i++){
+				watchProcesses[i].isRunning=false;
+			}
+		}
+			
+	}
 	
 	public void measure(int pid){
 		watchProcesses[pid].measure(1) ;

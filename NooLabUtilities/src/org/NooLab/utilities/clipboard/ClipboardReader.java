@@ -255,7 +255,7 @@ public class ClipboardReader {
 		
 		public ClipboardSupervisor(){
 			
-			csvThrd = new Thread(this);
+			csvThrd = new Thread(this,"ClipboardSupervisor");
 			csvThrd.start();
 		}
 

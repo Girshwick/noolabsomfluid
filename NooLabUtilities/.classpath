@@ -22,8 +22,8 @@
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xmlenc-0.52.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xmlParserAPIs-2.6.2.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xalan/xalan-j_2_7_1/serializer.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/org.NooLab/repulsionField/NooLabChord.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/javax/javax.servlet.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/nets/nat/jNAT-PMPlib.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/NooLabChord"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

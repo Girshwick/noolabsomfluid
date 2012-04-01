@@ -1383,6 +1383,31 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		return ir;
 	}
 	
+	public boolean matchSimpleWildcard(String compareThisSnip, String toFullString) {
+		boolean rB=false;
+		String compareThis = compareThisSnip.trim();
+
+		if ((compareThis.endsWith("*")) && (compareThis.startsWith("*") )){
+			compareThis = compareThis.replace("*", "");
+			
+			return rB;
+		}
+
+		if (compareThis.startsWith("*") ){
+			compareThis = compareThis.replace("*", "");
+			rB = toFullString.endsWith(compareThis) ;
+			return rB;
+		}
+		if (compareThis.endsWith("*")){
+			compareThis = compareThis.replace("*", "");
+			rB = toFullString.startsWith(compareThis) ;
+			return rB;
+		}
+		
+		// if *ABC -> match to the end, if *ABC* match anywhere, if ABC* match at the beginning 
+		return rB;
+	}
+	
 	
 	// this should run multi-threaded, using multi-digester
 	public int mostSimilar( Vector<String> items, String compStr, int method, Map<String,Integer> bufferMap ){
@@ -1534,8 +1559,8 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		return rStr;
 	}
 	
-	public String replaceAll( String str, String searchfor, String byThat){
-		
+	public static String replaceall( String str, String searchfor, String byThat){
+
 		String rStr = str;
 		boolean done=false, twophaseRepl;
 		int z,p,sLen;
@@ -1578,10 +1603,15 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		
 		if (twophaseRepl){
 			byThat = "#<###>#";
-			rStr = replaceAll( rStr, byThat, originalReplacement) ;
+			rStr = replaceall( rStr, byThat, originalReplacement) ;
 		}
 
 		return rStr ;
+	}
+	public String replaceAll( String str, String searchfor, String byThat){
+		
+		return replaceall(str, searchfor, byThat);
+		
 	}
 	
 	
@@ -4077,6 +4107,8 @@ if (str.contains("1. 5")){
 	
 		return languageID; 
 	}
+
+
 
 	
 }

@@ -36,7 +36,9 @@ public class DelayFor {
 	}
 
 	public void period( long totalTime){
-		period(totalTime,100,0) ;
+		long stepp = 100;
+		if (totalTime*0.6<stepp)stepp=stepp/10;
+		period(totalTime,stepp,0) ;
 	}
 
 	public void period( long totalTime, int stepping){

@@ -649,34 +649,15 @@ public class DFutils extends Thread{
 		return rStr;
 	}
 	
-	/**
-	 * <p>
-	 * creates a string which could serve as a directory (folder) name;<br/> 
-	 * if the second string parameter ends with a trailing slash like "path/", and
-	 * if it is possible, then the resulting path will be created physically;
-	 * if this fails, the method returns an empty string. </p>
-	 * 
-	 *  <p> 
-	 *  note, that there are two flavors of this method; one of them checks if the path can be created,
-	 *  and if, it creates it, and if then it does not exist it returns an empty string
-	 *  </p>
-	 * @param pathsnip1
-	 * @param pathsnip2
-	 * @return
-	 */
-	public String createPath( String pathsnip1, String pathsnip2){
-		
-		return createPath( pathsnip1, pathsnip2, false);
-	}
+	public static  String createPath( String pathsnip1, String pathsnip2, boolean onlycheckPath){
 
-	public String createPath( String pathsnip1, String pathsnip2, boolean onlycheckPath){
 		String path ="" ;
 		
 		try{
 			path=".";
-			pathsnip2 = strgutil.replaceAll(pathsnip2, "::", "/");
-			pathsnip2 = strgutil.replaceAll(pathsnip2, ":", "");
-			pathsnip2 = strgutil.replaceAll(pathsnip2, "//", "/");
+			pathsnip2 = StringsUtil.replaceall(pathsnip2, "::", "/");
+			pathsnip2 = StringsUtil.replaceall(pathsnip2, ":", "");
+			pathsnip2 = StringsUtil.replaceall(pathsnip2, "//", "/");
 			
 			path = pathsnip1 + "/" + pathsnip2;
 			
@@ -684,7 +665,7 @@ public class DFutils extends Thread{
 			path = path.replaceAll("\\\\", "/") ;
 			path = path.replaceAll("\\//", "/") ;
 			path = path.replaceAll("//", "/") ; 
-			path = strgutil.replaceAll(path,"./", "/") ;
+			path = StringsUtil.replaceall(path,"./", "/") ;
 			// path = prepareFilepath( path ) ;
 			
 			int k=pathsnip2.length() ;
@@ -715,6 +696,36 @@ public class DFutils extends Thread{
 		
 		
 		return path ;
+	}
+	
+	public static String createPath( String pathsnip1, String pathsnip2){
+		
+		return createPath( pathsnip1, pathsnip2, false);
+	}
+
+	/**
+	 * <p>
+	 * creates a string which could serve as a directory (folder) name;<br/> 
+	 * if the second string parameter ends with a trailing slash like "path/", and
+	 * if it is possible, then the resulting path will be created physically;
+	 * if this fails, the method returns an empty string. </p>
+	 * 
+	 *  <p> 
+	 *  note, that there are two flavors of this method; one of them checks if the path can be created,
+	 *  and if, it creates it, and if then it does not exist it returns an empty string
+	 *  </p>
+	 * @param pathsnip1
+	 * @param pathsnip2
+	 * @return
+	 */
+	public String createpath( String pathsnip1, String pathsnip2){
+		
+		return createPath( pathsnip1, pathsnip2, false);
+	}
+
+	public String createpath( String pathsnip1, String pathsnip2, boolean onlycheckPath){
+		return createPath( pathsnip1, pathsnip2, onlycheckPath);
+		
 	}
 	
 	
@@ -1637,22 +1648,24 @@ public class DFutils extends Thread{
 
 		return rootPathNames;
 	}
-	
+	public static boolean fileExists(String filename){
+		 File file=new File(filename);
+		    
+		    boolean exists = file.exists();
+		    if (!exists) {
+		      // It returns false if File or directory does not exist
+		    	return false;
+		    }else{
+		      // It returns true if File or directory exists
+		    	return true;
+		    }
+	}
 	/**
 	 *  provides simpler access to this routine
 	 * 
 	 */ 
 	public boolean fileexists(String filename){
-	    File file=new File(filename);
-	    
-	    boolean exists = file.exists();
-	    if (!exists) {
-	      // It returns false if File or directory does not exist
-	    	return false;
-	    }else{
-	      // It returns true if File or directory exists
-	    	return true;
-	    }
+	   return fileExists(filename);
 	}
 
 	public boolean filenameIsUsable(String dataFieldFilename) {
