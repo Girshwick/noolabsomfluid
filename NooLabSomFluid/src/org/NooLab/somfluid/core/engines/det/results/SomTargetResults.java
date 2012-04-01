@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
+import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.datatypes.IndexDistance;
+import org.NooLab.utilities.datatypes.IndexedDistances;
+import org.NooLab.utilities.logging.PrintLog;
+
 import org.NooLab.somfluid.SomApplicationResults;
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidProperties;
@@ -23,9 +28,11 @@ import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.data.DataSampler;
 import org.NooLab.somfluid.properties.ModelingSettings;
-import org.NooLab.utilities.ArrUtilities;
-import org.NooLab.utilities.logging.PrintLog;
 
+import org.NooLab.somfluid.core.categories.extensionality.* ;
+import org.NooLab.somfluid.core.categories.imports.ExtensionalityDynamicsImportIntf;
+import org.NooLab.somfluid.core.categories.imports.IntensionalitySurfaceImportIntf;
+import org.NooLab.somfluid.core.categories.imports.SimilarityImportIntf;
 
 
 /**
@@ -38,19 +45,17 @@ import org.NooLab.utilities.logging.PrintLog;
 public class SomTargetResults {
 
 	DSom dSom;
-	DSomCore dSomCore;
-	
+
+
 	VirtualLattice somLattice;
 	SomDataObject somData;
-	SomFluid somFluidParent;
 	
-	 
 	
 	ModelingSettings modelingSettings ;
 	ClassificationSettings classifySettings;
 	
 	Roccer roccer;
-	
+	ModelProperties modelProperties = new ModelProperties ();
 	
 	boolean singleModeUndefined = false;
 	
@@ -61,6 +66,8 @@ public class SomTargetResults {
 	
 	// a collection of lists, each item in this collection refers to a particular node
 	ArrayList<FrequencyList> minorityFrequencies = new ArrayList<FrequencyList>();
+	
+	// ArrayList<Majorities> samplesResults = new ArrayList<Majorities>();
 	
 	private Majorities majorities ;
 	private SampleValidator sampleValidator ;
@@ -79,13 +86,11 @@ public class SomTargetResults {
 	
 	
 	// ========================================================================
-	public SomTargetResults( DSomCore dsomcore, DataSampler datasampler, ModelingSettings modSettings) {
+	public SomTargetResults( DSom dsom, DataSampler datasampler, ModelingSettings modSettings) {
 		// 
-		dSomCore = dsomcore;
-		 
-		dSom = dSomCore.getParent();
 		
-		somFluidParent = dSom.getSomFluidParent() ;
+		dSom = dsom;
+		 
 		
 		somLattice = dSom.getSomLattice();
 		somData = dSom.getSomData();
@@ -121,9 +126,11 @@ public class SomTargetResults {
 			if (dSom.getModelingSettings().getValidationActive()){
 										out.print(1, "performing validation...");
 										
-				performValidation( dataSampler.getValidationSet() );
+				// not active so far ... :  this.performValidation( dataSampler.getValidationSet() );
 										
 				prepare( DataSampler._SAMPLE_TRAINING);
+				
+				
 				prepare( DataSampler._SAMPLE_VALIDATION);
 										out.print(2, "performing validation done.");
 			}else{
@@ -170,7 +177,7 @@ public class SomTargetResults {
 	 * this is being called e.g. by "executeSOM()" in class "DSomCore{}"
 	 * @param sampleTraining 
 	 * 
-	 */
+	 */  
 	protected void prepare( int sampleIdentifier ) {
 		 
 		try{
@@ -196,8 +203,8 @@ public class SomTargetResults {
 								  ( classifySettings.getTargetGroupDefinition().length==0) ;
 			
 			if ((tm == ClassificationSettings._TARGETMODE_SINGLE) && (singleModeUndefined==false)){
-				validateSingleTarget( sampleIdentifier ); // still for both samples here
 				
+				validateSingleTarget( sampleIdentifier ); // still for both samples here
 				// displayResultsOnNodes();
 				return;
 			}  
@@ -225,7 +232,7 @@ public class SomTargetResults {
 		
 		
 	}
-
+	
 	protected void validateSingleTarget( int sampleIdentifier ){
 		
 											out.print(2, "checking for results on SOM by assuming mode = _TARGETMODE_SINGLE");
@@ -234,7 +241,13 @@ public class SomTargetResults {
 			
 			if (sampleIdentifier == DataSampler._SAMPLE_TRAINING){
 				majorities = new Majorities();	
+				
 				majorities.determineTargetGroups( somLattice );
+				this.modelProperties.trainingSample = majorities.getTrainingSample();
+											out.print(2, "creating results : "+  this.toString()+"\n"+
+													 	 "for training sample of lattice : "+ somLattice.toString());
+				// modelProperties.trainingSample.roc = new RoC( majorities.roccer._rocN);
+				modelProperties.trainingSample.tpSingularity = modelProperties.trainingSample.roc.rocCurve[1][0]; 
 			}
 			if (sampleIdentifier == DataSampler._SAMPLE_VALIDATION){
 				/* dealing with validation sample is fundamentally different from checking the
@@ -247,6 +260,13 @@ public class SomTargetResults {
 				
 				sampleValidator = new SampleValidator( dataSampler.getValidationSet() ) ;
 				sampleValidator.perform();
+
+				this.modelProperties.validationSamples.add( sampleValidator.majorities.getModelProperties().getTrainingSample() );
+				
+				sampleValidator.pseudoLattice.clear();
+				sampleValidator.pseudoLattice.close();
+				sampleValidator.pseudoLattice=null;
+				
 			}
 			 
 			
@@ -346,19 +366,54 @@ public class SomTargetResults {
 	}
 
 
+	/**
+	 * @return the sampleValidator
+	 */
+	public SampleValidator getSampleValidator() {
+		return sampleValidator;
+	}
+
+
+
+
+	/**
+	 * @return the modelProperties
+	 */
+	public ModelProperties getModelProperties() {
+		return modelProperties;
+	}
+
+
+
+
 	// ........................................................................
-	class Majorities 	implements 
+	private class Majorities 	implements 
 	 								FrequencyListGeneratorIntf {
 		
 		FrequencyList frequencyList  ; 
-		//RocCurve roc ;
+		RocCurve roc ;
+		Roccer roccer;
 		LatticeClassDescription lcd;
 		
 		ArrayList<Integer> ecrNodes = new ArrayList<Integer>();
 		
+		ModelProperties modelProps;
+		
 		public Majorities(){
 			
 			lcd = latticeClassDescription ;
+		}
+
+
+		public ValidationSet getTrainingSample() {
+			
+			return new ValidationSet( modelProps.trainingSample);
+		}
+
+
+		public ModelProperties getModelProperties() {
+			
+			return modelProps;
 		}
 
 
@@ -439,7 +494,7 @@ public class SomTargetResults {
 			ArrayList<Double> tvValues  ;
 			double[][] tgDef;
 			String[] tgLabels;
-			ModelProperties modelProperties;
+			
 			
 			
 			tgDef = classifySettings.getTargetGroupDefinition() ;
@@ -447,8 +502,13 @@ public class SomTargetResults {
 			
 			// set results to  somLattice.getModelProperties();
 			// which serves as a container for all results that describe the lattice as a model
-			modelProperties = somLattice.getModelProperties();
+			modelProps = somLattice.getModelProperties();
 			
+			if (somLattice.size()<=0){
+				return;
+			}
+			
+			// -> all nodes
 			for (int i=0;i<somLattice.size();i++){
 				
 				groupIdentifyingValue = -1;
@@ -513,34 +573,33 @@ public class SomTargetResults {
 				
 			} // -> all nodes
 			
-		 
-		
+			// TODO: determine the best ppv
+			determineROCvalues(); // TODO: nodes should be sorted along decreasing ppv !!
+			                      //       so far, the TP @ ECR is wrong !!!
+			modelProps.trainingSample.setSampleSize( dataSampler.getSizeTrainingSet() );
 			
-			
-			
-			determineROCvalues();
 			
 			// getRocCurve creates a copy of the double[][] array
-			modelProperties.trainingSample.roc.rocCurve = roccer._rocN.getRocCurve() ;
-			modelProperties.trainingSample.roc = new RoC( roccer._rocN );
+			modelProps.trainingSample.roc.rocCurve = roccer._rocN.getRocCurve() ;
+			modelProps.trainingSample.roc = new RoC( roccer._rocN );
 			
 			nodeCases = roccer.totalPCount;
-			modelProperties.trainingSample.observationCount = roccer.totalObsCount; 
-			modelProperties.trainingSample.casesCount = nodeCases;
-			modelProperties.trainingSample.truePositives  = nodeTP;
-			modelProperties.trainingSample.trueNegatives  = nodeTN; // ??? non-TG values in non-hb nodes
-			modelProperties.trainingSample.falsePositives = nodeFP; // ??? non TG values in hb nodes , as implied by the ecr which is measuring the quality of the node
+			modelProps.trainingSample.observationCount = roccer.totalObsCount; 
+			modelProps.trainingSample.casesCount = nodeCases;
+			modelProps.trainingSample.truePositives  = nodeTP;
+			modelProps.trainingSample.trueNegatives  = nodeTN; // ??? non-TG values in non-hb nodes
+			modelProps.trainingSample.falsePositives = nodeFP; // ??? non TG values in hb nodes , as implied by the ecr which is measuring the quality of the node
 			nodeFN = nodeCases-nodeTP;
-			modelProperties.trainingSample.falseNegatives = nodeFN; // TG values in non-hb nodes , as implied by the ecr which is measuring the quality of the node
-			modelProperties.trainingSample.ecrNodes = new ArrayList<Integer>(ecrNodes) ;
+			modelProps.trainingSample.falseNegatives = nodeFN; // TG values in non-hb nodes , as implied by the ecr which is measuring the quality of the node
+			modelProps.trainingSample.ecrNodes = new ArrayList<Integer>(ecrNodes) ;
 			
-			modelProperties.trainingSample.tpSingularity = modelProperties.trainingSample.roc.rocCurve[1][0] ;
+			modelProps.trainingSample.tpSingularity = modelProps.trainingSample.roc.getTpSingularityValue(); //  rocCurve[1][0] ;
 			
-			modelProperties.ecr = generalECR ;
-			modelProperties.targetGroups = classifySettings.getTargetGroupDefinition();
-			modelProperties.targetMode = classifySettings.getTargetMode() ;
-			modelProperties.targetVariable = classifySettings.getActiveTargetVariable() ;
-			modelProperties.targetVariableIndex = somLattice.getNode(0).getSimilarity().getIndexTargetVariable() ;
+			modelProps.ecr = generalECR ;
+			modelProps.targetGroups = classifySettings.getTargetGroupDefinition();
+			modelProps.targetMode = classifySettings.getTargetMode() ;
+			modelProps.targetVariable = classifySettings.getActiveTargetVariable() ;
+			modelProps.targetVariableIndex = somLattice.getNode(0).getSimilarity().getIndexTargetVariable() ;
 			
 			
 			
@@ -552,16 +611,16 @@ public class SomTargetResults {
 				nodeFP = nodeFP + (int) ((double)node.getExtensionality().getCount() * (1-node.getExtensionality().getPPV()));
 					
 			}
-			modelProperties.trainingSample.ecrTP = nodeTP;
-			modelProperties.trainingSample.ecrFP = nodeFP;
-			modelProperties.trainingSample.ecrRelSize = (double)(nodeTP+nodeFP)/ (double)modelProperties.trainingSample.observationCount;
-			modelProperties.trainingSample.ecrRelTP = (double)nodeTP/(double)modelProperties.trainingSample.casesCount ;
-			modelProperties.trainingSample.ecrRelRisk = (double)nodeTP/(double)(nodeTP+nodeFP) ;
+			modelProps.trainingSample.ecrTP = nodeTP;
+			modelProps.trainingSample.ecrFP = nodeFP;
+			modelProps.trainingSample.ecrRelSize = (double)(nodeTP+nodeFP)/ (double)modelProps.trainingSample.observationCount;
+			modelProps.trainingSample.ecrRelTP = (double)nodeTP/(double)modelProps.trainingSample.casesCount ;
+			modelProps.trainingSample.ecrRelRisk = (double)nodeTP/(double)(nodeTP+nodeFP) ;
 			 
 			out.printErr(2,"\nquality @ ecr, risk compliant nodes count n="+ecrNodes.size()+
 					       ",  tp="+nodeTP+", fp="+nodeFP+
-					       ",  tp singularity ="+ String.format("%.3f",modelProperties.trainingSample.tpSingularity) +
-					       ",  AuC "+String.format("%.4f",modelProperties.trainingSample.roc.AuC)+"\n");
+					       ",  tp singularity ="+ String.format("%.3f",modelProps.trainingSample.tpSingularity) +
+					       ",  AuC "+String.format("%.4f",modelProps.trainingSample.roc.AuC)+"\n");
 			
 			// displayResultsOnNodes();
 		}
@@ -779,11 +838,13 @@ public class SomTargetResults {
 			somValidation = (SomAppValidationIntf)(new SomApplication());
 			// somValidation = somFluidParent.getSomValidationInstance() ;
 			
-			latticeProperties = dSom.getSfFactory().getLatticeProperties() ;
-			pseudoLattice = new VirtualLattice(somFluidParent, latticeProperties);
+			latticeProperties = dSom.getSomProcessParent().getLatticeProperties() ;
 			
 			
-
+			/*
+			 * 
+			 */
+			pseudoLattice = new VirtualLattice(dSom.getSomProcessParent(), latticeProperties,50);
 		}
 		// ................................................
 		
@@ -802,6 +863,7 @@ public class SomTargetResults {
 			// we have to copy those result data to the modelProperties.validationSample of the main somLattice
 			
 			somLattice.getModelProperties().setValidationSample( pseudoLattice.getModelProperties().getTrainingSample() ) ;
+			somLattice.getModelProperties().getValidationSample().setSampleSize( dataSampler.getSizeValidationSet() );
 			
 		}
 		/** this is applicable only to validation of classification tasks, for regression tasks we need sth different ! */
@@ -833,7 +895,7 @@ public class SomTargetResults {
 					resultObj = somValidation.classify( ix ) ;
 					 
 					
-					if (resultObj.topEcrNodes.size()>0){
+					if ((resultObj!=null) && (resultObj.topEcrNodes!=null) && (resultObj.topEcrNodes.size()>0)){
 
 						
 						bmuIndex = resultObj.topEcrNodes.get(0);
@@ -847,15 +909,14 @@ public class SomTargetResults {
 						// we have to add the record ix to the pseudoNode; 
 						pseudoNode = pseudoLattice.getNodeByNumId( nodeID ) ;
 						if (pseudoNode==null){
-							pseudoNode = new MetaNode( pseudoLattice, somData);
 							
-							pseudoNode.importExtensionalityDynamics( nativeNode.getExtensionality() ) ;
-							pseudoNode.importIntensionalitySurface( nativeNode.getIntensionality() ) ;
-							pseudoNode.importSimilarity( nativeNode.getSimilarity() ) ;
+							// pseudoNode = new MetaNode( pseudoLattice, somData);
 							
+							pseudoNode = new MetaNode( pseudoLattice, somData, nativeNode) ;
+							 
 							pseudoNode.setNumID( nodeID ) ;
-							pseudoNode.clear() ;
-							pseudoLattice.addNode(pseudoNode) ;
+							pseudoNode.clearData() ;
+							pseudoLattice.addNode(pseudoNode) ; // ??
 						}
 						
 						pseudoNode.importDataByIndex(recordIndexes);						
@@ -953,6 +1014,7 @@ public class SomTargetResults {
 			double ppv, npv ;
 			double cumTpRate = -1.0;
 			double ordFpRate = -1.0;
+			double relNodeSize;
 		}
 		
 		@SuppressWarnings("unchecked")
@@ -962,9 +1024,7 @@ public class SomTargetResults {
  			MetaNode node;
  			int k,pSum=0, nSum=0  ,nonemptyNodeCount=0;
  			double tpr,fpr,v1,v2 ;
- 			
- 			
- 			
+ 			 
  			k=0;
 			// we first create a list of items : nodeID, node size, ppv, npv, npv[] 
 			for (int i=0;i<somLattice.size();i++){
@@ -976,11 +1036,11 @@ public class SomTargetResults {
 				rItem.ppv = node.getExtensionality().getPPV( ) ;
 				rItem.npv = node.getExtensionality().getNPV( ) ;
 				rItem.nodeSize = node.getExtensionality().getCount();
-			
+				rItem.relNodeSize = 0.0 ;
+				
 				totalObsCount = totalObsCount + rItem.nodeSize ;
 				
 				totalPCount = (int) (totalPCount + rItem.nodeSize * rItem.ppv) ; 
-				
 				totalNCount = (int) (totalNCount + rItem.nodeSize * rItem.npv) ;
 				
 				if (rItem.nodeSize>0){
@@ -1005,11 +1065,11 @@ public class SomTargetResults {
 			
 			pSum=0; nSum=0; 
 			double nn,tn;
-			int z=0, rcz=0 ; 
+			int z=0, rcz=0 ,fpzn=0; 
 			
 			try{
-				
-
+				_rocN.rocCurve[0][0] = 0;
+				_rocN.rocCurve[1][0] = 0 ;
 				for (int i=0;i<rocItems.size();i++){
 					v1 = Math.max(0,rocItems.get(i).npv);
 					v2 = Math.max(0,rocItems.get(i).ppv);
@@ -1019,7 +1079,7 @@ public class SomTargetResults {
 					if (rocItems.get(i).nodeSize==0){
 						continue;
 					}
-					
+					rocItems.get(i).relNodeSize = (double)rocItems.get(i).nodeSize/(double)totalObsCount;
 					_rocR.rocCurve[0][rcz] = v1;
 					_rocR.rocCurve[1][rcz] = v2;
 					
@@ -1034,12 +1094,21 @@ public class SomTargetResults {
 					
 					// care for bindings in x-direction == for nn
 					if ((z>0) && (nn==_rocN.rocCurve[0][z-1])){
-						_rocN.rocCurve[0][z-1] = nn;
-						_rocN.rocCurve[1][z-1] = tn ;
+						if (z-1>=0){
+							_rocN.rocCurve[0][z-1] = nn;
+							_rocN.rocCurve[1][z-1] = tn ;
+						}
+						
 					}else{
-						_rocN.rocCurve[0][z] = nn;
-						_rocN.rocCurve[1][z] = tn ;
-						z++;
+						if (z-fpzn<_rocN.rocCurve[0].length){
+							_rocN.rocCurve[0][z-fpzn] = nn;
+							_rocN.rocCurve[1][z-fpzn] = tn ;
+							z++;
+						}
+						if (fpr==0.0){
+							fpzn++;
+						}
+
 					}
 				
 					
@@ -1048,23 +1117,23 @@ public class SomTargetResults {
 				
 				double[] r1values = new double[z] ;
 				double[] r2values = new double[z] ;
-				System.arraycopy(_rocN.rocCurve[0], 0, r1values , 0, z);
-				System.arraycopy(_rocN.rocCurve[1], 0, r2values , 0, z);
+				System.arraycopy(_rocN.rocCurve[0], 0, r1values , 0, z-fpzn);
+				System.arraycopy(_rocN.rocCurve[1], 0, r2values , 0, z-fpzn);
 				
 				_rocN.rocCurve = new double[2][z] ;
-				System.arraycopy( r1values , 0,  _rocN.rocCurve[0], 0, z);
-				System.arraycopy( r2values , 0,  _rocN.rocCurve[1], 0, z);
+				System.arraycopy( r1values , 0,  _rocN.rocCurve[0], 0, z-fpzn);
+				System.arraycopy( r2values , 0,  _rocN.rocCurve[1], 0, z-fpzn);
 				
 				
 				r1values = new double[z] ;
 				r2values = new double[z] ;
 				
-				System.arraycopy(_rocR.rocCurve[0], 0, r1values , 0, z);
-				System.arraycopy(_rocR.rocCurve[1], 0, r2values , 0, z);
+				System.arraycopy(_rocR.rocCurve[0], 0, r1values , 0, z-fpzn);
+				System.arraycopy(_rocR.rocCurve[1], 0, r2values , 0, z-fpzn);
 				
 				_rocR.rocCurve = new double[2][z] ;
-				System.arraycopy( r1values , 0,  _rocR.rocCurve[0], 0, z);
-				System.arraycopy( r2values , 0,  _rocR.rocCurve[1], 0, z);
+				System.arraycopy( r1values , 0,  _rocR.rocCurve[0], 0, z-fpzn);
+				System.arraycopy( r2values , 0,  _rocR.rocCurve[1], 0, z-fpzn);
 				
 			}catch(Exception e){
 				e.printStackTrace();

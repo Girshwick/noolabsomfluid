@@ -82,7 +82,7 @@ public class DataTable implements Serializable{
 	
 	ArrayList<String> columnHeaders = new ArrayList<String>() ; 
 	
-	int[] formats ;
+	int[] formats ;         
 	
 	private Map<Double,Integer> indexValueMap = new TreeMap<Double,Integer>();
 										// consider Apache's TreeBidiMap ...
@@ -177,6 +177,20 @@ public class DataTable implements Serializable{
 		return table;
 	}
 	
+	public void clear() {
+		
+		dataTable.clear(); 
+		columnHeaders.clear();
+		dataTableRows.clear();
+		transposedTable.clear();
+		indexValueMap.clear();
+		
+		
+		strgutil = null;
+		arrutil = null;
+		
+	}
+
 	private void transferContent( DataTable inDatatable, DataTable outDaTa){
 		
 		DataTableCol col;
@@ -1244,6 +1258,19 @@ if (ir==670){
 	}
 	
 
+
+	public int getColumnIndexOfType(int formatType) {
+		int index=-1;
+		if (formats!=null){
+			for (int i = 0; i < formats.length; i++) {
+				if (formats[i]==formatType){
+					index=i;
+					break;
+				}
+			}
+		}
+		return index;
+	}
 
 	public int[] getFormats() {
 		return formats;

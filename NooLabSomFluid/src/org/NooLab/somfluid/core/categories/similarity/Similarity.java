@@ -29,36 +29,60 @@ public class Similarity implements
 
 	int similarityType = _SIMDIST_ADVSHAPE ;
 	
-	ArrayList<Double> useIntensity ;
+	ArrayList<Double> useIntensity = new ArrayList<Double>();
 	ArrayList<Double> usageIndicationVector = new ArrayList<Double>();
 	ArrayList<Double> blacklistIndicationVector = new ArrayList<Double>();
 	
 	
-	ArrayList<Integer> excludedVariableIndexes;
+	ArrayList<Integer> excludedVariableIndexes = new ArrayList<Integer>();
 	
 	int indexIdColumn = -1;
 	int indexTargetVariable = -1;
 	
-	
+	// ===========
 	public Similarity(){
 		
 	}
-	
-	 
-	@Override
-	public void setUsageIndicationVector(int[] usagevector) {
-		// ArrayList<Double>
-		usageIndicationVector = new ArrayList<Double>();
+	public Similarity( Similarity inSimilarity) {
+
+		useIntensity = new ArrayList<Double>();
 		
-		for (int i=0;i<usagevector.length;i++){
-			usageIndicationVector.add( (double)(1.0*usagevector[i]) ) ;
-		}
-		// this does not work, underneath it remains integer, and later (next read op) a ClassCastException will be thrown!
-		// Collection cL = Arrays.asList(ArrayUtils.toObject(usagevector));
-		// usageIndicationVector = new ArrayList<Double>( cL );
+		if (inSimilarity.useIntensity!=null) useIntensity.addAll( inSimilarity.useIntensity) ;
+		
+		if (inSimilarity.usageIndicationVector!=null) usageIndicationVector.addAll( inSimilarity.usageIndicationVector );
+		
+		if (inSimilarity.blacklistIndicationVector!=null) blacklistIndicationVector.addAll( inSimilarity.blacklistIndicationVector );
+		
+		
+		excludedVariableIndexes = new ArrayList<Integer>() ;
+		if (inSimilarity.excludedVariableIndexes!=null) excludedVariableIndexes.addAll( inSimilarity.excludedVariableIndexes ) ;
+		
+		indexIdColumn = inSimilarity.getIndexIdColumn();
+		indexTargetVariable = inSimilarity.indexTargetVariable ;
+		
+		
 	}
-
-
+	// ========================================================================
+	public void clear(){
+		if (useIntensity!=null){
+			useIntensity.clear();
+			usageIndicationVector.clear();
+			blacklistIndicationVector.clear();
+			excludedVariableIndexes.clear();
+			
+		}
+	}
+	
+	public void close(){
+		clear();
+		useIntensity = null ;
+		usageIndicationVector = null ;
+		blacklistIndicationVector = null ;
+		excludedVariableIndexes = null ;
+		
+	}
+	// ------------------------------------------------------------------------
+	 
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void setBlacklistIndicationVector(int[] blacklistPositions) {
@@ -82,7 +106,14 @@ public class Similarity implements
 	public double similarityWithinDomain( ArrayList<Double> vector1, // should be the data from the nodes intensional profile vector
 										  ArrayList<Double> vector2, boolean suppressSQRT) {
 		// useIntensity
-		return (new SimilarityCalculator(vector1,vector2)).calc(usageIndicationVector ); // using global useIntensity
+		SimilarityCalculator sc;
+		  
+		sc = (new SimilarityCalculator(vector1,vector2));
+		sc.suppressSQRT = suppressSQRT;
+		sc.indexIdColumn = indexIdColumn;
+		sc.indexTargetVariable = indexTargetVariable;
+		
+		return sc.calc(usageIndicationVector ); // using global useIntensity
 	}
 
 	@Override
@@ -170,12 +201,43 @@ public class Similarity implements
 	}
 
 
+	@Override
+	public int[] getUseIndicatorArray() {
+		int [] usearr = new int[usageIndicationVector.size()] ;
+		
+		for (int i=0;i<usearr.length;i++){
+			if (usageIndicationVector.get(i)>0.0){
+				usearr[i] = 1;
+				if (i==indexTargetVariable){
+					usearr[i] = -2;
+				}
+			}
+			 
+		}
+		return usearr;
+	}
+	
 	public ArrayList<Double> getUsageIndicationVector() {
 		return usageIndicationVector;
 	}
 
 	
+	@Override
+	public void setUsageIndicationVector(int[] usagevector) {
+		// ArrayList<Double>
+		usageIndicationVector = new ArrayList<Double>();
+		
+		for (int i=0;i<usagevector.length;i++){
+			usageIndicationVector.add( (double)(1.0*usagevector[i]) ) ;
+		}
+		// this does not work, underneath it remains integer, and later (next read op) a ClassCastException will be thrown!
+		// Collection cL = Arrays.asList(ArrayUtils.toObject(usagevector));
+		// usageIndicationVector = new ArrayList<Double>( cL );
+	}
+
+
 	public void setUsageIndicationVector(ArrayList<Double> usageIndicationVector) {
+		
 		this.usageIndicationVector = usageIndicationVector;
 	}
 

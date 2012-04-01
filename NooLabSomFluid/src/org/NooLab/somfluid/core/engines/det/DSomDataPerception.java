@@ -3,11 +3,13 @@ package org.NooLab.somfluid.core.engines.det;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.datatypes.IndexDistance;
+import org.NooLab.utilities.datatypes.IndexDistanceIntf;
+import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
 
-import org.NooLab.repulsive.components.data.IndexDistance;
-import org.NooLab.repulsive.components.data.IndexDistanceIntf;
-import org.NooLab.somfluid.components.IndexedDistances;
+
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
@@ -19,6 +21,7 @@ import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.properties.ModelingSettings;
+
 
  
 
@@ -53,6 +56,10 @@ public class DSomDataPerception
 	}
 	// ========================================================================	
 
+	public void clear(){
+		sampleRecordIDs.clear() ;
+		volatileSample.clear() ;
+	}
 	// ........................................................................
 	public void setLoopParameters(int epoch, int somsteps) {
 	 
@@ -107,6 +114,8 @@ public class DSomDataPerception
 		
 		minFill = this.parentSom.modelingSettings.getMinimalSplitSize() ;
 		
+		 
+		
 		recordsConsidered=0;
 		
 		while ((recordsConsidered < sampleRecordIDs.size() ) && (parentSom.getUserbreak()==false) ) {
@@ -119,6 +128,7 @@ public class DSomDataPerception
 			}else{
 				currentRecordIndex = sampleRecordIDs.get( recordsConsidered);
 			}
+			recordsConsidered++;
 			
 											if (currentRecordIndex > dtable.rowcount() ){
 												break; // continue;
@@ -130,7 +140,7 @@ public class DSomDataPerception
 			}
 			// the sample index need to be translated into the real record id
 			// which we accomplish by means of the values in the index column
-			// -> the import of the table has to check whther there is an index column !!!!
+			// -> the import of the table has to check whether there is an index column !!!!
 			// we created a map (value in index column) -> (row number)
 			
 			// indexColValue = getIndexValueFromRow( sampleRecordIDs, currentSampleIndex, f) ;
@@ -144,7 +154,7 @@ public class DSomDataPerception
 			testrecord = selectPreparePerceptDataRecord( currentRecordIndex, 2); // 2: normalized data
 			
 						 				if (testrecord == null){
-						 					recordsConsidered++;
+						 					
 						 					continue;
 						 				}
 				 		 
@@ -158,28 +168,32 @@ public class DSomDataPerception
 		    // we update the winning node without further consideration ONLY in the last step
 		    if (((currentEpoch+1)>=somSteps) || (currentEpoch<=1) || (mode>0)){ //  
 		    	learningRate = 0.04 ;
-		    	
+if ((currentEpoch+1)>=somSteps){
+	int nn;
+	nn=0;
+}
+	
 		    	updateWinningNode( winningNodeIndexes, testrecord, currentRecordIndex, learningRate );
 			
 		    	// this also defines the size of the neighborhood 
 		    	int ce = currentEpoch+mode;
 		    	ce = Math.min(ce,somSteps);
 		    	ce = currentEpoch ;
-		    	adoptInfluenceAndReach( sampleRecordIDs.size(), recordsConsidered, ce, somSteps ,timeConstant);
+		    	adoptInfluenceAndReach( sampleRecordIDs.size(), recordsConsidered-1, ce, somSteps ,timeConstant);
 		    }
 
 		    
 	    	// in the final step we do nothing structural any more ! ...in order to get a stable representation 
 		    if (((currentEpoch+1)<somSteps) && (mode==0)){ 
-				
-				if ((recordsConsidered<4) && (neighbourhoodSize<=1)){ adoptInfluenceAndReach( sampleRecordIDs.size(), recordsConsidered, currentEpoch, somSteps ,timeConstant ); }
+				// ????
+				if ((recordsConsidered<4) && (neighbourhoodSize<=1)){ adoptInfluenceAndReach( sampleRecordIDs.size(), recordsConsidered-1, currentEpoch, somSteps ,timeConstant ); }
 
 				// retrieves the list of nodes from the physical ParticleField that are in the vicinity of the winner 
 				affectedNodesIndexes = getAffectedNodes( winningNodeIndexes, 1 );
 		    	
 				winnerIndex = winningNodeIndexes.get(0).getIndex() ;
 		    	
-				if ((currentEpoch>=1) && (((double)recordsConsidered/(double)sampleRecordIDs.size())<0.7)){ 
+				if ((currentEpoch>=1) && (((double)(recordsConsidered-1)/(double)sampleRecordIDs.size())<0.7)){ 
 					
 			    	int newWinnerIndex = avoidEmptyNodes( winnerIndex, affectedNodesIndexes );
 			    	if (newWinnerIndex >=0){
@@ -200,16 +214,16 @@ public class DSomDataPerception
 		    	}
 		    	
 		    	// this also defines the size of the neighborhood 
-		    	adoptInfluenceAndReach( sampleRecordIDs.size(), recordsConsidered, currentEpoch, somSteps ,timeConstant );
+		    	adoptInfluenceAndReach( sampleRecordIDs.size(), recordsConsidered-1, currentEpoch, somSteps ,timeConstant );
 
 		    	
 		    	// this affects just the profile vectors of the nodes ! 
 		    	if ((currentEpoch+1)<somSteps){ // in the last step we do not adjust the vicinity any more... it is just classifying...
 		    		 
-		    		updateNodesInVicinity( winningNodeIndexes, affectedNodesIndexes, learningRate, testrecord ,recordsConsidered); // influence ?
+		    		updateNodesInVicinity( winningNodeIndexes, affectedNodesIndexes, learningRate, testrecord ,recordsConsidered-1); // influence ?
 		    	}
 		    
-		    	learningRate = adjustLearningRate( learningRate, recordsConsidered, sampleRecordIDs.size(), currentEpoch, somSteps);
+		    	learningRate = adjustLearningRate( learningRate, recordsConsidered-1, sampleRecordIDs.size(), currentEpoch, somSteps);
 		    	
 		    	/* in the epoch N-1 we check for splits, growth according to settings
 		    	 * especially, whether adjacent nodes are drastically different filled (<10, >100), (>1000, <30) (<3,>40)
@@ -221,16 +235,20 @@ public class DSomDataPerception
 		    		
 		    		structuralAdaptation( winningNodeIndexes, affectedNodesIndexes );
 		    	}   
+		    	affectedNodesIndexes.clear();
+		    	winningNodeIndexes.clear();
 		    	
+		    	affectedNodesIndexes=null;
+		    	winningNodeIndexes=null;
 		    } // currentEpoch: not the last one ?			
 		    
-		    if ((recordsConsidered<=1) || (recordsConsidered%100==0)){
+		    if ((recordsConsidered-1<=1) || (recordsConsidered%100==0)){
 		    	out.print(4, "epoch: "+currentEpoch+"(of "+(somSteps-1)+"), record "+recordsConsidered+", learnrate: "+String.format("%.3f",learningRate)+
 		    			     " ,  nb size: "+neighbourhoodSize);
 		    }
 
 											out.print(3,"neighbourhoodSize : "+neighbourhoodSize);
-			recordsConsidered++;
+			// recordsConsidered++;
 
 			int tn = Thread.activeCount();
 			// out.print(2, "  - - -  active_threads: "+tn);
@@ -675,13 +693,12 @@ if (extSizeInNeighbors.size()>0){
 		    	 }
 		     } else {
 		    	 _next_record = -1;
-		                               out.print(2, "problem in getNextRecordId , err =" + String.valueOf(err) + 
+		                               out.print(2, "problem in getNextRecordId (sample body is empty), err =" + String.valueOf(err) + 
 		                            		   		" , _rs " + String.valueOf(_rs) + "  , _arr_pos " + String.valueOf(_arr_pos));
 		     }
 		
 		     												err = 6;
-		     
-		     err=0;
+		     volatileSample.trimToSize() ;		     err=0;
 		}
 		finally {
 			if (err>0){
@@ -996,7 +1013,9 @@ if (extSizeInNeighbors.size()>0){
 			
 			bmuSearch = new ProfileVectorMatcher(out);
 			bmuSearch.setNodeCollection( nodeCollection).setParameters(profilevalues, bmuCount, boundingIndexList);
+			
 			bmuSearch.createListOfMatchingUnits(1);
+			
 			sortedNeighbors = bmuSearch.getList( -1 ) ;
 			
 			if (sortedNeighbors.size()==0){
@@ -1060,7 +1079,7 @@ if (currentEpoch>=2){
 		int size;
 		
 		if (mapRadius<=0.01){
-			mapRadius = parentSom.dSomCore.getMapRadius(); 
+			mapRadius = parentSom.getdSomCore().getMapRadius(); 
 		};
 		
 		rc = actualRecordCount;
@@ -1248,7 +1267,15 @@ if (this.currentEpoch==2){
 				if (i<=0){
 					int iwn = i;
 					if (this.currentEpoch+1==this.somSteps)iwn=-1;
-				
+											if ((i<=1) && (currentEpoch==0)){
+												//
+												/*
+												out.print(2, "somLattice address : "+somLattice.toString()) ;
+												ArrayList<Double>  uv = node.getIntensionality().getUsageIndicationVector() ;
+												String str = ArrUtilities.arr2Text(uv, 1) ;
+												out.printErr(2, ">>>   node UIV : "+str) ;
+												*/
+											}
 					// ... calculate new profile, calculate new variance, CoV
 					node.insertDataAndAdjust( dataNewRecord, recordIndexInTable, 
 											  iwn,currentLearningrate, 

@@ -40,12 +40,15 @@ public class RoC implements Serializable {
 	 * @return
 	 */
 	public double[][] getRocCurve() {
-		int z= rocCurve[0].length;
-		double[][] xRoc = new double[2][z] ;
+		double[][] xRoc = new double[0][0] ;
 		
-		System.arraycopy( rocCurve[0], 0,  xRoc[0], 0, z);
-		System.arraycopy( rocCurve[1], 0,  xRoc[1], 0, z);
+		if (rocCurve!=null){
+			int z = rocCurve[0].length;
+			xRoc = new double[2][z];
 
+			System.arraycopy(rocCurve[0], 0, xRoc[0], 0, z);
+			System.arraycopy(rocCurve[1], 0, xRoc[1], 0, z);
+		}
 		return xRoc;
 	}
 
@@ -75,5 +78,20 @@ public class RoC implements Serializable {
 
 	public void setRiskDynamics(double riskDynamics) {
 		this.riskDynamics = riskDynamics;
+	}
+
+	public double getTpSingularityValue() {
+		double tps = -1 ;
+		
+		try{
+
+			if ((rocCurve!=null) && (rocCurve.length>0)){
+				tps = rocCurve[1][0] ;
+			}
+
+		}catch(Exception e){
+		}
+		
+		return tps;
 	}
 }

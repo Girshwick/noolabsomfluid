@@ -9,7 +9,9 @@ import org.NooLab.somfluid.core.engines.NodeStatistics;
 
 public interface ExtensionalityDynamicsIntf {
 
-	
+	/**
+	 * @return number of records in this collection of extensions 
+	 */
 	public int getCount();
 
 	/**

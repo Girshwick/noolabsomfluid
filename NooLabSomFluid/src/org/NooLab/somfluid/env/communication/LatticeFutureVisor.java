@@ -27,9 +27,9 @@ public class LatticeFutureVisor implements Runnable, LatticeFutureVisorIntf{
 		isWaiting = true;
 		
 		lfvThrd.start();
-		
-		while (isWaiting ){
-			virtualLattice.getOut().delay(1);
+		int z=0;
+		while ((isWaiting ) && (z<8000)){
+			virtualLattice.getOut().delay(1); z++;
 		}
 	}
 

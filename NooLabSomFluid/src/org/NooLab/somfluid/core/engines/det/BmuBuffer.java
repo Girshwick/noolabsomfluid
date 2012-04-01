@@ -2,7 +2,7 @@ package org.NooLab.somfluid.core.engines.det;
 
 import java.util.ArrayList;
 
-import org.NooLab.repulsive.components.data.IndexDistance;
+import org.NooLab.utilities.datatypes.IndexDistance;
 
 
 

@@ -1,6 +1,8 @@
 package org.NooLab.somfluid.core.engines.det;
 
 import java.util.ArrayList;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.Random;
 
 
@@ -12,7 +14,9 @@ import org.NooLab.somfluid.SomFluidTask;
 
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
+import org.NooLab.somfluid.core.*;
 import org.NooLab.somfluid.core.application.SomValidation;
+import org.NooLab.somfluid.core.engines.det.results.ModelProperties;
 import org.NooLab.somfluid.core.engines.det.results.SomTargetResults;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.properties.ModelingSettings;
@@ -48,14 +52,14 @@ import org.NooLab.utilities.logging.PrintLog;
  * e.g. for branching, nesting etc. = growing and differentiation 
  * 
  */
-public class DSom implements DSomIntf{
+public class DSom extends Observable implements DSomIntf{
 
 	
 	DSomProperties dsProperties;
 	
 	ModelingSettings  modelingSettings ;
 	
-	SomFluid somFluidParent;
+	// SomFluid somFluidParent;
 	SomFluidFactory sfFactory;
 	SomFluidProperties sfProperties;
 	
@@ -64,18 +68,19 @@ public class DSom implements DSomIntf{
 
 	SomFluidMonoTaskIntf somTask; // is of mono-flavor here
 	
-	SomTargetedModeling somTargetedModeling;  
+	//SomTargetedModeling somTargetedModeling;  
 	
-	DSomCore dSomCore;
+	private DSomCore dSomCore;
 
 	public BmuBuffer bmuBuffer;
 	
-	// this gets assigned in DSomCore, sine we also  need the actual record sample 
+	// this gets assigned in DSomCore, since we also  need the actual record sample 
 	// (besides the total number of records))
-	SomTargetResults somResults;
 	
 	
-	String activeTvLabel ;
+	
+	String activeTvLabel ="";
+	int activeTvIndex = -1;
 	
 	
 	PrintLog out;
@@ -84,12 +89,24 @@ public class DSom implements DSomIntf{
 
 	Random random;
 
+	private int callerStatus = 0;
+
+	public boolean inProcessWait = false;
+
+	SomProcessIntf somProcessParent;
+
+	public boolean resultsRequested=true;
+
+	private String instanceGuid;
 	
 	// ------------------------------------------------------------------------
-	public DSom( SomFluid sfParent , SomDataObject sdo, VirtualLattice somlattice, SomFluidTask sfTask ) {
-		 
-		somFluidParent = sfParent;
-		sfProperties = somFluidParent.getSfProperties();
+	public DSom( SomProcessIntf processParent, SomDataObject sdo, VirtualLattice somlattice, SomFluidTask sfTask ) {
+
+		
+		this.addObserver( (Observer) processParent );
+		
+		somProcessParent = processParent;
+		sfProperties = somProcessParent.getSfProperties();
 		sfFactory = sfProperties.getSfFactory() ;
 		
 		somData = sdo;
@@ -97,41 +114,105 @@ public class DSom implements DSomIntf{
 		
 		modelingSettings = sfProperties.getModelingSettings() ;
 		
-		random = new Random();
+		random = sfFactory.getRandom();
 		random.setSeed(3579) ;
 		
 		
 		bmuBuffer = new BmuBuffer(this, somData.getRecordCount() ) ;
 		
 		activeTvLabel = sfProperties.getModelingSettings().getActiveTvLabel() ;
+		if (activeTvLabel.length()>0){
+			
+			activeTvIndex = somData.getVariables().getIndexByLabel( activeTvLabel ) ;
+			somData.getVariables().setTvColumnIndex(activeTvIndex) ;
+			somData.getVariables().addTargetedVariableByLabel(activeTvLabel ) ;
+		}
+		
 		
 		out = sdo.getOut() ;
 		
 	}
 	
 
+	public DSom(DSom dSomIn) {
+
+		
+	}
+
+
 	private void init(){
 		
 	}
+	
+	public void close(){
+		
+		if (dSomCore!=null) dSomCore.close() ;
+		
+		System.gc() ;
+
+		dSomCore = null;
+	}
+	
+	
 	// ------------------------------------------------------------------------	
 
 	public void performTargetedModeling() {
 		 
 		dSomCore = new DSomCore(this) ;
 		 
+		
+		
 		// will run the som in a dedicated thread
 		dSomCore.perform() ;
 		 
+		
 	}
 
+	public void onCoreProcessCompleted(int resultCode){
+		ModelProperties modelProperties ;
+		
+		if (dSomCore.somResults!=null){ // SomTargetResults@1a6acb9
+			modelProperties = new ModelProperties( (ModelProperties) dSomCore.somResults.getModelProperties() ) ;
+		}else{
+			modelProperties = new ModelProperties();
+		}
+		
+
+		// dSomCore is not the owner of the lattice !!
+		dSomCore.close();
+		dSomCore = null;
+
+		System.gc();
+
+			modelProperties.dSomGuid = getGuid();
+		
+			// is sent to ???
+			setChanged();
+			this.notifyObservers(modelProperties);
+		
+		
+	}
 
 	// ========================================================================
 	
 	
-	public int getTargetVariableColumn() {
+	public int getTargetVariableColumn() throws Exception{
 		// dependent on modelingSettings
+		int varix ,varix2;
+		String varstr;
 		
-		return 0;
+		if (activeTvIndex>0){
+			return activeTvIndex ;
+		}
+		varix  = getSomLattice().getNode(0).getSimilarity().getIndexTargetVariable() ;
+		varstr = this.modelingSettings.getActiveTvLabel() ;
+		varix2 = somData.getVariables().getIndexByLabel(varstr) ;
+		
+		if (varix!=varix2){
+			throw(new Exception("target variable settings have been found to be inconsistent."));
+		}
+		activeTvIndex = varix ;
+		return varix  ;
 	}
 
 
@@ -157,8 +238,8 @@ public class DSom implements DSomIntf{
 	}
 
 
-	public SomFluid getSomFluidParent() {
-		return somFluidParent;
+	public SomProcessIntf getSomProcessParent() {
+		return somProcessParent;
 	}
 
 
@@ -191,7 +272,7 @@ public class DSom implements DSomIntf{
 		return out;
 	}
 
-
+/*
 	public void setEmbeddingInstance(SomTargetedModeling targetedModeling) {
 		 
 		somTargetedModeling  = targetedModeling;
@@ -199,6 +280,41 @@ public class DSom implements DSomIntf{
 	public SomTargetedModeling getEmbeddingInstance() {
 		 
 		return somTargetedModeling;
+	}
+*/
+
+	public void setCallerStatus(int callerState) {
+		callerStatus = callerState ;
+	}
+
+
+	public int getCallerStatus() {
+		return callerStatus;
+	}
+
+
+	/**
+	 * @return the inProcessWait
+	 */
+	public boolean isInProcessWait() {
+		return inProcessWait;
+	}
+
+
+	/**
+	 * @param inProcessWait the inProcessWait to set
+	 */
+	public void setInProcessWait(boolean inProcessWait) {
+		this.inProcessWait = inProcessWait;
+	}
+
+
+	public String getGuid() {
+		return instanceGuid;
+	}
+
+	public void setGuid(String instanceGuid) {
+		this.instanceGuid = instanceGuid;
 	}
 
  

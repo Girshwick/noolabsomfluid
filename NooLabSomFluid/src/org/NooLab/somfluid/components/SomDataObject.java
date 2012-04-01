@@ -6,6 +6,7 @@ import java.util.*;
 
 
 
+import org.NooLab.somfluid.SomDataDescriptor;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.core.engines.det.results.FrequencyList;
@@ -20,6 +21,7 @@ import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.data.TableImportSettings;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somfluid.env.data.DataFileReceptorIntf;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.somtransform.algo.AdaptiveDiscretization;
@@ -49,11 +51,11 @@ import org.NooLab.utilities.xml.*;
  * TODO:  prepare the interface DataSourceIntf !
  */
 public class SomDataObject 	implements  
-										//	used for read access, e.g. by nodes
+										//	used for read access, e.g. by nodes and other applications
 											DataSourceIntf {
 
 	transient DataHandlingPropertiesIntf dataHandlingProperties;
-	transient SomFluidFactory sfFactory;
+	transient SomTransformer transformer;
 	
 	// object references ..............
 	transient FileDataSource filesource;
@@ -61,9 +63,12 @@ public class SomDataObject 	implements
 	
 	
 	// main variables / properties ....
+	transient SomFluidFactory sfFactory ;
 	
 	transient DataTable data=null ;
 	transient DataTable normalizedSomData=null ;
+	
+	transient DataFileReceptorIntf dataReceptor;
 	
 	Variables variables = new Variables() ;
 	Variables activeVariables;
@@ -74,7 +79,7 @@ public class SomDataObject 	implements
 	ClassificationSettings classifySettings ;
 	ModelingSettings modelingSettings;
 	
-	MissingValues missingValues;
+	MissingValues missingValues;  
 
 	int maxColumnCount ;
 	int maxRecordCount = -1 ;
@@ -98,10 +103,11 @@ public class SomDataObject 	implements
 	transient PrintLog out  ;
 		
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-
+	 
 	public SomDataObject( DataHandlingPropertiesIntf datahandleProps){
 		
 		dataHandlingProperties = datahandleProps;
+		
 		
 		missingValues = new MissingValues(this);
 		data = new DataTable( this, true ); // true: isnumeric, Som data objects always contain numeric data
@@ -114,8 +120,22 @@ public class SomDataObject 	implements
 	public void setFactory(SomFluidFactory factory) {
 		sfFactory = factory;
 		
+		
 		modelingSettings = sfFactory.getSfProperties().getModelingSettings() ;
 		classifySettings = modelingSettings.getClassifySettings() ; 
+	}
+
+
+	public void clear() {
+		missingValues = null; 
+		variables.clear(0) ;
+		
+		data.clear();
+		
+		strgutil = null;
+		fileutil = null; 
+		utils = null;
+		
 	}
 
 
@@ -127,6 +147,7 @@ public class SomDataObject 	implements
 			// load data into SomDataObject
 			
 			filename = dataHandlingProperties.getDataSrcFilename() ;
+			
 			if (fileutil.fileexists(filename)==false){
 				return;
 			}
@@ -336,7 +357,7 @@ public class SomDataObject 	implements
 
 			}
 
-			variables.clear() ;
+			variables.clear(0) ;
 			
 			
 			for (j = 0; j < vectorsize; j++) {
@@ -770,6 +791,38 @@ public class SomDataObject 	implements
 	*/
 	// ------------------------------------------------------------------------
 	
+	
+	public void acquireInitialVariableSelection() {
+
+		String bstr;
+		int ix;
+		ArrayList<Variable> blackvariables = variables.getBlackList() ;
+		ArrayList<String> blacklabels = variables.getBlacklistLabels() ;
+		
+		ArrayList<String>  blacks = modelingSettings.getBlacklistedVariablesRequest();
+		
+		for (int i=0;i<blacks.size();i++){
+			bstr = blacks.get(i) ;
+			if (blacklabels.contains(bstr)==false){
+				blacklabels.add(bstr) ;
+				ix = variables.getIndexByLabel(bstr) ;
+				if (blackvariables.contains(variables.getItem(ix))==false){
+					blackvariables.add( variables.getItem(ix) ) ;
+				}
+			}
+		}
+		
+		variables.setInitialUsageVector( modelingSettings.getInitialVariableSelection() ) ;
+		
+	}
+
+
+	public SomDataDescriptor getSomDataDescriptor() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
 	public DataTable getDataTable(){
 		return data ;
 	}
@@ -816,8 +869,8 @@ public class SomDataObject 	implements
 	}
 
 
-	public void importDataTable( DataTable datatable ){
-		SomTransformer  transformer;
+	public void importDataTable( SomTransformer transformer, DataTable datatable ){
+		 
 		
 		if (datatable==null){
 			return;
@@ -826,7 +879,7 @@ public class SomDataObject 	implements
 		try{
 
 			TableImportSettings importSettings = new TableImportSettings() ;
-			transformer = sfFactory.getTransformer();
+			 
 				
 			// TODO
 			// check, whether there is a serialization of a dataTable which we derived from the raw file;
@@ -879,6 +932,21 @@ public class SomDataObject 	implements
 			e.printStackTrace();
 		}
 	}
+
+	public void introduceBlackList() {
+		ArrayList<String>  blacklist;
+		Variable variable;
+		String varLabel;
+		
+		blacklist = modelingSettings.getBlacklistedVariablesRequest() ;
+		
+		
+		for (int i=0;i<blacklist.size();i++){
+			varLabel = blacklist.get(i) ;
+			variables.addBlacklistLabel(varLabel) ;
+		}
+	}
+
 
 	/** prepares a transposed table for fast access  */
 	public void prepareTransposedTable() {
@@ -948,6 +1016,9 @@ public class SomDataObject 	implements
 
 	public Variables getActiveVariables() {
 		 
+		if (activeVariables==null){
+			activeVariables = variables;
+		}
 		return activeVariables;
 	}
  
@@ -967,7 +1038,7 @@ public class SomDataObject 	implements
 		
 		int nh = data.getColumnHeaders().size();
 		
-		variables.clear() ; 
+		variables.clear(0) ; 
 		
 		for (int i=0;i<nh;i++){
 			column = data.getColumn(i);
@@ -1128,6 +1199,45 @@ public class SomDataObject 	implements
 
 	public int getColumnCount(){
 		return getRecordSize();
+	}
+
+
+	public void registerDataReceptor(DataFileReceptorIntf datareceptor) {
+		dataReceptor = datareceptor;
+		
+	}
+
+
+	/**
+	 * @return the transformer
+	 */
+	public SomTransformer getTransformer() {
+		return transformer;
+	}
+
+
+	/**
+	 * @param transformer the transformer to set
+	 */
+	public void setTransformer(SomTransformer transformer) {
+		this.transformer = transformer;
+		
+	}
+
+
+	/**
+	 * @return the dataReceptor
+	 */
+	public DataFileReceptorIntf getDataReceptor() {
+		return dataReceptor;
+	}
+
+
+	/**
+	 * @param dataReceptor the dataReceptor to set
+	 */
+	public void setDataReceptor(DataFileReceptorIntf dataReceptor) {
+		this.dataReceptor = dataReceptor;
 	}
 
 

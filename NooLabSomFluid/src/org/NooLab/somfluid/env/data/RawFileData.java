@@ -56,7 +56,7 @@ public class RawFileData {
 
 	ArrUtilities utils = new ArrUtilities();
 
-	PrintLog out  ;
+	PrintLog out = new PrintLog(2,true) ;
 
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 

@@ -3,6 +3,7 @@ package org.NooLab.somfluid.core.engines.det.adv;
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.core.engines.det.DSom;
+import org.NooLab.somfluid.core.engines.det.SomTargetedModeling;
 
 /**
  *
@@ -26,13 +27,14 @@ public class SomBags {
 
 	SomFluid somFluid;
 	SomFluidProperties sfProperties ;
+	SomTargetedModeling targetModeling ;
 	
 	
 	// ========================================================================
-	public SomBags(SomFluid somfluid, SomFluidProperties sfprop){
+	public SomBags(SomTargetedModeling targetmodeling, SomFluidProperties sfprop){
 		
 		sfProperties = sfprop ;
-		somFluid = somfluid;
+		targetModeling = targetmodeling;
 		
 		
 	}

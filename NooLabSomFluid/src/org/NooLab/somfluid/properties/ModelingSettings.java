@@ -240,9 +240,11 @@ public class ModelingSettings implements Serializable{
 
 	private DataFilter dataFilter;
 
-	
+	private ArrayList<String> blacklistedVariablesRequest = new ArrayList<String>();
 
-	
+	private int initialAutoVariableSelection=0 ;
+	ArrayList<String> initialVariableSelection = new ArrayList<String>();
+		
 
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -862,6 +864,64 @@ public class ModelingSettings implements Serializable{
 
 	public int getSomType() {
 		return somType;
+	}
+
+	public void setRequestForBlacklistVariablesByLabel(String[] strings) {
+		
+		ArrayList<String> items = new ArrayList<String> ( Arrays.asList(strings)) ; 
+		blacklistedVariablesRequest.addAll(items) ;
+	}
+
+	/**
+	 * @return the blacklistedVariablesRequest
+	 */
+	public ArrayList<String> getBlacklistedVariablesRequest() {
+		return blacklistedVariablesRequest;
+	}
+
+	/**
+	 * @param blacklistedVariablesRequest the blacklistedVariablesRequest to set
+	 */
+	public void setBlacklistedVariablesRequest( ArrayList<String> blacklist ) {
+		this.blacklistedVariablesRequest = blacklist;
+	}
+
+	public void setInitialAutoVariableSelection(int mode) {
+		// 
+		initialAutoVariableSelection = mode;
+	}
+
+	/**
+	 * @return the initialAutoVariableSelection
+	 */
+	public int getInitialAutoVariableSelection() {
+		return initialAutoVariableSelection;
+	}
+
+	public void setInitialVariableSelection(String[] strings) {
+		
+		initialVariableSelection = new ArrayList<String>( Arrays.asList(strings));
+		
+	}
+	/**
+	 * @return the initialVariableSelection
+	 */
+	public ArrayList<String> getInitialVariableSelection() {
+		return initialVariableSelection;
+	}
+
+	/**
+	 * @param initialVariableSelection the initialVariableSelection to set
+	 */
+	public void setInitialVariableSelection(
+			ArrayList<String> initialVariableSelection) {
+		this.initialVariableSelection = initialVariableSelection;
+	}
+
+	public void addInitialVariableSelection(String[] strings) {
+		
+		ArrayList<String> varitems = new ArrayList<String>( Arrays.asList(strings));
+		initialVariableSelection.addAll(varitems);
 	}
 
 	

@@ -1,5 +1,7 @@
 package org.NooLab.somfluid.env.data;
 
+import java.util.ArrayList;
+
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.data.DataTable;
@@ -26,6 +28,9 @@ public class DataReceptor implements //
 	SomFluidProperties sfProperties;
 	SomDataObject somData;
 	
+	String loadedFile = "";
+	String preparedFile = "";
+	
 	RawFileData rawFileData;
 	
 	PrintLog out;
@@ -44,10 +49,12 @@ public class DataReceptor implements //
 
 
 	@Override
-	public void loadFromFile(String filename) {
+	public void loadFromFile(String filename) throws Exception {
 		
 		DataTable dataTable;
 		out = somData.getOut();
+		
+		loadedFile = filename;
 		
 		rawFileData = new RawFileData(  somData, out ) ;
 		
@@ -55,10 +62,16 @@ public class DataReceptor implements //
 		
 		dataTable = rawFileData.getDataTable(); 
 		
-		somData.importDataTable( dataTable );
+		somData.importDataTable( somData.getTransformer(), dataTable );
 	
 		rawFileData=null;
 		// dataTable=null;
+	}
+
+	@Override
+	public String getLoadedFileName() {
+		
+		return loadedFile;
 	}
 	
 	

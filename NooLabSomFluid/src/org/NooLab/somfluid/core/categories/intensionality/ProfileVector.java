@@ -64,6 +64,35 @@ class ProfileVector implements Serializable, ProfileVectorIntf {
 		int z;
 		z=0;
 	}
+	public ProfileVector(ProfileVector templateProfile) {
+		
+		try{
+			
+			lastExtDataValueIndex = templateProfile.lastExtDataValueIndex ;
+			if ( templateProfile.variablesStr!=null) variablesStr.addAll( templateProfile.variablesStr ) ;  
+			if (templateProfile.variables!=null) variables.addAll( templateProfile.variables ) ; 
+			if (templateProfile.values!=null)values.addAll( templateProfile.values ) ;
+			
+			if (templateProfile.intSomNodeProperties!=null) intSomNodeProperties.addAll( templateProfile.intSomNodeProperties ) ; 
+			if (templateProfile.intSomNodePropValues!=null) intSomNodePropValues.addAll( templateProfile.intSomNodePropValues ) ;
+			
+			if (templateProfile.compoundValues!=null) compoundValues.addAll( templateProfile.compoundValues ) ;
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+	
+	public void clear() {
+		variablesStr.clear();
+		variables.clear();
+		values.clear();
+		
+		intSomNodeProperties.clear(); 
+		intSomNodePropValues.clear();
+		compoundValues.clear();
+		
+	}
 	// ========================================================================
 	
  

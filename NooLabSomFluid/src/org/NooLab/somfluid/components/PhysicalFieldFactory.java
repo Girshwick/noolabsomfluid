@@ -41,7 +41,14 @@ public class PhysicalFieldFactory {
 	}
 	// ------------------------------------------------------------------------
 	
-	public RepulsionFieldIntf createPhysicalField( SomFluidFactory sfFactory, RepulsionFieldEventsIntf eventSink, int nbrparticles ){
+	public void defineEventMessagingEndpoint( RepulsionFieldEventsIntf eventSink){
+		if (repulsionField!=null){
+			repulsionField.registerEventMessaging( eventSink );
+		}
+	}
+	
+	
+	public RepulsionFieldIntf createPhysicalField( SomFluidFactory sfFactory,  RepulsionFieldEventsIntf eventSink,int nbrparticles ){ // ,
 	 
 		int runRequestTester=0,  selszLimit ;
 		
@@ -68,6 +75,7 @@ public class PhysicalFieldFactory {
 		repulsionField.useParallelProcesses(0);
 		
 		repulsionField.registerEventMessaging( eventSink );
+		
 		repulsionField.setName("somfluid-app") ;
 		repulsionField.setColorSize(false, true);
 
@@ -149,6 +157,9 @@ public class PhysicalFieldFactory {
 		
 		while (initComplete==false){
 			 out.delay(10) ;
+			 if (eventSink==null){
+				 initComplete = repulsionField.getInitComplete();
+			 }
 		}
 											
 		 
@@ -164,6 +175,10 @@ public class PhysicalFieldFactory {
 	}
 	
 	
+	private boolean getInitComplete() {
+		 
+		return false;
+	}
 	public RepulsionField getRepulsionField() {
 		return repulsionField;
 	}

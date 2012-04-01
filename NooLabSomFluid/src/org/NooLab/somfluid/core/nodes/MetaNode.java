@@ -6,29 +6,23 @@ import java.util.Observer;
 import java.util.Random;
 
 
-import org.NooLab.repulsive.components.data.IndexDistance;
-import org.NooLab.repulsive.components.data.IndexDistanceIntf;
-import org.NooLab.repulsive.intf.DataObjectIntf;
-import org.NooLab.somfluid.components.DataSourceIntf;
-import org.NooLab.somfluid.components.VirtualLattice;
-import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivityIntf;
-import org.NooLab.somfluid.core.categories.connex.NetworkMessageIntf;
-import org.NooLab.somfluid.core.categories.connex.NodesMessageIntf;
-import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
-import org.NooLab.somfluid.core.categories.imports.MetaNodeConnectivityImportIntf;
-import org.NooLab.somfluid.core.categories.imports.ExtensionalityDynamicsImportIntf;
-import org.NooLab.somfluid.core.categories.imports.IntensionalitySurfaceImportIntf;
-import org.NooLab.somfluid.core.categories.imports.SimilarityImportIntf;
-import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceIntf;
-import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
-import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
+import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.datatypes.IndexDistanceIntf;
+import org.NooLab.utilities.logging.PrintLog;
+
+import org.NooLab.somfluid.components.*;
+import org.NooLab.somfluid.core.categories.connex.*;
+import org.NooLab.somfluid.core.categories.extensionality.*;
+import org.NooLab.somfluid.core.categories.imports.*;
+import org.NooLab.somfluid.core.categories.intensionality.*;
+import org.NooLab.somfluid.core.categories.similarity.*;
 import org.NooLab.somfluid.core.engines.NodeStatistics;
 import org.NooLab.somfluid.core.engines.det.ProfileVectorMatcher;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
-import org.NooLab.somfluid.env.communication.NodeObserverIntf;
-import org.NooLab.somfluid.env.communication.NodeTask;
+import org.NooLab.somfluid.env.communication.*;
+
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
-import org.NooLab.utilities.logging.PrintLog;
+ 
 
 
 /**
@@ -142,16 +136,58 @@ public class MetaNode   extends
 		super(virtualLatticeNodes,  somData );
 		
 	}
+	
+	public MetaNode(VirtualLattice somlattice, DataSourceIntf somData, MetaNode templateNode) {
+		super(somlattice,  somData );
+		
+		extensionality =  new ExtensionalityDynamics( (ExtensionalityDynamics)templateNode.extensionality ) ;
+		
+		intensionality = new IntensionalitySurface( (IntensionalitySurface)templateNode.intensionality ) ;
+		
+		similarity = new Similarity( (Similarity)templateNode.similarity );
+		
+		_MinimalSizeBeforeSplit = templateNode._MinimalSizeBeforeSplit ;
+		_AbsoluteMinimumForSplit = templateNode._AbsoluteMinimumForSplit ;
+		
+		 
+		virtualRecordCount = templateNode.virtualRecordCount ; 
+		contentSensitiveInfluence = templateNode.contentSensitiveInfluence ;
+		changeIsSizedependent = templateNode.changeIsSizedependent ;
+
+		calculateAllVariables = templateNode.calculateAllVariables;
+		if(templateNode.sdoIndexValues!=null) sdoIndexValues.addAll( templateNode.sdoIndexValues );
+		
+		if (templateNode.listOfQualifiedIndexes!=null) listOfQualifiedIndexes.addAll( templateNode.listOfQualifiedIndexes) ;
+		
+		classifyDescription = templateNode.classifyDescription ;
+	}
+	
 	// ------------------------------------------------------------------------	
 	  
+	
 
-	public void clear(){
-		
-		 this.extensionality.getListOfRecords().clear();
-		 this.extensionality.getStatistics().resetFieldStatisticsAll() ;
-		 virtualRecordCount=0;
-		
+	public void clearData(){
+		this.extensionality.getListOfRecords().clear();
+		this.extensionality.getStatistics().resetFieldStatisticsAll() ;
 	}
+	
+	public void clear(){
+		stopAutonomyProcess();
+		
+		this.extensionality.getListOfRecords().clear();
+		this.extensionality.getStatistics().resetFieldStatisticsAll() ;
+		
+		virtualRecordCount=0;
+		/*
+		this.similarity.clear() ;
+		
+		intensionality.clear(0) ;
+		variableLabels.clear() ;
+		*/
+		sobj = null;
+		sampler=null;
+	}
+	
 	public void evaluateExtensions() {
 		
 		int ix,np, rcount,rIndex;
@@ -182,6 +218,8 @@ public class MetaNode   extends
 			// the underlying table as a record index, not by the index value of in the data record
 			
 			rIndex = extensionality.getRecordItem(i); 
+			
+			
 			recordVector = this.somData.getRecordByIndex( rIndex,2) ; // 2 == record from normalized data
 
 			if (recordVector.size()>0){
@@ -307,15 +345,14 @@ public class MetaNode   extends
 				
 				
 				// work on the variable only if allowed
-				calcThis = (usevector.get(w) > 0);
+				calcThis = (usevector.get(w) > 0 || (w==this.similarity.getIndexTargetVariable()));
 				
 				if (calcThis) {
 					if (calculateAllVariables) {
 						// we may update all variables, the distance will be
 						// calc'd only for used ones anyway !
-						if (w == similarity.getIndexTargetVariable()) {
-							calcThis = false; // always to exclude: the index
-												// column
+						if (w == similarity.getIndexIdColumn()) {
+							calcThis = false; // always to exclude: the index column
 						}
 						// || ( w == similarity.getIndexIdColumn() ))
 						// we include the target variable, so we can see the expected mean value,
@@ -485,8 +522,17 @@ if ((_new_w<0) || (_new_w>1.04)){
 			//fillingLimitForMeanStyle 
 			
 			usevector = this.similarity.getUsageIndicationVector() ;
+			
 			nodeProfile = new  ArrayList<Double>(intensionality.getProfileVector().getValues()) ;
 			recordcount = extensionality.getCount() ;
+			// UsageIndicationVector() is different from Similarity and Intensionality !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+											if (serialID<=-10){
+												ArrayList<Double>  uv = getIntensionality().getUsageIndicationVector() ;
+												String str = ArrUtilities.arr2Text(uv, 1) ;
+												out.print(2,"insertDataAndAdjust(), UsageIndicationVector from Similarity : "+ str);
+											}
+			
+			
 											err = 3;
 			nodeStats = extensionality.getStatistics() ;
 			_d = intensionality.getProfileVector().getValues().size();
@@ -516,7 +562,7 @@ if ((_new_w<0) || (_new_w>1.04)){
 								}
 											err = 5;
 				// work on the variable only if allowed
-				calcThis = (usevector.get(w) > 0);
+				calcThis = (usevector.get(w) > 0) || (w==this.similarity.getIndexTargetVariable());
 				
 				if (calcThis==false) {
 					if (calculateAllVariables) {
@@ -536,8 +582,8 @@ if ((_new_w<0) || (_new_w>1.04)){
 				}
 											err = 7;
 				if (calcThis) {
-					
 											err = 10;
+											
 					if (((nodeProfile.get(w) >= 0) && ( fieldValue >= 0)) && (fieldValue <= 1)) {
 						// excluding MV ...
 											err = 11;
@@ -600,7 +646,7 @@ if ((_new_pv<0) || (_new_pv>1.04)){
                        if ((_new_pv<0) && (_new_pv>-0.3)){_new_pv=0;}
 
                        
-                       	if (similarity.getUsageIndicationVector().get(w)<=0.0){
+                       	if ((similarity.getUsageIndicationVector().get(w)<=0.0) && (w!=this.similarity.getIndexTargetVariable())){
                        		_new_pv = 0.0;
                        	}
 
@@ -800,6 +846,12 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 		return null;
 	}
 
+	public void setSomData(SomDataObject somdata) {
+		 
+		somData = somdata;
+	}
+
+
 	public ArrayList<IndexDistanceIntf> getListOfQualifiedIndexes() {
 		return listOfQualifiedIndexes;
 	}
@@ -855,7 +907,9 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 				}else{
 					v = 0.0;
 				}
-				this.intensionality.getProfileVector().getValues().set(i,v);
+				if (i<intensionality.getProfileVector().getValues().size()){
+					intensionality.getProfileVector().getValues().set(i,v);
+				}
 			}
 		}
 		
@@ -1056,7 +1110,7 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 
 	@Override
 	public SimilarityIntf importSimilarityConcepts(long serialID) {
-SimilarityIntf similarity;
+		SimilarityIntf similarity;
 		
 		similarity = virtualLattice.distributeSimilarityConcept(serialID); // Similarity@1db6942
 		return similarity;

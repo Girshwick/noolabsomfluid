@@ -14,17 +14,19 @@ import org.NooLab.utilities.logging.PrintLog;
 
 public class NodesInformer {
 
-	ArrayList<NetworkMessageIntf> observingNodes = new ArrayList<NetworkMessageIntf>(); 
+	protected ArrayList<NetworkMessageIntf> observingNodes = new ArrayList<NetworkMessageIntf>(); 
 	
-	ArrayList<QTask> taskQueue = new ArrayList<QTask>(); 
+	protected ArrayList<QTask> taskQueue = new ArrayList<QTask>(); 
 	
-	ArrayList<Integer> removingNodeIsBlocked = new ArrayList<Integer>() ;
+	protected ArrayList<Integer> removingNodeIsBlocked = new ArrayList<Integer>() ;
 	
 	MessageServer msgSrv ;
 	
 	boolean isRunning=false;
 	 
 	PrintLog out = new PrintLog (2,true);
+	
+	
 	// ------------------------------------------------------------------------
 	public NodesInformer(){
 	
@@ -90,6 +92,17 @@ public class NodesInformer {
 	}
 
 	// ========================================================================
+
+	/**
+	 * @return the msgSrv
+	 */
+	protected void stopMsgSrv() {
+		msgSrv.stop() ;
+		taskQueue.clear();
+		observingNodes.clear() ;
+		removingNodeIsBlocked.clear();
+		out=null;
+	}
 
 	class ServiceLoop implements Runnable{
 
@@ -224,6 +237,7 @@ public class NodesInformer {
 		// we need to hide the Runable interface in order to make it possible to subclass the NodesInformer
 		NodesInformer parent;
 		Thread nodinfThrd;
+		boolean isworking;
 		
 		public MessageServer( NodesInformer parent){
 		
@@ -233,33 +247,42 @@ public class NodesInformer {
 		}
 		
 		
+		public void stop(){
+			isRunning = false;
+			while (isworking){
+				out.delay(1);
+			}
+			taskQueue.clear() ;
+		}
 		
 		@Override
 		public void run() {
-			
+			isworking=false;
 			isRunning = true;
 			try{
 				
-				while (isRunning){
+				while ((isRunning) && (parent!=null)){
 					
 					if (taskQueue.size()>0){
-						
+						isworking=true;
 						// Step 2 : working through the internal queue of notifications
 						// 	        selecting the first one, handling it in its own data space         
 						new ServiceLoop( taskQueue.get(0) );
 						
 						taskQueue.remove( 0 );
 						
+						isworking=false;
 						
 					}else{
 						// a mini delay only if nothing is to be done
-						delay(5) ;
+						delay(2) ;
 					}
 					
 				}
-				
+				// Thread.currentThread().join();
 			}catch(Exception e){
-				
+				isRunning = false;
+				isworking=false;
 			}
 		}
 		

@@ -7,9 +7,11 @@ import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
  
 import org.NooLab.somfluid.properties.DataUseSettings;
 import org.NooLab.somfluid.properties.ModelingSettings;
+import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.properties.SettingsTransporter;
 import org.NooLab.somfluid.properties.SpriteSettings;
 import org.NooLab.somfluid.properties.ValidationSettings;
+import org.NooLab.utilities.files.DFutils;
 
 
 											//  as usual, we offer particular views on this container
@@ -30,7 +32,7 @@ public class SomFluidProperties implements 	//
 
 	public static final int _SIM_NONE      = -1;
 	public static final int _SIM_SURROGATE = 3;
-	public static final int _SIM_PROFILES  = 3;
+	public static final int _SIM_PROFILES  = 5;
 	
 	
 	transient SomFluidFactory sfFactory ;
@@ -48,6 +50,7 @@ public class SomFluidProperties implements 	//
 	// that is for _SOMTYPE_MONO only ! 
 	ModelingSettings modelingSettings = new ModelingSettings() ;
 	DataUseSettings dataUseSettings = new DataUseSettings() ;
+	PersistenceSettings persistenceSettings = new PersistenceSettings();
 		
 	// lattice
 	int somType = -1; // mandatory 
@@ -57,6 +60,9 @@ public class SomFluidProperties implements 	//
 	private int restrictionForSelectionSize = -1;
 
 	boolean initializationOK = false;
+
+	private boolean extendingDataSourceEnabled;
+
 	
 	static SettingsTransporter settingsTransporter;
 	
@@ -138,6 +144,18 @@ public class SomFluidProperties implements 	//
 	// ------------------------------------------------------------------------
 	
 
+	public PersistenceSettings getPersistenceSettings() {
+		
+		return persistenceSettings;
+	}
+
+	/**
+	 * @param persistenceSettings the persistenceSettings to set
+	 */
+	public void setPersistenceSettings(PersistenceSettings persistenceSettings) {
+		this.persistenceSettings = persistenceSettings;
+	}
+
 
 	public ModelingSettings getModelingSettings() {
 		return modelingSettings;
@@ -181,11 +199,32 @@ public class SomFluidProperties implements 	//
 	}
 
 	/**   */
-	public void addDataSource(int sourceType, String locatorname) {
+	public boolean addDataSource(int sourceType, String locatorname) {
+		boolean result=false;
+		String rootpath =""; // e.g.  "D:/data/projects/"
+		String prjname = "", filename="",relPath;
 		
 		this.sourceType = sourceType;
+		locatorname = locatorname.trim();
+		
+		if ((locatorname.indexOf("/")==0) || (DFutils.fileExists(locatorname)==false)){
+			
+			rootpath = persistenceSettings.getPathToSomFluidSystemRootDir();
+			
+			prjname = persistenceSettings.getProjectName() ;
+			relPath = prjname+"/data/raw/";
+			relPath = relPath.replace("//", "/").trim();
+			
+			filename = DFutils.createPath(rootpath.trim(), relPath);
+			
+			// "D:/data/projects/bank2/data/raw/bankn_d2.txt" 
+			locatorname = DFutils.createPath( filename,locatorname );
+			// e.g.  "D:/data/projects/bank2/data/raw/bankn_d2.txt"
+		}
 		dataSrcFilename = locatorname ; 
 		
+		result = DFutils.fileExists(dataSrcFilename) ;
+		return result;
 	}
 
 	public String getDataSrcFilename() {
@@ -468,6 +507,13 @@ public class SomFluidProperties implements 	//
 	public void setGrowthSizeAdaptationIntensity(int adaptionintensity) {
 		 
 	}
+
+
+	public void setExtendingDataSourceEnabled(boolean flag) {
+		extendingDataSourceEnabled = flag;
+	}
+
+
 
 
 	

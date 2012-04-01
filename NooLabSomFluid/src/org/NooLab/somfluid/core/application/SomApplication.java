@@ -2,7 +2,7 @@ package org.NooLab.somfluid.core.application;
 
 import java.util.ArrayList;
 
-import org.NooLab.repulsive.components.data.IndexDistanceIntf;
+
 import org.NooLab.somfluid.SomApplicationResults;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
@@ -14,6 +14,7 @@ import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
 

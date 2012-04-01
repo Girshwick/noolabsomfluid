@@ -15,7 +15,7 @@ import org.NooLab.utilities.logging.PrintLog;
 public class SomVariableHandling {
 
 	
-	DSom dSom;
+	 
 	SomDataObject somData;
 	
 	AdaptiveDiscretization adaptiveGroups ;
@@ -33,19 +33,7 @@ public class SomVariableHandling {
 	PrintLog out = new PrintLog(2,true);
 	
 	// ========================================================================
-	public SomVariableHandling(DSom dsom){
-		
-		dSom = dsom;
-		 
-		somData = dSom.getSomData() ;
-		
-		somLattice = dSom.getSomLattice();
-		
-		modelingSettings = dSom.getModelingSettings() ;
-		classifySettings = modelingSettings.getClassifySettings() ;
-		
-		out = dSom.getOut() ;
-	}
+	 
 	
 	public SomVariableHandling( SomDataObject sdo, ModelingSettings modset){
 		
@@ -56,7 +44,7 @@ public class SomVariableHandling {
 	
 	// ========================================================================
 
-	public void determineSampleSizes(){
+	public void determineSampleSizes( int nodecount){
 		int maxSampleSize;
 		int tvIndex  ;
 		DataTable nData, rData ;
@@ -64,10 +52,9 @@ public class SomVariableHandling {
 		ArrayList<Integer> sampleRecordIndexes;
 		
 		
+		maxSampleSize = Math.max( nodecount  * 15 , 101) ;
+		// tvIndex = dSom.getSomLattice().getSimilarityConcepts().getIndexTargetVariable();
 		
-		maxSampleSize = Math.max( somLattice.size()  * 15 , 101) ;
-		tvIndex = dSom.getSomLattice().getSimilarityConcepts().getIndexTargetVariable();
-		 
 	}
 	
 	public void getEmpiricTargetGroups(boolean enforceRecalc) {

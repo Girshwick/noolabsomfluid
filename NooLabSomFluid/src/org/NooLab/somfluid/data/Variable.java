@@ -21,7 +21,11 @@ public class Variable implements Serializable{
 	
 	private double minimum;
 	private double maximum;
-	private double weight;
+
+	private double selectionWeight;
+	private int selectionCount;
+
+	
 	private String label;
 	private boolean isTV=false;
 	private boolean isID=false;
@@ -44,12 +48,50 @@ public class Variable implements Serializable{
 	private int isEmpty = 0 ;
 
 	private int serialID = -1 ;
+
 	
 	// ========================================================================
 	public Variable(){
 		
 	}
+	
+	public Variable( Variable iitem) {
+
+
+		index = iitem.index; 
+
+		valueScaleNiveau = iitem.valueScaleNiveau ;
+		
+		minimum = iitem.minimum ;
+		maximum = iitem.maximum ;
+		selectionWeight = iitem.selectionWeight ;
+		label = iitem.label ;
+		isTV = iitem.isTV ;
+		isID =iitem.isID ;
+		Used = iitem.Used ;
+		IDnotnormalized = iitem.IDnotnormalized ;
+		
+		mvCount = iitem.mvCount ;
+		
+		isDerived = iitem.isDerived ;
+		derivationID = iitem.derivationID ;
+		
+		parentCollection = new ArrayList<Variable>();
+		if (iitem.parentCollection!=null){
+			parentCollection.addAll(iitem.parentCollection);
+		}
+
+		isTVcandidate = iitem.isTVcandidate ;
+
+		isIndexcandidate = iitem.isIndexcandidate ;
+
+		isEmpty = iitem.isEmpty ;
+
+		serialID = iitem.serialID ;
+		
+	}
 	// ========================================================================	
+
 	
 	public int getIndex(){
 		return index  ;
@@ -80,12 +122,7 @@ public class Variable implements Serializable{
 	public double getMaximum() {
 		return maximum;
 	}
-	public void setWeight(float weight) {
-		this.weight = weight;
-	}
-	public double getWeight() {
-		return weight;
-	}
+	 
 	public void setLabel(String label) {
 		this.label = label;
 	}
@@ -135,8 +172,20 @@ public class Variable implements Serializable{
 	}
 
 
-	public void setWeight(double weight) {
-		this.weight = weight;
+	 
+	public void setSelectionWeight(double weight) {
+		this.selectionWeight = weight;
+	}
+	public int getSelectionCount() {
+		return selectionCount;
+	}
+ 
+	public double getSelectionWeight() {
+		return selectionWeight;
+	}
+
+	public void setSelectionCount(int n) {
+		this.selectionCount = n;
 	}
 
 	public int getMvCount() {

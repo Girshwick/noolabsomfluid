@@ -1,69 +1,446 @@
 package org.NooLab.somfluid.core.engines.det;
 
+import java.util.ArrayList;
+import java.util.Observable;
+import java.util.Observer;
+
+import org.NooLab.repulsive.components.data.SurroundResults;
+import org.NooLab.repulsive.intf.main.*;
+import org.NooLab.repulsive.particles.Particle;
 import org.NooLab.somfluid.SomFluid;
+import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidTask;
-import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.components.VirtualLattice;
+import org.NooLab.somfluid.components.*;
+import org.NooLab.somfluid.core.*;
+import org.NooLab.somfluid.env.data.* ;
+
+import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
+import org.NooLab.somfluid.core.engines.det.results.*;
 import org.NooLab.somfluid.core.engines.det.adv.SomBags;
-import org.NooLab.somfluid.data.Variables;
-import org.NooLab.somfluid.env.communication.LatticeFutureVisor;
-import org.NooLab.somfluid.env.communication.NodeTask;
+import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
+import org.NooLab.somfluid.core.nodes.MetaNode;
+import org.NooLab.somfluid.data.*;
+import org.NooLab.somfluid.env.communication.*;
+import org.NooLab.somfluid.properties.ModelingSettings;
+
+import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.net.GUID;
 import org.NooLab.utilities.objects.StringedObjects;
+import org.NooLab.utilities.timing.DelayFor;
 
 
 
+/**
+ * see for eventlisteners here:
+ * 
+ * http://www.javaworld.com/javaworld/jw-03-1999/jw-03-toolbox.html?page=6
+ * http://stackoverflow.com/questions/1658702/how-do-i-make-a-class-extend-observable-when-it-has-extended-another-class-too
+ * 
+ * 
+ * 
+ *
+ */
+public class SomTargetedModeling    extends
+	 											NodesInformer    
+	 								implements  
+	 								 		    SomProcessIntf ,
+	 								 		    Observer,
+	 								 		    // events from particle field, namely selections!
+	 								 		    RepulsionFieldEventsIntf{
 
-public class SomTargetedModeling {
-
-	SomFluid somFluid;
+	String name = "";
+	long numericID = 0L;
+	
+	SomFluidFactory sfFactory ;
+	//SomFluid somFluid;
+	SomHostIntf somHost;
+	
 	SomFluidProperties sfProperties; 
+	ModelingSettings modelingSettings;
+	
 	SomDataObject somDataObject;
-	VirtualLattice virtualLatticeNodes; 
+	SomTransformer transformer;
+	
 	SomFluidTask sfTask;
 	
-	SomBags somBags;
+	RepulsionFieldIntf particleField ;
+	LatticePropertiesIntf latticeProperties;
+	
+	/** 
+	 * VirtualLattice is essentially an ArrayList of &lt;MetaNodeIntf&gt;
+	 * ?? we never can call the routines of the MetaNode directly, we always have
+	 * to to use an event mechanism  
+	 */
+	VirtualLattice somLattice ; 
+	
+	SomBags somBags; 
+	DSom dSom ;
+	
+	DataFileReceptorIntf dataReceptor;
+	
+	
+	int callerStatus = 0;
 	
 	StringedObjects sob = new StringedObjects();
 	PrintLog out = new PrintLog(2, true);
+	private boolean isCompleted=false;
+ 
 	
 	
 	// ========================================================================
-	public SomTargetedModeling( SomFluid somfluid,
+	public SomTargetedModeling( SomHostIntf somhost,
+								SomFluidFactory factory, 
 								SomFluidProperties sfproperties, 
-								SomDataObject somDataObj,
-								VirtualLattice latticeNodes, 
-								SomFluidTask sftask) {
+								SomFluidTask sftask ,
+								long numericid ) {
 		
-		somFluid = somfluid  ;
+		sfFactory = factory;
+		somHost = somhost  ;
 		sfProperties = sfproperties  ; 
-		somDataObject = somDataObj ;
-		virtualLatticeNodes = latticeNodes ; 
+		
+		somDataObject = somHost.getSomDataObj() ;
+		
+		modelingSettings = sfProperties.getModelingSettings() ;
+		
+		this.numericID = numericid;
+		// this should be a copy, in order to allow parallel processing on the same machine
+		// TODO: somLattice = new VirtualLattice(latticeNodes) ;
+		 
+		
 		sfTask = sftask  ;
+		callerStatus = sfTask.getCallerStatus() ;
+		
+		basicInitialization( factory );
+		
+		completingInitialization();
 		
 	}
 	// ========================================================================
 	
 	
-	public SomTargetedModeling(SomTargetedModeling targetModeling) {
+	public SomTargetedModeling( SomTargetedModeling targetModeling, boolean newLattice, int callerState ) {
 		 
-		somFluid = targetModeling.somFluid  ;
+		callerStatus = callerState;
+		
 		sfProperties = targetModeling.sfProperties  ; 
 		somDataObject = targetModeling.somDataObject ;
-		virtualLatticeNodes = targetModeling.virtualLatticeNodes ; 
+		
+		basicInitialization( sfFactory );
+		
+		if (newLattice==false){
+			somLattice = targetModeling.somLattice ;
+			somLattice.reInitNodeData() ;
+			somLattice.setSomData(somDataObject);
+		}else{
+			  
+			somLattice = new VirtualLattice( this, targetModeling.somLattice.getLatticeProperties(),-5 );
+		}
+		
 		sfTask = targetModeling.sfTask  ;
+		
+ 
+	}
+ 
+	
+
+ 
+
+	private void basicInitialization(SomFluidFactory factory){
+		
+		sfFactory = factory;
+		
+		sfProperties = sfFactory.sfProperties ;
+		 
+		
+		// only if requested by the properties ....
+		somBags = new SomBags(this, sfProperties) ;
+		 
+		out.setPrefix("[SomFluid-main]");
 	}
 
-	public SomTargetedModeling init(){
 
+	/**  
+	 * 
+	 * connecting the SOM nodes to the particles collection
+	 * 
+	 * Note that the particles in the field are just containers! They are not identical to nodes.
+	 * Hence, our nodes need to be attached to the particles  
+	 */
+	private void createVirtualLattice( VirtualLattice somLattice, RepulsionFieldIntf particleField, int initialNodeCount) {
+		
+		MetaNode mnode;
+		long idbase;
+		Particle particle;
+		
+		somDataObject = somHost.getSomDataObj() ;
+		 
+											out.print(2, "creating the logical som lattice for "+initialNodeCount+" nodes...");
+		for (int i=0;i<initialNodeCount;i++){
+			
+			mnode = new MetaNode( somLattice, somDataObject  );
+			somLattice.addNode(mnode) ;
+			
+											out.print(4,"Node <"+i+">, serial = "+mnode.getSerialID());
+			 
+			registerNodeinNodesInformer( mnode );
+			 
+			ArrayList<Variable> vari = somDataObject.getVariableItems();
+			ProfileVectorIntf pv = mnode.getIntensionality().getProfileVector();
+			pv.setVariables( vari ) ;
+	
+			mnode.getExtensionality().getStatistics().setVariables(somDataObject.getVariableItems());
+			
+			 
+			
+			particle = particleField.getParticles().get(i);
+			particle.setIndexOfDataObject( mnode.getSerialID() );
+			
+			
+		}
+		
+		
+		
+		double d = particleField.getAverageDistanceBetweenParticles();
+		somLattice.setAveragePhysicalDistance(d);
+		
+											out.print(2, "logical som lattice created.");
+		// 
+	}
+
+
+	protected void completingInitialization(  ){
+		
+		int initialNodeCount = sfProperties.getInitialNodeCount();
+		
+		if (somLattice!=null){
+			somLattice.clear();
+			somLattice.close();
+			somLattice=null;	
+		}
+		
+		
+		
+		
+		particleField = somHost.getSomFluid().getParticleField( ) ;
+		
+		// re-arranging the endpoint for notifications
+		sfFactory.establishPhysicalFieldMessaging( this); // RepulsionFieldEventsIntf eventSink
+		
+		
+		somLattice = new VirtualLattice(this,latticeProperties,(int) (100+numericID));
+		  
+		// initStructures( somLattice );
+		createVirtualLattice( somLattice, particleField, initialNodeCount ); 
+	}
+	
+	
+	protected void initializeNodesWithData(){
+		
+		// "by index" refers to 
+		// this.notifyNodeByIndex(1, new NodeTask( NodeTask._TASK_SETDATA, variablesSetupDef, null) );
+		// this.notifyNodeBySerial( somLattice.getNode(5).getSerialID(), new NodeTask( NodeTask._TASK_SETDATA, new String("123-"+i)) );
+	
+		// TODO: we may perform a PCA, thus deriving a weight vector (NOT: profile vector!!!)
+		//       that would prepare the SOM into the direction of the main dimensions
+		int n=0;
+		n=1;
+		
+	}
+
+
+	protected void initializeNodesWithRandomvalues( Variables vars){
+	
+		NodeTask task;
+		 
+		String guid; 
+		LatticeFutureVisor latticeFutureVisor;
+		
+		
+		
+		
+		if ((vars==null) || (vars.size()<=1)){
+			return;
+		}
+		if (somLattice==null){
+			return;
+		}
+		 
+											out.print(2, "loading data definitions to Som-Lattice...");
+											
+		// initialize feature vectors: ALL variables, WITHOUT id, tv !!!
+		// if we won't use all variables, the size of the vectors won't match (intensionality.profilevector.values)
+											
+		ArrayList<String> uv = vars.getLabelsForVariablesList(vars) ;
+		
+		latticeFutureVisor = new LatticeFutureVisor(somLattice,  NodeTask._TASK_SETVAR );
+		 
+											out.print(4, "before task sending...");
+		task = new NodeTask( NodeTask._TASK_SETVAR, (Object)sob.encode( (Object)uv ));
+		// do it for all nodes
+		notifyAllNodes( task );
+											out.print(4, "returned from task sending...  -> now waiting");
+		latticeFutureVisor.waitFor(); // it will wait for completion of "_TASK_SETVAR", for all nodes since we did not define a particular one		
+	
+	
+											out.print(4, "continue, next task...");
+		// set target variable ... TODO other messages about dynamic configuration : blacklist, whitelist, sim function 
+		task = new NodeTask( NodeTask._TASK_SETTV, (Object)sob.encode( (Object)vars.getActiveTargetVariable()) );
+		// do it for all nodes
+		notifyAllNodes( task );
+		
+		 
+											out.print(3, "loading data definitions done.");
+											out.print(3, "initializing nodes...");
+											
+		latticeFutureVisor = new LatticeFutureVisor(somLattice,  NodeTask._TASK_RNDINIT );
+		
+		
+		// ATTENTION: we have to wait !!! The informer immediately returns, then the init is sent before the node initialized!
+		// the need for waiting until a process is completed is quite rare, and should occur only in the startup phase,
+		// even on loading data into the SOM (learning) there should be no need to wait
+		task = new NodeTask( NodeTask._TASK_RNDINIT  );
+		notifyAllNodes( task );
+		
+		latticeFutureVisor.waitFor(); out.delay(100); 
+											out.print(1, "initialization of SomFluid done.");
+											
+											
+	}
+
+
+	public void prepare( ArrayList<Integer> usedVariables){
+		
+		int ix;
+		String tvlabel = null;
+		ArrayList<Double> usageVector =new ArrayList<Double>();
+		
+		Variables variables = somDataObject.getVariables() ;
+		Variables vars = new Variables();
+		Variable v;
+		
+		if (usedVariables.size()==0){
+			
+		}
+		for (int i=0;i<variables.size();i++){
+			if (i>=usageVector.size())usageVector.add(0.0) ;
+		}
+
+		
+		if (variables.getUsageIndicationVector().size()==0){
+			for (int i=0;i<variables.size();i++){
+				variables.getUsageIndicationVector().add(0.0) ;
+			}
+		}else{
+			// TODO all variables except black, ID, IDs, and TVs except selected one
+		}
+		
+		
+		
+		// index
+		if (variables.getIdVariables().size()>0){
+			v = variables.getIdVariables().get(0) ;
+			vars.additem( v );
+			if (variables.getIdColumnIndex()<0){
+				ix = variables.getIndexByLabel( v.getLabel());
+				variables.setIdColumnIndex(ix) ;
+			}
+		}
+		
+
+		// target
+		v = variables.getTargetVariable() ;
+		if (v!=null){
+			tvlabel = v.getLabel() ;
+		}
+		if (v==null){ // setActiveTvLabel("*TV") 
+			
+			tvlabel = modelingSettings.getActiveTvLabel() ;
+			 
+			 
+			ix = variables.getIndexByLabel(tvlabel) ;
+			
+			if ((ix<0) && (tvlabel.indexOf("*")>=0)){
+				 
+			}else{
+				v = variables.getItem(ix) ;
+				tvlabel = v.getLabel();
+				variables.setTargetVariable(v) ;
+				
+			}
+			usageVector.set(ix, 1.0);
+		}
+		if ((v != null) && (v.getLabel().length()>0)){
+			vars.additem( v );
+		}
+		
+
+		 
+		if (usedVariables.size()>0){
+			// the desired variables
+			for (int i = 0; i < usedVariables.size(); i++) {
+				ix = usedVariables.get(i) ;
+				vars.additem(variables.getItem(ix));
+				
+				variables.getUsageIndicationVector().set(ix, 1.0);
+				usageVector.set(ix, 1.0);
+			}
+		}else{
+			for (int i = 0; i < somDataObject.getActiveVariables().size(); i++) {
+				v = somDataObject.getActiveVariables().getItem(i);
+				vars.additem(v );
+				String label = v.getLabel() ;
+				if ((v.isID()==false) && (somDataObject.getVariables().getBlacklistLabels().indexOf(label)<0)){
+					usageVector.set(i, 1.0);
+				}
+			}
+		}
+		  
+		
+		
+		
+		init(variables);
+		
+		if (somLattice.getNodes().get(0).getExtensionality().getCount()>0){
+			somLattice.clear();
+		}
+		
+		ArrayList<Variable> varin, vari = somDataObject.getVariableItems();
+		ProfileVectorIntf pv = somLattice.getNode(0).getIntensionality().getProfileVector();
+		varin = pv.getVariables() ;
+
+		
+		
+											out.print(2, "lattice going to be configured : "+somLattice.toString());
+		somLattice.getSimilarityConcepts().setUsageIndicationVector(usageVector) ;
+		somLattice.getSimilarityConcepts().setIndexTargetVariable( variables.getIndexByLabel(tvlabel) );
+		somLattice.getSimilarityConcepts().setIndexIdColumn( variables.getIdColumnIndex() ) ;
+		
+		somLattice.setSomData(somDataObject) ; 
+		somLattice.spreadVariableSettings();
+		// somLattice.getSimilarityConcepts().setUsageIndicationVector(usageVector) ;
+		//  node.getSimilarity.usageIndicationVector is wrong, hence profile.getValues() is also wrong 
+	}
+
+
+	public void setSource( int index) {
+		
+		
+	}
+	 
+
+	public SomTargetedModeling init( Variables _vars ){
+		Variables vars = null ;
+		
 		String activeTvLabel;
 		// now, the somDataObject knows about the DataTable
 		// if there is some data in SomDataObject, it will be loaded into nodes
 		
 		// we have to remove empty columns, blacklisted columns, columns that are excluded dynamically 
 		// by criteria like derivation level 
-		somDataObject.determineActiveVariables();
+		// somDataObject.determineActiveVariables(); // not yet functional.... else, it should be called BEFORE this init()...
+		
 		
 		ClassificationSettings cf = sfProperties.getModelingSettings().getClassifySettings() ;
 		int targetMode = cf.getTargetMode();
@@ -75,12 +452,22 @@ public class SomTargetedModeling {
 				somDataObject.inferTargetGroups( sfProperties.getModelingSettings() );
 			}
 		}
+
+		if ((_vars==null) || (_vars.size()<=1)){
+			vars = somDataObject.getVariables() ;
+			vars.getBlacklist().clear();
+		} else{
+			vars = somDataObject.getVariables() ;
+			//_vars;
+		}
 		
-		initializeNodesWithRandomvalues(); // adopting feature vectors, not yet the data of course
-		
-		initializeNodesWithData(); 
-		
-		  
+		 
+		initializeNodesWithRandomvalues( vars ); // adopting feature vectors, not yet the data of course
+		 
+		// initializeNodesWithData(); // nothing there so far, could be stuffed with top-4 of a linear/ized description 
+		// we would use a method primingNodesCollection() 
+		// to which we would stuff a small number of profiles, that are supposed to separate quite well
+		// e.g. based on PCA & kmeans
 		
 		activeTvLabel = sfProperties.getModelingSettings().getActiveTvLabel() ; // "TV"
 		// TargetVariable  targetVariable;
@@ -88,19 +475,87 @@ public class SomTargetedModeling {
 		return this;
 	}
 
-	public void perform() {
+	
+	protected void performTransformations() {
 		 
 		
-
-		
-		DSom dSom ;
-		
-		
-		// no bagging, just standard normal som-ing 
-		dSom = new DSom( somFluid, somDataObject, virtualLatticeNodes, sfTask );
-		dSom.setEmbeddingInstance( this ) ;
+	}
 
 
+	public void clear() {
+		                   					out.print(5, "stm-clear (1)...");
+		stopMsgSrv(); // nodesinformer
+											out.print(5, "stm-clear (2)...");
+		somLattice.reInitNodeData() ;
+		somLattice.close();
+											out.print(5, "stm-clear (3)...");
+		// somLattice=null;
+		
+		(new DelayFor()).period(100);
+		dSom.close() ;
+		dSom = null;
+											out.print(5, "stm-clear (4)...");
+		
+		
+		System.gc();
+		(new DelayFor()).period(200);
+	}
+
+
+	public String perform( int callerState ) {
+		  
+		VirtualLattice somlattice;
+		
+		
+		
+		
+		sfTask.setCallerStatus(callerState);
+		
+		// no bagging (is a performed as a different task), just standard normal som-ing 
+		dSom = new DSom( this, somDataObject, somLattice, sfTask );
+		
+		String dsomGuid = GUID.randomvalue() ;
+		
+		dSom.setGuid(dsomGuid);
+		
+											out.print(2, "Som is running, identifier: "+dsomGuid) ;
+		
+		somlattice = dSom.getSomLattice();
+											out.print(2, "dSom is working on lattice : "+somlattice.toString()) ;
+		// dSom.setEmbeddingInstance( this ) ;
+
+		dSom.setCallerStatus(callerStatus) ;
+		
+		 
+		ArrayList<Double> usevector ;
+
+						// this is globally constant, hence we should not do that... we need flexibility for screenings
+						usevector = dSom.getSomData().getVariables().getUsageIndicationVector();
+		
+		usevector = somlattice.getSimilarityConcepts().getUsageIndicationVector();
+		
+		if (dSom.activeTvIndex>=usevector.size()){
+			usevector.add(-2.0);
+		}else{
+			usevector.set(dSom.activeTvIndex,-2.0);
+		}
+		
+		somlattice.getSimilarityConcepts().setUsageIndicationVector( usevector ) ;
+		
+		
+		somlattice.getSimilarityConcepts().setIndexTargetVariable(dSom.activeTvIndex);
+		
+		int ix = dSom.getSomData().getVariables().getIdColumnIndex();
+		if (ix>=0){
+			somlattice.getSimilarityConcepts().setIndexIdColumn(ix) ;
+		}
+		
+		somlattice.setSomData(dSom.getSomData()) ;
+		// settings to be spreaded will be taken from : similarityConcepts.getUsageIndicationVector()
+		somlattice.spreadVariableSettings();
+		 
+		
+		
 		if (sfProperties.getModelingSettings().getSomBagSettings().getApplySomBags()){
 			
 			// we create bags according to parameters, eachbag will run a DSom then...
@@ -110,83 +565,262 @@ public class SomTargetedModeling {
 			somBags.runBags();
 
 		} else{
+			if (callerState>0){
+				dSom.inProcessWait = true ;
+			}
 			
-			// TODO: make a deep copy of modeling settings (serial object) and change some of them !!
 			dSom.performTargetedModeling();
 		}
 		 
-		
-		
+		return dsomGuid;
 	}
 	
 	
-	protected void initializeNodesWithData(){
+	@SuppressWarnings("unused")
+	@Override
+	public void update(Observable dsomInstance, Object results) {
+		// 
+		DSom dsom ;
+		SomTargetResults stm ;
+				
+		dsom = (DSom) dsomInstance;
+		String dsomGuid = dsom.getGuid();
 		
-		// "by index" refers to 
-		// this.notifyNodeByIndex(1, new NodeTask( NodeTask._TASK_SETDATA, variablesSetupDef, null) );
-		// this.notifyNodeBySerial( virtualLatticeNodes.getNode(5).getSerialID(), new NodeTask( NodeTask._TASK_SETDATA, new String("123-"+i)) );
-
-		// TODO: we may perform a PCA, thus deriving a weight vector (NOT: profile vector!!!)
-		//       that would prepare the SOM into the direction of the main dimensions
+		ModelProperties mprops = (ModelProperties) results ;
 		
+		mprops.task = sfTask;
 		
+		isCompleted=true;
+		somHost.onTargetedModelingCompleted(mprops);
 	}
 
-	protected void initializeNodesWithRandomvalues(){
 
-		NodeTask task;
-		Variables vars;
-		String guid; 
-		LatticeFutureVisor latticeFutureVisor;
-		
-		
-		vars = somDataObject.getActiveVariables() ;
-		
-		if (vars.size()<=1){
-			return;
-		}
-		if (virtualLatticeNodes==null){
-			return;
-		}
-		 
-											out.print(2, "loading data definitions to Som-Lattice...");
-											
-		// initialize feature vectors : only active variables , WITHOUT id, tv !!!
-		
-		
-		latticeFutureVisor = new LatticeFutureVisor(virtualLatticeNodes,  NodeTask._TASK_SETVAR );
-		 
-											out.print(4, "before task sending...");
-		task = new NodeTask( NodeTask._TASK_SETVAR, (Object)sob.encode( (Object)vars.getActiveVariableLabels()) );
-		// do it for all nodes
-		somFluid.notifyAllNodes( task );
-											out.print(4, "returned from task sending...  -> now waiting");
-		latticeFutureVisor.waitFor(); // it will wait for completion of "_TASK_SETVAR", for all nodes since we did not define a particular one		
+	/**
+	 * @param somDataObject the somDataObject to set
+	 */
+	public void setSomDataObject(SomDataObject somDataObject) {
+		this.somDataObject = somDataObject;
+	}
 
+
+	/**
+	 * @return the somBags
+	 */
+	public SomBags getSomBags() {
+		return somBags;
+	}
+
+
+	/**
+	 * @return the dSom
+	 */
+	public DSom getdSom() {
+		return dSom;
+	}
+	
+	public SomTransformer getTransformer() {
+		return transformer;
+	}
+	
 	 
-											out.print(4, "continue, next task...");
-		// set target variable ... TODO other messages about dynamic configuration : blacklist, whitelist, sim function 
-		task = new NodeTask( NodeTask._TASK_SETTV, (Object)sob.encode( (Object)vars.getActiveTargetVariable()) );
-		// do it for all nodes
-		somFluid.notifyAllNodes( task );
-		
+	
+	@Override
+	public ArrayList<Integer> getUsedVariablesIndices() {
 		 
-											out.print(3, "loading data definitions done.");
-											out.print(3, "initializing nodes...");
-											
-		latticeFutureVisor = new LatticeFutureVisor(virtualLatticeNodes,  NodeTask._TASK_RNDINIT );
+		return null;
+	}
+
+
+	@Override
+	public void setUsedVariablesIndices( ArrayList<Integer> usedVariables) {
+		 
 		
+	}
+
+
+	public Variables setUsedVariablesIndicatorVector( ArrayList<Double> impUsagevector) {
+
+		Variables vars,selectedVariables;
+		  
+		ArrayList<String> blacklistLabels = new ArrayList<String>(); 
+		ArrayList<String> initialUsageVector = new ArrayList<String>(); 
 		
-		// ATTENTION: we have to wait !!! The informer immediately returns, then the init is sent before the node initialized!
-		// the need for waiting until a process is completed is quite rare, and should occur only in the startup phase,
-		// even on loading data into the SOM (learning) there should be no need to wait
-		task = new NodeTask( NodeTask._TASK_RNDINIT  );
-		somFluid.notifyAllNodes( task );
+		ArrayList<Integer> usedVariables;
 		
-		latticeFutureVisor.waitFor(); out.delay(100); 
-											out.print(1, "initialization of SomFluid done.");
-											
-											
+		vars = somDataObject.getActiveVariables() ; // all vars
+		
+		// we have to refer to the original blacklist, which we probably extend
+		// is of type ArrayList<Variable> originalBlacklist
+		
+		// we create a deep copy, leaving the source unchanged
+		selectedVariables = new Variables( vars );
+		
+		for (int i=0;i<impUsagevector.size();i++){
+			if (impUsagevector.get(i)>0){
+				// selectedVariables.additem( vars.getItem(i) );
+				initialUsageVector.add( vars.getItem(i).getLabel() ) ;
+			}else{
+				blacklistLabels.add( vars.getItem(i).getLabel() ) ;
+			}
+		}
+		 
+		selectedVariables.setBlacklistLabels(blacklistLabels) ;
+		
+		selectedVariables.setInitialUsageVector( initialUsageVector ) ;
+		
+		somDataObject.getVariables().setInitialUsageVector(initialUsageVector) ;
+		
+		return selectedVariables;
 	}
 	
+	
+	public String getNeighborhoodNodes( int nodeindex, int surroundN ) {
+		int particleindex=nodeindex;
+		
+		// we need a map that translates between nodes and particles
+		
+		particleField.setSelectionSize( surroundN ) ;
+		
+		// asking for the surrounding, -> before start set the selection radius == new API function
+		String guid = particleField.getSurround( particleindex, 1, true);
+		
+		// will immediately return, the selection will be sent 
+		// through event callback to "onSelectionRequestCompleted()" below 
+ 		return  guid;
+	}
+	
+	@Override
+	public void statusMessage(String msg) {
+		
+	}
+
+	public LatticePropertiesIntf getLatticeProperties() {
+		return latticeProperties;
+	}
+
+
+	/**
+	 * @return the somLattice
+	 */
+	public VirtualLattice getSomLattice() {
+		return somLattice;
+	}
+
+
+	@Override
+	public boolean getInitComplete() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+
+	/**
+	 * @return the sfProperties
+	 */
+	public SomFluidProperties getSfProperties() {
+		return sfProperties;
+	}
+
+
+	/**
+	 * @return the somDataObject
+	 */
+	public SomDataObject getSomDataObject() {
+		return somDataObject;
+	}
+
+
+	@Override
+	public void onLayoutCompleted(int flag) {
+		
+		out.print(2,"Layout of particle field has been completed.");
+	}
+
+
+	@Override
+	public void onCalculationsCompleted() {
+	
+		if (sfFactory.getPhysicalFieldStarted()==0){
+			out.print(2,"Calculations in particle field have been completed.");
+			
+		}
+		sfFactory.setPhysicalFieldStarted(1);
+		
+		sfFactory.getFieldFactory().setInitComplete(true);
+	}
+
+
+	@Override
+	public void onSelectionRequestCompleted( Object resultsObj ) {
+		
+		// TODO: this should be immediately forked into objects, since the requests could be served in parallel
+		SurroundResults results, clonedResults;
+		String str ;
+		int[] particleIndexes;
+		
+		results = (SurroundResults)resultsObj;  
+		
+		/*
+		 *  here we have to use a message queue running in its own process, otherwise
+		 *  the SurroundRetrieval Process will NOT be released...
+		 *  We have a chain of direct calls
+		 *  
+		 */
+		
+		// we have to prepare the results in the particlefield!
+		// we need the list of lists: 
+		// for each particle he have a list of indexes ArrayList<Long> getIndexesOfAllDataObject()
+		particleIndexes = results.getParticleIndexes();
+		
+		clonedResults = (SurroundResults) sob.decode( sob.encode(results) );
+					if ((clonedResults==null) || (clonedResults.getParticleIndexes()==null)){
+						return ;
+					}
+											int n = clonedResults.getParticleIndexes().length   ;
+											str = clonedResults.getGuid() ;
+												
+											out.print(5, "particlefield delivered a selection (n="+n+") for GUID="+str);
+	
+		
+		// this result will then be taken as a FiFo by a digesting process, that
+		// will call the method "digestParticleSelection(results);"
+		// yet, it is completely decoupled, such that the current thread can return and finish
+		
+		if (somLattice.selectionResultsQueueDigesterAlive()==false){
+											out.print(3, "restarting selection-results queue digester...");
+			somLattice.startSelectionResultsQueueDigester(-1);
+			out.delay(50);
+		}
+		
+		ArrayList<SurroundResults> rQueue = somLattice.getSelectionResultsQueue(); 
+		rQueue.add( clonedResults );
+		
+		//out.print(2, "size of rQueue : "+rQueue.size());
+		return; 
+	}
+
+
+	@Override
+	public void onAreaSizeChanged(Object observable, int width, int height) {
+		
+	}
+
+
+	@Override
+	public void onActionAccepted(int action, int state, Object param) {
+		
+	}
+
+
+	public void setSerialID(long serial) {
+		numericID = serial;
+	}
+
+	public long getSerialID() {
+		return numericID;
+	}
+	
+	public boolean isCompleted() {
+		return isCompleted;
+	}
 }

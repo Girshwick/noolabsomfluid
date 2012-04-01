@@ -3,15 +3,17 @@ package org.NooLab.somfluid.core.engines.det.results;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import org.NooLab.somfluid.components.ModelPropertiesIntf;
+import org.NooLab.somfluid.SomFluidTask;
+ 
 
-
+import org.math.array.*;
 
 public class ModelProperties implements Serializable,
 										ModelPropertiesIntf{
 
 	private static final long serialVersionUID = -4278442100712457201L;
 
+	private int index=-1;
 	
 	String targetVariable = "" ;
 	int targetVariableIndex = -1;
@@ -29,6 +31,15 @@ public class ModelProperties implements Serializable,
 	 */
 	ArrayList<ValidationSet> validationSamples ;
 	ValidationSet globalSample     = new ValidationSet();
+
+
+	public String dSomGuid="";
+
+
+	public SomFluidTask task;
+
+
+	
 	
 	// some measures describing the lattice
 	
@@ -48,9 +59,55 @@ public class ModelProperties implements Serializable,
 		validationSamples.add( new ValidationSet()) ;
 		
 	}
+	
+	public ModelProperties(ModelProperties modprop) {
+
+		targetVariable = modprop.targetVariable ;
+		targetVariableIndex = modprop.targetVariableIndex;
+		
+		targetMode = modprop.targetMode;
+		
+		targetGroups = DoubleArray.copy( modprop.targetGroups) ;
+
+		ecr = modprop.ecr;
+		
+		trainingSample   = new ValidationSet( modprop.trainingSample);
+
+		
+		validationSamples = new ArrayList<ValidationSet>();
+		
+		for (int i=0;i<modprop.validationSamples.size();i++){
+			validationSamples.add( new ValidationSet(modprop.validationSamples.get(i)) );
+		}
+		globalSample = new ValidationSet( modprop.globalSample);
+
+	}
+
+	
 	// ========================================================================
 
 
+	public void close(){
+		validationSamples.clear();
+		validationSamples=null;
+		//globalSample.ecrNodes.clear();
+		globalSample=null;
+		if ((trainingSample!=null) && (trainingSample.ecrNodes!=null)){
+			trainingSample.ecrNodes.clear();
+		}
+		trainingSample=null;
+	}
+
+	public void setIndex(int index) {
+		 this.index = index;
+	}
+
+	/**
+	 * @return the index
+	 */
+	public int getIndex() {
+		return index;
+	}
 
 	public String getTargetVariable() {
 		return targetVariable;
@@ -133,8 +190,14 @@ public class ModelProperties implements Serializable,
 	}
 
 	public void setValidationSample(ValidationSet validationSample) {
-		validationSamples.clear() ;
-		this.validationSamples.add( validationSample);
+		if (validationSamples==null){
+			validationSamples = new ArrayList<ValidationSet>();
+		}
+		if (validationSamples!=null){
+			validationSamples.clear() ;
+			this.validationSamples.add( validationSample);
+		}
+		
 	}
 	public void addValidationSample(ValidationSet validationSample) {
 		this.validationSamples.add( validationSample);

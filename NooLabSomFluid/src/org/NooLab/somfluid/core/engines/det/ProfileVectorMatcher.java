@@ -2,13 +2,16 @@ package org.NooLab.somfluid.core.engines.det;
 
 import java.util.ArrayList;
 
-import org.NooLab.repulsive.components.data.IndexDistance;
-import org.NooLab.repulsive.components.data.IndexDistanceIntf;
+ 
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
-import org.NooLab.somfluid.core.categories.similarity.Similarity;
+ 
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
+ 
+import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.datatypes.IndexDistance;
+import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 import org.NooLab.utilities.logging.PrintLog;
 
 
@@ -42,6 +45,7 @@ public class ProfileVectorMatcher{
 	int bmuCount;
 	
 	int mode = 0;
+	int outMode=0;
 	
 	PrintLog out = new PrintLog(2,true);
 	
@@ -99,7 +103,7 @@ public class ProfileVectorMatcher{
 		return bestMatchesCandidates;
 	}
 	
-	private void createListOfMatchingNodes( ){
+	private void createListOfMatchingNodes(){
 
 		ArrayList<Integer> bestMatches = new ArrayList<Integer> (); 
 		
@@ -142,7 +146,12 @@ public class ProfileVectorMatcher{
 				profile = node.getProfileVector();
 				dsq = node.getSimilarity().similarityWithinDomain( profile.getValues(), profileValues, suppressSQRT) ;
 				// dsq = getAdvancedDistanceMeasure(1, SOMnodes[n].dweights, values);
-	
+				// node.getSimilarity.usageIndicationVector is wrong, hence profile.getValues() is also wrong
+											if (outMode==0){
+												outMode=1;
+												String str = ArrUtilities.arr2Text(profile.getValues(), 1) ;
+												// out.print(2, "createListOfMatchingNodes(), profile values vector 1 : "+str) ;
+											}
 	
 				if (dsq < 0) {
 					out.printErr(2,"Problem in calculating distance, relative node index: "+n+" , dsq<0 = " + String.valueOf(dsq));
@@ -365,6 +374,12 @@ public class ProfileVectorMatcher{
 	public void linkNodeCollection(ArrayList<MetaNode> nodes) {
 		nodeCollection = nodes; 
 		
+	}
+	/**
+	 * @param outMode the outMode to set
+	 */
+	public void setOutMode(int outMode) {
+		this.outMode = outMode;
 	}
 	
 

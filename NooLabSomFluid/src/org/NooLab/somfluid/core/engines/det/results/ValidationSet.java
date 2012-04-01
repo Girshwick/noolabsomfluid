@@ -17,6 +17,8 @@ public class ValidationSet  implements Serializable{
 	int falsePositives;
 	int falseNegatives;
 	
+	int sampleSize ;
+	
 	RoC roc = new RoC();
 
 	int observationCount;
@@ -39,6 +41,31 @@ public class ValidationSet  implements Serializable{
 	public ValidationSet(){
 		
 	}
+
+	public ValidationSet( ValidationSet vset){
+
+		casesCount = vset.casesCount  ;
+		truePositives = vset.truePositives  ;
+		trueNegatives = vset.trueNegatives  ;
+
+		falsePositives = vset.falsePositives  ;
+		falseNegatives = vset.falseNegatives  ;
+		
+		sampleSize = vset.sampleSize  ;
+		
+		roc = new RoC(vset.roc);
+
+		observationCount = vset.observationCount  ;
+
+		ecrTP = vset.ecrTP  ;
+		ecrFP = vset.ecrFP  ;
+		ecrRelSize = vset.ecrRelSize  ;
+		ecrRelTP = vset.ecrRelTP  ;
+		ecrRelRisk = vset.ecrRelRisk  ;
+		
+		tpSingularity = vset.tpSingularity  ;
+		
+	}
 	// ------------------------------------------------------------------------
 	
 
@@ -49,6 +76,17 @@ public class ValidationSet  implements Serializable{
 	public void setCasesCount(int casesCount) {
 		this.casesCount = casesCount;
 	}
+
+	public int getSampleSize() {
+		return sampleSize;
+	}
+	/**
+	 * @param sampleSize the sampleSize to set
+	 */
+	public void setSampleSize(int sampleSize) {
+		this.sampleSize = sampleSize;
+	}
+
 
 	public int getTruePositives() {
 		return truePositives;

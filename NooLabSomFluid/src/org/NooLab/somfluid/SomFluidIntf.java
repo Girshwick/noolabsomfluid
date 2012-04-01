@@ -11,7 +11,9 @@ public interface SomFluidIntf {
  
 	//-------------------------------------------------------------------------
 	
-	
+	public void setUserbreak(boolean flag);
+
+	public boolean getUserbreak() ;
 	
 	
 	

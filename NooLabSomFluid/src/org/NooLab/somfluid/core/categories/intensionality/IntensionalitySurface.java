@@ -36,10 +36,28 @@ public class IntensionalitySurface implements 	Serializable ,
 	public IntensionalitySurface( ){
 		 
 	}
+	
+	public IntensionalitySurface(IntensionalitySurface inIntensions) {
+		useWeights.clear() ;
+		useWeights.addAll( inIntensions.useWeights );
+
+		usageIndicationVector = new ArrayList<Double>();
+		if (inIntensions.usageIndicationVector !=null) usageIndicationVector.addAll( inIntensions.usageIndicationVector ) ;
+		
+		
+		profileVector = new ProfileVector( inIntensions.profileVector );
+		
+		isQualifiedTarget = inIntensions.isQualifiedTarget ;
+		targetVariableIndex = inIntensions.targetVariableIndex ;
+	}
+	
 	// ------------------------------------------------------------------------
+
+	
 
 	/**   the weight vector is NOT the use vector, the weight vector describes the weight of a variable IFF used  */
 	public void prepareWeightVector(){
+		useWeights.clear() ;
 		int n = profileVector.values.size();
 		for (int i=0;i<n;i++){
 			useWeights.add(1.0) ;
@@ -52,8 +70,9 @@ public class IntensionalitySurface implements 	Serializable ,
 	
 	@Override
 	public void clear(int mode) {
-		// 
-		
+		if (usageIndicationVector!=null)usageIndicationVector.clear(); 
+		if (useWeights!=null)useWeights.clear() ;
+		if (profileVector!=null) profileVector.clear();
 	}
 
 	@Override

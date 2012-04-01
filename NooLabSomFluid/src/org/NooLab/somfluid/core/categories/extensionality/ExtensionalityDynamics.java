@@ -2,10 +2,10 @@ package org.NooLab.somfluid.core.categories.extensionality;
 
 import java.util.ArrayList;
 
-import org.NooLab.repulsive.components.data.IndexDistance;
+
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.core.engines.NodeStatistics;
-import org.NooLab.somfluid.data.DataTable;
+
 
 
 /**
@@ -52,6 +52,8 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 
 	/** the positive predictive value of the node */
 	double ppv = -1.0, npv = -1.0;
+	
+	// given a particular threshold for 
 	double majorityValueIdentifier = -1.0 ;
 	
 	// ========================================================================
@@ -61,8 +63,18 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 		statistics = new NodeStatistics()  ;
 		
 	}
-	// ========================================================================
 	
+	public ExtensionalityDynamics(ExtensionalityDynamics inExtensions) {
+		somData = inExtensions.somData;
+		statistics = inExtensions.statistics  ; 
+		
+		
+		
+	}
+	
+	// ========================================================================
+	 
+
 	public void setListOfRecordsAsTable( ArrayList<Integer> records){
 		listOfRecords = records;
 	}

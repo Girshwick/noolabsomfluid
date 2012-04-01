@@ -8,11 +8,17 @@ import java.util.TreeMap;
 import java.util.Random;
 
 
+import org.math.array.StatisticSample;
 
-import org.NooLab.repulsive.components.data.IndexDistance;
-import org.NooLab.repulsive.components.data.IndexDistanceIntf;
+
+import org.NooLab.utilities.ArrUtilities; 
+import org.NooLab.utilities.datatypes.IndexDistance;
+import org.NooLab.utilities.datatypes.IndexDistanceIntf;
+import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.net.GUID;
+ 
 import org.NooLab.repulsive.components.data.SurroundResults;
-import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
+ 
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivity;
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivityIntf;
@@ -20,20 +26,19 @@ import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamics
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurface;
 import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceIntf;
+import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.categories.similarity.Similarity;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
+import org.NooLab.somfluid.core.engines.det.SomMapTable;
 import org.NooLab.somfluid.core.engines.det.results.ModelProperties;
 import org.NooLab.somfluid.core.nodes.LatticeIntf;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
-import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
+import org.NooLab.somfluid.core.*;
+import org.NooLab.somfluid.data.Variable;
+import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.communication.LatticeFutureVisorIntf;
-import org.NooLab.somfluid.properties.ModelingSettings;
-import org.NooLab.utilities.ArrUtilities;
  
-import org.NooLab.utilities.logging.PrintLog;
-import org.NooLab.utilities.net.GUID;
-import org.math.array.StatisticSample;
 
 
 
@@ -48,11 +53,12 @@ public class VirtualLattice implements LatticeIntf{
 	
 	Map<Long, Integer> nodeIndexMap = new TreeMap<Long, Integer>() ;
 	
-	SomFluid somFluidParent;
+	//SomFluid somFluidParent;
+	SomProcessIntf somProcessParent  ;
 	
 	SomDataObject somData;
 	
-	OpenLatticeFutures openLatticeFutures = new OpenLatticeFutures();
+	OpenLatticeFutures openLatticeFutures = new OpenLatticeFutures();  
 	
 	ArrayList<SurroundResults> selectionResultsQueue = new ArrayList<SurroundResults>(); 
 	SelectionResultsQueueDigester selectionResultsQueueDigester;
@@ -88,7 +94,7 @@ public class VirtualLattice implements LatticeIntf{
 	Random rndInstance = new Random();
 	
 	ArrUtilities arrutil = new ArrUtilities (); 
-	PrintLog out ;
+	PrintLog out = new PrintLog(2,true);
 
 	private double averagePhysicalDistance = 1.0;
 
@@ -99,19 +105,20 @@ public class VirtualLattice implements LatticeIntf{
 	
 	
 	// ========================================================================
-	public VirtualLattice(SomFluid parent, LatticePropertiesIntf latticeProps){
-	 
+	public VirtualLattice(SomProcessIntf parent, LatticePropertiesIntf latticeProps, int z){
+		  
 		latticeProperties = latticeProps;
-		somFluidParent = parent;
+		somProcessParent = parent;
 		
-		somData = somFluidParent.getSomDataObject() ; 
+		 
 		
 		extensionalityDynamics = new ExtensionalityDynamics(somData) ; 
 		
 		// ..........................................................
-		out = parent.getOut();
 		
-		selectionResultsQueueDigester = new SelectionResultsQueueDigester() ;
+		selectionResultsQueueDigester = new SelectionResultsQueueDigester(z) ;
+		// out.printErr(2, "startSelectionResultsQueueDigester(a)");
+		
 		out.delay(60);
 		
 		/*
@@ -124,10 +131,23 @@ public class VirtualLattice implements LatticeIntf{
 		statsSampler = new StatisticSample( seed ) ;
 		
 		
+	} 
+	
+	// constructor for cloning an existing lattice of nodes, INCLUSIVE the nodes !!
+	public VirtualLattice(VirtualLattice latticeNodes) {
+		
 	}
-	// ========================================================================
 
 	
+	// ========================================================================
+
+
+	public void setSomData(SomDataObject somDataObject) {
+		 
+		
+		somData = somDataObject;
+	}
+
 	/**
 	 * 
 	 * this method returns a list of particles within the diameter that is defined at a given stage of learning;
@@ -161,6 +181,208 @@ public class VirtualLattice implements LatticeIntf{
 		return selectedNodes;
 	}
 	
+	
+
+	/**
+	 * 
+	 * extracting the profiles from the SomLattice into a simple table.
+	 * 
+	 * this then may be used for SomSprite or for SomIdeals
+	 * 
+	 * 
+	 */
+	public SomMapTable exportSomMapTable() {
+		return exportSomMapTable(0) ;
+	}
+	/**
+	 * 
+	 * @param modus =0->only the variables contained in the metric ; =1->all variables
+	 * @return
+	 */
+	public SomMapTable exportSomMapTable(int modus) {
+		
+		SomMapTable smt = new SomMapTable();
+		/*
+		 	double[][] values = new double[0][0] ; 
+			String[]   variables = new String[0] ;
+		 */
+		
+		boolean hb, nodeIsApplicable;
+		String varLabel;
+		int refNodeCount=0, vix, tvindex=-1 ;
+		
+		// ArrayList<MetaNode> nodes;
+		MetaNode node;
+		
+		// nodes = dSom.somLattice.getNodes() ;
+		ProfileVectorIntf  profileVector; 
+		
+		ArrayList<Double> pValues;
+		Variables  variables;
+		Variable variable ;
+		ArrayList<Variable> varList ;
+		
+		ArrayList<String>  nodeVarStr ;// = new ArrayList<String>();
+		ArrayList<String>  activeVarStr = new ArrayList<String>();
+		ArrayList<String>  compoundVarStr = new ArrayList<String>();
+		ArrayList<Double>  activeProfileValues = new ArrayList<Double>() ;
+		double activeProfileValue;
+		ArrayList<Double> useIndicators , latticeuseIndicators;
+		
+		variables = somData.getVariables() ;
+		// not implemented: varList = variables.getActiveVariables();
+		
+		latticeuseIndicators = getSimilarityConcepts().getUsageIndicationVector() ;
+		
+		/*
+		 * we need two loops, since compared/extracted nodes may be of different structure 
+		 * the first one finding the compound vector that can be used to describe all nodes,
+		 */
+		for (int i=0;i<nodes.size();i++){
+			
+			node = nodes.get(i) ;
+			useIndicators = node.getSimilarity().getUsageIndicationVector();
+			// ATTENTION this does NOT contain the target variable
+			// also: blacklist..., 
+			
+			profileVector = node.getIntensionality().getProfileVector();
+			
+			nodeVarStr = node.getIntensionality().getProfileVector().getVariablesStr() ;
+			
+			// we do this for each node, though in most cases this is redundant, 
+			// -> , nodes are NOT necessarily showing the same assignates/features !!
+			for (int v=0;v<nodeVarStr.size();v++){ // nodeVarStr
+				
+				// exclude variables that have -1 as profile values (mv portion too large)
+				varLabel = nodeVarStr.get(v) ;
+				
+				vix = variables.getIndexByLabel( varLabel ); 
+				if (vix<0){continue;}
+				
+				variable = variables.getItem(vix) ;
+				
+				 
+				hb = true;
+				
+				// hb =  variable.isTV(); // variable.isUsed() ||
+				{
+					if ((hb) || (variable.isTV() )){
+						hb = (variable.isIndexcandidate()==false) && (variable.isID()==false) && (variable.isTVcandidate()==false) ;	
+					}
+					if (hb==false){
+						continue;
+					}
+				}
+				
+				varLabel = variable.getLabel() ;
+				
+				if (hb){
+					hb = (useIndicators.get(v)>0.0) || (useIndicators.get(v)==-2.0) ;
+				}
+				if (modus>=1){
+					hb = ((useIndicators.get(v)>=0.0) || (useIndicators.get(v)==-2.0) )&& (variables.getBlacklistLabels().indexOf(varLabel)<0) ;
+				}
+				if (hb){
+					
+					if (compoundVarStr.indexOf( varLabel )<0 ){
+						compoundVarStr.add( variable.getLabel() ) ;
+						if (variable.isTV()){
+							tvindex = v; 
+						}
+					}
+				}
+			} // v-> all variables
+			
+			// we might use some filter, such as MV in profile, size of node, or a filter by value of any variable
+			// such filters may reduce the number of nodes we are effectively referring to 
+			refNodeCount++;
+			
+		} // i-> all nodes
+
+		if (compoundVarStr.size()==0){
+			return smt;
+		}
+		
+		String tvLabel = somData.getVariables().getTargetVariable().getLabel() ;
+		if (compoundVarStr.indexOf(tvLabel)<0){
+			compoundVarStr.add(tvLabel) ;
+			tvindex = compoundVarStr.size()-1 ;
+		}
+		if (tvindex<0){
+			tvindex = compoundVarStr.indexOf(tvLabel);
+		}
+			
+		smt.values = new double[refNodeCount][compoundVarStr.size()] ; 
+		smt.variables = new String[ compoundVarStr.size()] ; 
+		// that would be wrong!
+		// smt.tvIndex = dSom.getSomData().getVariables().getTvColumnIndex() ;
+		smt.tvIndex = tvindex ; 
+		int rnc=0;
+		
+		// compoundVarStr could be in a different order as compared to the table,
+		// hence we should determine the indices in the variables-list, sort
+		// the compoundVarStr accordingly and then proceed ...
+		
+		
+		for (int i=0;i<nodes.size();i++){
+			
+			node = nodes.get(i) ;
+			useIndicators = node.getSimilarity().getUsageIndicationVector();
+			// also: blacklist...
+			
+			nodeIsApplicable=true;
+			// apply the filter that acts on the node
+			if (nodeIsApplicable==false){
+				continue;
+			}
+			
+			profileVector = node.getIntensionality().getProfileVector();
+			
+			// we export used vars + TV
+			pValues = profileVector.getValues() ;
+			
+			// we do this for each node, though in most cases this is redundant, 
+			// et, nodes are NOT necessarily showing the same assignates/features !!
+			for (int v=0;v<variables.size();v++){
+				
+				variable = variables.getItem(v) ;
+				varLabel = variable.getLabel() ;
+				
+				hb = (useIndicators.get(v)>0.0) || (variable.isTV());
+				if (hb){
+					hb = (variable.isIndexcandidate()==false) && (variable.isID()==false) ;	
+				}
+				hb = compoundVarStr.indexOf(varLabel)>=0;
+				
+				if (hb){
+					
+					
+					activeVarStr.add( varLabel ) ;
+					
+					// activeProfileValue = pValues.get(v) ;
+					// activeProfileValues.add(activeProfileValue) ;
+					
+					vix = compoundVarStr.indexOf(varLabel) ;
+					if (vix>=0){
+						smt.variables[vix] = varLabel;
+						smt.values[rnc][vix] = pValues.get(v);
+						if (variable.isTV()){
+							smt.tvIndex = vix;
+						}
+					}
+				}
+				
+			} // v-> all variables
+			rnc++;
+			
+			
+		} // i-> all nodes
+		
+		
+		
+		return smt;
+	}
+
 	// ..........................................
 	
 	/**
@@ -182,33 +404,46 @@ public class VirtualLattice implements LatticeIntf{
 			ArrayList<IndexDistanceIntf> particlesIntf = new ArrayList<IndexDistanceIntf>();
 			ArrayList<IndexDistance> particles = new ArrayList<IndexDistance>();
 			
-			// TODO define selection size, otherwise the field will take the default !!!
+			// define selection size, otherwise the field will take the default !!!
 			// this call returns immediately, providing the GUID as issued by the RepulsionField
-			queryGuid = somFluidParent.getNeighborhoodNodes( index ,surroundN);  // XXX
-			
+			queryGuid = somProcessParent.getNeighborhoodNodes( index ,surroundN);   
+											out.print(4, "request for getNeighborhoodNodes, waiting for guid = "+queryGuid);
+											
 			// putting this to a map <guid,null>, the matching result object will contain the same Guid
-			selectionResultsQueryMap.put(queryGuid,null) ;
-			
-			// now waiting here
+			// but only, if it does not exist so far: if retrieval is not threaded, then it will be already there!								
+			if (selectionResultsQueryMap.containsKey(queryGuid)==false){
+				selectionResultsQueryMap.put(queryGuid,null) ;
+			}
+			// now waiting here XXX			
 			int z=0;
 			while ((z<2000) && (selectionResultsQueryMap.get(queryGuid)==null)){ // (z<300) && // activate for NON _DEBUG abc124
 				minidelay(10); 
 				z++;
 			}
 			
+			if (selectionResultsQueryMap.get(queryGuid)==null){
+				out.print(2, "request for getNeighborhoodNodes NOT found, would-be guid = "+queryGuid);
+				IndexDistance ixd = new IndexDistance(index,0.0,"");
+				ArrayList<IndexDistance> ixds = new ArrayList<IndexDistance>();
+				ixds.add(ixd);
+				particlesIntf = new ArrayList<IndexDistanceIntf>( ixds);
+			}
+											out.print(5, "size of selectionResultsQueryMap : "+selectionResultsQueryMap.size()) ;
 			if (selectionResultsQueryMap.containsKey(queryGuid)){
 				results = (SurroundResults) selectionResultsQueryMap.get(queryGuid);
+				selectionResultsQueryMap.remove(queryGuid) ;
 			}else{
 				// create an empty dummy
 				return particlesIntf;
 			}
 			
 			if ((results!=null) && (results.getParticlesAsIndexedDistances()!=null)){
-				particles = results.getParticlesAsIndexedDistances();
+				particles =  results.getParticlesAsIndexedDistances();
 				particlesIntf = new ArrayList<IndexDistanceIntf>( particles );
 			}else{
 				out.printErr(3, "retrieval of surround for index <"+index+"> was unexpectedly empty.");
 				surroundError++;
+				if (selectionResultsQueryMap.containsKey(queryGuid) )selectionResultsQueryMap.remove(queryGuid) ;
 			}
 			
 			results = null;
@@ -232,10 +467,108 @@ public class VirtualLattice implements LatticeIntf{
 	public int size(){
 		return nodes.size();
 	}
+	
 	public void clear(){
-		nodes.clear();
+		
+		for (int i=0;i<nodes.size();i++){
+			nodes.get(i).clear(); 
+		}
+
+		if (selectionResultsQueue!=null)selectionResultsQueue.clear() ;
+		if(selectionResultsQueryMap!=null)selectionResultsQueryMap.clear();
+	
 	}
 	
+	public void close(){
+		clear() ;
+		
+		nodes.clear();
+		nodeIndexMap.clear();
+
+		selectionResultsQueueDigester.stop() ;
+		
+		modelProperties.close();
+		// modelProperties=null;
+		statsSampler =null;
+		
+		extensionalityDynamics.getListOfRecords().clear();
+		extensionalityDynamics=null;
+		
+		selectionResultsQueueDigester.stop();
+		out.delay(10);
+		
+		
+		out.print(5, "closing VirtualLattice (address: "+this.toString()+")");
+		System.gc();
+	}
+	
+	public void reInitNodeData(){
+		MetaNode node;
+		selectionResultsQueueDigester.isRunning=false;
+		
+		for (int i=0; i < nodes.size();i++){
+			node = nodes.get(i) ;
+			node.getExtensionality().clear() ;
+			
+		}
+	}
+	public void reInitNodeData(int mode){
+		reInitNodeData();
+		if (mode>0){
+			// TODO reinit with random profiles
+			
+		}
+	}
+	
+	public void spreadVariableSettings() {
+		 
+		ArrayList<Double> usagevector;
+		int ix;
+		
+		usagevector =  new ArrayList<Double>();
+		usagevector.addAll( similarityConcepts.getUsageIndicationVector() );
+		
+		            						String str = arrutil.arr2text(usagevector, 0);
+		            						out.printErr(2, "spreadVariableSettings(), usagevector : "+str) ;
+		//for (MetaNode node:nodes){
+		for (int i=0;i<nodes.size() ;i++){
+			
+			MetaNode node = nodes.get(i) ;
+				
+			node.setSomData( this.somData);			
+			node.getExtensionality().clear();
+			
+			node.getExtensionality().getStatistics().resetFieldStatisticsAll() ;
+			
+			ProfileVectorIntf  pv = node.getIntensionality().getProfileVector() ;
+			// pv.g
+			 
+			int n =-1;
+			ArrayList<Double> uv = node.getIntensionality().getUsageIndicationVector()  ;
+			if (uv!=null){
+				n = uv.size();
+			}
+			
+			node.getIntensionality().setUsageIndicationVector(usagevector);
+			
+			
+			// this will set the reference, no copy is created !
+			node.getSimilarity().setUsageIndicationVector(usagevector);
+			
+			
+			
+			ix = this.similarityConcepts.getIndexTargetVariable() ;
+			if (ix>=0){
+				node.getSimilarity().setIndexTargetVariable(ix);
+				//usagevector.set(ix, -2.0) ;
+			}
+			
+			ix = this.similarityConcepts.getIndexIdColumn() ;
+			if (ix>=0)node.getSimilarity().setIndexIdColumn(ix);
+		}
+		ix=0;
+	}
+
 	public MetaNode getNodeByNumId( long nodeID ){
 		
 		MetaNode node= null, _node;
@@ -270,7 +603,12 @@ public class VirtualLattice implements LatticeIntf{
 
 	
 	public MetaNode getNode( int index ){
-		return nodes.get(index) ;
+		MetaNode node=null ;
+		if ((index>=0) && (index<nodes.size())){
+			node = nodes.get(index) ;
+		}
+		nodes.get(index) ;
+		return node;
 	}
 	
 	public ArrayList<MetaNode> getNodes() {
@@ -483,20 +821,25 @@ public class VirtualLattice implements LatticeIntf{
 	}
 
 
-	public void stop(){
-		selectionResultsQueueDigester.isRunning = false;
-	}
 	public boolean selectionResultsQueueDigesterAlive(){
 		boolean hb = (selectionResultsQueueDigester!=null) && (selectionResultsQueueDigester.isRunning) ; 
 		       	
 		if (hb){
-			hb = (selectionResultsQueueDigester.vslSelectionDigest.isAlive()) ;
+			// hb = (selectionResultsQueueDigester.vslSelectionDigest.isAlive()) ;
 		}
 		
 		return hb ;
 	}
-	public void startSelectionResultsQueueDigester(){
-		selectionResultsQueueDigester = new SelectionResultsQueueDigester() ;
+	public void stop(){
+		selectionResultsQueueDigester.isRunning = false;
+	}
+
+	public void startSelectionResultsQueueDigester(int z ){
+		
+		if (selectionResultsQueueDigester==null){
+			out.printErr(2, "startSelectionResultsQueueDigester(b)");
+			selectionResultsQueueDigester = new SelectionResultsQueueDigester(z) ;
+		}
 	}
 	/**
 	 * 
@@ -512,12 +855,29 @@ public class VirtualLattice implements LatticeIntf{
 		
 		SurroundResults _results ;
 		
-		public SelectionResultsQueueDigester(){
+		public SelectionResultsQueueDigester(int z){
 		
-			vslSelectionDigest = new Thread (this,"vslSelectionDigest");
+			vslSelectionDigest = new Thread (this,"vslSelectionDigest-"+z); 
 			vslSelectionDigest.start() ;
 		}
-		@Override
+		
+		public void stop(){
+			
+			isRunning=false;
+			while (isWorking){
+				out.delay(1) ;	
+			}
+			isWorking=false;
+			
+			if (selectionResultsQueue != null) {
+				selectionResultsQueue.clear();
+				out.delay(20);
+				selectionResultsQueue = null;
+			}
+		}
+		
+		
+		@Override		
 		public void run() {
 			isRunning = true;
 			int dt;
@@ -549,16 +909,18 @@ public class VirtualLattice implements LatticeIntf{
 					} // isWorking ?
 					
 					if (selectionResultsQueue.size()==0){
-						dt = 2 ;
+						dt = 1 ;
+						out.delay(dt);
 					}else{
 						dt = 0 ;
 					}
-					out.delay(dt);
+					
 				}// -> isRunning?
 				
 			}catch(Exception e){
-				
+				e.printStackTrace();
 			}
+			// out.printErr(2, "SelectionResultsQueueDigester() -> STOPPED");
 			
 		}
 		
@@ -729,7 +1091,6 @@ public class VirtualLattice implements LatticeIntf{
 		return statsSampler;
 	}
 
-	
 	
 		
 }

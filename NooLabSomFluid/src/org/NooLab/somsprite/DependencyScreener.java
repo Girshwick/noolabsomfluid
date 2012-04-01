@@ -20,12 +20,12 @@ import org.NooLab.math3.stat.clustering.EuclideanDoublePoint;
 import org.NooLab.math3.stat.clustering.EuclideanIntegerPoint;
 import org.NooLab.math3.stat.clustering.KMeansPlusPlusClusterer;
 import org.NooLab.math3.stat.inference.MannWhitneyUTest;
-import org.NooLab.repulsive.components.data.IndexDistance;
-import org.NooLab.somfluid.components.IndexedDistances;
+
 import org.NooLab.somfluid.core.categories.similarity.SimilarityCalculator;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.core.engines.det.SomMapTable;
 import org.NooLab.somfluid.core.nodes.ClusterNode;
+import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
 import org.apache.commons.math.linear.EigenDecomposition;
 import org.apache.commons.math.linear.EigenDecompositionImpl;
@@ -71,7 +71,10 @@ public class DependencyScreener {
 	
 	// this "EuclideanDoublePoint" knows by itself how to calculate the distance
 	KMeansPlusPlusClusterer<EuclideanDoublePoint> kMeans ;
+	// TODO: we use kmeans to estimate the match in multi-target case
 	
+	ArrayList<PotentialSpriteImprovement> bestEstimatedUtilities = new ArrayList<PotentialSpriteImprovement>();
+	int dCountThreshold = 5;
 	
 	PrintLog out;
 	
@@ -100,7 +103,7 @@ public class DependencyScreener {
 		
 		PotentialSpriteImprovement euItem;
 		ArrayList<PotentialSpriteImprovement> estimatedUtils ;
-		ArrayList<PotentialSpriteImprovement> bestEstimatedUtilities = new ArrayList<PotentialSpriteImprovement>();
+		
 		
 		int tvindex = somMapTable.tvIndex ;
 		
@@ -132,11 +135,13 @@ public class DependencyScreener {
 			
 			// TODO: this could be multi-threaded easily...
 			for (int i=0;i<depVarIndexes.size();i++){
+											
 				depVarIndex = depVarIndexes.get(i) ;
 				
 				depVar[0] = somMapTable.variables[ depVarIndex[0] ];
 				depVar[1] = somMapTable.variables[ depVarIndex[1] ];
-				
+											if ((i==0) || (i%10==0))
+											out.print(2, "screening for dependencies ("+(i)+" of "+depVarIndexes.size()+") in variables ("+depVarIndex[0]+","+depVarIndex[1]+")..." );
 				int va = depVarIndex[0];
 				int vb = depVarIndex[1];
 				
@@ -150,7 +155,7 @@ public class DependencyScreener {
 					depVarValues[2][r] = somMapTable.values[r][somMapTable.tvIndex] ;
 					// TODO: we need also a binarized version of the TV, into 2 groups or n groups
 					
-				} // all rows in exrtacted columns
+				} // all rows in extracted columns
 				
 				// this returns a relative improvement of the association
 				AssociationDifferential ad = new AssociationDifferential();
@@ -161,23 +166,28 @@ public class DependencyScreener {
 				}
 				
 			} // i-> all pairs
-			
+											
+											
 			Collections.sort(bestEstimatedUtilities, new euComparable(-1));
 			
 			// reduce for similar, only <N> items per pair of variable
 			
 			reduceListOfCandidates(bestEstimatedUtilities); 
-
-			int n = bestEstimatedUtilities.size();
-			if (n>2)n=2;
 			
-			bestEstimatedUtilities = new ArrayList<PotentialSpriteImprovement>( bestEstimatedUtilities.subList(0, n));
+											out.print(2, "all pairs checked, "+bestEstimatedUtilities.size()+" potential improvements found ...");
+											
+			int n = bestEstimatedUtilities.size();
+			if (n>5){
+				n=5;
+				bestEstimatedUtilities = new ArrayList<PotentialSpriteImprovement>( bestEstimatedUtilities.subList(0, n));
+			}
 			
 			String expressionName , expression;
 			SpriteFuncIntf func;
 			double kvalue ;
 			
 			for (int i=0;i<bestEstimatedUtilities.size();i++){
+				
 				euItem = bestEstimatedUtilities.get(i);
 				
 				expressionName = evaluator.getExpression(euItem.funcIndex1);
@@ -196,6 +206,7 @@ public class DependencyScreener {
 				// refresh expression setting ...
 				euItem.setExpression(expression);
 				euItem.setExpressionName(expressionName);
+											out.print(2, "var 1, var 2  : "+euItem.varIndex1+", "+euItem.varIndex2);
 			}
 			
 		}catch(Exception e){
@@ -241,9 +252,87 @@ public class DependencyScreener {
 	}
 	
 	private void reduceListOfCandidates( ArrayList<PotentialSpriteImprovement> items) {
-		 
+		PotentialSpriteImprovement item, coitem;
+		int n,i,lastN=-1;
+		boolean hb;
 		
+		i = items.size()-1;
+		
+		// 1. drop all bad ones
+		while (i>=0){
+			if (items.get(i).estimatedImprovement<1.5){
+				items.remove(i) ;
+			}
+			i--;
+		}
+
+		// 2. remove multiple entries for a particular pair of variables, 
+		//    keeping only 1 or 2, dependent on the total size (thus we need a meta-loop)
+
+		n = items.size();
+		int nFromSamePair = 3;
+		int nOnSameVar = Math.max(1, nFromSamePair-1);
+		
+		while ((items.size()>dCountThreshold) && (nFromSamePair>0)){
+ 			
+			// note htat the list is sorted...
+ 			for (int k = 0; k < items.size()-1; k++) {
+ 				
+ 				item = items.get(k) ;
+ 				
+ 				if (item.estimatedImprovement<0){
+ 					continue;
+ 				}
+ 				int idPairCount=0;
+ 				int[] idBaseVarCount= new int[2];
+ 				
+ 				for (int j = k+1; j < items.size(); j++) {
+ 					coitem = items.get(j) ;
+ 					hb=true;
+ 					
+ 					// ?? drop it ?
+ 					if ((item.varIndex1==coitem.varIndex1) && (item.varIndex2==coitem.varIndex2)){
+ 						idPairCount++;
+ 					}else{
+						if (item.varIndex1 == coitem.varIndex1) {
+							idBaseVarCount[0]++;
+						}
+						if (item.varIndex2 == coitem.varIndex2) {
+							idBaseVarCount[1]++;
+						}
+ 					}
+ 					hb = (idPairCount<nFromSamePair) && (idBaseVarCount[0]<nOnSameVar) && (idBaseVarCount[1]<nOnSameVar); 
+ 					
+ 					
+ 					if (hb==false){
+ 						coitem.estimatedImprovement = -1.01 ;
+ 					}
+ 				} // j-> i+k -> all
+ 				
+ 				
+			} // i->
+
+			// 3. drop all those for which we have reduced the estimated improvement
+			i = items.size()-1;
+			while (i>=0){
+				if (items.get(i).estimatedImprovement<1.5){
+					items.remove(i) ;
+				}
+				i--;
+			}
+			n = items.size(); if (lastN==n){break;} ; lastN=n;
+			nFromSamePair--;
+ 		} // items count > 5 (threshold)
+		
+		n = items.size();
+		
+		// 4. absolute limitation of list to "dCountThreshold"
+		while (items.size()>dCountThreshold){
+			items.remove(dCountThreshold) ;
+		}
+		items.trimToSize() ;
 	}
+	
 	
 	class AssociationDifferential{
 		
@@ -718,9 +807,17 @@ if ((expressionName.contains("logist2x")) ||
 	 
 	
 
-	public IndexedDistances getListOfCandidatePairs() {
-		 
-		return ixdPair;
+	public ArrayList<PotentialSpriteImprovement> getListOfCandidatePairs() {
+		ArrayList<PotentialSpriteImprovement> candidates = new ArrayList<PotentialSpriteImprovement>(bestEstimatedUtilities);
+		return candidates;
+	}
+
+	public int getdCountThreshold() {
+		return dCountThreshold;
+	}
+
+	public void setdCountThreshold(int dCountThreshold) {
+		this.dCountThreshold = dCountThreshold;
 	}
 	
 

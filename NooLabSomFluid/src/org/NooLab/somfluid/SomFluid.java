@@ -2,30 +2,22 @@ package org.NooLab.somfluid;
 
 import java.util.ArrayList;
 
-import org.NooLab.repulsive.components.data.SurroundResults;
+import org.NooLab.utilities.files.DFutils;
+import org.NooLab.utilities.logging.PrintLog;
+ 
+import org.NooLab.utilities.net.GUID;
+import org.NooLab.utilities.objects.StringedObjects;
+
 import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
-import org.NooLab.repulsive.particles.Particle;
-import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.components.SomTasks;
-import org.NooLab.somfluid.components.VirtualLattice;
-import org.NooLab.somfluid.core.application.SomAppUsageIntf;
-import org.NooLab.somfluid.core.application.SomAppValidationIntf;
-import org.NooLab.somfluid.core.application.SomApplication;
-import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
-import org.NooLab.somfluid.core.engines.det.DSom;
-import org.NooLab.somfluid.core.engines.det.SomTargetedModeling;
-import org.NooLab.somfluid.core.engines.det.adv.SomBags;
-import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
-import org.NooLab.somfluid.core.nodes.MetaNode;
-import org.NooLab.somfluid.data.Variables;
-import org.NooLab.somfluid.env.communication.GlueClientAdaptor;
-import org.NooLab.somfluid.env.communication.LatticeFutureVisor;
-import org.NooLab.somfluid.env.communication.NodeTask;
-import org.NooLab.somfluid.env.communication.NodesInformer;
+
+import org.NooLab.somfluid.properties.* ;
+import org.NooLab.somfluid.components.* ;
+import org.NooLab.somfluid.core.application.*;
+ 
+import org.NooLab.somfluid.env.data.*;
 import org.NooLab.somtransform.SomTransformer;
-import org.NooLab.utilities.logging.PrintLog;
-import org.NooLab.utilities.objects.StringedObjects;
+
 
 
 /*
@@ -49,39 +41,26 @@ import org.NooLab.utilities.objects.StringedObjects;
  * 
  */
 public class SomFluid 
-                      extends
-                      			 NodesInformer
-                      			 
                       implements Runnable,
 								 SomFluidIntf,
 								 
-								 SomSupervisionIntf,
-								 // events from article field, namely selections!
-								 RepulsionFieldEventsIntf{
+								 SomSupervisionIntf ,
+								 RepulsionFieldEventsIntf
+								 {
 	
 	
-	String name = "";
-	long numericID = 0L;
+	
 
 	SomFluidProperties sfProperties;
 	SomFluidFactory sfFactory ;
 	
-	RepulsionFieldIntf particleField ;
-
-	LatticePropertiesIntf latticeProperties;
 	
-	/** 
-	 * VirtualLattice is essentially an ArrayList of &lt;MetaNodeIntf&gt;
-	 * we never can call the routines of the MetaNode directly, we always have
-	 * to to use an event mechanism  
-	 */
-	VirtualLattice virtualLatticeNodes; 
 	
-	SomDataObject somDataObject;
+	// SomDataObject somDataObject;
+	ArrayList<SomDataObject> somDataObjects = new ArrayList<SomDataObject>();
 	
 	SomTasks somTasks;
 	
-	SomBags somBags;
 	
 	SomFluid sf ;
  	
@@ -93,123 +72,58 @@ public class SomFluid
 	
 	StringedObjects sob = new StringedObjects();
 	PrintLog out = new PrintLog(2, true);
+	private boolean processIsActivated=false;
+	private RepulsionFieldIntf particleField;
+	private boolean userBreak;
+	
 	
 	// ------------------------------------------------------------------------
 	protected SomFluid( SomFluidFactory factory){
 		
-		basicInitialization( factory );
-	}
-	
-	protected SomFluid( SomFluidFactory factory, long numericid ){
-		
-		basicInitialization( factory );
-		
-		completingInitialization(numericid);
-	}
-	
-	private void basicInitialization(SomFluidFactory factory){
+		sfThread = new Thread (this,"sfThread" );
+		somTasks = new SomTasks( sfFactory ) ;
 		
 		sfFactory = factory;
-		
-		sfProperties = sfFactory.sfProperties ;
-		latticeProperties = sfFactory.latticeProperties ;
-		
-		somDataObject = new SomDataObject( sfProperties ); 
-		somDataObject.setFactory(sfFactory);
-		somDataObject.setOut(out) ;
-		
-		
-		somBags = new SomBags(this, sfProperties) ;
+		sfProperties = sfFactory.getSfProperties() ;
 		
 		sf = this;
 		
-		out.setPrefix("[SomFluid-main]");
+		prepareParticlesField( (RepulsionFieldEventsIntf)this);
 	}
 	
-	protected void completingInitialization( long numericID ){
-		
-		this.numericID = numericID;
-		
-		sfThread = new Thread (this,"sfThread-"+numericID);
-		
-		virtualLatticeNodes = new VirtualLattice(this,latticeProperties);
-		
-		// if we are allowed to load the data, we'll do it there
-		// note that the task of normalizing the data is performed by the transformer part
-		// the SOM itself ALWAYS expects normalized data, even 
-		somDataObject.prepare() ;
-		
-		initStructures();
-		
-		somTasks = new SomTasks( sfFactory ) ;
-		
-		
-		
-	}
-	// ------------------------------------------------------------------------
-
+	 
 	
-	private void initStructures() {
-		
-		// note that the nodes will not contain a working feature vector,
-		// all lists get initialized and defined, but remain empty
-		createVirtualLattice( sfProperties.getInitialNodeCount() );
-		
-	}
-
-	/**  
-	 * Note that the particles in the field are just containers! They are not identical to nodes.
-	 * Hence, our nodes need to be attached to the particles   */
-	private void createVirtualLattice( int initialNodeCount) {
-		MetaNode mnode;
-		long idbase;
-		Particle particle;
-											out.print(2, "creating the physical node field for "+initialNodeCount+" particles...");
-		// we need to harvest the events here!
-		particleField = sfFactory.createPhysicalField( this, initialNodeCount);
-		 
-											out.print(2, "creating the logical som lattice for "+initialNodeCount+" nodes...");
-		for (int i=0;i<initialNodeCount;i++){
-			
-			mnode = new MetaNode( virtualLatticeNodes, somDataObject  );
-			virtualLatticeNodes.addNode(mnode) ;
-			
-											out.print(4,"Node <"+i+">, serial = "+mnode.getSerialID());
-			 
-			registerNodeinNodesInformer( mnode );
-			 
-			
-			particle = particleField.getParticles().get(i);
-			particle.setIndexOfDataObject( mnode.getSerialID() );
-			
-			
-		}
-		
-		
-		
-		double d = particleField.getAverageDistanceBetweenParticles();
-		virtualLatticeNodes.setAveragePhysicalDistance(d);
-		
-											out.print(2, "logical som lattice created.");
-		// 
-	}
-
+	
 	// ========================================================================
 	
-	
-	
-	protected void performTransformations() {
+	 
+	public void prepareParticlesField( RepulsionFieldEventsIntf eventSink ){
 		
-		SomTransformer transformer;
-		transformer = sfFactory.getTransformer();
-		
-		
+		int initialNodeCount = sfProperties.getInitialNodeCount();
+
+		out.print(2, "creating the physical node field for " + initialNodeCount
+				+ " particles...");
+
+		// we need to harvest the events here!
+		if ((particleField != null) && (particleField.getNumberOfParticles() != initialNodeCount)) {
+			particleField.close();
+			particleField = null;
+		}
+		if (particleField == null) {
+			
+			// sfFactory.establishPhysicalFieldMessaging( this); // RepulsionFieldEventsIntf eventSink
+			particleField = sfFactory.createPhysicalField( eventSink, initialNodeCount);
+			// this one extra!
+			// establishPhysicalFieldMessaging( RepulsionFieldEventsIntf eventSink)
+		}
+
 	}
+	
+ 
 
 
-	
-	
-	
+
+
 	/**
 	 * start this through message queue and task process,  
 	 * 
@@ -217,28 +131,76 @@ public class SomFluid
 	 */
 	private void performTargetedModeling( SomFluidTask sfTask ) {
 		// since we need this also for evo-optimization, we put it to a small class  
-		// ther we use a different constructor (taking a copy from this basic instance...)
-		
-		SomTargetedModeling targetedModeling;
-		
-		targetedModeling = new SomTargetedModeling( this, sfProperties, somDataObject, virtualLatticeNodes, sfTask);
-		targetedModeling.init().perform();
+		// there we use a different constructor (taking a copy from this basic instance...)
 		 
+		SimpleSingleModel simo ;
+		ModelingSettings modset = sfProperties.modelingSettings ;
+			
+		somDataObjects.clear();
+		
+		simo = new SimpleSingleModel(this , sfTask, sfFactory );
+		
+		simo.prepareDataObject() ;
+		simo.setInitialVariableSelection( modset.getInitialVariableSelection() ) ;
+		
+		simo.perform();
+		 
+		// handling requests about persistence: saving/sending model, results
+	}
+	
+
+	
+	private void performModelOptimizcreener(SomFluidTask sfTask) {
+		ModelOptimizer moz ;
+		 
+		somDataObjects.clear();
+		
+		moz = new ModelOptimizer( this , sfTask, sfFactory );
+		
+		moz.perform();
+		
+		/*
+		 * // put results into modelProperties object (item of a list of such)
+		
+		// put(dsomGuid, modelProperties);
+		
+		 */
+		// handling requests about persistence: saving/sending model, results
+	}
+	
+
+	private void performAssociativeStorage(SomFluidTask sfTask) {
+		 
+		
+		new SomAssociativeStorage( this, sfFactory, sfProperties, createSomDataObject() ); 
 	}
 
 	// ========================================================================
-	public void addTask(SomFluidTask somFluidTask) {
+	public String addTask(SomFluidTask somFluidTask) {
 		 
+		somFluidTask.guidID = GUID.randomvalue() ;
 		somTasks.add(somFluidTask);
+		
+		
+		out.print(2, "...now there are "+somTasks.size()+" tasks in the SomFluid-queue...") ;
+		out.delay(100) ;
+		
+		isActivated = true;
+		
+		return somFluidTask.guidID  ;
 	}
 
 
 	@Override
 	public void start() {
-		
-		
-		sfThread.start();
-		isActivated = true;
+		if (processIsActivated){
+			return;
+		}
+		processIsActivated=true;
+		if(processIsRunning==false){
+			sfThread.start();
+			isActivated = true;
+		}
 	}
 
 	
@@ -254,26 +216,39 @@ public class SomFluid
 			
 			while (processIsRunning){
 				
-			
+				// out.print(2,"task dispatching process is running (tasks:"+somTasks.size()+") ");
+				
 				if ((isWorking==false) && (isActivated)){//) && (isInitialized)){
 					isWorking=true;
-					
+											out.print(5,"...tdp (2)") ;
 					if ((somTasks!=null) && (somTasks.size()>0)){
-						
+										    out.print(5,"...tdp (3)") ;
 						sfTask = somTasks.getItem(0) ;
-						new TaskDispatcher(sfTask);
-					}
-					
-					if ((sfTask!=null) && (sfTask.isCompleted())){
-						somTasks.remove(0);
+						
+						out.print(2,"working on task, id = "+sfTask.guidID);
+						TaskDispatcher td = new TaskDispatcher(sfTask);
+											out.print(5,"...tdp (4)") ;
+						if (td.isWorking==false){
+											out.print(5,"...tdp (91)") ;
+							isWorking=false;
+						}
+					}else{
 						isWorking=false;
 					}
+					
+					
 				}
 				
-				out.delay(2500);
+				if ((isWorking) && (somTasks.size()>0) && (somTasks.getItem(0).isCompleted())){
+											out.print(5,"...tdp (6)") ;
+					out.print(2,"task ("+somTasks.getItem(0).guidID+") has been completed");
+					somTasks.remove(0);
+					isWorking=false;
+				}
+				out.delay(500);
 			}
 			
-			
+											out.print(5,"...tdp (-1)") ;
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -282,72 +257,173 @@ public class SomFluid
 	// ..........................................
 	class TaskDispatcher{
 
-		public TaskDispatcher(SomFluidTask sfTask) {
-			
-			// dependent on task we invoke different methods and worker classes
-			if (sfTask.somType == SomFluidProperties._SOMTYPE_MONO){
-				
-				// accessing the perssistent file,
-				// it may be an external file containing raw data, or
-				// if sth exists an already prepared one
-				sfFactory.loadSource();
-				 
-				
-				 
-				
-				// preparing the data, at least transforming and normalizing it
-				// is embedded into the SomDataObject, where it is called by
-				// importDataTable()
-				// (of course, it can be called separately too,
+		private boolean isWorking = false;
 
-				performTargetedModeling( sfTask );
+		public TaskDispatcher(SomFluidTask sfTask) {
+			 
+			
+			try{
 				
-			}else{
-				// sfFactory.openSource();
-				// performAssociativeStorage( sfTask );
+				// dependent on task we invoke different methods and worker classes
+				if (sfTask.somType == SomFluidProperties._SOMTYPE_MONO){
+					
+					// accessing the perssistent file,
+					// it may be an external file containing raw data, or
+					// if sth exists an already prepared one
+					if (sfTask.workingMode == SomFluidTask._SOM_WORKMODE_FILE){ // ==default
+						// r = sfFactory.loadSource();
+					}
+					
+					if (sfTask.workingMode == SomFluidTask._SOM_WORKMODE_PIKETT){ 
+						// goto standby mode for this task
+						sfTask.isStandbyActive = true;
+					}
+					
+					if (sfTask.getSpelaLevel()<=1){
+					// preparing the data, at least transforming and normalizing it
+					// is embedded into the SomDataObject, where it is called by
+					// importDataTable()
+					// (of course, it can be called separately too,
+					
+						performTargetedModeling( sfTask );
+						this.isWorking=true;
+					}
+					if (sfTask.getSpelaLevel()==2){
+						performModelOptimizcreener(sfTask) ;
+						this.isWorking=true;
+					}
+				}else{
+					sfFactory.openSource(); // just prepares access, includes connection to dir, db
+					performAssociativeStorage( sfTask );
+					this.isWorking=true;
+				}
+				
+				
+			}catch(Exception e){
+				e.printStackTrace();
+				this.isWorking=false;
 			}
+			
 		}
+
+
+		
 
 
 		
 		
 	} // inner class TaskDispatcher
+	 
+
 	// ========================================================================
 
 
 	
-	public void setSerialID(long serial) {
-		numericID = serial;
+	public SomDataObject createSomDataObject() {
+		SomDataObject _somDataObject;
+		
+		
+		_somDataObject = new SomDataObject(sfProperties) ;
+		
+		_somDataObject.setFactory(sfFactory);
+		_somDataObject.setOut(out);
+		 
+		_somDataObject.prepare();
+		
+		somDataObjects.add(_somDataObject) ;
+		
+		_somDataObject.setIndex(somDataObjects.size()-1);
+		
+		return _somDataObject;
 	}
 
-
-	public long getSerialID() {
-		return numericID;
-	}
-
-
-	public String getNeighborhoodNodes( int nodeindex, int surroundN ) {
-		int particleindex=nodeindex;
-		
-		// we need a map that translates between nodes and particles
-		
-		particleField.setSelectionSize( surroundN ) ;
-		
-		// asking for the surrounding, -> before start set the selection radius == new API function
-		String guid = particleField.getSurround( particleindex, 1, true);
-		
-		// will immediately return, the selection will be sent 
-		// through event callback to "onSelectionRequestCompleted()" below 
- 		return  guid;
-	}
+	// ========================================================================
 	
 	
+	
+	public SomDataObject loadSource( String srcname ) throws Exception{
+		
+		SomDataObject somDataObject;
+		int result=-1;
+		String srcName ="";
+		String loadedsrc ;
+		//  
+		srcName = srcname;
+		if ((srcName.length()==0) || (DFutils.fileExists(srcName)==false)){
+			srcName = sfProperties.getDataSrcFilename();
+		}
+		
+		
+		// check whether there is already an SDO
+		/*
+		if (somDataObjects==null){
+			somDataObjects = new ArrayList<SomDataObject>();
+		}
+		for (int i=0;i<somDataObjects.size();i++){
+			somDataObject = somDataObjects.get(i) ;
+			loadedsrc = somDataObject.getDataReceptor().getLoadedFileName() ;
+			if (loadedsrc.contentEquals(srcname)){
+				// return _somDataObject;
+			}
+			somDataObjects.get(0).clear();
+		}
+		
+		*/
+		
+		somDataObject = createSomDataObject() ;
+	
+		
+		SomTransformer transformer = new SomTransformer( somDataObject );
+
+		somDataObject.setTransformer(transformer) ;
+		
+		DataReceptor dataReceptor = new DataReceptor( sfProperties, somDataObject );
+		
+		dataReceptor.loadFromFile(srcName);
+
+		somDataObject.setDataReceptor(dataReceptor);
+
+		somDataObject.acquireInitialVariableSelection();
+
+		return somDataObject;
+
+	}
+ 
+
+	public SomDataObject getSomDataObject(int index) {
+		SomDataObject _somDataObject=null;
+		if ((index>=0) && (index<somDataObjects.size())){
+			_somDataObject = somDataObjects.get(index) ;
+		}
+		
+		return _somDataObject;
+	}
+
+ 
 	
 	// --- Events from RepulsionField / physical particle field ---------------
 	
-	public SomDataObject getSomDataObject() {
-		return somDataObject;
+	
+
+	/**
+	 * @return the somDataObjects
+	 */
+	public ArrayList<SomDataObject> getSomDataObjects() {
+		return somDataObjects;
 	}
+
+
+
+
+	/**
+	 * @param somDataObjects the somDataObjects to set
+	 */
+	public void setSomDataObjects(ArrayList<SomDataObject> somDataObjects) {
+		this.somDataObjects = somDataObjects;
+	}
+
+
+
 
 	public SomFluidProperties getSfProperties() {
 		return sfProperties;
@@ -371,88 +447,103 @@ public class SomFluid
 
 	// ------------------------------------------------------------------------
 	
-	@Override
-	public void onSelectionRequestCompleted( Object resultsObj ) {
-		
-		// TODO: this should be immediately forked into objects, since the requests could be served in parallel
-		SurroundResults results, clonedResults;
-		String str ;
-		int[] particleIndexes;
-		
-		results = (SurroundResults)resultsObj;  
-		
-		/*
-		 *  here we have to use a message queue running in its own process, otherwise
-		 *  the SurroundRetrieval Process will NOT be released...
-		 *  We have a chain of direct calls
-		 *  
-		 */
-		
-		// we have to prepare the results in the particlefield!
-		// we need the list of lists: 
-		// for each particle he have a list of indexes ArrayList<Long> getIndexesOfAllDataObject()
-		particleIndexes = results.getParticleIndexes();
-		
-		clonedResults = (SurroundResults) sob.decode( sob.encode(results) );
-											
-											int n = clonedResults.getParticleIndexes().length   ;
-											str = clonedResults.getGuid() ;
-												
-											out.print(5, "particlefield delivered a selection (n="+n+") for GUID="+str);
-
-		
-		// this result will then be taken as a FiFo by a digesting process, that
-		// will call the method "digestParticleSelection(results);"
-		// yet, it is completely decoupled, such that the current thread can return and finish
-		
-		if (virtualLatticeNodes.selectionResultsQueueDigesterAlive()==false){
-											out.print(3, "restarting selection-results queue digester...");
-			virtualLatticeNodes.startSelectionResultsQueueDigester();
-			delay(50);
-		}
-		
-		ArrayList<SurroundResults> rQueue = virtualLatticeNodes.getSelectionResultsQueue(); 
-		rQueue.add( clonedResults );
-		
-		return; 
+	public PrintLog getOut() {
+		return out;
 	}
+
+	public void registerDataReceptor(DataFileReceptorIntf datareceptor ) {
+		somDataObjects.get(0).registerDataReceptor(datareceptor );
+				
+	}
+
+
+
+
+	/**
+	 * @return the particleField
+	 */
+	public RepulsionFieldIntf getParticleField() {
+		return particleField;
+	}
+
+
+
+
+	@Override
+	public void onLayoutCompleted(int flag) {
+		
+	}
+
+
+
+
+	@Override
+	public void onSelectionRequestCompleted(Object results) {
+		
+	}
+
+
+
 
 	@Override
 	public void onAreaSizeChanged(Object observable, int width, int height) {
+
 		
 	}
+
+
+
 
 	@Override
 	public void onActionAccepted(int action, int state, Object param) {
 		
 	}
 
+
+
+
 	@Override
 	public void statusMessage(String msg) {
+		// TODO Auto-generated method stub
 		
 	}
 
-	@Override
-	public void onLayoutCompleted(int flag) {
-		
-		out.print(3,"Layout of particle field has been completed.");
-	}
+
+
 
 	@Override
 	public void onCalculationsCompleted() {
-
-		if (sfFactory.physicalFieldStarted==0){
-			out.print(4,"Calculations in particle field have been completed.");
+		
+		if (sfFactory.getPhysicalFieldStarted()==0){
+			out.print(2,"Calculations (SomFluid as event mgr) in particle field have been completed.");
 			
 		}
-		sfFactory.physicalFieldStarted=1;
+		sfFactory.setPhysicalFieldStarted(1);
 		
 		sfFactory.getFieldFactory().setInitComplete(true);
+		
 	}
 
-	public PrintLog getOut() {
-		return out;
+
+
+
+	@Override
+	public boolean getInitComplete() {
+		 
+		return false;
 	}
+
+
+
+	public void setUserbreak(boolean flag) {
+		userBreak = flag;
+	}
+	public boolean getUserbreak() {
+		
+		return userBreak;
+	}
+
+ 
 	
 	// ------------------------------------------------------------------------
 	

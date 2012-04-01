@@ -2,6 +2,7 @@ package org.NooLab.somfluid.components;
 
 import java.util.ArrayList;
 
+import org.NooLab.somfluid.SomDataDescriptor;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.Variables;
 
@@ -22,6 +23,6 @@ public interface DataSourceIntf {
 	
 	public ArrayList<String> getVariablesLabels() ;
 	
-	
+	public SomDataDescriptor getSomDataDescriptor() ;
 	
 }

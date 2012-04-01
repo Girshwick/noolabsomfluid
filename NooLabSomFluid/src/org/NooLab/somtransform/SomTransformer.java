@@ -3,12 +3,12 @@ package org.NooLab.somtransform;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.SomFluidFactory;
-import org.NooLab.somfluid.components.IndexedDistances;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.data.Variables;
+
+import org.NooLab.somsprite.PotentialSpriteImprovement;
 
 
 
@@ -20,18 +20,18 @@ import org.NooLab.somfluid.data.Variables;
  */
 public class SomTransformer {
 
-	SomFluidFactory sfFactory;
+	//SomFluidFactory sfFactory;
 	SomDataObject somData;
 	
 	DataTable dataTableObj ;
 	DataTable dataTableNormalized ;
 	
-	
+	ArrayList<CandidateTransformation> candidateTransformations = new ArrayList<CandidateTransformation> ();
 	
 	// ========================================================================
-	public SomTransformer( SomFluidFactory factory, SomDataObject sdo) {
+	public SomTransformer( SomDataObject sdo) {
 
-		sfFactory = factory;
+		
 		somData = sdo;
 		
 		dataTableObj = somData.getDataTable() ;
@@ -156,11 +156,35 @@ public class SomTransformer {
 
 
 	// send candidates into SomTransformer, they will be put just to a queue, 
-	// but NOTHING will be changed regarding the transformations...  
-	public void perceiveCandidateTransformations(IndexedDistances candidates) {
-		 
+	// but NOTHING will be changed regarding the transformations...  until a refresh or request for implementation will be sent...
+	public void perceiveCandidateTransformations(ArrayList<PotentialSpriteImprovement> candidates) {
+		
+		String expr,exprName;
+		String[] varStr = new String[2] ;
+		int[] varix = new int[2] ;
+		PotentialSpriteImprovement item;
+		CandidateTransformation ctrans ;
+		
+		// we translate it into a more economic form, just the variables and the formula
+		for (int i=0;i<candidates.size();i++){
+			item = candidates.get(i) ;
+			       expr = item.getExpression();
+			       exprName = item.getExpressionName() ;
+			       varix[0] = item.varIndex1 ;
+			       varix[1] = item.varIndex2 ;
+			       varStr[0] = somData.getVariablesLabels().get(varix[0]);
+			       varStr[1] = somData.getVariablesLabels().get(varix[1]);
+			       
+			ctrans = new CandidateTransformation(exprName,expr,varix,varStr);
+
+			candidateTransformations.add(ctrans) ;
+		}
 		
 	}
 
+	public void implementTransformations(){
+		// putting candidateTransformations to the transformation model
+		
+	}
 	
 }

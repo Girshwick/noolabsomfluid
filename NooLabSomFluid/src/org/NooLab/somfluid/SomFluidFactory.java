@@ -2,11 +2,12 @@ package org.NooLab.somfluid;
 
  
 import java.util.ArrayList;
+import java.util.Random;
  
  
 import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
-import org.NooLab.somfluid.components.PhysicalFieldFactory;
+import org.NooLab.somfluid.components.*;
 import org.NooLab.somfluid.core.application.SomAppUsageIntf;
 import org.NooLab.somfluid.core.application.SomAppValidationIntf;
  
@@ -42,9 +43,11 @@ public class SomFluidFactory  implements 	//
 	
 	private RepulsionFieldIntf physicalField ;
 	private PhysicalFieldFactory fieldFactory;  
+	RepulsionFieldEventsIntf somEventSink =null ;
+	
 	int physicalFieldStarted = 0;
 	
-	SomFluidProperties sfProperties;
+	public SomFluidProperties sfProperties;
 	SomFluidTask somFluidTask = null;
 	int somType = -1;
 	
@@ -52,11 +55,11 @@ public class SomFluidFactory  implements 	//
 	int factoryMode;
 	SomFluid somFluidModule;
 	SomPersistence persistence;
-	LatticeProperties latticeProperties;
 	
+	//
 	
 	DataFileReceptorIntf dataReceptor;
-	SomTransformer transformer;
+	
 	
 	int instanceType   = -1;
 	int glueModuleMode = 0;
@@ -65,15 +68,18 @@ public class SomFluidFactory  implements 	//
 	GlueBindings glueBindings;
 	
 	PrintLog out = new PrintLog(2, true);
+	private Random random;
 	
 	// ------------------------------------------------------------------------
 	private SomFluidFactory(SomFluidProperties props, int factorymode){
-		
 		 
+		// factorymode -> providing different interfaces active = producing, or passive
 		
+		// ************* iwll be solved differently
 		// if (glueModuleMode == SomFluidFactory._GLUE_MODULE_ENV_CLIENT){ 
 		// setting up "wireless" = file-free connectivity by the Glue messaging system
-		//glueConnection = sfProperties.getGlueConnection( GlueConnection._GLUEX_DUAL );
+		// glueConnection = sfProperties.getGlueConnection( GlueConnection._GLUEX_DUAL ); 
+		// *************
 		
 		if (props.getMessagingActive()){
 			glueBindings = new GlueBindings( this, props);
@@ -93,18 +99,19 @@ public class SomFluidFactory  implements 	//
 		factory = this;
 		sfProperties.setFactoryParent( this );
 		
+		
+		// creating the Factory for the RepulsionField, ..it will not be created right now,
+		// only upon "completingInitialization()"
+		fieldFactory = new PhysicalFieldFactory() ;
+		
 		persistence = new SomPersistence(sfProperties) ;
 		
 		// we need to create the SomFluid object in a rudimentary form right now,
 		// because we need it as a event sink for the "PhysicalFieldFactory()"
 		somFluidModule = new SomFluid( this );
-		
-		// creating the Factory for the RepulsionField, ..it will not be created right now,
-		// only upon "completingInitialization()"
-		fieldFactory = new PhysicalFieldFactory() ;
-				
-		dataReceptor = new DataReceptor( sfProperties, somFluidModule.somDataObject );
-		transformer = new SomTransformer( this, somFluidModule.somDataObject );
+		 
+		random = new Random();
+		random.setSeed(192837465) ;
 		
 		out.setPrefix("[SomFluid-factory]");
 	}
@@ -136,24 +143,26 @@ public class SomFluidFactory  implements 	//
 	}
 	
 	
-	protected SomFluidIntf getSomFluid(  ){
+	public SomAppUsageIntf getSomApplication() {
 		
-		long serialID=0;
+		return somFluidModule.getSomUsageInstance();
+	}
+
+	public SomAppValidationIntf getSomValidator() {
+		return somFluidModule.getSomValidationInstance();
+	}
+
+	protected SomFluidIntf getSomFluid( ){
+		
+		
 		if (somFluidModule==null){
-			
-			serialID = SerialGuid.numericalValue();
-			
-			somFluidModule = new SomFluid( this, serialID);
+			 
+			somFluidModule = new SomFluid( this);
 			 
 		}
-		if (somFluidModule.getSerialID()<=0){
-			
-			serialID = SerialGuid.numericalValue();
-			  
-			somFluidModule.completingInitialization( serialID );
-		}
 		
 		
+		somFluidModule.start(); //just starts the loop that will accept the tasks
 		
 		return somFluidModule ;
 	}
@@ -161,26 +170,39 @@ public class SomFluidFactory  implements 	//
 	 
 	// ------------------------------------------------------------------------
 	
-	public RepulsionFieldIntf createPhysicalField( RepulsionFieldEventsIntf somEventSink, int initialNodeCount) {
+	public RepulsionFieldIntf createPhysicalField( RepulsionFieldEventsIntf eventSink, int initialNodeCount) { // 
+		RepulsionFieldIntf physicalField;
 		
 		out.print(2, "starting the physical particles field... ") ;  
 		
-		physicalField = fieldFactory.createPhysicalField( this, somEventSink, initialNodeCount );
+		if (eventSink!=null){
+			somEventSink = eventSink;
+		}
+		
+		physicalField = fieldFactory.createPhysicalField( this,somEventSink, initialNodeCount ); // somEventSink,
 		
 		while (physicalFieldStarted<=0){
 			out.delay(10);
 		}
 		return physicalField;
 	}
-
-	public RepulsionFieldIntf getPhysicalField() {
-		return physicalField;
-	}
-
  
+	public void establishPhysicalFieldMessaging( RepulsionFieldEventsIntf eventSink){
+		somEventSink = eventSink;
+		if (fieldFactory!=null){
+			fieldFactory.defineEventMessagingEndpoint(eventSink) ;
+		}
+	}
 	
 	public int getPhysicalFieldStarted() {
 		return physicalFieldStarted;
+	}
+
+	/**
+	 * @param physicalFieldStarted the physicalFieldStarted to set
+	 */
+	public void setPhysicalFieldStarted(int physicalFieldStarted) {
+		this.physicalFieldStarted = physicalFieldStarted;
 	}
 
 	public PhysicalFieldFactory getFieldFactory() {
@@ -195,9 +217,7 @@ public class SomFluidFactory  implements 	//
 		return dataReceptor;
 	}
 
-	public SomTransformer getTransformer() {
-		return transformer;
-	}
+	
 
 	/**
 	 * 
@@ -218,13 +238,20 @@ public class SomFluidFactory  implements 	//
 		
 	}
 
-	public void loadSource() {
-		
-		//  
-		dataReceptor.loadFromFile( sfProperties.getDataSrcFilename() );
-		
+
+
+	public SomDataDescriptor getSourceDescriptor() {
+		return getSourceDescriptor(0) ; 
 	}
 	
+	public SomDataDescriptor getSourceDescriptor(int index) {
+		SomDataObject _somDataObject;
+		_somDataObject	= somFluidModule.getSomDataObject(index) ;
+		SomDataDescriptor sdd = _somDataObject.getSomDataDescriptor();
+		return sdd;
+	}
+
+		
 	public void addModelingTargetByVariable(String tvLabel) {
 		
 		ArrayList<String> tvc = sfProperties.getModelingSettings().getTargetVariableCandidates();
@@ -292,7 +319,7 @@ public class SomFluidFactory  implements 	//
 		
 		if (somFluidTask.getStartMode() == 1){
 			
-			somFluidModule.start();   // nothing happens without providing a task
+			// somFluidModule.start();   // nothing happens without providing a task
 			somFluidModule.addTask(  somFluidTask );
 			
 		}else{
@@ -367,17 +394,24 @@ public class SomFluidFactory  implements 	//
 		this.glueModuleMode = gluemode;
 	}
 
-	public LatticeProperties getLatticeProperties() {
-		return latticeProperties;
+
+
+	public void openSource() {
+		// just prepares access, includes connection to dir, db
+		// TODO Auto-generated method stub
+		
 	}
 
-	public SomAppUsageIntf getSomApplication() {
-		
-		return somFluidModule.getSomUsageInstance();
+	/**
+	 * @return the out
+	 */
+	public PrintLog getOut() {
+		return out;
 	}
-	
-	public SomAppValidationIntf getSomValidator() {
-		return somFluidModule.getSomValidationInstance();
+
+	public Random getRandom() {
+
+		return random;
 	}
 
 

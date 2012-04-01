@@ -3,7 +3,9 @@ package org.NooLab.somfluid.core.engines.det;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.SomFluidTask;
 import org.NooLab.somfluid.components.SomVariableHandling;
+import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
@@ -20,6 +22,9 @@ import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.communication.LatticeFutureVisor;
 import org.NooLab.somfluid.env.communication.NodeTask;
 import org.NooLab.somfluid.properties.ModelingSettings;
+import org.NooLab.somscreen.EvoBasics;
+import org.NooLab.somscreen.EvoMetrices;
+import org.NooLab.somscreen.SomQuality;
 import org.NooLab.somscreen.SomScreening;
 import org.NooLab.somsprite.SomSprite;
 import org.NooLab.somtransform.algo.AdaptiveDiscretization;
@@ -28,25 +33,28 @@ import org.NooLab.utilities.logging.PrintLog;
 
  
 /**
- * 
  * this impementation claims to contain ensemble based feature selection
  * http://java-ml.sourceforge.net/api/0.1.6/
  * 
- * @author kwa
- *
+ * TODO   minimal node size is not corrected for , there are nodes with 2 items in it ...
+ * 
+ * TODO   correlational shift, PCA, decomposing "info collecting path", as in screening
+ * 
  */
 public class DSomCore {
 
 	DSom dSom;
 	
+	SomProcessIntf somProcess;
 	
 	ModelingSettings modset;
 	DataSampler dataSampler = new DataSampler();
 	
+	int tvColumnIndex=-1, indexColumnIndex=-1 ;
 	
-	int targetVarColumn= -1;
 	int[] usagevector ;
 	int[] blacklistPositions ;
+	
 	ArrayList<Double> useIntensityVector;
 	
 	// contains methods for determining the usage vector, inclusive selections for 
@@ -66,6 +74,7 @@ public class DSomCore {
 	ModelingSettings modelingSettings ;  
 	ClassificationSettings  classifySettings ;
 	
+	SomTargetResults somResults;
 	
 	// ------------------------------------------
 	ArrUtilities arrutil = new ArrUtilities();
@@ -75,6 +84,9 @@ public class DSomCore {
 	public DSomCore(DSom dsom) {
 		 
 		dSom = dsom;
+		
+		somProcess = dSom.getSomProcessParent() ;
+		
 		// ... dSom.somData;
 		out = dSom.out;
 		
@@ -91,13 +103,22 @@ public class DSomCore {
 		
 	}
 	// ========================================================================
-
-
+	public void close(){
+		
+		arrutil=null;
+		if (sampleRecordIDs!=null)sampleRecordIDs.clear();
+		sampleRecordIDs=null;
+	}
+	
 	public void perform() {
 		 
-		new DsomStarter(); // ?? switched off only for DEBUG !!! abc124
+		dSom.inProcessWait = true;
 		
-		// performDSom();
+		if (dSom.inProcessWait==false){
+			new DsomStarter(); // ?? switched off only for DEBUG !!! abc124
+		}else{
+			performDSom();
+		}
 	}
 
 
@@ -120,17 +141,16 @@ public class DSomCore {
 			performDSom();
 		}
 		
+		//informing the observer
+		
 	} // inner class DsomStarter
 
 	protected void prepareSomProcess(){
 	
-		int tvColumnIndex=-1, indexColumnIndex=-1 ;
+		
 		
 		DataTable dtable ;
-		DataTableCol col;
-		
 		Variables variables ;
-		Variable var;
 		
 		MetaNodeIntf node;
 		
@@ -140,20 +160,139 @@ public class DSomCore {
 		// determine the usagevector, excluding index columns tv column
 	
 		modset = dSom.modelingSettings ;
-		
-		dtable = dSom.somData.getDataTable();
 	
-		assignates = new Assignates( dSom ); 
+		assignates = new Assignates( dSom );
+		
+		// TODO: set the scale accordingly ! (esp string variables  
+		dtable = dSom.somData.getDataTable();
+		
+		dSom.somData.introduceBlackList();
 		
 		variables = dSom.somData.getVariables();
-		
-		usagevector = new int[variables.size()] ;
-		blacklistPositions = new int[variables.size()] ;
-		
+		 
+		if (tvColumnIndex>=0){
+			variables.setTvColumnIndex(tvColumnIndex) ; 
+		}else{
+			int ix = variables.getTvColumnIndex() ;
+			if (ix<0){
+				
+			}else{
+				tvColumnIndex=ix;
+			}
+		}
+		if (indexColumnIndex>=0){
+			variables.setIdColumnIndex( indexColumnIndex );
+		}else{
+			int ix = variables.getIdColumnIndex(); 
+			if (ix<0){
+				ix = dSom.somData.getDataTable().getColumnIndexOfType(0);
+				if (ix>=0){
+					indexColumnIndex = ix;
+					variables.setIdColumnIndex( indexColumnIndex );
+				}
+			}
+		}
 		
 		// note that the TV will be included into the usagevector, 
 		// but it will be excluded from similarity considerations !
+		// usagevector = prepareUsageVector( dtable, variables ); // ?????????? only the first time ?
+		// is of int[]
+		// THIS IS WRONG !!! in screening, it always would return to the original setting
+		// usagevector = variables.getUseIndicatorArray() ;
 		
+		usagevector = dSom.somLattice.getSimilarityConcepts().getUseIndicatorArray() ;
+		 
+		
+		int tix = variables.getTvColumnIndex() ;
+		if (tix>=0){
+			usagevector[tix]=-2;
+		}
+		// TODO XXX ALSO WRONG because it is GLOBAL
+		blacklistPositions = getBlackListPositions(variables);
+		// TODO: whitelist ?
+		// ................................................
+		 
+		absoluteRecordCount = dSom.somData.getRecordCount() ;
+		
+		if (modset.getValidationActive()){
+			// get a validation sample, and the remaining datasample
+											out.print(2, "preparing samples ...");
+			 
+			// establish sampling for validation
+			
+			double samplePortion = modelingSettings.getValidationSettings().getPortion();
+			
+			// creating the samples for training and validation, will be stored in dataSampler
+			dataSampler.createBasicModelingSamples( absoluteRecordCount, samplePortion );
+			
+		}else{
+			dataSampler.createRecordIndexMasterList(absoluteRecordCount);
+		}
+		// also: wwe may split of an out of modeling sample
+		// also: bagging samples from remaining training set
+		
+		// ................................................
+		// should be saved here
+		// dSom.somLattice.distributeIntensionalitySurface().prepareWeightVector()
+		
+		somSteps = modset.getMaxSomEpochCount();
+		
+		dSom.somLattice.setSomData( somProcess.getSomDataObject() ) ;
+		
+		
+		// set blacklist, usevector to similarity object of lattice, and sim object of all nodes
+		SimilarityIntf simIntf = null ;
+		
+		for (int i=0;i<dSom.somLattice.size();i++){
+			
+			node = dSom.somLattice.getNode(i);
+
+			simIntf = node.getSimilarity();
+			
+			// simIntf.setUsageIndicationVector(usagevector);
+			simIntf.setBlacklistIndicationVector(blacklistPositions);
+			
+			simIntf.setIndexTargetVariable(tvColumnIndex) ;
+			simIntf.setIndexIdColumn(indexColumnIndex) ;
+			
+			ArrayList<Double>  uv = simIntf.getUsageIndicationVector();
+			node.cleanInitializationByUsageVector( uv );
+		} // i-> all nodes
+		
+		                                                   // simIntf = null ????
+											out.print(4,"similarity obj = "+simIntf.toString());
+
+		// TODO: createClassesDictionary() from target variable column, simulation file, or tg definition
+		
+	}
+
+	private int[] getBlackListPositions(Variables variables) {
+		int[] blacklistPositions = new int[variables.size()] ;
+		ArrayList<String> blacks;
+		int ix;
+		String blackvarLabel;
+		blacks = variables.getBlacklistLabels() ;
+		
+		for (int i=0;i<blacks.size();i++){
+			blackvarLabel = blacks.get(i) ;
+			ix = variables.getIndexByLabel(blackvarLabel) ;
+			blacklistPositions[ix] = 1;
+		}
+				
+		return blacklistPositions;
+	}
+	
+	
+	public int[] prepareUsageVector(DataTable dtable, Variables variables) {
+		DataTableCol col;
+		Variable var;
+		 
+		int[] blacklistPositions = getBlackListPositions(  variables) ;
+		int[] usagevector = new int[variables.size()] ;
+		
+		// get that from Variables !
+		
+
 		for (int i=0;i<usagevector.length;i++){
 			
 			var = variables.getItem(i);
@@ -168,6 +307,7 @@ public class DSomCore {
 				usagevector[i] = 0; 
 				if (indexColumnIndex<0){ indexColumnIndex=i;}
 				var.setIndexcandidate(true) ;
+				
 				continue;
 			}
 			 
@@ -199,70 +339,77 @@ public class DSomCore {
 				}
 			}
 			
+			
 			usagevector[i] = 1;
 		}
 
-		// ................................................
-		// int _n = sampleRecordIDs.size();
-		absoluteRecordCount = dSom.somData.getRecordCount() ;
 		
-		if (modset.getValidationActive()){
-			// get a validation sample, and the remaining datasample
-											out.print(2, "preparing samples ...");
-			 
-			// establish sampling for validation
-			
-			double samplePortion = modelingSettings.getValidationSettings().getPortion();
-			
-			// creating the samples for training and validation, will be stored in dataSampler
-			dataSampler.createBasicModelingSamples( absoluteRecordCount, samplePortion );
-			
-		}else{
-			dataSampler.createRecordIndexMasterList(absoluteRecordCount);
-		}
-		// also: wwe may split of an out of modeling sample
-		// also: bagging samples from remaining training set
-		
-		// ................................................
-		// should be saved here
-		// dSom.somLattice.distributeIntensionalitySurface().prepareWeightVector()
-		
-		somSteps = modset.getMaxSomEpochCount();
-		
-		
-		// set blacklist, usevector to similarity object of lattice, and sim object of all nodes
-		SimilarityIntf simIntf = null ;
-		
-		for (int i=0;i<dSom.somLattice.size();i++){
-			
-			node = dSom.somLattice.getNode(i);
-
-			
-			
-			simIntf = node.getSimilarity();
-			
-			simIntf.setUsageIndicationVector(usagevector);
-			simIntf.setBlacklistIndicationVector(blacklistPositions);
-			
-			simIntf.setIndexTargetVariable(tvColumnIndex) ;
-			simIntf.setIndexIdColumn(indexColumnIndex) ;
-			
-			
-			node.cleanInitializationByUsageVector( simIntf.getUsageIndicationVector() );
-		} // i-> all nodes
-		
-		
-											out.print(4,"similarity obj = "+simIntf.toString());
-
-		// TODO: createClassesDictionary() from target variable column, simulation file, or tg definition
-		
+		return usagevector;
 	}
-
 	// ========================================================================
 	
 	
-	
-	private void performDSom(){
+	private int performDSom(){
+
+		boolean done=false;
+		int resultCode= -1;
+		
+		SomVariableHandling variableHandling;
+		SomQuality sq ;
+		
+		
+		variableHandling = new SomVariableHandling( dSom.somData, modelingSettings  );
+		variableHandling.determineSampleSizes( dSom.somLattice.size() ) ;
+
+		 
+		
+		// before starting with our L2-process, we need the info about ClassificationSettings.getTargetGroupDefinition()
+		// which we have to set empirically if we are in multi-mode
+		int tm = modset.getClassifySettings().getTargetMode();
+		
+		if (tm == ClassificationSettings._TARGETMODE_MULTI){ // TODO: needed an option which blocks the recalc of TGs! 
+			// check if targetgoupdefs are false, or auto = true, if not: do nothing here, even if we have to stop 
+			
+			
+			variableHandling.getEmpiricTargetGroups(  true ); 
+			// there are different flavors of that, actually, it also can perform "adaptive binning" into a number of groups,
+			// perhaps based on mono-variate clustering (in turn based on the spatial distribution of distances)
+			
+			
+			double[][] tGdefinition = variableHandling.getTargetGroups();
+			this.classifySettings.setTGdefinition(tGdefinition);
+		}
+		
+		
+		if (modset.getSomType() == SomFluidProperties._SOMTYPE_MONO ){
+			// if we are "modeling" i.e. working guided by a target variable, we have to distribute the use vector
+			 ArrayList<Double> usevector = null ;
+			 MetaNode  node;
+			 int  tix ;
+			 
+		}
+
+		
+		resultCode = executeSOM() ; // >0 == ok 
+		 
+		
+		//dSom.resultsRequested=false;
+		if (dSom.resultsRequested){
+			// this will put the results into the "som": the lattice will kow about the mode, 
+			// the TV and the TG, and the nodes will know
+			// about their ppv regarding those definitions
+			somResults = new SomTargetResults( dSom, dataSampler, modelingSettings );
+		
+			// performs a validation if the validation sample is present, and collects the results for both samples
+			// results are then written to ???? 
+			somResults.prepare(); 
+		}
+		
+		dSom.onCoreProcessCompleted(resultCode);
+		return resultCode;
+	}
+	/*
+	private void _obs_performDSom_long(){
 		
 		int loopcount=0;
 		boolean done=false;
@@ -271,13 +418,18 @@ public class DSomCore {
 		
 		SomTargetResults somResults;
 		
+		
+
+		SomMapTable somMapTable ;
+
 		SomSprite somSprite ;
 		SomScreening somScreening;
+		SomQuality sq ;
 		
-		SomMapTable somMapTable ;
+		EvoBasics  evoBasics;
 		
-		variableHandling = new SomVariableHandling( dSom );
-		variableHandling.determineSampleSizes() ;
+		variableHandling = new SomVariableHandling( dSom.somData, modelingSettings );
+		variableHandling.determineSampleSizes(dSom.somLattice.size() ) ;
 		
 		
 		// before starting with our L2-process, we need the info about ClassificationSettings.getTargetGroupDefinition()
@@ -305,14 +457,16 @@ public class DSomCore {
 			 int  tix ;
 			 
 			 for (int i=0; i<dSom.getSomLattice().size();i++){
+				 
 				 node = dSom.getSomLattice().getNode(i);
-				 usevector = new ArrayList<Double>(node.getSimilarity().getUsageIndicationVector()) ;
+				 // usevector = new ArrayList<Double>(node.getSimilarity().getUsageIndicationVector()) ;
 				 tix =  node.getSimilarity().getIndexTargetVariable() ;
-				 usevector.set(tix, 0.0) ;
+				 // usevector.set(tix, 0.0) ;
+				 
 				 node.getIntensionality().setUsageIndicationVector(usevector) ;
 				 node.getIntensionality().setTargetVariableIndex(tix) ;
 				 // the list of used variables is an important aspect of an intension and should be made available there
-				 // fromhere it is used by SomApplication (app, validation), 
+				 // from here it is used by SomApplication (app, validation), 
 				 // note that the usevector in intension excludes the TV !!! 
 				 // it is also part of "node.similarity", which uses it for learning
 			 }
@@ -326,7 +480,7 @@ public class DSomCore {
 			// which we could add here in this loop below. (loop level L3/L4)
 			// about loop levels see:
 			// http://theputnamprogram.wordpress.com/2011/12/21/technical-aspects-of-modeling/
-				
+			
 			done = executeSOM()>=0 ;
 			// will be put into a class
 			//  new ExecuteSom( params ).go().prepareResults() ;
@@ -334,11 +488,13 @@ public class DSomCore {
 			
 			// ......................................
 			
-			// this will put the results into the "som": the lattice will kow about the mode, the TV and the TG, and the nodes will know
+			// this will put the results into the "som": the lattice will kow about the mode, 
+			// the TV and the TG, and the nodes will know
 			// about their ppv regarding those definitions
-			somResults = new SomTargetResults( this, dataSampler, modelingSettings );
+			somResults = new SomTargetResults( dSom, dataSampler, modelingSettings );
 			
 			// performs a validation if the validation sample is present, and collects the results for both samples
+			// results are then written to ???? 
 			somResults.prepare(); 
 
 			// consoleDisplay(); // of profile values for nodes
@@ -346,31 +502,32 @@ public class DSomCore {
 			
 			// ......................................
 			
-			if (modset.getMaxL2LoopCount()>0){
-				// the Level 2 loop
+			if ((modset.getMaxL2LoopCount()>0) && (dSom.getCallerStatus()<=0)){
+				// the Level 2 loop                       will be 1+ for optimizer for which we need just plain results
 				/*
 				 * note that the SomFluid instance always contains the full spectrum of tools, yet,
 				 * it behaves as such or such (Som, Sprite, Optimizer, transformer), according to the request.
 				 * 
 				 * L2 loops make sense only WITH sprite and screening...
-				 */
+				  
 				
 				if ((modset.getSpriteAssignateDerivation() )&& (dSom.getUserbreak()==false)){
-
+					/*
 					// create instance
-					somSprite = new SomSprite( dSom , modelingSettings );
+					dSom.getSomProcessParent().
+					
+					somSprite = new SomSprite(  , modelingSettings );
 				 
 					// export maptable, or data, dependent on record number, to the sprite
-					// somMapTable = exportSomMapTable();
 					somSprite.acquireMapTable( exportSomMapTable() );
-					
-					somSprite.startSpriteProcess(1); 
-					// 1 = will wait for completion , but may react to messages and requests
+
+					                            // 1 = will wait for completion, but may react to messages and requests
+					somSprite.startSpriteProcess(1); // DEBUG ONLY switched off
 					
 					// now integrate new variables, introduce it both on raw level as well as on transformed lavel
 					// try to reduce it to the raw level
 					
-					
+					 
 				} // SpriteAssignateDerivation() ?
 				
 				if ((modset.getEvolutionaryAssignateSelection() ) && (dSom.getUserbreak()==false)){
@@ -383,7 +540,7 @@ public class DSomCore {
 					 *  basically, it is a meta process that performes executeSOM()
 					 *  -> put this execsom into a class 
 					 *  (new ExecuteSom( params )).go().prepareResults() ;
-					*/
+					 
 					
 					// let SomTransformer implement the waiting candidate transformations
 					
@@ -391,15 +548,35 @@ public class DSomCore {
 					
 					
 					// 
-					somScreening = new SomScreening( dSom , modelingSettings );
+					
+					 
+					somScreening = new SomScreening( null  );// dSom
+					
+					somScreening.acquireMapTable( exportSomMapTable() );
+					
 					somScreening.setModelResultSelection( new int[]{SomScreening._SEL_TOP, SomScreening._SEL_DIVERSE} ) ;
 					somScreening.setModelResultSelectionSize(20) ;
-					somScreening.startScreening();
-					// somScreening will reference settings and results for the collection of models 
+					
+					// provide the results of the model, will also calculate the quality score
+					
+					somScreening.setInitialModelQuality( dSom  );
+					
+					somScreening.startScreening(1);
+					// somScreening will reference settings and results for the collection of models
+
+					// will contain weights and counts (also avail through each variable, but this is more efficient)
+					
+					
+											out.print(2, "SomScreening has been finished, re-establishing the best of the evaluated models...");
+					restoreModelFromHistory( somScreening,  -1 ) ; 
+											out.print(2, "best model has been restored.");
 				}	
 				
 				if (modelingSettings.getSomCrystalization() ){
+					// create an idealization into a secondary instance of dSom
 					
+					// creates a deep clone, down to nodes, but without cloning settings, of course !
+					DSom dSom2 =  new DSom(dSom) ;  
 				}
 			} // any L2 loop ?
 			
@@ -415,19 +592,8 @@ public class DSomCore {
 			
 		} // done ?
 	}
+	*/
 	
-	
-	class ExecuteSom{
-		
-		public ExecuteSom(){
-			
-		}
-		
-		
-		public void go(){
-			
-		}
-	}
 	/**
 	 *  executing the SOM;
 	 *  1. basically, this just organized the learning epochs, where "organizing" meanse
@@ -443,7 +609,7 @@ public class DSomCore {
 	private int executeSOM(){
 		
 		int result = -1;
-		DSomDataPerception somDataPerception;
+		DSomDataPerception somDataPerception = null;
 		double learningRate;
 		
 		int  limitforConsideredRecords = 0, actualRecordCount  ;
@@ -453,9 +619,16 @@ public class DSomCore {
 		
 		try{
 			modset = dSom.modelingSettings ;	
+
 			
+ArrayList<Double>  uv1 = dSom.somLattice.getNode(0).getIntensionality().getUsageIndicationVector();
+ArrayList<Double>  uv2 = dSom.somLattice.getNode(0).getSimilarity().getUsageIndicationVector();
 			
-			// absolute_record_count has been set in "setData(SomDataObject)" below...
+String str1 = ArrUtilities.arr2Text(uv1, 1);
+String str2 = ArrUtilities.arr2Text(uv2, 1);
+//UsageIndicationVector() is different from Similarity and Intensionality !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
 			absoluteRecordCount = this.dataSampler.getSizeTrainingSet();
 			actualRecordCount =  absoluteRecordCount; // we ALWAYS have a training sample available! ;
 			
@@ -482,12 +655,15 @@ public class DSomCore {
 					globalLimit = maxRC ; 
 					dataSampler.setGlobalLimit(globalLimit);
 				}
- 			}
+			}
 											out.print(1, "Som learning is starting on "+dataSampler.getTrainingSet().size()+" records from training sample.");
 			
 			while ((currentEpoch < somSteps) && (dSom.getUserbreak()==false)) {
-											out.print(1, "Som learning epoch... "+(currentEpoch+1));
-											
+											out.print( Math.max(2,5-currentEpoch), "Som learning epoch... "+(currentEpoch+1));
+if (currentEpoch>=3){
+	int nn;
+	nn=0;
+}
 				// before (re-)starting, we have to reset the node statistics, and the list of entries, except the weights of the vector
 				clearNodesExtension( currentEpoch );
 				
@@ -511,25 +687,77 @@ public class DSomCore {
 				// consoleDisplay();
 			} // currentEpoch -> maxSomEpochCount 
 				
-											out.print(1, "Som learning has been completed.");
+											
 			
 			result=0 ;
+			sampleRecordIDs.clear();
+			sampleRecordIDs=null;
 			
 		}catch(Exception e){
 			e.printStackTrace();
 			result = -7 ;
 		}
 		if (result==0){
-			out.print(1, "Basic Som learning has been finished.");
+			out.print(1, "Basic Som learning has been finished ("+result+").");
+		}
+		if (somDataPerception!=null){
+			somDataPerception.clear() ;
 		}
 		return result;
 	}
 
- 
 
-	// ========================================================================
+	private void restoreModelFromHistory( SomScreening somScreening, int bestHistoryIndex) {
+		
+		int _bestHistoryIndex, n ;
+		String str;
+		ArrayList<Integer> indexes ;
+		ArrayList<Double> histUsagevector, uv ;
+
+		EvoBasics evoBasics;
+		EvoMetrices evoMetrices;
+		SomTargetedModeling targetMod;
+		SomTargetResults somResults;
+		
+		_bestHistoryIndex = bestHistoryIndex;
+		evoMetrices = somScreening.getEvoMetrices();
+		
+		evoBasics = somScreening.getEvoBasics() ;
+		
+		if (_bestHistoryIndex<0)_bestHistoryIndex= evoBasics.getBestModelHistoryIndex() ;
+		
+		histUsagevector = evoMetrices.getBestResult().getUsageVector() ; 
+
+		indexes = evoMetrices.determineActiveIndexes(histUsagevector);
+		str = arrutil.arr2text(indexes) ;
+										out.print(2,"restoring best model (history index :"+_bestHistoryIndex+"), variable indices : "+str);
+		
+ 
+		uv = dSom.somLattice.getSimilarityConcepts().getUsageIndicationVector();
+		n = dSom.somLattice.getSimilarityConcepts().getUsageIndicationVector().size();
+		
+		dSom.somLattice.reInitNodeData() ;
+		
+		dSom.somLattice.getSimilarityConcepts().setUsageIndicationVector(histUsagevector) ;
+		executeSOM() ; // 
+		
+		somResults = new SomTargetResults( dSom, dataSampler, modelingSettings );
+		somResults.prepare();
+		
+	}
+
 	
-	 
+	class ExecuteSom{
+		
+		public ExecuteSom(){
+			
+		}
+		
+		
+		public void go(){
+			
+		}
+	}
 	// ------------------------------------------------------------------------
 	/**
 	 * 
@@ -697,7 +925,8 @@ public class DSomCore {
 	 * 
 	 * 
 	 */
-	private SomMapTable exportSomMapTable() {
+	public SomMapTable exportSomMapTable() {
+		
 		SomMapTable smt = new SomMapTable();
 		/*
 		 	double[][] values = new double[0][0] ; 
@@ -724,10 +953,12 @@ public class DSomCore {
 		ArrayList<String>  compoundVarStr = new ArrayList<String>();
 		ArrayList<Double>  activeProfileValues = new ArrayList<Double>() ;
 		double activeProfileValue;
-		ArrayList<Double> useIndicators ;
+		ArrayList<Double> useIndicators , latticeuseIndicators;
 		
 		variables = this.dSom.somData.getVariables() ;
 		// not implemented: varList = variables.getActiveVariables();
+		
+		latticeuseIndicators = dSom.somLattice.getSimilarityConcepts().getUsageIndicationVector() ;
 		
 		/*
 		 * we need two loops, since compared/extracted nodes may be of different structure 
@@ -737,30 +968,37 @@ public class DSomCore {
 			
 			node = nodes.get(i) ;
 			useIndicators = node.getSimilarity().getUsageIndicationVector();
+			// ATTENTION this does NOT contain the target variable
 			// also: blacklist..., 
 			
-			profileVector = node.getIntensionality().getProfileVector();
+			profileVector = node.getIntensionality().getProfileVector(); // in "exportSomMapTable()"
+			 
 			
 			nodeVarStr = node.getIntensionality().getProfileVector().getVariablesStr() ;
 			
 			// we do this for each node, though in most cases this is redundant, 
-			// et, nodes are NOT necessarily showing the same assignates/features !!
+			// -> , nodes are NOT necessarily showing the same assignates/features !!
 			for (int v=0;v<nodeVarStr.size();v++){
 				
 				// exclude variables that have -1 as profile values (mv portion too large)
 				varLabel = nodeVarStr.get(v) ;
 				
-				vix = variables.getIndexByLabel( varLabel ); if (vix<0){continue;}
+				vix = variables.getIndexByLabel( varLabel ); 
+				if (vix<0){continue;}
+				
 				variable = variables.getItem(vix) ;
 				
+				 
 				hb = true;
 				
 				// hb =  variable.isTV(); // variable.isUsed() ||
-				if ((hb) || (variable.isTV() )){
-					hb = (variable.isIndexcandidate()==false) && (variable.isID()==false) && (variable.isTVcandidate()==false) ;	
+				{
+					if ((hb) || (variable.isTV() )){
+						hb = (variable.isIndexcandidate()==false) && (variable.isID()==false) && (variable.isTVcandidate()==false) ;	
+					}
 				}
 				
-				if ((hb) && (useIndicators.get(v)>0.0)){
+				if ((hb) && ((useIndicators.get(v)>0.0) || (useIndicators.get(v)==-2.0))){
 					varLabel = variable.getLabel() ;
 					if (compoundVarStr.indexOf( varLabel )<0 ){
 						compoundVarStr.add( variable.getLabel() ) ;
@@ -780,8 +1018,21 @@ public class DSomCore {
 		if (compoundVarStr.size()==0){
 			return smt;
 		}
+		
+		String tvLabel = dSom.getSomData().getVariables().getTargetVariable().getLabel() ;
+		if (compoundVarStr.indexOf(tvLabel)<0){
+			compoundVarStr.add(tvLabel) ;
+			tvindex = compoundVarStr.size()-1 ;
+		}
+		if (tvindex<0){
+			tvindex = compoundVarStr.indexOf(tvLabel);
+		}
+			
 		smt.values = new double[refNodeCount][compoundVarStr.size()] ; 
 		smt.variables = new String[ compoundVarStr.size()] ; 
+		// that would be wrong!
+		// smt.tvIndex = dSom.getSomData().getVariables().getTvColumnIndex() ;
+		smt.tvIndex = tvindex ; 
 		int rnc=0;
 		
 		for (int i=0;i<nodes.size();i++){
@@ -796,7 +1047,8 @@ public class DSomCore {
 				continue;
 			}
 			
-			profileVector = node.getIntensionality().getProfileVector();
+			profileVector = node.getIntensionality().getProfileVector(); // in "exportSomMapTable()"
+			 
 			
 			// we export used vars + TV
 			pValues = profileVector.getValues() ;
@@ -807,7 +1059,7 @@ public class DSomCore {
 				
 				variable = variables.getItem(v) ;
 				
-				hb = useIndicators.get(v)>0.0 ;
+				hb = (useIndicators.get(v)>0.0) || (variable.isTV());
 				if (hb){
 					hb = (variable.isIndexcandidate()==false) && (variable.isID()==false) ;	
 				}
@@ -817,8 +1069,8 @@ public class DSomCore {
 					
 					activeVarStr.add( varLabel ) ;
 					
-					activeProfileValue = pValues.get(v) ;
-					activeProfileValues.add(activeProfileValue) ;
+					// activeProfileValue = pValues.get(v) ;
+					// activeProfileValues.add(activeProfileValue) ;
 					
 					vix = compoundVarStr.indexOf(varLabel) ;
 					if (vix>=0){
@@ -878,6 +1130,38 @@ public class DSomCore {
 
 	public DSom getParent() {
 		return dSom;
+	}
+
+
+	/**
+	 * @return the tvColumnIndex
+	 */
+	public int getTvColumnIndex() {
+		return tvColumnIndex;
+	}
+
+
+	/**
+	 * @param tvColumnIndex the tvColumnIndex to set
+	 */
+	public void setTvColumnIndex(int tvColumnIndex) {
+		this.tvColumnIndex = tvColumnIndex;
+	}
+
+
+	/**
+	 * @return the indexColumnIndex
+	 */
+	public int getIndexColumnIndex() {
+		return indexColumnIndex;
+	}
+
+
+	/**
+	 * @param indexColumnIndex the indexColumnIndex to set
+	 */
+	public void setIndexColumnIndex(int indexColumnIndex) {
+		this.indexColumnIndex = indexColumnIndex;
 	}
 	
 	

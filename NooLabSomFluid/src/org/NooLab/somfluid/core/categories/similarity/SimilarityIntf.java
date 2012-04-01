@@ -98,6 +98,10 @@ public interface SimilarityIntf {
 	public void setBlacklistIndicationVector( ArrayList<Double> blacklistIndicationVector) ;
 	 
 	public ArrayList<Double> getBlacklistIndicationVector() ;
+
+	public void clear();
+
+	public int[] getUseIndicatorArray();
 	
 	
 	

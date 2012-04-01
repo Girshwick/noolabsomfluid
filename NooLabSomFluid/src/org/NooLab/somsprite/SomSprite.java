@@ -1,11 +1,13 @@
 package org.NooLab.somsprite;
 
-import org.NooLab.somfluid.components.IndexedDistances;
+import java.util.ArrayList;
+
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.engines.det.SomMapTable;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.SpriteSettings;
+
 import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
@@ -38,7 +40,9 @@ import org.NooLab.utilities.strings.StringsUtil;
  */
 public class SomSprite {
 
-	DSom dSom ;
+	// DSom dSom ;
+	SomTransformer transformer;
+	
 	SomDataObject somData;
 	
 	SomMapTable somMapTable ;
@@ -53,15 +57,15 @@ public class SomSprite {
 	SpriteSettings spriteSettings ;
 	
 	Evaluator evaluator ;
-	IndexedDistances candidates ;
+	ArrayList<PotentialSpriteImprovement> candidates = new ArrayList<PotentialSpriteImprovement>();
 	
 	ArrUtilities arrutil = new ArrUtilities();
 	PrintLog out;
 	
 	// ========================================================================
-	public SomSprite( DSom dsom, ModelingSettings modset) {
+	public SomSprite( SomTransformer transformer, ModelingSettings modset) {
 		
-		dSom = dsom;
+		this.transformer = transformer;
 		
 		modelingSettings = modset;
 		spriteSettings = modelingSettings.getSpriteSettings() ;
@@ -71,7 +75,7 @@ public class SomSprite {
 		
 		spriteMain = this;
 		
-		out = dSom.getOut() ;
+		 
 	}
 	// ========================================================================
 	
@@ -175,38 +179,50 @@ public class SomSprite {
    
 	
 	public void acquireMapTable( SomMapTable smt) {
-		String[] variables;
 		
 		somMapTable = new SomMapTable(smt) ;
 	}
 
 
 
-	public void startSpriteProcess(int wait) {
+	public int startSpriteProcess(int wait) {
 		// will wait for completion
 		// start only if the tabe is ok
 		
+		if (spriteProcessIsRunning){
+			return -3;
+		}
+		
 		startSpriteProcess( null );
 		
-		if (wait>0){
+		while (spriteProcessIsRunning==false){
+			out.delay(5) ;	
+		}
+		
+		
+		if ((wait>0) && (spriteProcessIsRunning)){
+			out.print(2, "sprite process has been started...");
+			
 			while (spriteProcessIsRunning){
 				out.delay(50) ;
 			}
 		}
 		out.print(2, "sprite process has been completed.");
-		
+		return 0;
 	}
 
 
 
-	public void startSpriteProcess( ProcessCompletionMsgIntf msgOnCompletion) {
+	public void startSpriteProcess( ProcessCompletionMsgIntf msgOnCompletion ) {
 		// will immediately return after starting the process
 		
 		if (msgOnCompletion!=null){
 			this.msgOnCompletion = msgOnCompletion;
 		}
+		
 		sprity = new SomSpriteProcess(); 
 		sprity.startSprite() ;
+		out.delay(10) ;
 	}
 
 
@@ -238,9 +254,9 @@ public class SomSprite {
 			
 			// send candidates into SomTransformer, they will be put just to a queue, 
 			// but NOTHING will be changed regarding the transformations...  
-			SomTransformer st = dSom.getSfFactory().getTransformer();
-			if (st!=null){
-				st.perceiveCandidateTransformations(candidates) ;
+			  
+			if (transformer!=null){
+				transformer.perceiveCandidateTransformations(candidates) ;
 			}
 		}
 		

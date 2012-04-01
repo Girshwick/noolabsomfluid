@@ -8,6 +8,7 @@ public class SimilarityCalculator{
 	ArrayList<Double> useIntensity ;
 	
 	int indexIdColumn=-1, indexTargetVariable=-1;
+	public boolean suppressSQRT;
 			
 	public SimilarityCalculator( ArrayList<Double> _vector1, ArrayList<Double> _vector2 ){
 		
@@ -71,29 +72,43 @@ public class SimilarityCalculator{
 		}
 		double c, d, d0, df, ic1 = 0, ic2 = 0, iq;
 		int i,u=0, z, distanceMeth, fvp=-1;
-
+		double ui ;
+		
+		
 		distanceMeth = 2;
 		d = 0;
 		z = 0;
 		d0 = 0;
-
+		ui=-1.0;
+		
 		for (i = 0; i < vector2.size(); i++) {
-
+			 
 			if ((i < useIntensity.size()) ) {
-				double ui = useIntensity.get(i);
+				ui = useIntensity.get(i);
+				
 				if (ui <= 0.0){
-					u++;
-					continue;
+					if (ui!=-2.0){
+						u++;
+						continue;
+					}
 				}
 			}
 			if (fvp<0){fvp=i;}
 			if ((vector1.get(i) < 0.0) || (vector2.get(i) < 0.0)) {
-				if ((vector1.get(i) > -4) && (vector2.get(i) > -4)
+				if ( (i != indexTargetVariable) && (vector1.get(i) > -4) && (vector2.get(i) > -4)
 						&& (i != indexIdColumn)
-						&& (i != indexTargetVariable)) {
-					d = d + 0.6;
+						&& (i != indexTargetVariable)
+						) {
+					if ((vector1.get(i) < 0.0) && (vector2.get(i) < 0.0)){
+						d = d + 0.15;
+					}else{
+						d = d + 0.6;
+					}
 				}
 			} else {
+				if (ui==-2.0){
+					continue;
+				}
 				c = vector1.get(i) - vector2.get(i);
 
 				d = d + c * c;

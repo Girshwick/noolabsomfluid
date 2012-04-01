@@ -184,18 +184,21 @@ public abstract class AbstractMetaNode  extends
 
 
 	/** should be called in the name space of the node thread, so we need a private message queue here, too  */
+	@SuppressWarnings("unused")
 	public void initializeSOMnode() {
 		
 		NodeStatistics nodeStats ;
 		
 		// int _vectorsize = variableLabels.size() ;
 		
+		int vn = this.virtualLattice.getSimilarityConcepts().getUsageIndicationVector().size();
 		
 		/*
 		 * 	ArrayList<Variable> variables = new ArrayList<Variable>(); 
 			ArrayList<Double>   values  
 		 */
 		profileVector.setVariablesStr(  new ArrayList<String>(variableLabels) );
+		
 		int n = profileVector.getVariablesStr().size() ;
 		
 		nodeStats = extensionality.getStatistics() ;
@@ -246,11 +249,15 @@ if (v0!=vv){
 			
 			nodeStats.getFieldValues().add( new BasicStatisticalDescription() ) ;
 			nodeStats.setVariables(vars) ;
-		}
+		} // i-> all vector positions
 											out.print(3, "node <" + serialID + "> initialized.");
 		profileVector.setLastExtDataValueIndex( profileVector.getVariablesStr().size()-1 );		
 		
 		int np = profileVector.getValues().size() ;
+		if (np==0){
+			ArrayList<Double> values ;
+			// profileVector.setValues( values );
+		}
 		intensionality.prepareWeightVector();
 	}
  
@@ -262,7 +269,9 @@ if (v0!=vv){
 		openLatticeFutureTask = taskId;
 	}
 	
-	
+	public void stopAutonomyProcess(){
+		autonomy.isRunning=false;
+	}
 	// ========================================================================
 	class Autonomy implements Runnable{
 

@@ -2,9 +2,9 @@ package org.NooLab.somfluid.core.nodes;
 
 import java.util.ArrayList;
 
-import org.NooLab.repulsive.components.data.IndexDistance;
-import org.NooLab.repulsive.components.data.IndexDistanceIntf;
-import org.NooLab.somfluid.components.IndexedDistances;
+import org.NooLab.utilities.datatypes.IndexDistanceIntf;
+
+  
 
 public interface LatticeIntf {
 

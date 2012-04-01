@@ -2,10 +2,12 @@ package org.NooLab.somfluid.core.engines.det;
 
 import java.util.ArrayList;
 
-import org.NooLab.repulsive.components.data.IndexDistanceIntf;
+ 
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
+ 
+import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 import org.NooLab.utilities.logging.PrintLog;
 
 
@@ -56,10 +58,10 @@ public class DSomDataPerceptionAbstract {
 	 * @return
 	 */
 	// this acts as a wrapper for "BmuIdentification{}"
-	protected ArrayList<IndexDistanceIntf> getBestMatchingNodes( 	int dataRowIndex,
-																ArrayList<Double> profilevalues, 
-																int bmuCount, 
-																ArrayList<Integer> boundingIndexList) {
+	protected ArrayList<IndexDistanceIntf> getBestMatchingNodes(  int dataRowIndex,
+																  ArrayList<Double> recordprofilevalues, 
+																  int bmuCount, 
+																  ArrayList<Integer> boundingIndexList) {
 		
 		ArrayList<IndexDistanceIntf> bestMatchesCandidates = new ArrayList<IndexDistanceIntf> (); 
 		ArrayList<MetaNodeIntf> nodeCollection = new ArrayList<MetaNodeIntf>(); 
@@ -73,6 +75,7 @@ public class DSomDataPerceptionAbstract {
 		//
 		
 		try {
+			
 			
 			/*
 			 * we refer to the AreaPerspective of the field, from where we determine the indexes of the nodes
@@ -110,16 +113,21 @@ public class DSomDataPerceptionAbstract {
 			// the best match for the profilevalues (format: ArrayList Double)
 			bmuSearch = new ProfileVectorMatcher(out);
 			
+if (dataRowIndex>2){
+	bmuSearch.setOutMode(1);
+}
+			
 			// this provides just the reference, NOT copies !
 			bmuSearch.linkNodeCollection( somLattice.getNodes());
 			
 			// and this provides the selection, which is either all, or reduced by some preprocessing or buffering
 			bmuSearch.setNodeCollectionByIndex(nodeIndexCollection);
 			
-			bmuSearch.setParameters(profilevalues, bmuCount, boundingIndexList);
+			bmuSearch.setParameters( recordprofilevalues, bmuCount, boundingIndexList);
 			
 			// this respects deactivated nodes
 			bmuSearch.createListOfMatchingUnits(1); // 1=nodes -> profiles
+			
 			bestMatchesCandidates = bmuSearch.getList( -1 ) ;
 			
 			/*
