@@ -9,6 +9,8 @@ import math.geom2d.polygon.Polygon2D;
 
 import org.NooLab.repulsive.components.topology.ResultObjekt;
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.datatypes.IndexDistance;
+ 
 
 
 public class SurroundResults implements Cloneable,Serializable{

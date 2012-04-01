@@ -675,6 +675,14 @@ public class RepulsionFieldAppletsimple 	extends
 		
 	}
 
+
+
+	@Override
+	public boolean getInitComplete() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
  
 }
 

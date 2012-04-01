@@ -11,7 +11,7 @@ import math.geom2d.polygon.convhull.JarvisMarch2D;
 
 import org.NooLab.graph.TreeLinesIntf;
 import org.NooLab.repulsive.RepulsionFieldCore;
-import org.NooLab.repulsive.components.data.IndexDistance;
+ 
 import org.NooLab.repulsive.components.data.LineXY;
 import org.NooLab.repulsive.components.data.PointXY;
 import org.NooLab.repulsive.components.data.RetrievalParamSet;
@@ -27,6 +27,7 @@ import org.NooLab.repulsive.intf.main.RepulsionFieldBasicIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.repulsive.intf.particles.ParticlesIntf;
 import org.NooLab.repulsive.particles.Particle;
+import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
 
@@ -65,9 +66,9 @@ public class SurroundRetrieval implements Runnable {
 	ParticleGrid particleGrid;
 	ParticlesIntf particles;
 	
-	ArrayList<RetrievalParamSet> paramSets = new ArrayList<RetrievalParamSet>(); 
+	ArrayList<RetrievalParamSet> paramSets = new ArrayList<RetrievalParamSet>(); // !!!!!!!!!!
 	
- 	Map<String,Object> resultMap = new HashMap<String,Object>();
+ 	Map<String,Object> resultMap = new HashMap<String,Object>();  // !!!!!!!!!!!!!!!!!
 	  
  	SelectionConstraints selectionConstraints;
  	
@@ -77,6 +78,8 @@ public class SurroundRetrieval implements Runnable {
 	Map<String,Thread> threadMap = new HashMap<String,Thread>();
 	
 	PrintLog out = new PrintLog(2,true);
+	private boolean selectionExecParallel=false;
+	private boolean adjustmentWait;
 	
 	// ========================================================================
 	public SurroundRetrieval( RepulsionFieldCore rfcore ){
@@ -117,6 +120,30 @@ public class SurroundRetrieval implements Runnable {
 	// ========================================================================
 	
 	
+	public void close() {
+		if ((rfSurrThrd!=null) && (rfSurrThrd.isInterrupted()==false)){
+			
+			// rfSurrThrd.interrupt();
+		}
+ 
+		paramSets.clear(); 
+		
+	 	resultMap.clear();
+		   
+	 	
+	 	if ((rfSurrThrd !=null) &&(rfSurrThrd.isInterrupted()==false)){
+	 		// rfSurrThrd.interrupt();
+	 	}
+	 	
+	 	rfSurrThrd=null;
+	 	 
+		threadMap.clear();
+		
+		threadMap=null;
+		out=null;
+	}
+
+
 	// for selecting a single particle, results returned via interfaced event
 	public int addRetrieval(int xpos, int ypos, boolean autoselect) {
 		int index=-1;
@@ -211,17 +238,45 @@ public class SurroundRetrieval implements Runnable {
 	 * @return
 	 */
 	public String go( int paramSetIndex, int task , String guidStr) {
+		boolean ok=false;
 		
 		surroundTask = task;
+		adjustmentWait=true;
 		
-		paramSets.get(paramSetIndex).task = task;
-		paramSets.get(paramSetIndex).guid = guidStr;
+		if (paramSets!=null) {
+			for (int i=paramSets.size()-1;i>0; i--) {
+				if (paramSets.get(i)==null) {
+					paramSets.remove(i);
+				}
+			}
+		}
 		
-		rfSurrThrd = new Thread(this,"rfSurrThrd-"+guidStr);
-		 
-		threadMap.put(guidStr, rfSurrThrd);
-		rfSurrThrd.setPriority(8) ;
-		rfSurrThrd.start();
+		while (ok==false){
+			try {
+				if (paramSetIndex > paramSets.size()-1) {
+					paramSetIndex = paramSets.size() - 1;
+				}
+				paramSets.get(paramSetIndex).task = task;
+				paramSets.get(paramSetIndex).guid = guidStr;
+
+				ok = true;
+			} catch (Exception e) {
+
+			}
+		}
+		adjustmentWait=false;
+		
+		if (selectionExecParallel){
+			rfSurrThrd = new Thread(this,"rfSurrThrd-"+guidStr);
+			 
+			threadMap.put(guidStr, rfSurrThrd);
+			rfSurrThrd.setPriority(8) ;
+			rfSurrThrd.start();
+			
+		}else{
+			runDispatch();	
+		}
+		
 		
 		return guidStr;
 	}
@@ -241,8 +296,12 @@ public class SurroundRetrieval implements Runnable {
 	@Override
 	public void run() {
 		
-		// surroundBuffers.out.delay(5);
+		runDispatch();
 		
+	}
+
+	private void runDispatch(){
+
 		if (surroundTask<=_TASK_PARTICLE){
 			getParticle( surroundTask );
 			return;
@@ -263,8 +322,6 @@ public class SurroundRetrieval implements Runnable {
 			return;
 		}
 	}
-
-
 
 	private void getParticle( int style ){
 		
@@ -322,6 +379,11 @@ public class SurroundRetrieval implements Runnable {
 		 		 
 		threadMap.remove(rps.guid);
 		
+		try {
+			if (thrd!=null)
+			thrd.join();
+		} catch (InterruptedException e) {
+		}
 		thrd = null;
 
 	}
@@ -397,8 +459,20 @@ public class SurroundRetrieval implements Runnable {
 			return;
 		}
 		
-		RetrievalParamSet p = paramSets.get(paramSets.size()-1) ; 
-		if (p.surroundN > particles.size()*(2.0/3.0)){ p.surroundN = (int) (particles.size()*(2.0/3.0)); };
+		while (adjustmentWait){}
+		
+		 
+		
+		RetrievalParamSet p=null ;
+		int pin = paramSets.size()-1;
+		while ((pin>=0) && (p==null)){
+			p = paramSets.get(pin) ;
+			pin--;
+		}
+		 
+		if (p!=null){
+			if (p.surroundN > particles.size()*(2.0/3.0)){ p.surroundN = (int) (particles.size()*(2.0/3.0)); };
+		}
 		
 		if (style== _TASK_SURROUND_C){
 			results = getSurround( p.xpos, p.ypos, p.surroundN, p.selectMode,  p.autoselect);
@@ -414,9 +488,29 @@ public class SurroundRetrieval implements Runnable {
 			results.setParamSet( p );
 			 
 
-			// put his to the result map
+			// put this to the result map, where is this cleared !!!
+			if (selectionExecParallel){}
+				
 			resultMap.put(p.guid, results);
-
+			
+			while (adjustmentWait){
+				
+			}
+			
+			if ((paramSets!=null) ) {
+				for (int i = 0; i < paramSets.size(); i++) {
+					if (paramSets.get(i)!=null){
+						String gs = paramSets.get(i).guid;
+						if (gs.contentEquals(p.guid)) {
+							paramSets.set(i, null);
+							break;
+						}
+					}
+				}
+			}
+			// out.print(2, "SurroundRetrieval, size of paramSets: "+paramSets.size()) ;
+			// out.print(2, "-                          resultMap: "+resultMap.size()) ;
+			
 			srObserver.surroundRetrievalUpdate(this, p.guid);
 		}
 		
@@ -425,16 +519,22 @@ public class SurroundRetrieval implements Runnable {
 		// out.print(2, "nulling thread of guid: "+p.guid) ;
 		 
 		threadMap.remove(p.guid);
-		thrd.setPriority(1) ;  // type "rfSurrThrd"
-		// ClassLoader cl = thrd.getContextClassLoader();
-		ThreadGroup tg = thrd.getThreadGroup();
-		tg.setMaxPriority(8);
+		if (thrd!=null){
+			thrd.setPriority(1); // type "rfSurrThrd"
+			// ClassLoader cl = thrd.getContextClassLoader();
+			ThreadGroup tg = thrd.getThreadGroup();
+			if (tg!=null){
+				tg.setMaxPriority(8);
+			}
 
-		try{
-			thrd.interrupt();
-			thrd = null;
+			try {
+				// thrd.interrupt();
+				// thrd.join() ;
+				// thrd = null;
 
-		}catch(Exception e){}
+			} catch (Exception e) {
+			}
+		}
 	}
 	
 	
@@ -597,6 +697,22 @@ public class SurroundRetrieval implements Runnable {
 	public void setSelectionConstraints( SelectionConstraints selectconstraints) {
 		// 
 		selectionConstraints = selectconstraints;
+	}
+
+
+	/**
+	 * @return the selectionExecParallel
+	 */
+	public boolean isSelectionExecParallel() {
+		return selectionExecParallel;
+	}
+
+
+	/**
+	 * @param selectionExecParallel the selectionExecParallel to set
+	 */
+	public void setSelectionExecParallel(boolean selectionExecParallel) {
+		this.selectionExecParallel = selectionExecParallel;
 	}
 	
 }	

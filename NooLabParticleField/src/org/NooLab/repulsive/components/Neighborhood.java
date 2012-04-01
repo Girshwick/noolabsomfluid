@@ -7,13 +7,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
-import org.NooLab.repulsive.components.data.IndexDistance;
+ 
 import org.NooLab.repulsive.components.data.RequestBorder;
 import org.NooLab.repulsive.components.infra.C2DComparable;
 import org.NooLab.repulsive.intf.ItemLinkageIntf;
 import org.NooLab.repulsive.intf.Stoppable;
 import org.NooLab.repulsive.particles.Particles;
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.logging.PrintLog;
 
 

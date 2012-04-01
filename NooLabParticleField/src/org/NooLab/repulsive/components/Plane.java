@@ -7,7 +7,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
-import org.NooLab.repulsive.components.data.IndexDistance;
+import org.NooLab.utilities.datatypes.IndexDistance;
+
+ 
 
 public class Plane {
 

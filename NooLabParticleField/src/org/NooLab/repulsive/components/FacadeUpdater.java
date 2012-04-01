@@ -189,6 +189,7 @@ public class FacadeUpdater implements Runnable{
 	public void run() {
 		isRunning= true;
 		perform();
+		isRunning= false;
 	}
 
 	public Particles getParticles() {

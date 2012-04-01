@@ -1,6 +1,8 @@
 package org.NooLab.repulsive;
  
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 
 import org.NooLab.repulsive.components.FacadeUpdater;
@@ -88,6 +90,8 @@ public class RepulsionField implements 	Runnable,
 	
 	
 	ArrayList<String> availableResults = new ArrayList<String>(); 
+	
+	private Map<String, Object> suRRMap = new HashMap<String, Object> ();
 	
 	boolean isFacadeReadyToUse=false;
 	
@@ -179,6 +183,9 @@ public class RepulsionField implements 	Runnable,
 		}
 		if (finished){
 			particles = facade.getParticles() ;
+			
+			isFacadeReadyToUse=true;
+			eventsReceptor.onLayoutCompleted(0);
 		}
 		
 		/*
@@ -265,6 +272,25 @@ public class RepulsionField implements 	Runnable,
 		// 
 		coreInstance.init( command) ;
 	}
+
+	// ........................................................................
+	
+	
+	@Override
+	public void close() {
+		 
+		int i=particles.size();
+		while (i>=0){
+			Particle p=particles.get(i);
+			if (p.getIndexesOfAllDataObject()!=null)p.getIndexesOfAllDataObject().clear();
+			p=null;
+		}
+		particles.clear();
+		particles=null;
+		coreInstance.particles.clear();
+	 
+	}
+
 
 	public RepulsionFieldCore createCoreInstance(RepulsionFieldFactory rff){
 	
@@ -355,6 +381,7 @@ public class RepulsionField implements 	Runnable,
 		int ypos;
 		int selectMode;
 		boolean autoselect;
+		
 
 		public SurroundRetrievalHandler(  double xpos, double ypos, boolean autoselect){
 			
@@ -417,6 +444,8 @@ public class RepulsionField implements 	Runnable,
 			 
 			availableResults.add(guidStr);
 			
+			suRRMap.put(guidStr,surroundRetrieval);
+			
 			String str = Thread.currentThread().getStackTrace()[1].getMethodName();
 			// 	caller: GetStacktrace()[1]
 			
@@ -459,7 +488,10 @@ public class RepulsionField implements 	Runnable,
 				
 				guidStr = surroundRetrieval.go(pix, SurroundRetrieval._TASK_SURROUND_C);
 				  
-				 
+				
+				// in surroundRetrieval there is a resultMap which now contains an entry with guidStr;
+				// if selection was in parallel through "rfSurrThrd", the object part is null,
+				// is execution is serial, then the object is defined as results TODO
 				return guidStr;
 			} 
 			return "";
@@ -500,6 +532,11 @@ public class RepulsionField implements 	Runnable,
 			}
 			return "";
 		}
+
+		public void close() {
+			// TODO Auto-generated method stub
+			
+		}
 		
 	} // inner class SurroundRetrievalHandler
 	
@@ -516,7 +553,10 @@ public class RepulsionField implements 	Runnable,
 		 * of that message ALSO has to be stateless = thread-safe by using an acceptance class!!!
 		 * (FIFO message queue for serializing parallel/overlapping requests) 
 		 */  
-		return (new SurroundRetrievalHandler( (double)xpos, (double)ypos, autoselect)).go(1);
+		SurroundRetrievalHandler suRR = (new SurroundRetrievalHandler( (double)xpos, (double)ypos, autoselect)) ;
+		String selection = suRR.go(1) ;
+		suRR.close();
+		return selection;
 	}
 
 	@Override
@@ -1167,6 +1207,14 @@ public class RepulsionField implements 	Runnable,
 		 
 		eventsReceptor.statusMessage(msg) ;
 	}
+	
+	@Override
+	public boolean getInitComplete() {
+		 
+		return isFacadeReadyToUse;
+	}
+
+
 	@Override
 	public void onCalculationsCompleted() {
 		// 
@@ -1174,9 +1222,11 @@ public class RepulsionField implements 	Runnable,
 		
 		updatingBuffersFromCore(); 
 		
-		eventsReceptor.onCalculationsCompleted();
+		if (eventsReceptor!=null){
+			eventsReceptor.onCalculationsCompleted();
+		}
 		
-		isFacadeReadyToUse=true; // will be set only HERE to true, after the first fixation 
+		isFacadeReadyToUse=true; // XXX will be set only HERE to true, after the first fixation 
 	}
 	
 	
@@ -1184,7 +1234,8 @@ public class RepulsionField implements 	Runnable,
 
 	@Override                        
 	public void surroundRetrievalUpdate( SurroundRetrieval Observable, String guid) {
-
+		SurroundRetrieval sr = null;
+		
 		out.print(3, "result returned to field from SurroundRetrieval(), result id = "+guid );
 		
 		try{
@@ -1218,7 +1269,31 @@ public class RepulsionField implements 	Runnable,
 				// particles.selectSurround(result.getParticleIndexes(), result.getParamSet().isAutoselect());
 			}
 			if ((eventsReceptor != null)  ){
+				try{
+					sr = (SurroundRetrieval)suRRMap.get(result.getGuid());
+					
+				}catch(Exception e){
+					
+				} // TODO
+				// we have to make a copy and then to remove it from the resultMap in SurroundRetrieval XXX				
 				eventsReceptor.onSelectionRequestCompleted(result);
+				
+				int n = result.getObjects().size();
+				// out.print(2, "size of results list: "+n);
+				
+				if (surroundRetrieval!=null){
+					Object obj = surroundRetrieval.getResultMap().get( result.getGuid());
+					SurroundResults srr = (SurroundResults)obj;
+					if ((srr!=null) || (surroundRetrieval.getResultMap().containsKey(result.getGuid()))){
+						surroundRetrieval.getResultMap().remove(result.getGuid());
+					}
+				}
+				// cleaning in a dedicated thread?
+				if (sr!=null){
+					sr.close(); // == SurroundRetrieval.close();
+					sr=null;
+				}
+				// System.gc();
 			}
 			
 	

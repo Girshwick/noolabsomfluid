@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import org.NooLab.chord.IndexedItemsCallbackIntf;
 import org.NooLab.chord.MultiDigester;
 import org.NooLab.repulsive.RepulsionFieldCore;
-import org.NooLab.repulsive.components.data.IndexDistance;
+ 
 import org.NooLab.repulsive.components.topology.Surround;
 import org.NooLab.repulsive.intf.SurroundRetrievalObserverIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldBasicIntf;
@@ -14,6 +14,7 @@ import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.repulsive.intf.particles.ParticlesIntf;
 import org.NooLab.repulsive.particles.Particle;
 import org.NooLab.repulsive.particles.Particles;
+import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.logging.PrintLog;
 
 

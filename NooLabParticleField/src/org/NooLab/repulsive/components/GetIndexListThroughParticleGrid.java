@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.Vector;
 
 import org.NooLab.graph.TreeLinesIntf;
-import org.NooLab.repulsive.components.data.IndexDistance;
+import org.NooLab.utilities.datatypes.IndexDistance;
+ 
+
+
 
 public class GetIndexListThroughParticleGrid {
 

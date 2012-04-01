@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.NooLab.repulsive.RepulsionFieldCore;
-import org.NooLab.repulsive.components.data.IndexDistance;
+ 
 import org.NooLab.repulsive.particles.Particle;
 import org.NooLab.repulsive.particles.Particles;
 

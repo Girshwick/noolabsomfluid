@@ -49,6 +49,10 @@ public interface RepulsionFieldIntf extends RepulsionFieldSelectionIntf, Repulsi
 	public void setSelectionShape(int shapeId);
 
 
+
+	public void close();
+
+
 	
 	
 }

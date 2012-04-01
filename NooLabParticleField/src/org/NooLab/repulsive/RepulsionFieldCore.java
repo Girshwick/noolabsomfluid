@@ -46,6 +46,7 @@ import org.NooLab.repulsive.intf.particles.ParticlesIntf;
 import org.NooLab.repulsive.particles.Particle;
 import org.NooLab.repulsive.particles.Particles;
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.math.array.StatisticSample;
 
@@ -371,9 +372,9 @@ public class RepulsionFieldCore implements 	Runnable,
 		rfProperties = properties;
 		
 		String userdir = rfProperties.fileutil.getUserDir() ;
-		RepulsionField._RFUSERDIR = rfProperties.fileutil.createPath( userdir ,"RepulsionField/" );
+		RepulsionField._RFUSERDIR = DFutils.createPath( userdir ,"RepulsionField/" );
 		
-		out.setPrefix("[RF-CORE]");
+		out.setPrefix("[RF-CORE]"); 
 	}
 	
  
@@ -3939,7 +3940,8 @@ if (index>nbrParticles-5){
 				neighborhood.update(i, particles.get(i).x,particles.get(i).y, particles.get(i).radius);
 			}
 			neighborhood.finalizeQ();
-		
+			neighborhood.stop();
+			neighborhood=null;
 	}
 
 	private int adaptSelectionSize( int cSelSize) {

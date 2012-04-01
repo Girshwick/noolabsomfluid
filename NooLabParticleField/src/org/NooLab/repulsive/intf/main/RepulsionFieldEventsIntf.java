@@ -26,5 +26,5 @@ public interface RepulsionFieldEventsIntf {
 
 	public void onCalculationsCompleted();
 	
-
+	public boolean getInitComplete();
 }

@@ -9,10 +9,11 @@ import java.util.Vector;
 import org.NooLab.graph.TreeLinesIntf;
 import org.NooLab.repulsive.RepulsionFieldCore;
 
-import org.NooLab.repulsive.components.data.IndexDistance;
+ 
 import org.NooLab.repulsive.components.data.RetrievalParamSet;
 import org.NooLab.repulsive.components.topology.CoverageByBars;
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.datatypes.IndexDistance;
 
 
 

@@ -9,7 +9,7 @@ import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.repulsive.particles.Particles;
 import org.NooLab.utilities.logging.PrintLog;
 
-
+// nbthrd  sfthrd wqthrd 
 
 
 public class CollectStatistics implements Runnable,Stoppable{

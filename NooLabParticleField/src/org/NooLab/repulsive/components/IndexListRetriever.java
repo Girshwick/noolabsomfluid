@@ -2,10 +2,11 @@ package org.NooLab.repulsive.components;
 
 import java.util.ArrayList;
 
- 
- 
-import org.NooLab.repulsive.components.data.IndexDistance;
+import org.NooLab.utilities.datatypes.IndexDistance;
 
+ 
+ 
+ 
 public class IndexListRetriever {
 
 	ParticleGrid pgrid;

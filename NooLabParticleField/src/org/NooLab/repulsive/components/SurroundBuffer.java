@@ -6,8 +6,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 
-import org.NooLab.repulsive.components.data.IndexDistance;
+import org.NooLab.utilities.datatypes.IndexDistance;
 
+ 
 
 /**
  * 

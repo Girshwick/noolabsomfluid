@@ -1,13 +1,11 @@
 package org.NooLab.repulsive.components;
 
 
-import org.NooLab.repulsive.RepulsionField;
+
 import org.NooLab.repulsive.RepulsionFieldCore;
 import org.NooLab.repulsive.RepulsionFieldFactory;
 import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
-import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.repulsive.intf.particles.ParticlesIntf;
-import org.NooLab.repulsive.particles.Particles;
 import org.NooLab.utilities.logging.PrintLog;
 
 
@@ -206,6 +204,13 @@ public class SamplingField implements Runnable, RepulsionFieldEventsIntf{
 	public void statusMessage(String msg) {
 		// TODO Auto-generated method stub
 		
+	}
+
+
+	@Override
+	public boolean getInitComplete() {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 
