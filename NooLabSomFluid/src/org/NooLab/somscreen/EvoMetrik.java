@@ -1,0 +1,154 @@
+package org.NooLab.somscreen;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+
+
+
+/**
+ * 
+ * this class describes a single step,
+ * holding all the steps allows to change the ECR on the fly, and to recalculate the costs
+ * 
+ * @author kwa
+ *
+ */
+public class EvoMetrik  implements Serializable{
+
+	private static final long serialVersionUID = -831642790269374541L;
+
+	// as long as the ECR is not changed don the fly, these two values are identical
+	double actualScore; // 
+	double mainScore;
+	
+	// could be quite expensive regarding space... will be stored only in EvoBasics, or the parent class
+	// ArrayList<Double>  evoWeights = new ArrayList<Double>() ; 
+	// ArrayList<Integer> evoCounts = new ArrayList<Integer>() ; 
+
+	SomQualityData sqData;
+
+	ArrayList<Double> usageVector;
+
+	int index;
+
+	ArrayList<Integer> varIndexes = new ArrayList<Integer>();
+	
+	
+	
+	// 
+	
+	// ========================================================================
+	public EvoMetrik(){
+		
+	}
+	// ========================================================================	
+
+
+
+	/**
+	 * @return the actualScore
+	 */
+	public double getActualScore() {
+		return actualScore;
+	}
+
+
+
+	/**
+	 * @param actualScore the actualScore to set
+	 */
+	public void setActualScore(double actualScore) {
+		this.actualScore = actualScore;
+	}
+
+
+
+	/**
+	 * @return the mainScore
+	 */
+	public double getMainScore() {
+		return mainScore;
+	}
+
+
+
+	/**
+	 * @param mainScore the mainScore to set
+	 */
+	public void setMainScore(double mainScore) {
+		this.mainScore = mainScore;
+	}
+
+
+
+	/**
+	 * @return the sqData
+	 */
+	public SomQualityData getSqData() {
+		return sqData;
+	}
+
+
+
+	/**
+	 * @param sqData the sqData to set
+	 */
+	public void setSqData(SomQualityData sqData) {
+		this.sqData = sqData;
+	}
+
+
+
+	/**
+	 * @return the usageVector
+	 */
+	public ArrayList<Double> getUsageVector() {
+		return usageVector;
+	}
+
+
+
+	/**
+	 * @param usageVector the usageVector to set
+	 */
+	public void setUsageVector(ArrayList<Double> usageVector) {
+		this.usageVector = usageVector;
+	}
+
+
+
+	/**
+	 * @return the index
+	 */
+	public int getIndex() {
+		return index;
+	}
+
+
+
+	/**
+	 * @param index the index to set
+	 */
+	public void setIndex(int index) {
+		this.index = index;
+	}
+
+
+
+	/**
+	 * @return the varIndexes
+	 */
+	public ArrayList<Integer> getVarIndexes() {
+		return varIndexes;
+	}
+
+
+
+	/**
+	 * @param varIndexes the varIndexes to set
+	 */
+	public void setVarIndexes(ArrayList<Integer> varIndexes) {
+		this.varIndexes = varIndexes;
+	}
+	
+}

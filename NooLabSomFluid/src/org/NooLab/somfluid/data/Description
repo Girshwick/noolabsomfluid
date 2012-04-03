@@ -1,0 +1,15 @@
+
+
+this package contains all structures to deal with data storages
+
+- volatile business objects (texts, the separation into sentences, words, image patches, ...)
+- static data like random vectors
+
+- standardized store and recall methods, using 
+  - proprietary (serialized) objects, or 
+  - databases
+
+- index connectors to connect Node content with physical data sources
+  or objects outside the SOM
+
+

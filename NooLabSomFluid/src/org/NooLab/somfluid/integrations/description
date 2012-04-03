@@ -1,0 +1,26 @@
+
+
+
+in this package
+
+any kind of integration WITHIN an instance of SomFluid ;
+for outward directed integration of different instances of SomFluids, there is MetaNet
+
+
+
+Integration within comprises
+
+- pre-coarsed navigation
+- markov stuff for virtual movement
+- organizing sprites
+- abstraction
+- supervision
+- reproducing
+
+sprite etc could be external applications !
+
+
+
+
+
+
