@@ -11,7 +11,7 @@ public class DelayFor {
 	int minStepWidth = 10;
 	boolean userbreak=false;
 	boolean visibleFeedback = true ;
-	boolean isRunning = false;
+	boolean isRunning = false ;
 	DelayNotificationIntf callBack;
 	
 	

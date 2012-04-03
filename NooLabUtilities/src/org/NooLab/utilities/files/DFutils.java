@@ -52,7 +52,7 @@ public class DFutils extends Thread{
     DirectoryContent dirutil = new DirectoryContent();
     
     // org.NooLab.utilities.logging.PrintLog out ;
-    PrintLog  out = new PrintLog(2,true) ;
+    PrintLog  out =  new PrintLog(2,true) ;
     
     
 	public void setOut( org.NooLab.utilities.logging.PrintLog outprn) {

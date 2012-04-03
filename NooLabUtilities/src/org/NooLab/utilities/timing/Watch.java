@@ -14,7 +14,7 @@ public class Watch{
 	int processCount;
 	watchProcess[] watchProcesses ;
 	 
-	PrintLog out = new PrintLog(2,true) ; 
+	PrintLog out = new PrintLog(2,true); 
 	
 	// ========================================================================
 	public Watch( int processcount){

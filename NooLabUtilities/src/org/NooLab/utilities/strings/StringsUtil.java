@@ -98,7 +98,7 @@ public class StringsUtil {
 	Vector<ItemResult> itemresults = new Vector<ItemResult>();
 	
 	 
-	StringComparison strgcomp = new StringComparison();
+	StringComparison strgcomp =  new StringComparison();
 	
 
 	

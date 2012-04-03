@@ -119,6 +119,9 @@ public class ArrUtilities {
 	}
 	
 	public String arr2text(ArrayList<Integer> selectedSet) {
+		return arr2Text( selectedSet );
+	}
+	public static String arr2Text(ArrayList<Integer> selectedSet) {
 		String return_value ="";
 		int n;
 		int[] ints = new int[selectedSet.size()];
