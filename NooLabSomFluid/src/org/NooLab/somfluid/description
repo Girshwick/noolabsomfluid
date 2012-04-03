@@ -1,0 +1,89 @@
+
+
+A SomFluid is a module for a population of SOMs 
+
+SomFluid contains to very different SOM-engines:
+- the probabilistic SOM (prespecific storage), and 
+- the deterministic SOM (modeling/classification)
+
+small, but important note:
+SomFluid is not concerned with any administrative task, and it also does not
+organize issues around the application of models (or their general life cycle), 
+all of which is done by package NooLabSomOrganizer
+
+
+Environmental Organization
+---------------------------
+Each Instance of SomFluid runs in its own directory, which is labeled by a random GUID;
+This directory contains a small properties files which defines the 
+individual/preferred ID. If such does not exist upon startup, it will be created
+In the MetaNet context, this GUID will be associated with a unique Long value
+
+SomFluid can produce offspring!
+Producing such offspring also creates a small info file
+Offsprings are connected through a Glue MessageBoard. 
+
+Offsprings are created through thinning of networks and pullulation.
+ 
+ 
+ 
+Internal Organization
+--------------------- 
+
+One instance of SomFluid contains exactly 1 instance,
+albeit the topology can be 3-dimensional, and the network may have gaps
+
+
+that can grow in either direction. 
+Yet, "fibers" can detach, such producing another module.
+
+The SomFluid uses the RepulsionField as its "physical" basis.
+
+
+
+
+
+
+
+msom = modular SOM
+
+An msom is a small module that is part of a population of SOM, which
+together build a self-organizing population (probabilistic meta 
+network, PMN [project: NooLabMetaNet]) of SOM.
+
+This PMN is an organizer that uses SOM to organize other SOM, mainly by
+some global monitoring.
+
+Most behaviors of PMN are, however, self-organized, i.e. organized in
+a bottom up fashion.
+
+an msom can grow itself in different modes;
+
+importantly, a message interface is needed on the level of
+SOM semantics, for passing around
+
+- vectors
+- tables
+- meta-control data
+- results
+- queries
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
