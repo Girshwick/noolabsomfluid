@@ -14,6 +14,8 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.NooLab.somfluid.components.SomDataObject;
+import org.NooLab.somfluid.data.Variables;
 import org.NooLab.utilities.logging.PrintLog;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -30,6 +32,8 @@ import org.apache.commons.collections.CollectionUtils;
 @SuppressWarnings("rawtypes")
 public class PowerSetSpringSource {
 
+	SomDataObject somData ;
+	
 	PowerSet<Integer> pset ;
 	Iterator setIterator ; 
 	
@@ -53,7 +57,7 @@ public class PowerSetSpringSource {
 	 * counts of being postponed in case of weighted, random selection
 	 * 
 	 */
-	SelectionProperties selectionProperties = new SelectionProperties();
+	SelectionProperties selectionProperties ;
 
 
 	boolean removalInactive = false;
@@ -71,29 +75,48 @@ public class PowerSetSpringSource {
 	private int preferredSizeLimit;
 	
 	PrintLog out = new PrintLog(2,true);
+	private boolean isScramblingActive;
+	private int absoluteSizeLimit = -1;
+	private ArrayList<String> blacklistedLabels = new ArrayList<String>();
+	
 	// ========================================================================
-	@SuppressWarnings("unused")
 	public PowerSetSpringSource( ArrayList<String> inItems){
 		
+		
+		
 		preferredLimit = (int) (inItems.size() * 0.8);
-		init(inItems);
+		init(inItems,0);
 		
 		random.setSeed(1324356);
 		random.nextDouble() ;
 	}
 
-	public PowerSetSpringSource(){
-		
+	public PowerSetSpringSource( SomDataObject somdata){
+		somData = somdata;
+		selectionProperties = new SelectionProperties();
 	}
 
 	public PowerSetSpringSource(int preferredlimit) {
 		preferredLimit = preferredlimit;
+		selectionProperties = new SelectionProperties();
+	}
+	public void _PowerSetSpringSource() {
+		selectionProperties = new SelectionProperties();
 	}
 
-	private void init(ArrayList<String> inItems){
+	// ========================================================================
+
+	
+	private void init(ArrayList<String> inItems, int ithScreen){
+		
+		selectionProperties = new SelectionProperties();
+		
 		if ((inItems!=null) && (inItems.size()>0)){
-			items.clear(); items.addAll(inItems);
-			generate();
+			
+			items.clear(); 
+			items.addAll(inItems);
+			
+			generate(ithScreen);
 			
 			// we have to change all this stuff to Set<Integer> and using a map
 			// using long strings is very expensive
@@ -105,23 +128,30 @@ public class PowerSetSpringSource {
 			// System.out.println("total size of power set = "+setSize) ;
 			constrainedSetSize = setSize;
 			
-			generate();
+			generate(ithScreen);
 			
 			constraints.setMaps( labelPositionMap, positionLabelMap );
 		}
 		
 		
 	}
-	// ========================================================================
-	
-	public void setItems( ArrayList<String> inItems){
-		init(inItems) ;
-	}
-	
+
 	// we could prepare from ixLo to ixHi in order to relaease stress to memory...
-	private void generate(){
+	/**
+	 * "scramblez" provides an indicator for the intensity of scrambling the initial itemset,
+	 * for large sets, we can arrange the items in the basic set according to the evo weights,
+	 * or randomly, by n-fold baker transformation (n=scrambles), or both
+	 * 
+	 * This then allows to limit the generated set that is effective for exploration 
+	 * 
+	 */
+	private void generate( int scramblez ){
 		
 		String str;
+		
+		if ((isScramblingActive) && (scramblez>0)){
+			
+		}
 		
 		for (int i = 0; i<items.size(); i++){
 			str = items.get(i).trim();
@@ -141,6 +171,9 @@ public class PowerSetSpringSource {
 		if (pset!=null){
 			pset = null ;
 		}
+		
+		 
+		
 		pset = new PowerSet<Integer>(itemset);
 		pset.setRandom(random) ;
 		setIterator = pset.iterator();
@@ -161,13 +194,46 @@ public class PowerSetSpringSource {
 		prepare(amount);
 	}
 	
+	public void close() {
+
+		this.preparedSets.clear() ;
+		items.clear();
+		itemset.clear() ;
+		constraints = null ;
+
+		labelPositionMap.clear();
+		positionLabelMap.clear();
+		
+		visitedGlobalIndexes.clear() ;
+		remainingConstrainedIndexes.clear() ;
+		
+		selectionProperties.spItems.clear() ;
+		selectionProperties = null;
+		
+		preparedSets.clear() ;
+		expicitlyExcludedSets.clear() ;
+	}
+
+	// ========================================================================
+	
+	
+	public void setItems( ArrayList<String> inItems, int ithScreen){
+		init(inItems,ithScreen) ;
+	}
+
+	public void setBlacklistedVarLabels(ArrayList<String> blackLabels) {
+
+		blacklistedLabels = blackLabels;
+		
+	}
+
 	/**
 	 * uses the values for amount and prob ratio to create a further bunch of values
 	 */
 	public void prepareNextSection(){
 		
 	}
-	
+	/** we need to apply a time constraint here ...  */
 	public void prepare(long amount){
 		int z = -1, n = 0;
 		
@@ -177,9 +243,9 @@ public class PowerSetSpringSource {
 		for (Set<Integer> s : pset) {
 			z++;
 
-			// s = pset.getNext(z);
+			// s = pset.getNext(z); // not necessary, is invoked by the "for" itself
 			
-			boolean setIsOk = constraints.check(s);
+			boolean setIsOk = constraints.check(s)>=0;
 			if (setIsOk) {
 				
 				// System.out.println("" + n + " of " + z + "  " + s);
@@ -192,8 +258,11 @@ if (z%100==0){
 }
 				// System.out.println("excluded (index:"+z+"): "+s.toString() );
 			}
-		}
-		out.print(2,"remaining combinations after applying constraints : "+remainingConstrainedIndexes.size()+" of "+z);
+			if ((z>2000000) || ((absoluteSizeLimit>0) && (preparedSets.size()>absoluteSizeLimit))){
+				break;
+			}
+		} // ->
+		out.printErr(3,"remaining combinations after applying constraints: "+remainingConstrainedIndexes.size()+" of "+z);
 		constrainedSetSize = remainingConstrainedIndexes.size() ;
 	}
 
@@ -281,9 +350,10 @@ if (z%100==0){
 	 * @return
 	 */
 	
+	@SuppressWarnings("unchecked")
 	public ArrayList<String> getNextSimilar( ArrayList<String> templateList, int minDeviations, int posDeviations ) {
 		boolean found=false;
-		int firstRPos=-1, mind=9999;
+		int firstRPos=-1, mind=9999,n;
 		ArrayList<String> setAsList = new ArrayList<String>();
 		ArrayList<String> firstSetItemList = new ArrayList<String>();
 		ArrayList<String> sItemList;
@@ -296,11 +366,16 @@ if (z%100==0){
 		}else{
 			zLimit = remainingConstrainedIndexes.size()/2 ; 
 		}
-			
+											out.print(4,"PowerSetSpringSource, getNextSimilar, selecting ...");
+											
 		while ((found==false) && (z<zLimit)){
 			z++;
 			sItemList = getNextRandom();
-			
+boolean hb = (CollectionUtils.intersection(sItemList , blacklistedLabels).size()>0);
+if ((hb) || (z>2500)){
+	n=0;
+	sItemList = (ArrayList<String>) CollectionUtils.subtract( sItemList , blacklistedLabels );
+}
 			if (firstSetItemList.size()==0){
 				firstSetItemList = sItemList;
 				firstRPos = putativeRemovalPosition; // is set in getNextRandom
@@ -331,9 +406,9 @@ if (remainingConstrainedIndexes.size()%200==0){
 				d=d1+d2;
 				if (mind>d){
 					mind=d;
-					putativeRemovalPosition = d;
+					// TODO: don't remember if we have already seen it...
 					firstSetItemList = sItemList;
-					firstRPos = d;
+					firstRPos = putativeRemovalPosition;
 				}
 			} //
 			
@@ -342,7 +417,17 @@ if (remainingConstrainedIndexes.size()%200==0){
 			}
 			
 		} // -> found ?
-		
+		if (setAsList.size()<=1){
+			n=0;
+			// preventing a null return
+			if (firstRPos>=0){
+				int p=firstRPos;
+				remainingConstrainedIndexes.remove(p);
+				setAsList = firstSetItemList;
+				found = true;
+			}
+		}		
+											out.print(4,"PowerSetSpringSource, selected ("+z+" trials) ...");  
 		if (found==false){
 			setAsList = firstSetItemList;
 			if ((firstRPos>=0) && (firstRPos<remainingConstrainedIndexes.size())){
@@ -364,16 +449,19 @@ if (remainingConstrainedIndexes.size()%200==0){
 	private ArrayList<String> getNextRandom( int overRule ) {
 		
 		ArrayList<String> setAsList = new ArrayList<String>();
-		Set<Integer> strset = null;
+		Set<Integer> strset = null, alignedIndexes=new TreeSet<Integer>();
 
 		boolean setIsOk = false,sProbIsOk=false;
 		boolean found=false;
 		int p,n,selectedIx=-1;
 		String str;
-		// 
+		
 		
 		if (isPrepared==false){
+			
+											out.print(2,"PowerSetSpringSource, prepare ...");
 			isPrepared = true;
+			
 			prepare() ;
 			// will fill the list "remainingConstrainedIndexes"
 		}
@@ -383,26 +471,46 @@ if (remainingConstrainedIndexes.size()%200==0){
 			k=60;
 		}
 		long zLimit = remainingConstrainedIndexes.size()*k*k;
-		int z=0;
+		int z=0; if (absoluteSizeLimit>5000){ if (absoluteSizeLimit<zLimit){zLimit=(int)(absoluteSizeLimit*1.1);} }
+											
 		
 		while ((found==false) && (z< zLimit )){
 			n = remainingConstrainedIndexes.size();
 			p = (int) Math.floor(random.nextDouble()* n) ;
-			 
+if (z>4000){
+	n=n+1-1;
+}
 			if ((p >= 0) && (p <= remainingConstrainedIndexes.size())) {
 
 				selectedIx = remainingConstrainedIndexes.get(p);
 				strset = preparedSets.get(selectedIx);
 
 				setIsOk = false;
-				setIsOk = constraints.check(strset);
-				
+				int r = constraints.check(strset) ;
+				setIsOk = r >= 0;
+				if (setIsOk == false){
+					if (r==-3){
+						// add mandatory items
+						constraints.ensureMandatoryItems( strset );  
+					}
+				}
 				if (setIsOk){
 					setIsOk = isExpicitlyExcluded(strset)==false;
 				}
+				
+				
 				// checking the content set for its selection probabilities 
 				 
 				sProbIsOk = selectionProperties.checkAcceptance( strset ) ;
+				
+				
+				alignedIndexes = translateLocalIndexes( strset );
+				
+				// note that positionLabelMap ALSO contains non-aligned, local index pointer values !
+				// strset.clear();
+				// strset.addAll(tempset);
+				
+				
 				
 				// overRule=1 if getNext() is called while random selection has been prepared
 				if (overRule>=1){
@@ -440,21 +548,47 @@ if (remainingConstrainedIndexes.size()%200==0){
 								sp.selectionCount++;
 							}
 						}
-					}
-
+					} // i -> 
+					alignedIndexes = translateLocalIndexes(strset);
 					found = true;
 				} // set ok ?
 			}
 			  
 			z++;
 		} // -> found?
+		
 		if ((found==false) && (z>0)){
-			System.out.println("...after <"+z+"> trials no matching set found!");
+			out.printErr(2,"...after <"+z+"> trials no matching set found!");
 		}
+											
 		z=0;
 		return setAsList;
 	}
 	
+	public Set<Integer> translateLocalIndexes(Set<Integer> strset) {
+		Set<Integer> tempset = new TreeSet();
+		Variables variables = somData.getVariables() ; 
+		
+		
+		// might be sth like  [1, 5, 8, 9, 11, 13, 14]
+		// i.e. the indiced as received here are NOT aligned to the variables list, and neither to
+		//      the lists of mandatory or excluded items.  ?????????????
+		// we have removed blacklisted items, and we rearranged the items
+		// we first have to translate them via strings
+		 
+		for (Integer si: strset){
+			String tlabel = labelPositionMap.get( si ) ;
+			int vix = variables.getIndexByLabel(tlabel) ;
+			if (si != vix){
+				tempset.add(vix) ;
+				// replace the non-aligned with the aligned value
+			}else{
+				tempset.add(si) ;
+			}
+		}
+		return tempset;
+	}
+
 	public void addSetAsExpicitlyExcluded( Set<Integer> checkedset) {
 		
 		
@@ -532,7 +666,7 @@ if (remainingConstrainedIndexes.size()%200==0){
 			// strset = pset.getNext(z);
 			
 			strset = (Set<Integer>)setIterator.next();
-			setIsOk = constraints.check( strset );
+			setIsOk = constraints.check( strset )>0;
 			
 			setPosIndex++;
 		} // -> setIsOk ?
@@ -640,7 +774,7 @@ if (remainingConstrainedIndexes.size()%200==0){
 	}
 	
 	public void resetPosition(){
-		generate();
+		generate(0);
 	}
 	
 	public ArrayList<ArrayList<String>> getAll(){
@@ -652,7 +786,7 @@ if (remainingConstrainedIndexes.size()%200==0){
 		for (Set<Integer> ival : pset) {
 			z++;
 			String s = labelPositionMap.get(ival) ;
-			boolean setIsOk = constraints.check( ival );
+			boolean setIsOk = constraints.check( ival )>=0;
 			if (setIsOk){
 				n++;
 				System.out.println(""+n+" of "+z +"  "+s);
@@ -670,7 +804,7 @@ if (remainingConstrainedIndexes.size()%200==0){
 		
 		for (Set<Integer> ival : pset) {
 			z++;
-			boolean setIsOk = constraints.check( ival );
+			boolean setIsOk = constraints.check( ival )>=0;
 			if (setIsOk){
 				n++;
 				System.out.println(""+n+" of "+z +"  "+ival);
@@ -704,6 +838,44 @@ if (remainingConstrainedIndexes.size()%200==0){
 	}
 	
 	
+	/**
+	 * @return the isScramblingActive
+	 */
+	public boolean isScramblingActive() {
+		return isScramblingActive;
+	}
+
+	/**
+	 * @param isScramblingActive the isScramblingActive to set
+	 */
+	public void setScramblingActive(boolean isScramblingActive) {
+		this.isScramblingActive = isScramblingActive;
+	}
+
+
+	/**
+	 * @return the absoluteSizeLimit
+	 */
+	public int getAbsoluteSizeLimit() {
+		return absoluteSizeLimit;
+	}
+
+	/**
+	 * @param absoluteSizeLimit the absoluteSizeLimit to set
+	 */
+	public void setAbsoluteSizeLimit(int absoluteSizeLimit) {
+		this.absoluteSizeLimit = absoluteSizeLimit;
+	}
+
+
+	/**
+	 * @return the selectionProperties
+	 */
+	public SelectionProperties getSelectionProperties() {
+		return selectionProperties;
+	}
+
+
 	class SelectionProperties{
 		
 		ArrayList<SelectionProperty> spItems = new ArrayList<SelectionProperty> ();
@@ -713,7 +885,6 @@ if (remainingConstrainedIndexes.size()%200==0){
 		public SelectionProperties(){
 			
 		}
-
 
 		public boolean checkAcceptance(Set<Integer> strset) {
 			boolean rB=false;
@@ -729,34 +900,40 @@ if (remainingConstrainedIndexes.size()%200==0){
 			for (Integer ival: strset) {
 				  
 				pos++;
-				str = labelPositionMap.get(ival) ;
-				sp = getItemByName(str);
-				
-				if (sp!=null){ 
-					if (rv < sp.selectionProbability){
-
-						if (sp.maxSelectionCount>=1){
-							if (sp.selectionCount>sp.maxSelectionCount){
-								// sp.selectionProbability = sp.selectionProbability*0.9; 
-							}
-							
-						}
-						
-						// rB=hb;
-					}else{
-						if (sp.selectionProbability<minProb)minProb=sp.selectionProbability;
-						if (sp.selectionProbability>supinfProb)supinfProb=sp.selectionProbability;
-						pp++;
-						sp.postponeCount++;
-						// all of this set ?
-						// rB=false;
-						
-						lastFailingPositions.add(pos) ;
+				if (labelPositionMap.containsKey(ival)){
+					
+					str = labelPositionMap.get(ival) ;
+					sp = getItemByName(str); // sp = SelectionProperty
+					
+					if (sp.selectionProbability<=0){ 
+						sp.selectionProbability = 0.7; 
 					}
-				}else{
-					rB=true;
-				}
-				 
+					
+					if (sp!=null){ 
+						if (rv < sp.selectionProbability){
+
+							if (sp.maxSelectionCount>=1){
+								if (sp.selectionCount>sp.maxSelectionCount){
+									// sp.selectionProbability = sp.selectionProbability*0.9; 
+								}
+							}
+							// rB=hb;
+						}else{
+							if (sp.selectionProbability<minProb)minProb=sp.selectionProbability;
+							if (sp.selectionProbability>supinfProb)supinfProb=sp.selectionProbability;
+							pp++;
+							sp.postponeCount++;
+							// all of this set ?
+							// rB=false;
+							
+							lastFailingPositions.add(pos) ;
+						}
+					}else{
+						rB=true;
+					}
+					 
+				} // ival in labelPositionMap ?
+				
 			}// ->
 			
 			if (lastFailingPositions.size()==0){
@@ -786,8 +963,10 @@ if (remainingConstrainedIndexes.size()%200==0){
 			return spItems.get(index);
 		}
 		
+		
 		public SelectionProperty getItemByName(String item) {
 			SelectionProperty sp=null;
+			
 			for (int i=0;i<spItems.size();i++){
 				if (spItems.get(i).name.contentEquals(item)){
 					sp = spItems.get(i);
@@ -866,8 +1045,8 @@ if (remainingConstrainedIndexes.size()%200==0){
 		/**
 		 * @param selectionProbability the selectionProbability to set
 		 */
-		public void setSelectionProbability(double selectionProbability) {
-			this.selectionProbability = selectionProbability;
+		public void setSelectionProbability(double probability) {
+			selectionProbability = probability;
 		}
 		
 		
@@ -886,7 +1065,8 @@ if (remainingConstrainedIndexes.size()%200==0){
 	}
 	*/
 	public static void main(String[] args) {
-		new PowerSetSpringSource();
+		// just for demo
+		// new  PowerSetSpringSource();
 	}
 }
 

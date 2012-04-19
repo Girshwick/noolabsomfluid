@@ -26,7 +26,7 @@ import org.NooLab.somscreen.EvoBasics;
 import org.NooLab.somscreen.EvoMetrices;
 import org.NooLab.somscreen.SomQuality;
 import org.NooLab.somscreen.SomScreening;
-import org.NooLab.somsprite.SomSprite;
+
 import org.NooLab.somtransform.algo.AdaptiveDiscretization;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
@@ -46,6 +46,7 @@ public class DSomCore {
 	DSom dSom;
 	
 	SomProcessIntf somProcess;
+	SomFluidProperties sfProperties ;
 	
 	ModelingSettings modset;
 	DataSampler dataSampler = new DataSampler();
@@ -86,6 +87,7 @@ public class DSomCore {
 		dSom = dsom;
 		
 		somProcess = dSom.getSomProcessParent() ;
+		sfProperties = somProcess.getSfProperties();
 		
 		// ... dSom.somData;
 		out = dSom.out;
@@ -110,7 +112,7 @@ public class DSomCore {
 		sampleRecordIDs=null;
 	}
 	
-	public void perform() {
+	public void perform() throws Exception {
 		 
 		dSom.inProcessWait = true;
 		
@@ -138,7 +140,14 @@ public class DSomCore {
 		
 		@Override
 		public void run() {
-			performDSom();
+			
+			try {
+				
+				performDSom();
+				
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 		
 		//informing the observer
@@ -349,7 +358,7 @@ public class DSomCore {
 	// ========================================================================
 	
 	
-	private int performDSom(){
+	private int performDSom() throws Exception{
 
 		boolean done=false;
 		int resultCode= -1;
@@ -421,7 +430,7 @@ public class DSomCore {
 	 *     according to the settings of use vectors and weight vectors
 	 *    
 	 */
-	private int executeSOM(){
+	private int executeSOM() throws Exception{
 		
 		int result = -1;
 		DSomDataPerception somDataPerception = null;
@@ -450,6 +459,10 @@ out.print(4, ".                        (sim) : "+str2);
 			absoluteRecordCount = this.dataSampler.getSizeTrainingSet();
 			actualRecordCount =  absoluteRecordCount; // we ALWAYS have a training sample available! ;
 			
+			if (absoluteRecordCount<=1){
+				throw(new Exception("critical porblem: absoluteRecordCount = "+absoluteRecordCount));
+			}
+			
 			initialLearningRate = modset.getInitialLearningRate();
 			learningRate = initialLearningRate; 
 					
@@ -473,11 +486,26 @@ out.print(4, ".                        (sim) : "+str2);
 					globalLimit = maxRC ; 
 					dataSampler.setGlobalLimit(globalLimit);
 				}
-			}
+			}	
+			
+											if (displayProgress(0))
 											out.print(1, "Som learning is starting on "+dataSampler.getTrainingSet().size()+" records from training sample.");
 			
 			while ((currentEpoch < somSteps) && (dSom.getUserbreak()==false)) {
-											out.print( Math.max(2,5-currentEpoch), "Som learning epoch... "+(currentEpoch+1));
+				 	/*
+				 	 _SOMDISPLAY_PROGRESS_NONE  = -1 ;
+				 	 
+					 _SOMDISPLAY_PROGRESS_BASIC =  0 ;
+					 _SOMDISPLAY_PROGRESS_STEPS =  1 ;
+					 _SOMDISPLAY_PROGRESS_PERC  =  2 ;   getShowSomProgressMode()
+					*/
+											if (displayProgress(2)){
+												out.print( 2, "Som learning epoch... "+(currentEpoch+1));
+											}else{
+												if ((currentEpoch>=3) && (displayProgress(1))){
+													out.print( 2, "Som learning epoch... "+(currentEpoch+1));
+												}
+											}
 if (currentEpoch>=3){
 	int nn;
 	nn=0;
@@ -525,7 +553,27 @@ if (currentEpoch>=3){
 	}
 
 
-	private void restoreModelFromHistory( SomScreening somScreening, int bestHistoryIndex) {
+	private boolean displayProgress(int level) {
+		boolean rB=false;
+		
+		if (level<=0){
+			rB = (sfProperties.getShowSomProgressMode()>= SomFluidProperties._SOMDISPLAY_PROGRESS_NONE) ;
+		}
+		if (level==1){
+			rB = (sfProperties.getShowSomProgressMode()>= SomFluidProperties._SOMDISPLAY_PROGRESS_BASIC) ;
+		}
+		if (level==2){
+			rB = (sfProperties.getShowSomProgressMode()>= SomFluidProperties._SOMDISPLAY_PROGRESS_STEPS) ;
+		}
+		if (level>=3){
+			rB = (sfProperties.getShowSomProgressMode()> SomFluidProperties._SOMDISPLAY_PROGRESS_PERC) ;
+		}
+		
+		
+		
+		return rB;
+	}
+	private void restoreModelFromHistory( SomScreening somScreening, int bestHistoryIndex) throws Exception {
 		
 		int _bestHistoryIndex, n ;
 		String str;
@@ -620,11 +668,15 @@ if (currentEpoch>=3){
 		  
 		sampleRecordIDs = dataSampler.createEffectiveRecordList( DataSampler._SAMPLE_TRAINING, targetcount, currentEpoch, somSteps ); // actualRecordCount
 		
-		double x = ((double)actualRecordCount)/ (dsomSize/dsomT);
+		double x = ((double)actualRecordCount)/ ((double)dsomSize/dsomT);
 		adjustDefaultStepCount = x < 11.0;
 		
 		if ((currentEpoch <= 1) || (adjustDefaultStepCount)){
-			somSteps = somSteps + (int)(Math.round(( dsomSize)/(actualRecordCount)));
+			if (actualRecordCount>0){
+				somSteps = somSteps + (int)(Math.round(( (double)dsomSize)/((double)actualRecordCount)));
+			}else{
+				somSteps = 1;
+			}
 			if (somSteps<3)somSteps=3;
 			if (somSteps>5)somSteps=5;
 		}

@@ -170,7 +170,7 @@ public class PhysicalFieldFactory {
 			repulsionField.out.delay(10) ;
 			z++;
 		}
-											out.print(3, "updating field of particles done. ") ;
+											out.print(4, "updating field of particles done. ") ;
 		return (RepulsionFieldIntf)repulsionField;
 	}
 	

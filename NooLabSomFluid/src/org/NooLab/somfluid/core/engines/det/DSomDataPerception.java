@@ -10,6 +10,7 @@ import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
 
 
+import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
@@ -44,6 +45,10 @@ public class DSomDataPerception
 	
 	double    constStartLearningRate = 0.25 ;
 	int       learningRateFixationmode = 2 ;
+
+
+
+	
 	
 	
 	
@@ -128,8 +133,13 @@ public class DSomDataPerception
 			}else{
 				currentRecordIndex = sampleRecordIDs.get( recordsConsidered);
 			}
-			recordsConsidered++;
-			
+			recordsConsidered++;   
+											if (displayProgress(3)){
+												// display epoch and 10-percentage, and compound of it
+												// currentEpoch
+												if ((currentEpoch>=1) || (sampleRecordIDs.size()>1200))
+												out.printprc(2, recordsConsidered, sampleRecordIDs.size(), ((int)sampleRecordIDs.size()/10), " records visited in epoch "+currentEpoch) ;
+											}
 											if (currentRecordIndex > dtable.rowcount() ){
 												break; // continue;
 											}
@@ -159,9 +169,9 @@ public class DSomDataPerception
 						 				}
 				 		 
 			winningNodeIndexes = getBestMatchingNodes( currentRecordIndex, testrecord, 5, boundingIndexList);
-			
+			                            
 				         				if ((winningNodeIndexes==null) || (winningNodeIndexes.size()==0))continue;
-				         				out.print(3, "winning node index: "+ winningNodeIndexes.get(0).getIndex() );
+				         				out.print(4, "winning node index: "+ winningNodeIndexes.get(0).getIndex() );
 		        				
             // set calculateAllVariables = true; for all nodes in the last epoch
 
@@ -247,7 +257,7 @@ if ((currentEpoch+1)>=somSteps){
 		    			     " ,  nb size: "+neighbourhoodSize);
 		    }
 
-											out.print(3,"neighbourhoodSize : "+neighbourhoodSize);
+											out.print(4,"neighbourhoodSize : "+neighbourhoodSize);
 			// recordsConsidered++;
 
 			int tn = Thread.activeCount();
@@ -1304,7 +1314,26 @@ if (this.currentEpoch==2){
 	}
 
 	
-	
+	private boolean displayProgress(int level) {
+		boolean rB=false;
+		
+		if (level<=0){
+			rB = (sfProperties.getShowSomProgressMode()>= SomFluidProperties._SOMDISPLAY_PROGRESS_NONE) ;
+		}
+		if (level==1){
+			rB = (sfProperties.getShowSomProgressMode()>= SomFluidProperties._SOMDISPLAY_PROGRESS_BASIC) ;
+		}
+		if (level==2){
+			rB = (sfProperties.getShowSomProgressMode()>= SomFluidProperties._SOMDISPLAY_PROGRESS_STEPS) ;
+		}
+		if (level>=3){
+			rB = (sfProperties.getShowSomProgressMode()> SomFluidProperties._SOMDISPLAY_PROGRESS_PERC) ;
+		}
+		
+		
+		
+		return rB;
+	}
 	
 
 }

@@ -3,6 +3,7 @@ package org.NooLab.somfluid.data;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import org.NooLab.somsprite.AnalyticFunctionSpriteImprovement;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 
@@ -34,6 +35,12 @@ public class Variables implements Serializable, VariablesIntf{
 	
 	ArrayList<String> 	  initialUsedVariablesStr = new ArrayList<String>() ;
 	ArrayList<Double> 	  usageIndicationVector = new ArrayList<Double>() ;
+	
+	/** 
+	 * describes whether a variable is allowed to touch or not across arbitrary contexts;
+	 * it is sth like a super-blacklist   
+	 */
+	ArrayList<Integer> 	  absoluteAccessible = new ArrayList<Integer>();
 	
 	StringsUtil strgutil = new StringsUtil();
 	
@@ -103,8 +110,22 @@ public class Variables implements Serializable, VariablesIntf{
 		targetedVariables.clear();
 	}
 
+	public ArrayList<AnalyticFunctionSpriteImprovement> getKnownTransformations() {
+		 
+		ArrayList<AnalyticFunctionSpriteImprovement> knownTransforms = new ArrayList<AnalyticFunctionSpriteImprovement>(); 
+	
+		
+		
+		return knownTransforms;
+	}
+
 	public Variable getItem( int index ){
-		return items.get(index) ;
+		Variable v=null;
+		
+		if ((index>=0) && (index<items.size())){
+			v = items.get(index) ;
+		}
+		return v; 
 	}
 	public void removeItem( int index ){
 		items.remove(index) ;
@@ -152,6 +173,27 @@ public class Variables implements Serializable, VariablesIntf{
 		return usedLabels;
 	}
 
+	public ArrayList<String> getLabelsForUseIndicationVector( Variables vars, ArrayList<Double> useIndications ){
+		ArrayList<String> labels = new ArrayList<String>();
+		String str;
+		
+		
+		if ((useIndications==null) || (useIndications.size()==0)){
+			return labels;
+		}
+		
+		for (int i=0;i<useIndications.size();i++){
+			
+			if (useIndications.get(i)>=0.00000001){
+				str = items.get(i).getLabel();
+				labels.add(str);
+			}
+		}// i->
+		
+		return labels;
+	}
+	
+	
 	public ArrayList<String> getLabelsForVariablesList(Variables vars){
 		ArrayList<String> labels = new ArrayList<String>();
 		Variable v;
@@ -177,17 +219,37 @@ public class Variables implements Serializable, VariablesIntf{
 		return labels;
 	}
 
+	
+	public ArrayList<Double> getUseIndicationForLabelsList( ArrayList<String> stringList ) {
+		
+		ArrayList<Double> useIndicationVector = new ArrayList<Double>();
+		String vlabel;
+		double ui;
+		ArrayList<String> varLabels = getLabelsForVariablesList(items);
+		
+		for (int i=0;i<items.size();i++){
+			ui=0.0;
+			vlabel = items.get(i).getLabel() ;
+			int p = stringList.indexOf(vlabel) ;
+			if (p>=0)ui=1.0;
+			useIndicationVector.add(ui);
+		}
+		
+		return useIndicationVector;
+	}
+	
+	
 	/**
 	 * returns a translation of labels to indexes, the list will have the same length!!
 	 * if a string is not found, the index value of the respective position will be set to -1;
 	 */
-	public ArrayList<Integer> getIndexesForLabelsList(ArrayList<String> strings) {
+	public ArrayList<Integer> getIndexesForLabelsList(ArrayList<String> stringList) {
 		ArrayList<Integer> indexes = new ArrayList<Integer>();
 		String inlabel,label;
 		ArrayList<String> varLabels = getLabelsForVariablesList(items);
 		
-		for (int i=0;i<strings.size();i++){
-			inlabel = strings.get(i) ;
+		for (int i=0;i<stringList.size();i++){
+			inlabel = stringList.get(i) ;
 			int p = varLabels.indexOf(inlabel) ;
 			indexes.add(p) ;
 		}
@@ -199,7 +261,7 @@ public class Variables implements Serializable, VariablesIntf{
 	public ArrayList<Variable> getActiveVariables() {
 		ArrayList<Variable> selection = new ArrayList<Variable>(); 
 		
-		
+		selection.addAll( this.items) ;
 		return selection;
 	}
 
@@ -394,7 +456,9 @@ public class Variables implements Serializable, VariablesIntf{
 					
 				}
 				if (ix>=0){
-					blackList.add( items.get(ix) );
+					if (blackList.contains( items.get(ix) )==false){
+						blackList.add( items.get(ix) );
+					}
 				}
 			}
 
@@ -428,6 +492,20 @@ public class Variables implements Serializable, VariablesIntf{
 
 	public void setWhiteLists(ArrayList<Variable> whiteLists) {
 		this.whiteLists = whiteLists;
+	}
+
+	/**
+	 * @return the absoluteAccessible
+	 */
+	public ArrayList<Integer> getAbsoluteAccessible() {
+		return absoluteAccessible;
+	}
+
+	/**
+	 * @param absoluteAccessible the absoluteAccessible to set
+	 */
+	public void setAbsoluteAccessible(ArrayList<Integer> absoluteAccessible) {
+		this.absoluteAccessible = absoluteAccessible;
 	}
 
 	public ArrayList<Variable> getBlackList() {
@@ -580,6 +658,30 @@ public class Variables implements Serializable, VariablesIntf{
 		return uses;
 	}
 	
+	
+	public Variable getItemByLabel(String varLabel) {
+		Variable variable= null;
+		boolean hb;
+		// items ArrayList<Variable>
+		Variable item;
+		
+		for (int i=0;i<items.size();i++){
+			item = items.get(i) ;
+			if ((item!=null) && (item.getLabel().contentEquals(varLabel))){
+				variable = item ;
+				break ;
+			}else{
+				hb = strgutil.matchSimpleWildcard( varLabel, item.getLabel()) ;
+				if (hb){
+					variable = item ;
+					break ;
+				}
+			}
+		}
+		
+		return variable;
+	}
+	
 	/**
 	 * 
 	 * todo: for large number of variables, we should set up a treemap... (assuming, that the set is not changing
@@ -685,8 +787,13 @@ public class Variables implements Serializable, VariablesIntf{
 	// --------------------------------------------------------------------		
 	
 	
-	
+	/**
+	 * translating index values indicating the position in the list into the list of strings ;
+	 * refers to the list of variables
+	 * 
+	 */
 	public ArrayList<String> deriveVariableSelection( ArrayList<Integer> proposedindexes, int mode ) {
+		
 		ArrayList<String> varSelection = new ArrayList<String>();
 		
 		for (int i=0;i<proposedindexes.size();i++){

@@ -33,6 +33,8 @@ public class DataReceptor implements //
 	
 	RawFileData rawFileData;
 	
+	DataTable dataTable;
+	
 	PrintLog out;
 	
 	// ------------------------------------------------------------------------
@@ -51,7 +53,7 @@ public class DataReceptor implements //
 	@Override
 	public void loadFromFile(String filename) throws Exception {
 		
-		DataTable dataTable;
+		
 		out = somData.getOut();
 		
 		loadedFile = filename;
@@ -62,7 +64,7 @@ public class DataReceptor implements //
 		
 		dataTable = rawFileData.getDataTable(); 
 		
-		somData.importDataTable( somData.getTransformer(), dataTable );
+		// somData.importDataTable( somData.getTransformer(), dataTable );
 	
 		rawFileData=null;
 		// dataTable=null;
@@ -72,6 +74,20 @@ public class DataReceptor implements //
 	public String getLoadedFileName() {
 		
 		return loadedFile;
+	}
+
+	/**
+	 * @return the rawFileData
+	 */
+	public RawFileData getRawFileData() {
+		return rawFileData;
+	}
+
+	/**
+	 * @return the dataTable
+	 */
+	public DataTable getDataTable() {
+		return dataTable;
 	}
 	
 	

@@ -33,7 +33,7 @@ public abstract class BasicNodeAbs implements
 	DataSourceIntf somData;
 	
 	
-	ArrayList<String> variableLabels = new ArrayList<String>();
+	private ArrayList<String> variableLabels = new ArrayList<String>();
 	// needs to get translated into index values that refer to the DataTable
 	
 	
@@ -68,6 +68,14 @@ public abstract class BasicNodeAbs implements
 		extensionality = importExtensionalityDynamics(serialID) ;
 	
 		profileVector = intensionality.getProfileVector(); 
+	}
+
+	public void setVariableLabels(ArrayList<String> varLabels) {
+		variableLabels = varLabels;
+	}
+
+	public ArrayList<String> getVariableLabels() {
+		return variableLabels;
 	}
 	
 	

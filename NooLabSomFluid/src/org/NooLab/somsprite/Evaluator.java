@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
  
+import org.NooLab.somsprite.func.SpriteFuncIntf;
 import org.NooLab.somsprite.func.XFunction;
 
 /**
@@ -17,7 +18,7 @@ import org.NooLab.somsprite.func.XFunction;
  */
 public class Evaluator {
 
-	SomSprite somSprite ;
+	SomSprite somSprite = null;
 	
 	Map<String,Object> functions = new HashMap<String,Object>() ;
 	Map<String,String> expressions = new HashMap<String,String>() ;
@@ -27,6 +28,9 @@ public class Evaluator {
 	// ========================================================================
 	public Evaluator(SomSprite somsprite){
 		somSprite = somsprite;
+	}
+	public Evaluator(){
+		
 	}
 	// ========================================================================
 	
@@ -40,14 +44,18 @@ public class Evaluator {
 
 
 			func = (SpriteFuncIntf) functions.get(expressionName) ;
-			resultObj = func.calculate(arguments) ;
+			if (func!=null){
+				resultObj = func.calculate(arguments) ;
+			}else{
+				resultObj = null;
+			}
 			
 		}catch(Exception e){
 			String estr = ""+e.getMessage();
 			if ((estr!=null) && (estr.contains("topNode parameter is null"))){
 				estr = estr+".\n"+"You may check syntax and brackets of the expression!";
 			}
-			System.err.println(estr+"\nin method <Evaluator.eval()> while calling func.calculate(<"+expressionName+">)..."); // expressionName
+			System.err.println(estr+"\nin method <Evaluator.eval()> while calling func.calculate(expression:<"+expressionName+">)..."); // expressionName
 		}
 		
 		return resultObj ;

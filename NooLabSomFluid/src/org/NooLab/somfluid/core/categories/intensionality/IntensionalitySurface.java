@@ -3,6 +3,8 @@ package org.NooLab.somfluid.core.categories.intensionality;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import org.NooLab.somfluid.util.BasicStatisticalDescription;
+
 
 /**
  * 
@@ -129,10 +131,36 @@ public class IntensionalitySurface implements 	Serializable ,
 	
 	@Override
 	public void setUsageIndicationVector(ArrayList<Double> usevector) {
+		int n = 0;
+		if (usageIndicationVector!=null){
+			usageIndicationVector.size(); 
+		}
 		usageIndicationVector = usevector; // it is a copy, not just a reference, as it originates in the similarity part ...
-										   // but the active TV is excluded here, since it is used only for application purposes	
+										   // but the active TV is excluded here, since it is used only for application purposes
+		if ((n>0) && (n!=usageIndicationVector.size())){
+			adjustUseWeightsVectorLen();
+		}
 	}
  
+	private void adjustUseWeightsVectorLen(){
+		
+		int n, vn;
+		
+		vn = usageIndicationVector.size();
+		n = useWeights.size() ;
+		
+		if (vn>n){
+			for (int i=0;i<vn-n;i++){
+				useWeights.add( 1.0 ) ;
+			}
+		}
+		if (vn<n){
+			for (int i=0;i<n-vn;i++){
+				useWeights.remove(vn) ;
+			}
+		}
+	}
+	
 	@Override
 	public ArrayList<Double> getUsageIndicationVector() {
 		 

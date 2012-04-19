@@ -21,10 +21,14 @@ import org.NooLab.math3.stat.clustering.EuclideanIntegerPoint;
 import org.NooLab.math3.stat.clustering.KMeansPlusPlusClusterer;
 import org.NooLab.math3.stat.inference.MannWhitneyUTest;
 
+import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityCalculator;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.core.engines.det.SomMapTable;
 import org.NooLab.somfluid.core.nodes.ClusterNode;
+import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somsprite.func.SpriteFuncIntf;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
 import org.apache.commons.math.linear.EigenDecomposition;
@@ -64,6 +68,8 @@ public class DependencyScreener {
 
 	SomSprite  somSprite;
 	
+	SomDataObject somData;
+	
 	SomMapTable somMapTable;
 	Evaluator evaluator;
 	
@@ -73,10 +79,12 @@ public class DependencyScreener {
 	KMeansPlusPlusClusterer<EuclideanDoublePoint> kMeans ;
 	// TODO: we use kmeans to estimate the match in multi-target case
 	
-	ArrayList<PotentialSpriteImprovement> bestEstimatedUtilities = new ArrayList<PotentialSpriteImprovement>();
+	ArrayList<AnalyticFunctionSpriteImprovement> bestEstimatedUtilities = new ArrayList<AnalyticFunctionSpriteImprovement>();
+	ArrayList<AnalyticFunctionSpriteImprovement> knownTransformations;
+	
 	int dCountThreshold = 5;
 	
-	PrintLog out;
+	PrintLog out ;
 	
 	// ========================================================================
 	public DependencyScreener(SomSprite somsprite, SomMapTable smt, Evaluator ev) {
@@ -87,6 +95,7 @@ public class DependencyScreener {
 		
 		kMeans = new KMeansPlusPlusClusterer<EuclideanDoublePoint>( (new Random(1234)) );
 		
+		
 		out = somSprite.out;
 	}
 	// ========================================================================	
@@ -94,19 +103,33 @@ public class DependencyScreener {
 	public void go(){
 	
 		double dr;
+		String str,varLabel;
 		int[] depVarIndex ;
 		String[] depVar = new String[3];
 		double[][] depVarValues = new double[5][somMapTable.values.length];
+		int fix1,fix2,ix0,ix1;
 		
-		
+		Variables variables;
 		ArrayList<int[]> depVarIndexes = new ArrayList<int[]>() ;
 		
-		PotentialSpriteImprovement euItem;
-		ArrayList<PotentialSpriteImprovement> estimatedUtils ;
+		AnalyticFunctionSpriteImprovement euItem;
+		ArrayList<AnalyticFunctionSpriteImprovement> estimatedUtils ;
 		
 		
+		somData = somSprite.somData;
+		variables = somData.getVariables() ;
+		
+		
+		// TODO first get known transformations and affected derived variables, such that we can 
+		//      prevent repeated suggestion of the same transformation 
+		
+		 
+		knownTransformations = variables.getKnownTransformations();
+		
+		
+		// 
 		int tvindex = somMapTable.tvIndex ;
-		
+
 		try{
 			
 			// we separate the tasks in a very trivial way;
@@ -140,8 +163,17 @@ public class DependencyScreener {
 				
 				depVar[0] = somMapTable.variables[ depVarIndex[0] ];
 				depVar[1] = somMapTable.variables[ depVarIndex[1] ];
-											if ((i==0) || (i%10==0))
-											out.print(2, "screening for dependencies ("+(i)+" of "+depVarIndexes.size()+") in variables ("+depVarIndex[0]+","+depVarIndex[1]+")..." );
+											
+											if ((i==0) || (i%10==0)){
+												int dmode = somSprite.sfProperties.getShowSomProgressMode();
+												if (dmode >= SomFluidProperties._SOMDISPLAY_PROGRESS_PERC){
+													out.print(2, "screening for dependencies ("+(i)+" of "+depVarIndexes.size()+") in variables ("+depVarIndex[0]+","+depVarIndex[1]+")..." );
+												}else{
+													if (i==0){
+														out.print(2, "screening for dependencies (n="+depVarIndexes.size()+")..." );
+													}
+												}
+											}
 				int va = depVarIndex[0];
 				int vb = depVarIndex[1];
 				
@@ -170,53 +202,135 @@ public class DependencyScreener {
 											
 			Collections.sort(bestEstimatedUtilities, new euComparable(-1));
 			
-			// reduce for similar, only <N> items per pair of variable
+			// remove known ones
+			removeKnownpreviousProposals();
 			
+			// reduce for similar, only <N> items per pair of variable
 			reduceListOfCandidates(bestEstimatedUtilities); 
 			
-											out.print(2, "all pairs checked, "+bestEstimatedUtilities.size()+" potential improvements found ...");
-											
-			int n = bestEstimatedUtilities.size();
-			if (n>5){
-				n=5;
-				bestEstimatedUtilities = new ArrayList<PotentialSpriteImprovement>( bestEstimatedUtilities.subList(0, n));
-			}
+											out.print(2, "all pairs checked, preparing potential improvements...");
 			
-			String expressionName , expression;
+			
+			String expressionName , expression, str1, str2;
 			SpriteFuncIntf func;
 			double kvalue ;
 			
 			for (int i=0;i<bestEstimatedUtilities.size();i++){
 				
 				euItem = bestEstimatedUtilities.get(i);
-				
-				expressionName = evaluator.getExpression(euItem.funcIndex1);
+				         fix1 = euItem.funcIndex1 ; fix2 = euItem.funcIndex2 ;
+
+				expressionName = evaluator.getExpression(euItem.funcIndex1); 
 				expression = evaluator.getExpression(expressionName );
 				
 				func = (SpriteFuncIntf) evaluator.functions.get(expressionName) ;
 				FunctionCohortParameterSet cps = func.getCohortParameterSet() ;
-				if (cps!=null){
-					kvalue = cps.cohortValues[ euItem.funcIndex2 ] ; 
-					
-					// replace k by value
-					expression = expression.replace( cps.varPLabel, ""+kvalue) ;
-					
-				}
 				
+				if (cps!=null){
+					if ((cps.cohortValues.length>0) && (euItem.funcIndex2<0)){
+						int k=0;
+						k = cps.cohortValues.length/2;
+						euItem.funcIndex2=k;
+					}
+					if ((euItem.funcIndex2 >=0) && (euItem.funcIndex2 < cps.cohortValues.length)){
+						
+						kvalue = cps.cohortValues[ euItem.funcIndex2 ] ;
+						kvalue = (Math.round( kvalue*1000.0)/1000.0) ;
+						// replace k by value
+						expression = expression.replace( cps.varPLabel, ""+kvalue+"") ;
+					}
+				}
+				 
 				// refresh expression setting ...
 				euItem.setExpression(expression);
 				euItem.setExpressionName(expressionName);
-											out.print(2, "var 1, var 2  : "+euItem.varIndex1+", "+euItem.varIndex2);
+				  
+				// translate indices from "somMapTable" to SomDataObject
+				varLabel = somMapTable.variables[euItem.varIndex1] ; 
+				euItem.varIndex1 = variables.getIndexByLabel(varLabel) ;  str1 = varLabel;
+				
+				varLabel = somMapTable.variables[euItem.varIndex2] ;
+				euItem.varIndex2 = variables.getIndexByLabel(varLabel) ;  str2 = varLabel;
+				
+				if (somSprite.isProposalKnown(euItem)){
+					euItem.funcIndex1 = -1 ; euItem.funcIndex2 = -1 ;
+					euItem.varIndex1  = -1 ; euItem.varIndex2  = -1 ;
+					euItem.setExpression("") ;
+					euItem.estimatedImprovement = -1.0 ;
+				}
+											if (euItem.varIndex1>0){
+												out.print(2, "var 1,  var 2  : "+euItem.varIndex1+", "+euItem.varIndex2+"  : "+expression );
+												out.print(2, "   labels a,b  :           "+str1+", "+str2);
+											}                               
+				// also register encoding, and print it
+											
+											
+										
 			}
+			
+											
+			// remove empty items
+			AnalyticFunctionSpriteImprovement fs ;
+			int i=bestEstimatedUtilities.size()-1;
+			
+			while(i>=0){
+				
+				fs = bestEstimatedUtilities.get(i) ;
+				if ((fs.funcIndex1<0) || (fs.getExpression().length()==0)){
+					bestEstimatedUtilities.remove(i) ;
+				}
+				i--;
+			}// ->
+			
+			int n = bestEstimatedUtilities.size();
+			if (n>5){
+				n=5;
+				bestEstimatedUtilities = new ArrayList<AnalyticFunctionSpriteImprovement>( bestEstimatedUtilities.subList(0, n));
+			}
+											out.print(2, bestEstimatedUtilities.size()+" potential improvements found.");
 			
 		}catch(Exception e){
 			e.printStackTrace() ;
 		}
-		 
+		dr=0; 
 	}
 
 	
-	public class euComparable implements Comparator<PotentialSpriteImprovement>{
+	private void removeKnownpreviousProposals() {
+		 
+		boolean hb;
+		AnalyticFunctionSpriteImprovement fs ;
+		
+		if (somSprite.previousProposals==null){
+			return;
+		}
+		
+		int n = somSprite.previousProposals.size() ;
+		if (n==0){
+			return;
+		}
+		
+		int i=bestEstimatedUtilities.size()-1;
+		while(i>=0){
+			
+			fs = bestEstimatedUtilities.get(i) ;
+			if (fs.getExpression().length()==0){ 
+				bestEstimatedUtilities.remove(i); 
+				i--;
+				continue;
+			}
+			
+			if (somSprite.isProposalKnown(fs)){
+				bestEstimatedUtilities.remove(i);
+			}
+			 
+			i--;
+		} // while ->
+		i=0;
+	}
+
+
+	public class euComparable implements Comparator<AnalyticFunctionSpriteImprovement>{
 		 
 		int sortdirection = 1;
 		
@@ -228,7 +342,7 @@ public class DependencyScreener {
 		}
 		
 	    @Override
-	    public int compare(PotentialSpriteImprovement item1, PotentialSpriteImprovement item2) {
+	    public int compare(AnalyticFunctionSpriteImprovement item1, AnalyticFunctionSpriteImprovement item2) {
 	    	int result=0;
 	    	
 	    	if (item1.estimatedImprovement < item2.estimatedImprovement){
@@ -251,8 +365,8 @@ public class DependencyScreener {
 	    }
 	}
 	
-	private void reduceListOfCandidates( ArrayList<PotentialSpriteImprovement> items) {
-		PotentialSpriteImprovement item, coitem;
+	private void reduceListOfCandidates( ArrayList<AnalyticFunctionSpriteImprovement> items) {
+		AnalyticFunctionSpriteImprovement item, coitem;
 		int n,i,lastN=-1;
 		boolean hb;
 		
@@ -268,9 +382,10 @@ public class DependencyScreener {
 
 		// 2. remove multiple entries for a particular pair of variables, 
 		//    keeping only 1 or 2, dependent on the total size (thus we need a meta-loop)
-
+		items.trimToSize() ;
 		n = items.size();
 		int nFromSamePair = 3;
+		int nFromSameLabelFunc = 2;
 		int nOnSameVar = Math.max(1, nFromSamePair-1);
 		
 		while ((items.size()>dCountThreshold) && (nFromSamePair>0)){
@@ -284,7 +399,7 @@ public class DependencyScreener {
  					continue;
  				}
  				int idPairCount=0;
- 				int[] idBaseVarCount= new int[2];
+ 				int[] idBaseVarCount= new int[3];
  				
  				for (int j = k+1; j < items.size(); j++) {
  					coitem = items.get(j) ;
@@ -300,9 +415,15 @@ public class DependencyScreener {
 						if (item.varIndex2 == coitem.varIndex2) {
 							idBaseVarCount[1]++;
 						}
+						if ( ((item.varIndex1 == coitem.varIndex1) ||  (item.varIndex2 == coitem.varIndex2)) &&
+							 (item.funcIndex1 == coitem.funcIndex1)){
+							idBaseVarCount[2]++;
+						}
  					}
- 					hb = (idPairCount<nFromSamePair) && (idBaseVarCount[0]<nOnSameVar) && (idBaseVarCount[1]<nOnSameVar); 
  					
+ 					hb = (idPairCount<nFromSamePair) && 
+ 					     (idBaseVarCount[0]<=nOnSameVar+2) && (idBaseVarCount[1]<=nOnSameVar+2) &&
+ 					     ((idBaseVarCount[2]< nFromSameLabelFunc)); 
  					
  					if (hb==false){
  						coitem.estimatedImprovement = -1.01 ;
@@ -315,13 +436,18 @@ public class DependencyScreener {
 			// 3. drop all those for which we have reduced the estimated improvement
 			i = items.size()-1;
 			while (i>=0){
-				if (items.get(i).estimatedImprovement<1.5){
+				item = items.get(i);
+				if ((item.estimatedImprovement<1.5) ){
 					items.remove(i) ;
 				}
 				i--;
 			}
 			n = items.size(); if (lastN==n){break;} ; lastN=n;
-			nFromSamePair--;
+			if (nFromSamePair>=2){
+				nFromSamePair--;
+			}else{
+				
+			}
  		} // items count > 5 (threshold)
 		
 		n = items.size();
@@ -330,6 +456,9 @@ public class DependencyScreener {
 		while (items.size()>dCountThreshold){
 			items.remove(dCountThreshold) ;
 		}
+		
+		
+		
 		items.trimToSize() ;
 	}
 	
@@ -344,7 +473,7 @@ public class DependencyScreener {
 		}
 		
 		@SuppressWarnings("unchecked")
-		public ArrayList<PotentialSpriteImprovement> check( int v1index, int v2index, double[][] depVarValues ){
+		public ArrayList<AnalyticFunctionSpriteImprovement> check( int v1index, int v2index, double[][] depVarValues ){
 			
 			double v1,v2,fv,fmax ,fmin , vesti;
 			int nex , knnClusterCount = 2,targetMode,k;
@@ -358,8 +487,8 @@ public class DependencyScreener {
 			ArrayList<IndexTuple> candidateImprovements = new ArrayList<IndexTuple> ();
 			IndexTuple ixtup;
 			
-			PotentialSpriteImprovement pimp; 
-			ArrayList<PotentialSpriteImprovement> potentialImprovements = new ArrayList<PotentialSpriteImprovement>() ;
+			AnalyticFunctionSpriteImprovement pimp; 
+			ArrayList<AnalyticFunctionSpriteImprovement> potentialImprovements = new ArrayList<AnalyticFunctionSpriteImprovement>() ;
 			FunctionCohortParameterSet cps ; 
 			
 			cls = somSprite.modelingSettings.getClassifySettings();
@@ -458,7 +587,7 @@ if ((expressionName.contains("logist2x")) ||
 						continue;
 					}
 					
-					// normalize;
+					// normalize; ???
 					
 					for (int i=0;i<depVarValues[0].length;i++){
 						fv = depVarValues[3][i] ;
@@ -519,6 +648,10 @@ if ((expressionName.contains("logist2x")) ||
 					// dependent on the target mode (1 group or many, discrete or corr), 
 					// we apply different weightings for the measure
 					vesti = estimateImprovement( targetMode, measure ) ;
+if (vesti>1000){
+	k=0;
+	vesti=2.2;
+}
 					ixtup = new IndexTuple(vesti, f,v);
 					candidateImprovements.add( ixtup ) ;
 											if (out!=null)out.print(4, "   - - - > estimated improvement (f,p:"+f+","+v+"): "+String.format("%.3f",vesti));
@@ -543,7 +676,7 @@ if ((expressionName.contains("logist2x")) ||
 					
 					expressionName = evaluator.getExpression(fs);
 					
-					pimp = new PotentialSpriteImprovement (v1index, v2index , ixtup.value);
+					pimp = new AnalyticFunctionSpriteImprovement (v1index, v2index , ixtup.value);
 					pimp.setFunctions( ixtup.indexes[0],ixtup.indexes[1] );
 					
 					potentialImprovements.add(pimp) ;
@@ -603,15 +736,28 @@ if ((expressionName.contains("logist2x")) ||
 		private double estimateImprovement( int tm, double[] measure) {
 			 
 			double msum ;
-			double estImp =0.0;
+			double v,estImp =0.0;
+			int z=0;
+			msum = 0.0;
 			
-			msum = measure[0] + measure[1] + measure[2] ; // + measure[3] ;
-			estImp = msum/3.0 ;
+			for (int i=0;i<=2;i++){
+				
+				v = measure[i] ;
+				if ((v>=0) && ( Double.isNaN(v)==false )){
+					msum = msum + v;
+					z++;
+				}
+			}
+			
+			if (z>0){
+				estImp = msum/((double)z) ;
+			}
 			
 			return estImp ;
 		}
 
 		private double calculateAlignments(double[][] depVarValues) {
+			
 			double rating = 0;
 			double[] ms = new double[3] ;
 			// 
@@ -632,7 +778,7 @@ if ((expressionName.contains("logist2x")) ||
 				ms[1] = mwu.mannWhitneyUTest( depVarValues[1], depVarValues[2]) ;
 				ms[2] = mwu.mannWhitneyUTest( depVarValues[3], depVarValues[2]) ;
 			
-				if ((ms[2]>0.9) && (ms[2]>ms[0]) && (ms[2]>ms[1])){
+				if ((ms[2]>0.9) && (ms[2]>ms[0]) && (ms[2]>ms[1]) && ((ms[1]>0.001 || ms[0]>0.001))){
 					rating = (ms[2]*ms[2]+ms[2])/(ms[1]+ms[0]) ;
 				} else{
 					rating = (1.0+ms[2])/(1.0+Math.max( ms[0], ms[1]));
@@ -669,7 +815,9 @@ if ((expressionName.contains("logist2x")) ||
 			} else{
 				cRatio = (1.0+scValueVV)/(1.0+Math.max( scValueV1, scValueV2));
 			}
-			
+			if (Double.isNaN(cRatio)){
+				cRatio = 0.1 ;
+			}
 			// cRatio = scValueV1/scValueV1;
 				
 			// remove col 3,4
@@ -807,8 +955,10 @@ if ((expressionName.contains("logist2x")) ||
 	 
 	
 
-	public ArrayList<PotentialSpriteImprovement> getListOfCandidatePairs() {
-		ArrayList<PotentialSpriteImprovement> candidates = new ArrayList<PotentialSpriteImprovement>(bestEstimatedUtilities);
+	public ArrayList<AnalyticFunctionSpriteImprovement> getListOfCandidatePairs() {
+		
+		ArrayList<AnalyticFunctionSpriteImprovement> candidates ;
+		candidates = new ArrayList<AnalyticFunctionSpriteImprovement>(bestEstimatedUtilities);
 		return candidates;
 	}
 

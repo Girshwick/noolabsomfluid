@@ -197,7 +197,7 @@ public abstract class AbstractMetaNode  extends
 		 * 	ArrayList<Variable> variables = new ArrayList<Variable>(); 
 			ArrayList<Double>   values  
 		 */
-		profileVector.setVariablesStr(  new ArrayList<String>(variableLabels) );
+		profileVector.setVariablesStr(  new ArrayList<String>(getVariableLabels()) );
 		
 		int n = profileVector.getVariablesStr().size() ;
 		
@@ -250,7 +250,7 @@ if (v0!=vv){
 			nodeStats.getFieldValues().add( new BasicStatisticalDescription() ) ;
 			nodeStats.setVariables(vars) ;
 		} // i-> all vector positions
-											out.print(3, "node <" + serialID + "> initialized.");
+											out.print(4, "node <" + serialID + "> initialized.");
 		profileVector.setLastExtDataValueIndex( profileVector.getVariablesStr().size()-1 );		
 		
 		int np = profileVector.getValues().size() ;

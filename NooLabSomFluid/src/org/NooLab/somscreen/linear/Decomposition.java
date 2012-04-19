@@ -68,7 +68,7 @@ public class Decomposition {
 		}
 		// we should subtract mean for each column
 		// in each column, we should divide by stdev
-										out.print(2,"calculating linear matrix description for som ...");
+										out.print(3,"calculating linear matrix description for som ...");
 		rmatrix = new Array2DRowRealMatrix( d ) ;
 		
 		svd = new SingularValueDecomposition(rmatrix) ;

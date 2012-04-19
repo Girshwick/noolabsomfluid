@@ -1,4 +1,6 @@
-package org.NooLab.somsprite;
+package org.NooLab.somsprite.func;
+
+import org.NooLab.somsprite.FunctionCohortParameterSet;
 
 public interface SpriteFuncIntf {
 
@@ -7,8 +9,9 @@ public interface SpriteFuncIntf {
 	public String getName();
 	public void   setName(String funcName);
 	
-	public void  setMissingValue( double missingvalue );
+	public void   setMissingValue( double missingvalue );
 	
+	public String getFormula();
 	
 	public Object calculate( double... values) throws Exception;
 	public void allowVariablesCountMismatch(boolean flag);

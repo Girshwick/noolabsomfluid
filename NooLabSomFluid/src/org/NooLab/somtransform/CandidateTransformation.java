@@ -9,7 +9,7 @@ public class CandidateTransformation implements Serializable{
 
 	private static final long serialVersionUID = 6502046200729357592L; 
 	
-	
+	int demandForFreshStack = -1;
 	String expression, expressionName;
 	String[] variablesStr = new String[2]; 
 	int[] variablesIx     = new int[2];
@@ -52,6 +52,34 @@ public class CandidateTransformation implements Serializable{
 
 	public void setVariablesIx(int[] variablesIx) {
 		this.variablesIx = variablesIx;
+	}
+
+	/**
+	 * @return the demandForFreshStack
+	 */
+	public int getDemandForFreshStack() {
+		return demandForFreshStack;
+	}
+
+	/**
+	 * @param demandForFreshStack the demandForFreshStack to set
+	 */
+	public void setDemandForFreshStack(int demandForFreshStack) {
+		this.demandForFreshStack = demandForFreshStack;
+	}
+
+	/**
+	 * @return the expressionName
+	 */
+	public String getExpressionName() {
+		return expressionName;
+	}
+
+	/**
+	 * @param expressionName the expressionName to set
+	 */
+	public void setExpressionName(String expressionName) {
+		this.expressionName = expressionName;
 	}
 	
 	

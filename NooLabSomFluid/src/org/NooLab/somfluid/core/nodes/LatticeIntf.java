@@ -10,4 +10,10 @@ public interface LatticeIntf {
 
 	
 	public ArrayList<IndexDistanceIntf> getNeighborhoodNodes( int index , int nodeCount );
+	
+	public void refreshDataSourceLink() ;
+	
+	public void spreadVariableSettings() ;
+	
+	
 }

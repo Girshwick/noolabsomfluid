@@ -13,7 +13,12 @@ import java.util.Random;
 import java.util.Vector;
 
 import org.NooLab.somfluid.SomFluidFactory;
+import org.NooLab.somfluid.components.Coarseness;
 import org.NooLab.somfluid.components.DataFilter;
+import org.NooLab.somfluid.components.MetricsStructure;
+import org.NooLab.somfluid.components.MultiCrossValidation;
+import org.NooLab.somfluid.components.ParetoPopulationExplorer;
+import org.NooLab.somfluid.components.SomModelDescription;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
 import org.NooLab.somfluid.core.engines.det.ClassesDictionary;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
@@ -244,6 +249,8 @@ public class ModelingSettings implements Serializable{
 
 	private int initialAutoVariableSelection=0 ;
 	ArrayList<String> initialVariableSelection = new ArrayList<String>();
+
+	private boolean isExtendedDiagnosis = false;
 		
 
 	
@@ -521,8 +528,8 @@ public class ModelingSettings implements Serializable{
 	 * 
 	 * @param maxL2LoopCount
 	 */
-	public void setMaxL2LoopCount(int maxL2LoopCount) {
-		this.maxL2LoopCount = maxL2LoopCount;
+	public void setMaxL2LoopCount(int maxL2loopcount) {
+		maxL2LoopCount = maxL2loopcount;
 	}
 
 	public boolean isContentSensitiveInfluence() {
@@ -924,6 +931,24 @@ public class ModelingSettings implements Serializable{
 		initialVariableSelection.addAll(varitems);
 	}
 
+	public void setExpectedVariety(String varLabel, int nFreq) {
+		//  
+		
+	}
+
+	public boolean isExtendedDiagnosis() {
+		return isExtendedDiagnosis;
+	}
+	/**
+	 * perfrms: </br>
+	 * ParetoPopulationExplorer, SomModelDescription, Coarseness, MultiCrossValidation, MetricsStructure
+	 *  
+	 * @param flag
+	 */
+	public void setExtendedDiagnosis(boolean flag) {
+		isExtendedDiagnosis = flag ;
+	}
+	
 	
 	
 }

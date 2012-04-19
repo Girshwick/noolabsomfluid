@@ -118,7 +118,7 @@ public class SimpleSingleModel implements SomHostIntf{
 			
 			targetedModeling.setSomDataObject(somDataObj);
 			 
-			targetedModeling.prepare( usedVariables );  
+			targetedModeling.prepare( usedVariables );  // 
 			 
 			String guid = targetedModeling.perform(0);
 			

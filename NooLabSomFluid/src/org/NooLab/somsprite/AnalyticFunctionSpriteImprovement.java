@@ -1,27 +1,41 @@
 package org.NooLab.somsprite;
 
-public class PotentialSpriteImprovement {
+public class AnalyticFunctionSpriteImprovement {
 	
 	
-	public int varIndex1;
-	public int varIndex2 ;
+	public int varIndex1 = -1;
+	public int varIndex2 = -1;
 	
-	public int funcIndex1;
-	public int funcIndex2 ;
+	public int funcIndex1 = -1;
+	public int funcIndex2 = -1;
 
-	public double  estimatedImprovement;
-	private String expression;
-	private String expressionName;
+	public double  estimatedImprovement = -1.0;
+	private String expression ="";
+	private String expressionName ="";
 
 	
 	// ------------------------------------------------------------------------
-	public PotentialSpriteImprovement( int varIndex1, int varIndex2, double estimatedImprovement){
+	public AnalyticFunctionSpriteImprovement( int varIndex1, int varIndex2, double estimatedImprovement){
 		
 		this.varIndex1 =  varIndex1;
 		this.varIndex2 =  varIndex2;
 		this.estimatedImprovement = estimatedImprovement ; 
 	}
 	// ------------------------------------------------------------------------
+
+	public AnalyticFunctionSpriteImprovement( AnalyticFunctionSpriteImprovement fs) {
+
+		varIndex1 = fs.varIndex1  ;
+		varIndex2 = fs.varIndex2   ;
+		
+		funcIndex1 = fs.funcIndex1  ;
+		funcIndex2 = fs.funcIndex2   ;
+
+		estimatedImprovement = fs.estimatedImprovement  ;
+		expression = fs.expression  ;
+		expressionName = fs.expressionName  ;
+
+	}
 
 	public void setVariables( int... varindex){
 		varIndex1 = varindex[0] ;
@@ -98,5 +112,25 @@ public class PotentialSpriteImprovement {
 		return expressionName;
 	}
 	
-	
+	public boolean isEqual( AnalyticFunctionSpriteImprovement fs){
+		boolean rB=true;
+		
+		rB = (varIndex1 == fs.varIndex1);
+		if (rB){ rB = varIndex2 == fs.varIndex2 ;  } ;
+		if (rB){ rB = funcIndex1 == fs.funcIndex1 ;  } ;
+		if (rB){ rB = funcIndex2 == fs.funcIndex2 ;  } ;
+		
+		if (rB){ 
+			if (fs.expression.length()>0){
+				rB = expression.contentEquals(fs.expression);  
+			} ;
+		}
+		if (rB){ 
+			if (fs.expressionName.length()>0){
+				rB = expressionName.contentEquals(fs.expressionName);  
+			} ;
+		}
+ 
+		return rB;
+	}
 }

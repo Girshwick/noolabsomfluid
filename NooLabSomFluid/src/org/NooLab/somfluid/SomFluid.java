@@ -13,8 +13,11 @@ import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
 
 import org.NooLab.somfluid.properties.* ;
 import org.NooLab.somfluid.components.* ;
+
 import org.NooLab.somfluid.core.application.*;
-import org.NooLab.somfluid.core.engines.det.SomHostIntf;
+import org.NooLab.somfluid.core.engines.det.results.ModelOptimizerDigester;
+import org.NooLab.somfluid.core.engines.det.results.SimpleSingleModelDigester;
+import org.NooLab.somfluid.core.engines.det.results.SomResultDigesterIntf;
  
 import org.NooLab.somfluid.env.data.*;
 import org.NooLab.somtransform.SomTransformer;
@@ -131,10 +134,9 @@ public class SomFluid
 	 * @param sfTask
 	 */
 	private void performTargetedModeling( SomFluidTask sfTask ) {
-		// since we need this also for evo-optimization, we put it to a small class  
-		// there we use a different constructor (taking a copy from this basic instance...)
 		 
 		SimpleSingleModel simo ;
+		SimpleSingleModelDigester simoResultHandler ;
 		ModelingSettings modset = sfProperties.modelingSettings ;
 			
 		sfTask.setSomHost(null) ;
@@ -142,39 +144,57 @@ public class SomFluid
 		
 		simo = new SimpleSingleModel(this, sfTask, sfFactory );
 		
+		simoResultHandler = new SimpleSingleModelDigester( simo,sfFactory );
+		sfTask.setSomResultHandler( simoResultHandler ) ;
+		
 		sfTask.setDescription("performTargetedModeling()") ;
 		
 		simo.prepareDataObject() ;
 		simo.setInitialVariableSelection( modset.getInitialVariableSelection() ) ;
 		
 		simo.perform();
-		 
+		// will return in "onTaskCompleted()"
 		// handling requests about persistence: saving/sending model, results
 	}
 	
 
-	
+	/**
+	 * 
+	 * optimizes a single model, using evo-screener and sprite-derivation
+	 * 
+	 * @param sfTask
+	 */
 	private void performModelOptimizcreener(SomFluidTask sfTask) {
 		ModelOptimizer moz ;
-		 
+		ModelOptimizerDigester optimizerResultHandler ;
 		somDataObjects.clear();
 		
 		sfTask.setDescription("ModelOptimizer()") ;
 		sfTask.setSomHost(null) ;
 		
+		
 		moz = new ModelOptimizer( this , sfTask, sfFactory );
-		
+
+		optimizerResultHandler = new ModelOptimizerDigester( moz , sfFactory);
+		sfTask.setSomResultHandler( optimizerResultHandler ) ;
+
 		moz.perform();
+		// will return in "onTaskCompleted()"
 		
-		/*
-		 * // put results into modelProperties object (item of a list of such)
-		
-		// put(dsomGuid, modelProperties);
-		
-		 */
-		// handling requests about persistence: saving/sending model, results
 	}
 	
+	
+	/**
+	 * 
+	 * creates a series of models, using slight variation in "strong" parameters such as
+	 * max number of clusters, ECR-catalog (esp. 0-alpha, 0-beta models)
+	 * 
+	 * @param sfTask
+	 */
+	private void performSpelaMetaModeling(SomFluidTask sfTask) {
+		
+		
+	}
 
 	private void performAssociativeStorage(SomFluidTask sfTask) {
 		 
@@ -202,6 +222,17 @@ public class SomFluid
 	public void onTaskCompleted( SomFluidTask sfTask ) {
 		 
 		out.printErr(1, "\nSomFluid task has been completed, returning instance : "+ sfTask.getDescription()+", "+sfTask.getSomHost().toString().replace("org.NooLab.somfluid.", "")+"\n" );
+		
+		/* sfTask contains a reference to 
+		 *   - somHost
+		 *   - the SomResultDigesterIntf
+		 * thus we just can call the interface's method ...
+		 * the routing to the appropriate class will be taken "automatically" (we prepared it in the task specific method)
+		 * 
+		 * it will use persistence settings
+		 */
+		
+		sfTask.getSomResultHandler().handlingResults() ;
 		
 	}
 
@@ -242,7 +273,7 @@ public class SomFluid
 										    out.print(5,"...tdp (3)") ;
 						sfTask = somTasks.getItem(0) ;
 						
-						out.print(2,"working on task, id = "+sfTask.guidID);
+						out.print(2,"\nworking on task, id = "+sfTask.guidID);
 						TaskDispatcher td = new TaskDispatcher(sfTask);
 											out.print(5,"...tdp (4)") ;
 						if (td.isWorking==false){
@@ -358,6 +389,22 @@ public class SomFluid
 	
 	
 	
+	public boolean loadLastOfKnownTransformerModels( SomDataObject somDataObj ) {
+		
+		SomTransformer somTransformer;
+		 
+		somTransformer = somDataObj.getTransformer();
+		
+		
+		
+		
+		
+		return false;
+	}
+
+
+
+
 	public SomDataObject loadSource( String srcname ) throws Exception{
 		
 		SomDataObject somDataObject;
@@ -390,18 +437,24 @@ public class SomFluid
 		somDataObject = createSomDataObject() ;
 	
 		
-		SomTransformer transformer = new SomTransformer( somDataObject );
+		SomTransformer transformer = new SomTransformer( somDataObject, sfProperties );
 
 		somDataObject.setTransformer(transformer) ;
 		
 		DataReceptor dataReceptor = new DataReceptor( sfProperties, somDataObject );
 		
+		// establishes a "DataTable" from a physical source
 		dataReceptor.loadFromFile(srcName);
-
-		somDataObject.setDataReceptor(dataReceptor);
-
+ 
+		// imports the DataTable into the SomDataObject, and uses a SomTransformer instance 
+		// in order to provide a basic numeric version of the data by calling SomTransformer.basicTransformToNumericalFormat()
+		somDataObject.importDataTable( dataReceptor, 1 ); 
+		
+		// as defined by the user
 		somDataObject.acquireInitialVariableSelection();
-
+		
+											out.print(4, "somDataObject instance @ loadSource : "+somDataObject.toString()) ;
+											
 		return somDataObject;
 
 	}

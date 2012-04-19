@@ -205,7 +205,7 @@ public class SomTargetedModeling    extends
 		double d = particleField.getAverageDistanceBetweenParticles();
 		somLattice.setAveragePhysicalDistance(d);
 		
-											out.print(2, "logical som lattice created.");
+											out.print(3, "logical som lattice created.");
 		// 
 	}
 
@@ -267,7 +267,7 @@ public class SomTargetedModeling    extends
 			return;
 		}
 		 
-											out.print(2, "loading data definitions to Som-Lattice...");
+											out.print(2, "loading data definitions to Som-Lattice (vector size: "+vars.size()+")..."); 
 											
 		// initialize feature vectors: ALL variables, WITHOUT id, tv !!!
 		// if we won't use all variables, the size of the vectors won't match (intensionality.profilevector.values)
@@ -304,7 +304,7 @@ public class SomTargetedModeling    extends
 		notifyAllNodes( task );
 		
 		latticeFutureVisor.waitFor(); out.delay(100); 
-											out.print(3, "initialization of SomLattice done.");
+											out.print(3, "initialization of SomLattice done (vector size: "+uv.size()+"). ");
 											
 											
 	}

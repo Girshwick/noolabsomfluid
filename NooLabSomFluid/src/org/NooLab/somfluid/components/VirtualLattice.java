@@ -14,6 +14,7 @@ import org.math.array.StatisticSample;
 import org.NooLab.utilities.ArrUtilities; 
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexDistanceIntf;
+import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
  
@@ -35,9 +36,12 @@ import org.NooLab.somfluid.core.nodes.LatticeIntf;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.core.*;
+import org.NooLab.somfluid.data.DataTable;
+import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.communication.LatticeFutureVisorIntf;
+import org.NooLab.somfluid.util.NumUtils;
  
 
 
@@ -237,6 +241,14 @@ public class VirtualLattice implements LatticeIntf{
 		latticeuseIndicators = getSimilarityConcepts().getUsageIndicationVector() ;
 		
 		/*
+		 * we need to (re)calculate the whole profile, non-used profile entries are 0.0 by default ! 
+		 */
+		if (modus>0){
+			updateIntensionalProfiles( modus ) ;
+		}
+		if (modus>1)modus=1;
+		
+		/*
 		 * we need two loops, since compared/extracted nodes may be of different structure 
 		 * the first one finding the compound vector that can be used to describe all nodes,
 		 */
@@ -325,68 +337,341 @@ public class VirtualLattice implements LatticeIntf{
 		// hence we should determine the indices in the variables-list, sort
 		// the compoundVarStr accordingly and then proceed ...
 		
-		
-		for (int i=0;i<nodes.size();i++){
+		try{
 			
-			node = nodes.get(i) ;
-			useIndicators = node.getSimilarity().getUsageIndicationVector();
-			// also: blacklist...
-			
-			nodeIsApplicable=true;
-			// apply the filter that acts on the node
-			if (nodeIsApplicable==false){
-				continue;
-			}
-			
-			profileVector = node.getIntensionality().getProfileVector();
-			
-			// we export used vars + TV
-			pValues = profileVector.getValues() ;
-			
-			// we do this for each node, though in most cases this is redundant, 
-			// et, nodes are NOT necessarily showing the same assignates/features !!
-			for (int v=0;v<variables.size();v++){
+
+			for (int i=0;i<nodes.size();i++){
 				
-				variable = variables.getItem(v) ;
-				varLabel = variable.getLabel() ;
+				node = nodes.get(i) ;
+				useIndicators = node.getSimilarity().getUsageIndicationVector();
+				// also: blacklist...
 				
-				hb = (useIndicators.get(v)>0.0) || (variable.isTV());
-				if (hb){
-					hb = (variable.isIndexcandidate()==false) && (variable.isID()==false) ;	
+				nodeIsApplicable=true;
+				// apply the filter that acts on the node
+				if (nodeIsApplicable==false){
+					continue;
 				}
-				hb = compoundVarStr.indexOf(varLabel)>=0;
 				
-				if (hb){
+				profileVector = node.getIntensionality().getProfileVector();
+				
+				// we export used vars + TV
+				pValues = profileVector.getValues() ;
+				
+				// we do this for each node, though in most cases this is redundant, 
+				// et, nodes are NOT necessarily showing the same assignates/features !!
+				for (int v=0;v<variables.size();v++){
 					
+					variable = variables.getItem(v) ;
+					varLabel = variable.getLabel() ;
 					
-					activeVarStr.add( varLabel ) ;
+					hb = (useIndicators.get(v)>0.0) || (variable.isTV());
+					if (hb){
+						hb = (variable.isIndexcandidate()==false) && (variable.isID()==false) ;	
+					}
+					hb = compoundVarStr.indexOf(varLabel)>=0;
 					
-					// activeProfileValue = pValues.get(v) ;
-					// activeProfileValues.add(activeProfileValue) ;
-					
-					vix = compoundVarStr.indexOf(varLabel) ;
-					if (vix>=0){
-						smt.variables[vix] = varLabel;
-						smt.values[rnc][vix] = pValues.get(v);
-						if (variable.isTV()){
-							smt.tvIndex = vix;
+					if (hb){
+						
+						
+						activeVarStr.add( varLabel ) ;
+						
+						// activeProfileValue = pValues.get(v) ;
+						// activeProfileValues.add(activeProfileValue) ;
+						
+						vix = compoundVarStr.indexOf(varLabel) ;
+						if (vix>=0){
+							smt.variables[vix] = varLabel;
+							smt.values[rnc][vix] = pValues.get(v);
+							if (variable.isTV()){
+								smt.tvIndex = vix;
+							}
 						}
 					}
-				}
+					
+				} // v-> all variables
+				rnc++;
 				
-			} // v-> all variables
-			rnc++;
+				
+			} // i-> all nodes
+	
 			
 			
-		} // i-> all nodes
-		
+			
+		}catch(Exception e){
+			
+			e.printStackTrace();
+		}
+				
 		
 		
 		return smt;
 	}
 
+	
+	/**
+	 * by default, the profile is calculated only for those variables which are part of the actual selection;
+	 * the reason is speed of processing in case of large values for the product (#variables x #records);</br></br>
+	 *  
+	 * yet, in some cases we need the statistics even for the disregarded variables: any kind of explorative investigation;</br></br>
+	 * 
+	 * by default, we only calc the very basic stats (mean, var, coeffvar), on (TODO) option for lattice we calc 
+	 * the full stats incl histograms and higher moments;</br></br> 
+	 * 
+	 * note that it is sometimes advantageous to exclude the outliers from the extensional list for calculation of the intensions,
+	 * for instance when screening dependencies, a limited idealization is oK... it will be tested anyway...
+	 * 
+	 * </br></br>
+	 * another (TODO) option on level of lattice is to calc only those columns which are =0.0 in the profile
+	 * 
+	 * @param mode  0=only used; 1=all except black, 2=all all, incl. TV, blacklisted,</br> 
+	 *              10,11,12 = additionally only top 80% of most similar records, if record count>=10 </br></br>  
+	 */
+	public void updateIntensionalProfiles(int mode) {
+
+		boolean calcThis;
+		String varLabel ;
+		MetaNode node;
+		ExtensionalityDynamicsIntf extension;
+		
+		int recordIndex, rcount ;
+		ArrayList<IndexDistanceIntf> ixdsList; IndexedDistances ixds = new IndexedDistances();
+		DataTable data;
+		DataTableCol column;
+		Double vqsum,vsum, value ;
+		
+		ArrayList<Double> useIndicators,blacklist ;
+		ArrayList<String> varLabels ; 
+		
+		
+		try {
+
+			data = somData.normalizedSomData ;
+			
+			for (int i = 0; i < nodes.size(); i++) {
+
+				node = nodes.get(i);
+				extension = node.getExtensionality();
+				
+				ixdsList = node.getListOfQualifiedIndexes();
+				ixds.addAll( ixdsList ); 
+				
+				if (mode>=10){
+					ixds.sort(1) ; // smallest distances first
+					if (ixds.size()>=10){
+						rcount = (int) (ixds.size()* 0.8) ;
+					}else{
+						rcount = ixds.size() ;
+					}
+				}else{
+					rcount = ixdsList.size() ;
+				}
+				
+				varLabels = node.getVariableLabels();
+				
+				// recixes = node.exportDataFromNode(-1, 0, false);
+				useIndicators = node.getSimilarity().getUsageIndicationVector();
+				blacklist = node.getSimilarity().getBlacklistIndicationVector() ;
+				
+				// all variables
+				for (int v=0;v<varLabels.size();v++){
+					
+					varLabel = varLabels.get(v);
+					// blacklisted? mode instead?
+					calcThis = true;
+					
+					// Object obj = blacklist.get(v);
+					// int b = (int) Math.round( (Double) obj );
+					calcThis = ( blacklist.get(v) <= 0.0  ); // ? not a black listed variable ?
+					
+					// tv?
+					if (calcThis){
+						// varLabel, v 
+						
+					}
+					if (calcThis){
+						
+						column = data.getColumn( varLabel) ;
+						
+						// looping through all values in column colix of normalized data, collecting data, calculating basic stats, 
+						// and saving it to stats description
+						
+						if (rcount > column.size()){
+							rcount = column.size(); // just to be sure, should actually never happen
+						}
+						vsum=0.0; vqsum=0.0; int n=0;
+						
+						for (int k = 0; k < rcount; k++) {
+							recordIndex = ixds.getItem(k).getIndex() ;
+						
+							value = column.getCellValues().get(recordIndex);
+							if ( value >= 0.0 ){
+								vsum = vsum  + value;
+								vqsum = vqsum  + value*value;
+								n++;
+							}
+						}
+						double _mean , _variance , coeffvar=-1.0;
+						// post-calc & store
+						_mean = vsum/((double)n);
+						_variance = NumUtils.lazyVariance(vsum,vqsum,n);
+						if (_mean!=0.0){
+							coeffvar = _variance /_mean ;
+						}
+						
+						if (Double.isNaN(_mean)){
+							_mean = -1.0 ;
+						}
+						node.getProfileVector().getValues().set(v, _mean) ;
+					} // calcThis ?
+					
+				}// v->
+				
+				
+				
+			} // i-> all nodes
+			
+			value=0.0;
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	/**
+	 * 
+	 * the lattice maintains master versions of variable lists usevectors etc.
+	 * all nodes must know individually about this in the beginning, so this simply spreads the settings 
+	 * into the population of nodes
+	 * 
+	 */
+	public void spreadVariableSettings() {
+		 
+		ArrayList<Double> usagevector;
+		int ix;
+		boolean vlattMasterAvailable=false;
+		ProfileVectorIntf vlattProfile;
+		ArrayList<String> nodeVarStr ;
+		
+		usagevector =  new ArrayList<Double>();
+		usagevector.addAll( similarityConcepts.getUsageIndicationVector() );
+		
+		vlattProfile = this.intensionalitySurface.getProfileVector(); 
+		if ((vlattProfile.getVariables()!=null) && (vlattProfile.getVariables().size()>0)){
+			vlattMasterAvailable=true;
+		}
+		            						String str = arrutil.arr2text(usagevector, 0);
+		            						out.printErr(4, "spreadVariableSettings(), usagevector : "+str) ;
+		//for (MetaNode node:nodes){
+		for (int i=0;i<nodes.size() ;i++){
+			
+			MetaNode node = nodes.get(i) ;
+				
+			node.setSomData( this.somData);			
+			node.getExtensionality().clear();
+			
+			
+			 
+			node.getExtensionality().getStatistics().resetFieldStatisticsAll() ; // statistics.fieldvalues ,  .variables
+			
+			if (vlattMasterAvailable){
+				node.getExtensionality().getStatistics().setVariables( vlattProfile.getVariables() ) ;
+			}
+			
+			ProfileVectorIntf  pv = node.getIntensionality().getProfileVector() ;
+			// pv.g
+			 
+			int n =-1;
+			ArrayList<Double> uv = node.getIntensionality().getUsageIndicationVector()  ;
+			if (uv!=null){
+				n = uv.size();
+			}
+			
+			node.getIntensionality().setUsageIndicationVector(usagevector);
+			 
+			nodeVarStr = vlattProfile.getVariablesStr() ;
+			
+			if (vlattMasterAvailable){
+				pv.setVariables( vlattProfile.getVariables() ); // the "values" vector will be adjusted accordingly ....
+				pv.setVariablesStr(nodeVarStr) ;
+				node.setVariableLabels(nodeVarStr);    
+			}
+			 
+			int zz = node.getIntensionality().getProfileVector().getVariablesStr().size();
+			
+			// this will set the reference, no copy is created !
+			node.getSimilarity().setUsageIndicationVector(usagevector);
+			
+			ix = this.similarityConcepts.getIndexTargetVariable() ;
+			if (ix>=0){
+				node.getSimilarity().setIndexTargetVariable(ix);
+				//usagevector.set(ix, -2.0) ;
+			}
+			
+			ix = this.similarityConcepts.getIndexIdColumn() ;
+			if (ix>=0)node.getSimilarity().setIndexIdColumn(ix);
+		}
+		ix=0;
+	}
+
+	public void refreshDataSourceLink() {
+		
+		int iix=-1;
+		DataTable datatable;
+		
+		ArrayList<Variable> variablesList;
+		ArrayList<String>  varlabels ;
+		ProfileVectorIntf profile;
+		 
+		
+		datatable = somData.normalizedSomData ;
+		varlabels = datatable.getColumnHeaders() ;
+		variablesList = somData.getVariables().getActiveVariables();
+		
+		similarityConcepts.adjustLengthOfUsageIndicationVector( varlabels.size()) ;
+		
+		iix = somData.getVariables().getIdColumnIndex() ;
+		if (iix>=0){
+			similarityConcepts.setIndexIdColumn( iix );
+		}
+		profile = intensionalitySurface.getProfileVector(); 
+		
+		profile.setVariables( variablesList ) ;
+		profile.setVariablesStr(varlabels) ;
+		 
+		spreadVariableSettings();
+		
+		// test
+		
+		ArrayList<Double> useIndicators = nodes.get(0).getSimilarity().getUsageIndicationVector();
+		ArrayList<String> nodeVarStr = nodes.get(0).getIntensionality().getProfileVector().getVariablesStr() ;
+		
+		int n= nodeVarStr.size();
+			n= useIndicators.size();
+		n=n+1-1;
+	}
+
 	// ..........................................
 	
+	public void reInitNodeData(){
+		MetaNode node;
+		selectionResultsQueueDigester.isRunning=false;
+		
+		for (int i=0; i < nodes.size();i++){
+			node = nodes.get(i) ;
+			node.getExtensionality().clear() ;
+			
+		}
+	}
+
+	public void reInitNodeData(int mode){
+		reInitNodeData();
+		if (mode>0){
+			// TODO reinit with random profiles
+			
+		}
+	}
+
 	/**
 	 * queries can take very different amounts of time, thus we need a GUID identifier for correct returns 
 	 *  
@@ -504,73 +789,6 @@ public class VirtualLattice implements LatticeIntf{
 		System.gc();
 	}
 	
-	public void reInitNodeData(){
-		MetaNode node;
-		selectionResultsQueueDigester.isRunning=false;
-		
-		for (int i=0; i < nodes.size();i++){
-			node = nodes.get(i) ;
-			node.getExtensionality().clear() ;
-			
-		}
-	}
-	public void reInitNodeData(int mode){
-		reInitNodeData();
-		if (mode>0){
-			// TODO reinit with random profiles
-			
-		}
-	}
-	
-	public void spreadVariableSettings() {
-		 
-		ArrayList<Double> usagevector;
-		int ix;
-		
-		usagevector =  new ArrayList<Double>();
-		usagevector.addAll( similarityConcepts.getUsageIndicationVector() );
-		
-		            						String str = arrutil.arr2text(usagevector, 0);
-		            						out.printErr(4, "spreadVariableSettings(), usagevector : "+str) ;
-		//for (MetaNode node:nodes){
-		for (int i=0;i<nodes.size() ;i++){
-			
-			MetaNode node = nodes.get(i) ;
-				
-			node.setSomData( this.somData);			
-			node.getExtensionality().clear();
-			
-			node.getExtensionality().getStatistics().resetFieldStatisticsAll() ;
-			
-			ProfileVectorIntf  pv = node.getIntensionality().getProfileVector() ;
-			// pv.g
-			 
-			int n =-1;
-			ArrayList<Double> uv = node.getIntensionality().getUsageIndicationVector()  ;
-			if (uv!=null){
-				n = uv.size();
-			}
-			
-			node.getIntensionality().setUsageIndicationVector(usagevector);
-			
-			
-			// this will set the reference, no copy is created !
-			node.getSimilarity().setUsageIndicationVector(usagevector);
-			
-			
-			
-			ix = this.similarityConcepts.getIndexTargetVariable() ;
-			if (ix>=0){
-				node.getSimilarity().setIndexTargetVariable(ix);
-				//usagevector.set(ix, -2.0) ;
-			}
-			
-			ix = this.similarityConcepts.getIndexIdColumn() ;
-			if (ix>=0)node.getSimilarity().setIndexIdColumn(ix);
-		}
-		ix=0;
-	}
-
 	public MetaNode getNodeByNumId( long nodeID ){
 		
 		MetaNode node= null, _node;

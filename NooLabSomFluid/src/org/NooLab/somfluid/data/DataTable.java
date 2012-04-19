@@ -10,6 +10,8 @@ import java.util.TreeMap;
 import org.NooLab.somfluid.components.MissingValues;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.util.Formula;
+import org.NooLab.somtransform.StackedTransformation;
+import org.NooLab.somtransform.TransformationStack;
 import org.NooLab.somtransform.algo.Binning;
 import org.NooLab.somtransform.algo.NomValEnum;
 import org.NooLab.somtransform.algo.NveMapping;
@@ -49,16 +51,22 @@ public class DataTable implements Serializable{
 	public static final double __MV_TRANSFORM = -1.0;
 	
 	public static final int __FORMAT_ID     = 0;
+	
 	public static final int __FORMAT_NUM    = 1;
 	public static final int __FORMAT_INT    = 2;
 	public static final int __FORMAT_ORGINT = 3;
-	public static final int __FORMAT_BIN    = 4;
+	public static final int __FORMAT_BIN    = 4; //   it is basically a value or a string
 	
-	public static final int __FORMAT_DATE   = 6;
+	public static final int __FORMAT_TIME   = 6; //   it is basically a string
+	public static final int __FORMAT_DATE   = 7; //     ./.
+	public static final int __FORMAT_DATETIME = 8;//    ./.  
+	
+	public static final int __FORMAT_ORDSTR = 10;
+	public static final int __FORMAT_STR    = 11;
+	public static final int __FORMAT_TXT    = 12;
+	public static final int __FORMAT_BINSTR = 13;
 
-	public static final int __FORMAT_STR    = 8;
-	public static final int __FORMAT_TXT    = 9;
-	public static final int __FORMAT_BINSTR = 10;
+	public static final int _MAX_ORDSTR_VARIABILITY = 50 ;
 
 	
 	// not avail: ExecSettings (config for diagnostic printouts etc.) settings ;
@@ -70,6 +78,7 @@ public class DataTable implements Serializable{
 	
 	transient DataTable dt;
 
+	transient String tablename="";
 	// main variables / properties ....
 	
 	// our table consists of a list of columns
@@ -101,7 +110,7 @@ public class DataTable implements Serializable{
 	 *   incl. NominalValuesEnumeration <br/>
 	 *   if not numeric, then all data are hold as String */
 	boolean isNumeric ;
-	int maxScanRows = 200 ;
+	int maxScanRows = 500 ;
 	
 	// NVE : config: max number of groups
 	int maxNveGroupCount = 32 ; // the original is DataTransformationSettings
@@ -143,6 +152,8 @@ public class DataTable implements Serializable{
 	transient ArrUtilities arrutil = new ArrUtilities ();
 	
 	transient PrintLog out = new PrintLog(4,false) ;
+
+	
 	
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 	
@@ -346,6 +357,21 @@ public class DataTable implements Serializable{
 		
 		return importTable( importTable, null, importSettings);
 	}
+	
+	/**
+	 * 
+	 * This imports the data, which comprises the following steps:
+	 *  - determining the format of the data in the column, index candidates are recognized automatically
+	 *  - simple transformations into numeric values, e.g. yes\no -> 1\0
+	 *  - creation of a SOM transformer model, if it does not exist
+	 *  - applying nve
+	 *  
+	 * 
+	 * @param importTable
+	 * @param nvetions
+	 * @param importSettings
+	 * @return
+	 */
 	public int importTable( DataTable importTable, ArrayList<NomValEnum> nvetions, TableImportSettings importSettings){ 
 			 
 		
@@ -415,7 +441,7 @@ if (i>=9){
 				/*
 
 					check whether there is a unique ID as integer
-
+					// should not be done hee
 					NVE : config: max number of groups  
 				 */
 				
@@ -428,7 +454,9 @@ if (i>=9){
 			 
 															if (out!=null){ out.print(3,"\nimporting columns...");};
 			// if necessary, apply nve
-			i=0;  // TODO make this multidigested ...
+			i=0;  
+			// TODO make this multidigested ...
+			
 			for (i=0;i<n;i++){ // -> all variables
 				
 				column = importTable.getColumn(i) ;
@@ -462,18 +490,21 @@ if (i>=9){
 						// it could be still boolean, like yes/no, true/false etc...
 						sdl = column.getStringsDiffList( tableHasHeader, 500, importTable.getMaxScanRows()); 
 						
-						if ((sdl.size()>2) && (sdl.size()<500)){
+						if ((sdl.size()>2) && (sdl.size()< _MAX_ORDSTR_VARIABILITY)){
 							// apply NVE: recode into integer, save mapping into the table 
 							// as item in a list of mapping objects (index, map)
 							
+							/*  TODO:  NVE NOT HERE !!!! move down to a stage behind format determination
 							NveMapping nveMap = new NveMapping( sdl ) ; // createMap()
 							this.nveMaps.add( nveMap );
 							column.applyNveRecodeMap( nveMap );
 							
+							*/
+							formats[i] = __FORMAT_ORDSTR ;  
 						} else {
 							if (sdl.size()==2){
 								
-								formats[i] = 3;
+								formats[i] = __FORMAT_BINSTR ;
 							} 
 						}
 						
@@ -484,22 +515,19 @@ if (i>=9){
 					if (formats[i] == DataTable.__FORMAT_DATE){  
 						// column.serializeDateEntries(tableHasHeader);
 						// we create new columns: inverse value = age, month, day of month, week, year
+						
+						// if date+time, create a new column for time serializing
 					}
 					
 					// if time, then serialize to nanos of day
-					if (formats[i] == 5){  
+					if (formats[i] == DataTable.__FORMAT_TIME){  
 						
 					}
 					
-					
-					// if date+time, create a new column for time serializing
-					if (formats[i] == 6){  
-						
-					}
-					
+				 
 					
 					// if boolean, replace with 0 and 1
-					if (formats[i] == DataTable.__FORMAT_BIN){  
+					if ((formats[i] == __FORMAT_BIN) || (formats[i] == __FORMAT_BINSTR)){  
 						// it could be 1,0 yes/no true/false t/f  y/n, ja/nein j/n s/n o/n +/- 
 						column.recodeBinaryEntries(tableHasHeader);
 					}
@@ -525,7 +553,7 @@ if (i>=9){
 				// introduce into this table: structure is created, values copied
 				
 				// following the various conversions, all columns should contain numerical values
-				column.isNumeric = true ;
+				if (formats[i] <= __FORMAT_ORGINT){ column.isNumeric = true ; }
 				column.hasHeader = tableHasHeader;
 				this.getColumn(i).importColumn(column, 1) ;
 				
@@ -576,6 +604,10 @@ if (i>=9){
 			
 			createRowOrientedTable();
 			
+			
+			
+			
+			
 		}catch (Exception e){
 			resultState = -err ;
 			e.printStackTrace() ;
@@ -584,36 +616,7 @@ if (i>=9){
 		return resultState;
 		
 	}
-	
- 
-
-	/**
-	 * checks how many different values occur in a column ... obsolete, is done elsewhere
-	 */
-	private void determineVarietyOfColumnData() {
-		//  
-		// histogram :
-		// import flanagan.analysis.*; 
-		// Stat.histogramBins(dvs, binWidth) ;
-		DataTableCol col;
-		
-		
-		
-		for (int i=0;i<colcount;i++){
-		
-			Binning binnAlgo = new Binning();
-			
-			// if it is not index... and not empty...
-			col  = this.getColumn(i);
-			
-			binnAlgo.setValues( col.getCellValues() );
-			binnAlgo.calculate();
-			binnAlgo.getDescriptiveResults() ;
-			
-			// put it to... the statsdescription of the variable
-		}
-	}
-	
+	 
 	
 
 	private void fillColumnAsIndex(DataTableCol col, int count, int startIxVal, int increment) {
@@ -630,17 +633,19 @@ if (i>=9){
 
 	public void createRowOrientedTable(  ){
 		
+		DataTableCol col ;
+		ArrayList<Double> values;
 		ArrayList<Double> rowdata;
 		int cc=-1,rc = -1, ir=-1,ic=-1 ;
 		double dv;
 		 
-		
-		
 		try{
 			dataTableRows.clear() ;
 			// ArrayList<DataTableCol> dataTable = new ArrayList<DataTableCol>() ; dataTableRows
 			// ArrayList< ArrayList<Double>>()
-			
+if (tablename.contains("normalized")){
+	dv=0.0;
+} 			
 			rc = dataTable.get(0).getCellValues().size();
 			cc = dataTable.size();
 			
@@ -652,7 +657,17 @@ if (ir==670){
 }
 				for (int c=0;c<cc;c++){
 					ic=c;
-					dv = dataTable.get(c).getCellValues().get(r) ;
+					try{
+						col = dataTable.get(c); 
+						values = col.getCellValues();
+						if ((values!=null) && (values.size()>=r-1)){
+							dv = values.get(r) ;
+						}else{
+							dv = -1.0;
+						}
+					}catch(Exception e){
+						dv=-1.0;
+					}
 					rowdata.add(dv);
 				}
 
@@ -661,7 +676,7 @@ if (ir==670){
 			
 			
 		}catch (Exception e){
-			out.printErr(1, "Crtical error in <createRowOrientedTable()>, r,c: "+ir+","+ic+" ,  while max is: "+rc+", "+dataTable.size());
+			out.printErr(1, "Critical error in <createRowOrientedTable()>, r,c: "+ir+","+ic+" ,  while max is: "+rc+", "+dataTable.size());
 			e.printStackTrace() ;
 		}
 		rc=0;
@@ -676,6 +691,50 @@ if (ir==670){
 		
 	}
 	
+	public int addDerivedColumn( TransformationStack varTransformStack, StackedTransformation st, int mode) {
+		// 
+		DataTableCol srcCol ;
+		DataTableCol newColumn ;
+		
+		
+		String sourceColumnLabel = "" , targetColumnLabel ="";
+		int    sourceColumnIx = -1 , targetColumnIx =-1;
+		
+		sourceColumnLabel = varTransformStack.getVarLabel() ;
+		
+		// loop until there is no further variable of the intended name , avoid suffixes like "_c_c"
+		targetColumnLabel = sourceColumnLabel+"_c" ;
+		
+		sourceColumnIx = columnHeaders.indexOf(sourceColumnLabel) ;
+		targetColumnIx = columnHeaders.size() ;
+		
+		srcCol = this.dataTable.get(sourceColumnIx) ;
+		if (mode<=0){
+			newColumn = new DataTableCol( this, sourceColumnIx); // no data copy
+		}else{
+			newColumn = new DataTableCol( this, srcCol);		 // incl. data copy
+		}
+		newColumn.hasHeader = true;
+
+		columnHeaders.add(targetColumnLabel) ;
+
+		dataTable.add(newColumn);
+
+		// don't forget the rows perspective....
+		ArrayList<Double>  row ;
+		double v;
+		for (int i=0;i<this.dataTableRows.size();i++){
+			
+			row = dataTableRows.get(i) ;
+			v = dataTable.get(sourceColumnIx).getValue(i);
+			row.add( v );
+			
+		}
+		
+		// return the index of the new column
+		return (dataTable.size()-1) ;
+	}
+
 	public int getFirstIndexColumnCandidate(){
 		int rc = -1;
 		for (int i=0;i<formats.length;i++){
@@ -1035,7 +1094,7 @@ if (ir==670){
 		if (colcount()>0){
 			
 			col = dataTable.get(0) ;  
-			rc = col.size(); 
+			rc = getRowcount(); // col.size(); 
 		}
 		rowcount = rc ;
 		return rc;
@@ -1176,7 +1235,12 @@ if (ir==670){
 	
 	
 	public DataTableCol getColumn( int index ){
-		return dataTable.get(index) ;
+		DataTableCol dtc = null;
+		
+		if ((index>=0) && (index<dataTable.size())){
+			dtc = dataTable.get(index);
+		}
+		return dtc ;
 	}
 
 	public DataTableCol getColumn( String headerlabel){
@@ -1272,12 +1336,43 @@ if (ir==670){
 		return index;
 	}
 
+	public String translateFormatID( int fid){
+		String fstr="";
+
+		if ((fid>=0) && (fid<=19))
+		switch (fid){
+			case 0 : fstr =  "_ID";
+			case 1 : fstr =  "_NUM";
+			case 2 : fstr =  "_INT";
+			case 3 : fstr =  "_ORGINT";
+			case 4 : fstr =  "_BIN";
+			case 5 : fstr =  "";
+			case 6 : fstr =  "_TIME";
+			case 7 : fstr =  "_DATE";
+			case 8 : fstr =  "_DATETIME";
+			case 9 : fstr =  "";
+			case 10 : fstr = "_ORDSTR";
+			case 11 : fstr = "_STR";
+			case 12 : fstr = "_TXT";
+			case 13 : fstr = "_BINSTR";
+			case 14 : fstr = "";
+			case 15 : fstr = "";
+			case 16 : fstr = "";
+			case 17 : fstr = "";
+			case 18 : fstr = "";
+			case 19 : fstr = "";
+		}
+		
+		return fstr; 
+	}
+	
 	public int[] getFormats() {
 		return formats;
 	}
 
-	public void setFormats(int[] formats) {
-		this.formats = formats;
+	public void setFormats(int[] informats) {
+		formats = new int[informats.length];
+		System.arraycopy(informats, 0, formats, 0, formats.length);
 	}
 
 	public void setIndexValueMap(Map<Double,Integer> indexValueMap) {
@@ -1303,10 +1398,18 @@ if (ir==670){
 	}
 
 	public int getRowcount() {
+		int r1=0,r2=0,r3=0;
+		
 		if (rowcount<=0){
 			if (getColcount()>0){
-				rowcount = dataTable.get(0).size() ;
+				r1 = dataTable.get(0).size() ;
 			}
+			if (getColcount()>1){
+				r2 = dataTable.get(1).size() ;
+			}
+			r3 = dataTable.get(getColcount()-1).size() ;
+			
+			rowcount = Math.max(r1, Math.max(r3, r2));
 		}
 		return rowcount;
 	}
@@ -1439,6 +1542,10 @@ if (ir==670){
 
 	public void setOutPrn( PrintLog outprn){
 		out = outprn;
+	}
+
+	public void setName(String tname) {
+		 tablename = tname; 
 	}
 
 	

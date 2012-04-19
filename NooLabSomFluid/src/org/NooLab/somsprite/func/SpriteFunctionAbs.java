@@ -8,7 +8,6 @@ import java.util.Vector;
 
 import org.NooLab.somsprite.FunctionCohortParameterSet;
 import org.NooLab.somsprite.FunctionCohortParameters;
-import org.NooLab.somsprite.SpriteFuncIntf;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 import org.nfunk.jep.EvaluatorVisitor;
@@ -568,6 +567,11 @@ if (formula.contains("k")){
 		this.funcName = funcName;
 	}
 
+
+	@Override
+	public String getFormula() {
+		return expression;
+	}
 
 	public String getExpression() {
 		return expression;

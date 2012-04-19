@@ -1,5 +1,8 @@
 package org.NooLab.somfluid;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import org.NooLab.somfluid.components.DataFilter;
 import org.NooLab.somfluid.core.engines.det.ResultRequests;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
@@ -34,6 +37,11 @@ public class SomFluidProperties implements 	//
 	public static final int _SIM_SURROGATE = 3;
 	public static final int _SIM_PROFILES  = 5;
 	
+	public static final int _SOMDISPLAY_PROGRESS_NONE  = -1 ;
+	public static final int _SOMDISPLAY_PROGRESS_BASIC =  0 ;
+	public static final int _SOMDISPLAY_PROGRESS_STEPS =  1 ;
+	public static final int _SOMDISPLAY_PROGRESS_PERC  =  2 ;
+	
 	
 	transient SomFluidFactory sfFactory ;
 	
@@ -62,6 +70,12 @@ public class SomFluidProperties implements 	//
 	boolean initializationOK = false;
 
 	private boolean extendingDataSourceEnabled;
+
+	private ArrayList<String> absoluteFieldExclusions;
+
+	private int absoluteFieldExclusionsMode;
+
+	private int showSomProgressMode;
 
 	
 	static SettingsTransporter settingsTransporter;
@@ -173,6 +187,49 @@ public class SomFluidProperties implements 	//
 	public void setSomType(int somType) {
 		this.somType = somType;
 		modelingSettings.setSomType(somType);
+	}
+
+
+	public void setAbsoluteFieldExclusions(String[] varStrings, int mode) {
+	
+		absoluteFieldExclusions = new ArrayList<String>( Arrays.asList(varStrings));
+		absoluteFieldExclusionsMode = mode;
+	}
+	
+	/**
+	 * @return the absoluteFieldExclusions
+	 */
+	public ArrayList<String> getAbsoluteFieldExclusions() {
+		return absoluteFieldExclusions;
+	}
+
+
+	/**
+	 * @param absoluteFieldExclusions the absoluteFieldExclusions to set
+	 */
+	public void setAbsoluteFieldExclusions(ArrayList<String> excludedfields) {
+		
+		absoluteFieldExclusions = new ArrayList<String>();
+		if ((excludedfields!=null) && (excludedfields.size()>0)){
+			absoluteFieldExclusions.addAll(excludedfields);
+		}
+		absoluteFieldExclusionsMode = -1;
+	}
+
+
+	/**
+	 * @return the absoluteFieldExclusionsMode
+	 */
+	public int getAbsoluteFieldExclusionsMode() {
+		return absoluteFieldExclusionsMode;
+	}
+
+
+	/**
+	 * @param absoluteFieldExclusionsMode the absoluteFieldExclusionsMode to set
+	 */
+	public void setAbsoluteFieldExclusionsMode(int absoluteFieldExclusionsMode) {
+		this.absoluteFieldExclusionsMode = absoluteFieldExclusionsMode;
 	}
 
 
@@ -511,6 +568,20 @@ public class SomFluidProperties implements 	//
 
 	public void setExtendingDataSourceEnabled(boolean flag) {
 		extendingDataSourceEnabled = flag;
+	}
+
+
+	public void setShowSomProgress(int displayIntensity) {
+		// TODO Auto-generated method stub
+		showSomProgressMode = displayIntensity ;
+	}
+ 
+	public int getShowSomProgressMode() {
+		return showSomProgressMode;
+	}
+ 
+	public void setShowSomProgressMode(int showSomProgressMode) {
+		this.showSomProgressMode = showSomProgressMode;
 	}
 
 

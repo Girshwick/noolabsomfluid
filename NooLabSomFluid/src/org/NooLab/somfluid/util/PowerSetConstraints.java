@@ -3,6 +3,7 @@ package org.NooLab.somfluid.util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -47,31 +48,31 @@ public class PowerSetConstraints {
 		this.isActive = isActive;
 	}
 
-	public boolean check(Set<Integer> set) {
-		boolean result = true ;
+	public int check(Set<Integer> set) {
+		int result = -7 ;
 		
 		if (isActive){
 			
 			if (minimumLength>0){
-				result = set.size()>= minimumLength;
+				if (set.size()>= minimumLength){ result = 1;};
 			}
-			if ((result) && (maximumLength>=minimumLength)){
-				result = set.size()<= maximumLength;
+			if ((result>=0) && (maximumLength>=minimumLength)){
+				if (set.size()<= maximumLength){result = 2;};
 			}
 			
-			if ((result) && (excludingItems.size()>0)){
+			if ((result>=0) && (excludingItems.size()>0)){
 			 
 				Collection c = CollectionUtils.intersection(set, excludingItems);
 				if (c.size()>0){
-					result=false;
+					result= -1;
 				}
 			}
 
-			if ((result) && (mandatoryItems.size()>0)){
+			if ((result>=0) && (mandatoryItems.size()>0)){
 				 
 				Collection c = CollectionUtils.intersection(set, mandatoryItems);
 				if (c.size()< mandatoryItems.size()){
-					result=false;
+					result=-3;
 				}
 			}
 
@@ -79,6 +80,7 @@ public class PowerSetConstraints {
 		} // active ?
 		return result;
 	}
+	
 	public boolean check(Set<Integer> strset, ArrayList<Integer> abandonedPositions) {
 		Set<Integer> dset;
 		boolean checkOK=false;
@@ -91,14 +93,29 @@ public class PowerSetConstraints {
 				dset.add(ival) ;
 			}
 		}
-		checkOK = check(dset);
+		checkOK = check(dset)>=0;
 			
 		return checkOK;
 	}
 	
 	
+	public void ensureMandatoryItems(Set<Integer> strset) {
+		
+		 
+		if ((mandatoryItems==null) || (mandatoryItems.size()==0)){
+			return;
+		}
+		
+		for (int i=0;i<mandatoryItems.size();i++){
+			if (strset.contains(mandatoryItems.get(i))==false){
+				strset.add( mandatoryItems.get(i) ) ;
+			}
+		}
+	}
+
 	public void setMaps( SortedMap<Integer, String> labelposmap,
 						 SortedMap<String, Integer> poslabelmap) {
+		
 		labelPositionMap = labelposmap ;
 		positionLabelMap = poslabelmap ;
 	}
@@ -162,11 +179,15 @@ public class PowerSetConstraints {
 		int ival;
 		
 		// labelPositionMap, 
-		if (item.length()>0){
+		if ((item.length()>0) && (positionLabelMap!=null)){
 			ival = positionLabelMap.get(item) ;
-			mandatoryItems.add(ival);
+			if (mandatoryItems.indexOf(ival)<0){
+				mandatoryItems.add(ival);
+			}
 		}
+		Collections.sort( mandatoryItems);
 	}
+	
 	public void addMandatoryItems(ArrayList<String> items) {
 		
 		if ((items!=null) && (items.size()>0)){
@@ -208,8 +229,10 @@ public class PowerSetConstraints {
 		
 		for (int i=0;i<mandatoryItems.size();i++){
 			int ival = mandatoryItems.get(i);
-			String str = labelPositionMap.get(ival);
-			mItems.add(str) ;
+			if (labelPositionMap.containsKey(ival)){
+				String str = labelPositionMap.get(ival);
+				mItems.add(str) ;
+			}
 		}
 		
 		return mItems;
@@ -243,10 +266,17 @@ public class PowerSetConstraints {
 		int ival;
 		
 		// labelPositionMap, 
-		if (item.length()>0){
-			ival = positionLabelMap.get(item) ;
-			excludingItems.add(ival);
+		if ((item.length()>0) && (positionLabelMap!=null)){
+			if (positionLabelMap.containsKey(item)) {
+				ival = positionLabelMap.get(item);
+				if (excludingItems.indexOf(ival) < 0) {
+					excludingItems.add(ival);
+				}
+
+				Collections.sort(excludingItems);
+			}
 		}
+		
 	}
 
 	public void addExcludingItem( int item) {

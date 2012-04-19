@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.SomFluidTask;
+import org.NooLab.somscreen.SomQualityData;
  
 
 import org.math.array.*;
@@ -39,6 +40,10 @@ public class ModelProperties implements Serializable,
 	public SomFluidTask task;
 
 	private boolean calculationsOk=false;
+
+	private ArrayList<String> variableSelection;
+
+	public SomQualityData sqData;
 
 
 	
@@ -89,6 +94,10 @@ public class ModelProperties implements Serializable,
 		}
 		globalSample = new ValidationSet( modprop.globalSample);
 
+		variableSelection = new ArrayList<String>();
+		if ((modprop.variableSelection!=null) && (modprop.variableSelection.size()>0)){
+			variableSelection.addAll(modprop.variableSelection);
+		}
 	}
  
  
@@ -233,6 +242,30 @@ public class ModelProperties implements Serializable,
 	 */
 	public void setCalculationsOk(boolean calculationsOk) {
 		this.calculationsOk = calculationsOk;
+	}
+
+	public void setVariableSelection(ArrayList<String> varSelection) {
+		if ((varSelection!=null) && (varSelection.size()>0)){
+			variableSelection = new ArrayList<String>();
+			variableSelection.addAll(varSelection);
+		}
+	}
+
+	/**
+	 * @return the variableSelection
+	 */
+	public ArrayList<String> getVariableSelection() {
+		return variableSelection;
+	}
+
+	public ArrayList<String> getVariableSelection( ArrayList<String> previousSelection ) {
+		ArrayList<String>  _selection ;
+		if((variableSelection==null) || (variableSelection.size()==0)){
+			_selection = previousSelection ;
+		}else{
+			_selection = previousSelection ;
+		}
+		return _selection ;
 	}
 	
 	

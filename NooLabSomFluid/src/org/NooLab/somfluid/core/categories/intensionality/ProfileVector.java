@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.data.Variable;
+import org.NooLab.somfluid.util.BasicStatisticalDescription;
 
 
 /**
@@ -122,11 +123,39 @@ class ProfileVector implements Serializable, ProfileVectorIntf {
 
 
 
-	public void setVariables(ArrayList<Variable> variables) {
-		this.variables = variables;
+	public void setVariables(ArrayList<Variable> variablesList) {
+		int n =0;
+		if (variables!=null){
+			n = variables.size() ;
+		}
+		variables = variablesList;
+		variables.trimToSize() ;
+		if ((n!=0) && (n != variables.size())){
+			adjustValuesVectorLen();
+		}
 	}
 
 
+	private void adjustValuesVectorLen() {
+		 
+		int n, vn;
+		
+		vn = variables.size();
+		n = values.size() ;
+		
+		if (vn>n){
+			for (int i=0;i<vn-n;i++){
+				values.add( 0.0 ) ;
+			}
+		}
+		if (vn<n){
+			for (int i=0;i<n-vn;i++){
+				values.remove(vn) ;
+			}
+		}
+		
+		values.trimToSize() ;
+	}
 	public ArrayList<Double> getValues() {
 		return values;
 	}
@@ -147,6 +176,7 @@ class ProfileVector implements Serializable, ProfileVectorIntf {
 				values.set(i, 0.0);
 			}
 		}
+		values.trimToSize() ;
 	}
 
 
@@ -185,7 +215,7 @@ class ProfileVector implements Serializable, ProfileVectorIntf {
 				
 				values.set(i, npv);
 			}
-			
+			values.trimToSize();
 		} // i-> all positions in vector
 		
 		

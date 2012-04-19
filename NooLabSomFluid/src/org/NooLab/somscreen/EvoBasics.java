@@ -34,6 +34,14 @@ public class EvoBasics implements Serializable{
 	public EvoBasics(){
 		
 	}
+	
+	public EvoBasics(EvoBasics eb) {
+		evolutionaryWeights.addAll( eb.evolutionaryWeights) ; 
+		evolutionaryCounts.addAll( eb.evolutionaryCounts) ; 
+		knownVariables.addAll( eb.knownVariables) ;
+		bestModelHistoryIndex = eb.bestModelHistoryIndex;
+	}
+	
 	private void initializeEvoTaskList() {
 		
 		evoTasks = new EvoTasks(knownVariables) ;
@@ -129,9 +137,16 @@ public class EvoBasics implements Serializable{
 	}
 
 	public void setKnownVariables(ArrayList<String> variablesStr) {
-		this.knownVariables = variablesStr;
 		
-		initializeEvoTaskList();
+		knownVariables.clear();
+		
+		if ((variablesStr!=null) && (variablesStr.size()>0)){
+			
+			knownVariables.addAll( variablesStr ) ;
+			
+			initializeEvoTaskList();
+			
+		}
 	}
 	
 	

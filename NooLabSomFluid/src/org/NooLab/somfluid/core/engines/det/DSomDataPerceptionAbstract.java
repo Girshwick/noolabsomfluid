@@ -3,6 +3,7 @@ package org.NooLab.somfluid.core.engines.det;
 import java.util.ArrayList;
 
  
+import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
@@ -21,7 +22,7 @@ public class DSomDataPerceptionAbstract {
 	protected SomDataObject  somData;
 	protected VirtualLattice somLattice;
 	
-	
+	protected SomFluidProperties sfProperties;
 	
 	
 	PrintLog out;
@@ -34,6 +35,8 @@ public class DSomDataPerceptionAbstract {
 		somData = dsom.somData ;
 		
 		somLattice = parentSom.somLattice;
+		
+		sfProperties = parentSom.sfProperties ;
 		
 		out = dsom.out ;
 		

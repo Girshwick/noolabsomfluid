@@ -606,7 +606,13 @@ public class DataSampler {
 	// ------------------------------------------------------------------------
 	
 	public int getSizeTrainingSet(){
-		return trainingSample.size();
+		int sztset = 0;
+		sztset = trainingSample.size();
+		
+		if (sztset<=1){
+			
+		}
+		return sztset;
 	}
 	
 

@@ -249,7 +249,7 @@ public class SomTargetResults {
 				
 				majorities.determineTargetGroups( somLattice );
 				this.modelProperties.trainingSample = majorities.getTrainingSample();
-											out.print(2, "creating results : "+  this.toString()+"\n"+
+											out.print(3, "creating results : "+  this.toString()+"\n"+
 													 	 "for training sample of lattice : "+ somLattice.toString());
 				// modelProperties.trainingSample.roc = new RoC( majorities.roccer._rocN);
 				modelProperties.trainingSample.tpSingularity = -3.0;
@@ -900,7 +900,7 @@ public class SomTargetResults {
 											out.print(2,"...going to validate the SomLattice using "+(recordIDs.size())+" records...") ;
 			recordIDs = dataSampler.getValidationSet() ;
 			establishPseudoLattice();
-											out.print(2,"...all records of the validation sample have been visited...") ;
+											out.print(3,"...all records of the validation sample have been visited...") ;
 			// now we are going to test that...
 			// the pseudoLattice contains 
 			majorities = new Majorities();	

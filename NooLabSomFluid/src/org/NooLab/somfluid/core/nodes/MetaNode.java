@@ -842,8 +842,9 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 
 	@Override
 	public ArrayList<Long> getExtensionRecordsIndexValues() {
-		// TODO Auto-generated method stub
-		return null;
+		ArrayList<Long> recIndexValues = new ArrayList<Long>();
+		
+		return recIndexValues;
 	}
 
 	public void setSomData(SomDataObject somdata) {
@@ -961,7 +962,7 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 		if (dcobj!=null){
 			// varlabels = (ArrayList<String>) dcobj;
 											out.print(4, "node <" + serialID + ">, onDefiningFeatureSet()");
-			variableLabels = new ArrayList<String>((ArrayList<String>) dcobj); // (varlabels);
+			setVariableLabels(new ArrayList<String>((ArrayList<String>) dcobj)); // (varlabels);
 		}
 		
 		if (openLatticeFutureTask == NodeTask._TASK_SETVAR){
@@ -993,7 +994,7 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 	@Override
 	public void onSendingDataObject( Object data, DataHandlingPropertiesIntf datahandler) {
 		
-		out.print(3, "node <"+serialID+">, onSendingDataObject()");
+		out.print(4, "node <"+serialID+">, onSendingDataObject()");
 
 		// formatting the data object: here, the object contains the index pointer to the
 		// SomDataObject

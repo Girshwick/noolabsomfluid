@@ -29,7 +29,7 @@ public class EvoMetrik  implements Serializable{
 
 	ArrayList<Double> usageVector;
 
-	int index;
+	int index = -1;
 
 	ArrayList<Integer> varIndexes = new ArrayList<Integer>();
 	
@@ -42,6 +42,19 @@ public class EvoMetrik  implements Serializable{
 		
 	}
 	// ========================================================================	
+
+
+
+	public EvoMetrik(EvoMetrik prevMetrik) {
+	 
+		actualScore = prevMetrik.actualScore;
+		mainScore = prevMetrik.mainScore ;
+		
+		sqData = new SomQualityData(prevMetrik.sqData);
+
+		usageVector = new ArrayList<Double> (prevMetrik.usageVector);
+		varIndexes = new ArrayList<Integer>(prevMetrik.varIndexes);
+	}
 
 
 

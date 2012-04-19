@@ -56,12 +56,13 @@ public class DataTableCol implements Serializable{
 	
 	MissingValues missingValues;
 	
+	/**   */
 	int dataFormat = -1;
 	boolean isNumeric = false;
 	boolean isIndexColumnCandidate = false;
 	
 	// a particular "transformation"
-	int copyofColumn;
+	int copyofColumn = -1;
 	
 	
 	int maxScanRows = -1 ;
@@ -153,8 +154,8 @@ public class DataTableCol implements Serializable{
 		}
 		
 		i=0;
-		for (i=0;i<nm;i++){
-			if ((dataFormat>=8) || (inColumn.cellValues.size()==0)){
+		for (i=0;i<nm;i++){ // __FORMAT_TIME __FORMAT_DATETIME
+			if (( isStringFormat(dataFormat)) || (isDateTimeFormat(dataFormat) ) || (inColumn.cellValues.size()==0)){
 				this.setValue(i, inColumn.getValue(i, "")) ; // str
 			}
 			if (i< inColumn.getCellValues().size()){
@@ -170,6 +171,23 @@ public class DataTableCol implements Serializable{
 			}	
 		}
 	}
+	
+	private boolean isStringFormat( int dataformatid ){
+		boolean rB ;
+		
+		rB = ((dataformatid>= DataTable.__FORMAT_ORDSTR ) );
+		
+		return rB;
+	}
+	
+	private boolean isDateTimeFormat( int dataformatid ){
+		boolean rB ;
+		
+		rB = ((dataformatid>= DataTable.__FORMAT_TIME) ) && (dataformatid <= DataTable.__FORMAT_DATETIME);
+		
+		return rB;
+	}
+	
 	public void calculateBasicStatistics() {
 		BasicStatistics basicst;
 		// in a dedicated worker class
@@ -430,6 +448,10 @@ public class DataTableCol implements Serializable{
 					
 					if (strValueVariety.size()==2){
 						formatIndicator = DataTable.__FORMAT_BINSTR;
+					}else{
+						if ((strValueVariety.size()>2) && (strValueVariety.size()< DataTable._MAX_ORDSTR_VARIABILITY )){
+							formatIndicator = DataTable.__FORMAT_ORDSTR ;
+						}
 					}
 				}
 			}
@@ -762,7 +784,12 @@ public class DataTableCol implements Serializable{
 	}
 
 	public ArrayList<String> getCellValueStr() {
-		return cellValueStr;
+		ArrayList<String> cvs = new ArrayList<String>();
+		if ((cellValueStr!=null) && (cellValueStr.size()>0)){
+			cvs.addAll( cellValueStr) ;
+			cvs.remove(0) ;
+		}
+		return cvs;
 	}
 
 	public void setCellValueStr(ArrayList<String> cellValueStr) {
@@ -785,8 +812,13 @@ public class DataTableCol implements Serializable{
 		return out;
 	}
 
-	public void setCellValues(ArrayList<Double> cellValues) {
-		this.cellValues = cellValues;
+	public void setCellValues(ArrayList<Double> cellvalues) {
+		cellValues.clear();
+		
+		if ((cellvalues!=null) && (cellvalues.size()>0)){
+			cellValues.addAll(cellvalues);
+		}
+		
 	}
 
 	public void setNve(NomValEnum nve) {

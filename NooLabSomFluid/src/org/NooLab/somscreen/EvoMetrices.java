@@ -59,7 +59,7 @@ public class EvoMetrices implements Serializable{
 	// TODO  logging combinations that we already have seen, as a int[] for fast match
 	//       in order to avoid repetitions
 
-	int largePeriod;
+	int largePeriod;        
 	
 	// in...
 	ArrayList<Integer> suggestedVarIxes = new ArrayList<Integer>();
@@ -97,16 +97,74 @@ public class EvoMetrices implements Serializable{
 		jrandom = sfFactory.getRandom() ;
 		jrandom.setSeed(3577) ;
 		int d = jrandom.nextInt(50);
+		
 		int n;
-		n = somData.getColumnCount()-2;
+		n = Math.max(2, somData.getNormalizedDataTable().colcount()-3);
 		int preferredLimit = (int) (n*0.7) ;
 		if (preferredLimit>40)preferredLimit=40;
-		powerset = new PowerSetSpringSource() ;
+		
+		powerset = new PowerSetSpringSource( somData ) ; 
+		powerset.setBlacklistedVarLabels(somData.getVariables().getBlacklistLabels()) ;
 		
 		largePeriod = largeperiod;
-		out = sfFactory.getOut() ;
+		out = somData.getOut() ;
 	}
+	
+	/**
+	 * for cloning
+	 * 
+	 * @param templEvoMetrices
+	 */
+	public EvoMetrices(EvoMetrices templEvoMetrices, boolean inclObjects) {
+		
+		
+		somHost = templEvoMetrices.somHost;
+		sfFactory = somHost.getSfFactory() ;
+		somData  = somHost.getSomDataObj() ;
+		
+		jrandom =  sfFactory.getRandom() ;
+		
+		modelingSettings = somHost.getSfProperties().getModelingSettings() ;
+		optimizerSettings = modelingSettings.getOptimizerSettings() ;
+		
+		
+		evoBasics = new EvoBasics( templEvoMetrices.evoBasics );
+		bestResult = new EvoMetrik( templEvoMetrices.bestResult) ;
+		
+		
+		 
+		if (inclObjects){
+			powerset = new PowerSetSpringSource( somData ) ; 
+			powerset.setBlacklistedVarLabels(somData.getVariables().getBlacklistLabels()) ;
+		}
+		
+		exploredMetrices = new ArrayList<ArrayList<Integer>>();
+		exploredMetrices.addAll( templEvoMetrices.getExploredMetrices() );
+		
+		topSortedVariables = new IndexedDistances();
+		  
+		
+		largePeriod = templEvoMetrices.largePeriod;
+		out = somData.getOut() ;
+		
+	}
+
+	
 	// ==========================================================================
+
+
+	public void close() {
+		evoBasics.evolutionaryCounts.clear();
+		evoBasics.evolutionaryWeights.clear() ;
+		evoBasics.knownVariables.clear() ;
+		powerset.close();
+		powerset = null;
+		
+		exploredMetrices.clear() ;
+		evmItems.clear() ;
+		suggestedVarIxes.clear() ;
+		proposedVariableIndexes.clear() ;
+	}
 
 	/**
 	 * this method registers 
@@ -192,8 +250,10 @@ public class EvoMetrices implements Serializable{
 			
 			// also changes to last
 		    if (selectionMode>=2){
-		    	scoreDifference = sq.somQualityData.score -  currentBaseMetrik.sqData.score ;
-		    	//updateEvoBasicsData( scoreDifference ,currentBaseMetrik.usageVector , evoResultItem.usageVector, 0.3);
+		    	if ((currentBaseMetrik!=null) && (currentBaseMetrik.sqData!=null)){
+		    		scoreDifference = sq.somQualityData.score -  currentBaseMetrik.sqData.score ;
+		    		// updateEvoBasicsData( scoreDifference ,currentBaseMetrik.usageVector , evoResultItem.usageVector, 0.3);
+		    	}
 		    }
 		     
 		}else{
@@ -259,7 +319,7 @@ public class EvoMetrices implements Serializable{
 	public void registerMetricChangeEffects( ArrayList<Integer> addedVarIxes, ArrayList<Integer> removedVarIxes, boolean isNewBest) {
 		// 
 		int ne,totalchanges = 0, ix, actionIndicator, ec;
-		double scoreDelta = 0.0, ccs,cscore,ew,scalew,sc1,sc2,cntscale;
+		double scoreDelta = 0.0, ccs,cscore,ew,scalew,sc1=-999.09,sc2=-999.09,cntscale;
 		
 		totalchanges = addedVarIxes.size() + removedVarIxes.size() ;
 	
@@ -274,9 +334,16 @@ public class EvoMetrices implements Serializable{
 		}
 		
 		ne = evmItems.size();
-		sc1 = evmItems.get(ne-1).sqData.score ;
-		sc2 = evmItems.get(ne-2).sqData.score ;
-		scoreDelta = 100*(sc1 - sc2)/Math.max(sc1,sc2) ;  // positive: larger == worse
+		
+		if (ne>0){
+			sc1 = evmItems.get(ne-1).sqData.score ;
+		}
+		if (ne>1){
+			sc2 = evmItems.get(ne-2).sqData.score ;
+			
+			scoreDelta = 100*(sc1 - sc2)/Math.max(sc1,sc2) ;  // positive: larger == worse
+		}
+		
 		
 		// thats now a percentage value
 		scoreDelta = scoreDelta/Math.max(sc1,sc2);
@@ -346,10 +413,14 @@ public class EvoMetrices implements Serializable{
 			evoBasics.evolutionaryWeights.set(ix, ew) ;
 			
 			String varLabel = somData.getVariables().getItem(ix).getLabel() ;
-			evoBasics.getEvoTasks().updateEvoTaskItem(varLabel, -actionIndicator ) ; 
+			if (evoBasics.getEvoTasks()!=null){
+				evoBasics.getEvoTasks().updateEvoTaskItem(varLabel, -actionIndicator ) ; 
+			}
 		}
 
-		evoBasics.getEvoTasks().renormalizeParameters();
+		if (evoBasics.getEvoTasks()!=null){
+			evoBasics.getEvoTasks().renormalizeParameters();
+		}
 	}
 	
 	
@@ -438,8 +509,15 @@ public class EvoMetrices implements Serializable{
 		averageCount = averageCount/((double)evoBasics.evolutionaryCounts.size() );
 		
 		boolean found=false;
-		
-		while (found==false){
+		int zz=0;
+		int pLimit = powerset.getAbsoluteSizeLimit();
+		if (pLimit<100){
+			pLimit = 10000 ;
+		}
+		while ((found==false) && (zz<pLimit)){
+			zz++ ;
+			
+			
 			if (mode==3){
 				prepareIndependentSelectionChange(z);
 			}
@@ -465,7 +543,7 @@ if (z==10){
 			}
 			// based on the selection score, which may be interpreted as a threshold for selection probability
 			
-			found = proposedMetricIsUnexplored( proposedVariableIndexes);
+			found = proposedMetricIsUnexplored( proposedVariableIndexes) && (proposedVariableIndexes.size()>=2);
 		}
 		
 		suggestedVarIxes.clear();
@@ -812,7 +890,9 @@ if (z==8){
 			
 			// everything is the almost same until here for small changes
 			setItems = powerset.getNextSimilar(setItems, lo, hi);
-
+if (setItems.size()<=1){
+	lo=0;
+}
 			proposedVarIxes = variables.getIndexesForLabelsList(setItems);
 
 			Collections.sort(proposedVarIxes);
@@ -850,8 +930,12 @@ if (z==8){
 		
 		ArrayList<Double> uvec ; 
 		ArrayList<Double> selectionProbabilities = new ArrayList<Double>();
-		try{
 		
+		
+		try{
+											out.print(3, "prepareLargeSelectionChange (1) ... ");
+			
+			
 			// TODO: also asking variables for participation
 			/*
 			 *  we already have a selection "suggestedVarIxes", which is derived from
@@ -878,12 +962,12 @@ if (z==8){
 			   powerset.setSelectionProbability( "A",0.62 ); // for one individually
 			   
 			*/
-			
+											out.print(3, "prepareLargeSelectionChange (2) ... ");
 			Variables variables = somData.getVariables();
 			n = bestResult.usageVector.size() ;
 			
 			selectionProbabilities.addAll( evoBasics.evolutionaryWeights );
-			
+											out.print(3, "prepareLargeSelectionChange (3) ... ");
 			if (evmItems.size()==1){ 
 				// use the statistical suggestion
 				n = suggestedVarIxes.size();
@@ -894,11 +978,13 @@ if (z==8){
 				}
 				// TODO we need a proportionality to improvement in evoweight change !!!
 				
+											out.print(3, "prepareLargeSelectionChange (4) ... ");
+				
 				// we will have a problem with large number of variables here
-				// initializatoin: first call triggers "prepare()"
+				// initialization: first call triggers "prepare()"
 				powerset.getNextRandom() ;
 				
-				
+											out.print(3, "prepareLargeSelectionChange (5) ... ");
 			} else{
 				// translate it into index values
 				for (int i = 0; i < n; i++) {
@@ -914,7 +1000,9 @@ if (z==8){
 				// lo-freq add/replace from suggestedVarIxes
 				
 			}
-			
+											out.print(3, "prepareLargeSelectionChange (6) ... ");
+			// this indices are NOT NECESSARILY in parallel to the list of variables !!
+			// we have to translate them
 			n = suggestedVarIxes.size();
 			for (int i=0; i<n;i++ ){
 				suggix = suggestedVarIxes.get(i) ;
@@ -949,13 +1037,13 @@ if (z==8){
 			// everything is the almost same until here for small changes 
 			setItems = powerset.getNextSimilar(setItems, lo,hi );
 			
-			proposedVarIxes = variables.getIndexesForLabelsList( setItems );
-			
+			proposedVarIxes = (variables.getIndexesForLabelsList( setItems ));
+			proposedVarIxes.trimToSize() ;
 			// retrieving top weighted variables, this takes into account evocount, and will take
 			// next lower weighted vars  // TODO parametrize that...
 			topIxes = getTopEvoWeightVarIxes(4);
-			if ((topIxes!=null) && ( topIxes.size()>0)){
-				
+			if ((topIxes!=null) && ( topIxes.size()>2)){
+									// XXX change from 0
 				
 				randomSubSelectionOfIndexes( proposedVarIxes, proposedVarIxes.size()-1 , tvIndex) ;
 				randomSubSelectionOfIndexes( topIxes, 2 , tvIndex) ;
@@ -975,8 +1063,10 @@ if (setItems.size()<=1){
 	 
 }
 			
+			// Set<Integer >tempset = translateLocalIndexes( strset );
+			
 			if (setItems.size()>1){
-				
+			// a list of Strings 	
 				powerset.addStringSetAsExpicitlyExcluded( setItems ); // this is not ready yet
 			
 				proposedVarIxes = variables.getIndexesForLabelsList( setItems );
@@ -1440,6 +1530,21 @@ if ((z%5==0) || (z==11)){
 	}
 	
 	
+	public void addEvmItems(ArrayList<EvoMetrik> evmitems) {
+	 
+		if ((evmitems==null) || (evmitems.size()==0)){
+			return;
+		}
+		
+		if (evmItems==null)evmItems = new ArrayList<EvoMetrik>();
+		
+		for (int i=0;i<evmitems.size();i++){
+			evmItems.add( new EvoMetrik( evmitems.get(i) ) );
+		}
+	}
+
+	 
+	
 	public ModelingSettings getModelingSettings() {
 		return modelingSettings;
 	}
@@ -1621,7 +1726,7 @@ if ((z%5==0) || (z==11)){
 	 * @param bestResult the bestResult to set
 	 */
 	public void setBestResult(EvoMetrik bestResult) {
-		this.bestResult = bestResult;
+		this.bestResult = new EvoMetrik(bestResult);
 	}
 
 	/**
@@ -1682,20 +1787,25 @@ if ((z%5==0) || (z==11)){
 		return outstr;
 	}
 
+	/**
+	 *  EvoMetrices._SORT_SCORE , _SORT_INDEX , _SORT_SIZE
+	 * @param criterion
+	 */
 	@SuppressWarnings("unchecked")
-	public void sort(int criterion ) {
+	public void sort(int criterion , int direction) {
 		
-		Collections.sort( evmItems, new evmComparator(criterion));	
+		Collections.sort( evmItems, new evmComparator(criterion,direction));	
 	}
 	
 
 	@SuppressWarnings("rawtypes")
 	class evmComparator implements Comparator{
 
-		int criterion=0;
+		int criterion=0, direction=1;
 		
-		public evmComparator(int c){
+		public evmComparator(int c, int direction){
 			criterion = c;
+			this.direction = direction;
 		}
 
 		
@@ -1709,7 +1819,7 @@ if ((z%5==0) || (z==11)){
 			evm1 = (EvoMetrik)obj1;
 			evm2 = (EvoMetrik)obj2;
 			
-			if (criterion==EvoMetrices._SORT_SCORE){
+			if (criterion==EvoMetrices._SORT_SCORE){ 
 				v1 = evm1.getSqData().score ;
 				v2 = evm2.getSqData().score ;
 			}
@@ -1719,15 +1829,18 @@ if ((z%5==0) || (z==11)){
 			if (criterion==EvoMetrices._SORT_SIZE){
 				
 			}
-
-			
-			
+ 
+			// top down
 				if (v1>v2){
 					result = -1;
 				}else{
 					if (v1<v2){
-						result = 1 ;
+						result =  1 ;
 					}
+				}
+				
+				if (direction<0){
+					result = result * (-1) ;
 				}
 			
 			return result;

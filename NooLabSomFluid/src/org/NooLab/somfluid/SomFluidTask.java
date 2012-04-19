@@ -3,6 +3,8 @@ package org.NooLab.somfluid;
 import java.io.Serializable;
 
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
+import org.NooLab.somfluid.core.engines.det.results.ModelOptimizerDigester;
+import org.NooLab.somfluid.core.engines.det.results.SomResultDigesterIntf;
 
 
 public class SomFluidTask 	implements 
@@ -44,6 +46,9 @@ public class SomFluidTask 	implements
 
 
 	private boolean noHostInforming = false;
+
+
+	private SomResultDigesterIntf somResultHandler;
 	
 	
 	// ========================================================================
@@ -323,6 +328,22 @@ public class SomFluidTask 	implements
 	 */
 	public boolean isNoHostInforming() {
 		return noHostInforming;
+	}
+
+
+
+	public void setSomResultDigester( SomResultDigesterIntf resultHandler) {
+		 
+		somResultHandler = resultHandler;
+	}
+ 
+	public SomResultDigesterIntf getSomResultHandler() {
+		return somResultHandler;
+	}
+
+ 
+	public void setSomResultHandler(SomResultDigesterIntf resultHandler) {
+		this.somResultHandler = resultHandler;
 	}
 
 }

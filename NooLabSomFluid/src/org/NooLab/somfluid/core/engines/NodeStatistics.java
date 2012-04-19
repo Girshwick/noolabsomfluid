@@ -82,9 +82,36 @@ public class NodeStatistics {
 
 
 
-	public void setVariables(ArrayList<Variable> variables) {
-		this.variables = variables;
+	public void setVariables(ArrayList<Variable> variablesList) {
+		int n = 0;
+		
+		if (variables!=null){
+			variables.size();
+		}
+		
+		variables = variablesList;
+		if ((n!=0) && (n!=variables.size())){
+			adjustFieldValuesVectorLen();
+		}
 	}
     
+	private void adjustFieldValuesVectorLen(){
+		int n, vn;
+		
+		vn = variables.size();
+		n = fieldValues.size() ;
+		
+		if (vn>n){
+			for (int i=0;i<vn-n;i++){
+				fieldValues.add( new BasicStatisticalDescription() ) ;
+			}
+		}
+		if (vn<n){
+			for (int i=0;i<n-vn;i++){
+				fieldValues.remove(vn) ;
+			}
+		}
+		
+	}
     
 }

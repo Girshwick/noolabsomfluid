@@ -22,6 +22,7 @@ import org.NooLab.somfluid.data.TableImportSettings;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.data.DataFileReceptorIntf;
+import org.NooLab.somfluid.env.data.DataReceptor;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.somtransform.algo.AdaptiveDiscretization;
@@ -869,7 +870,15 @@ public class SomDataObject 	implements
 	}
 
 
-	public void importDataTable( SomTransformer transformer, DataTable datatable ){
+	public void importDataTable(DataReceptor datareceptor, int applyExtendedPreparations) {
+		dataReceptor = datareceptor;
+		
+		importDataTable( getTransformer(), datareceptor.getDataTable(), applyExtendedPreparations ); 
+		
+	}
+
+
+	public void importDataTable( SomTransformer transformer, DataTable datatable, int applyExtendedPreparations ){
 		 
 		
 		if (datatable==null){
@@ -899,28 +908,51 @@ public class SomDataObject 	implements
 											out.print(2, "importDataTable() into SomDataObject...");
 			data.importTable(datatable, importSettings);
 			 
+			vectorSize = variables.size() ;
 			
 			data.createRowOrientedTable() ;
 			// TODO check here for buffered transformed data
 			
 			
-			// creating variables objects
+			// creating variables objects, setting info about raw data format
 			actualizeVariables();
-
+			
 			// --- transforming data ------------------------------------------
+			
  			transformer.setDataTable(data) ;
 			
-			// shifting distributions (kurtosis, skewness), 
- 			// splitting (deciling) variables based on histogram splines, outlier compression,
-			transformer.applyBasicNumericalAdjustments();
-
-			// like the SomSprite, just on raw variables , but based on samples of max 1000 values
-			transformer.applyAprioriLinkChecking();
+ 			// no transformations are applied here, just Transform.Stacks initialized, MV+StdStats prepared, 
+ 			// but no LinNorm ...  no NVE 
+ 			transformer.initializeTransformationModel();
+ 			
+ 			transformer.basicTransformToNumericalFormat(); 
+ 			// XXX TODO ADDED COLs are shifted 1 pos to the top == 1 pos too short !!!!!!!!!!
+ 			
+ 			
+			// like the SomSprite, just on raw variables, but based on samples of max 1000 values
+ 			// transformer.applyAprioriLinkChecking();
+			
 											out.print(2, "importDataTable(), normalizing data...");
 			// normalizing data: only now the data are usable
 			// note that index columns and string columns need to be excluded
 			// which we can do via the format[] value : use onls 1<= f <= 7, exclude otherwise
-			normalizedSomData = transformer.normalizeData(variables);   
+			
+			// normalizedSomData = transformer.normalizeData(variables);   
+			transformer.normalizeData(); // just adding everywhere LinNorm, caring for output data
+			
+			// creating the usable table as an instance of DataTable
+			normalizedSomData = transformer.writeNormalizedData() ; 
+			normalizedSomData.setName("normalized table");
+			
+			if (applyExtendedPreparations>0){
+			// shifting distributions (kurtosis, skewness), 
+ 			// splitting (deciling) variables based on histogram splines, outlier compression, NVE (thus quite expensive) 
+ 			// this also extends the basic transformer model
+ 			// will add a LinNorm at the end if necessary
+			
+				transformer.applyBasicNumericalAdjustments();
+			}
+
 			
 			normalizedSomData.createRowOrientedTable( ) ;
 			
@@ -928,11 +960,19 @@ public class SomDataObject 	implements
 			
 			prepareClassificationSettings();
 			
+			// TODO: saving both the standard imported table, the transformed table and the transformer model
+			//       into a dedicated directory... 
+			//       this could be change to a zip/jar with add meta information, and the raw data
+			
+			
+			
+			
 		}catch(Exception e){
 			e.printStackTrace();
 		}
 	}
 
+	
 	public void introduceBlackList() {
 		ArrayList<String>  blacklist;
 		Variable variable;
@@ -1024,10 +1064,17 @@ public class SomDataObject 	implements
  
 
 	// ........................................................................
+	
+	/**
+	 * 
+	 * TODO: check whether format info is transferred ....
+	 * 
+	 */
 	private void actualizeVariables() {
 		Variables vs;
 		Variable v;
 		DataTableCol  column ;
+		int _format;
 		
 		boolean  idcolFound=false ;
 		
@@ -1045,6 +1092,10 @@ public class SomDataObject 	implements
 			
 			v = new Variable();
 			v.setLabel( data.getColumnHeader(i)) ;
+			
+			_format = column.getDataFormat() ;
+			v.setRawFormat(_format) ;
+			
 			if ((column.getDataFormat()==0) || (column.isIndexColumnCandidate())){
 				v.setID(true);
 				idcolFound=true;
@@ -1063,6 +1114,8 @@ public class SomDataObject 	implements
 				}
 			}
 			v.setVariableSerialID(i);
+			
+			
 			variables.additem(v);
 		}
 		
@@ -1120,6 +1173,7 @@ public class SomDataObject 	implements
 
 	public void setOut(PrintLog out) {
 		this.out = out;
+		out.setPrefix("[SomFluid-main]") ;
 	}
 
 
@@ -1236,8 +1290,37 @@ public class SomDataObject 	implements
 	/**
 	 * @param dataReceptor the dataReceptor to set
 	 */
-	public void setDataReceptor(DataFileReceptorIntf dataReceptor) {
-		this.dataReceptor = dataReceptor;
+	public void setDataReceptor(DataFileReceptorIntf datareceptor) {
+		this.dataReceptor = datareceptor;
+	}
+
+
+	public Variable addDerivedVariable( int newIndex, 
+										String varLabel,
+										String newVarLabel ,
+										String parentTransformID ) {
+
+		Variable v, newVariable;
+		int ix,formind;
+		
+		
+		ix = variables.getIndexByLabel(varLabel) ;
+		v = variables.getItem(ix);
+		
+		newVariable  = new Variable(v) ;
+		newVariable.setLabel( newVarLabel ) ;
+		newVariable.setDerived( true ) ;
+		newVariable.setParentTransformID( parentTransformID ) ;
+		newVariable.setIndex(newIndex) ;
+		
+		formind = newVariable.getRawFormat() ;
+		
+		if ((formind == DataTable.__FORMAT_ID) || (formind == DataTable.__FORMAT_ORGINT)){
+			newVariable.setRawFormat( DataTable.__FORMAT_NUM ) ;
+		}
+		variables.additem(newVariable) ;
+		
+		return newVariable;
 	}
 
 

@@ -2,16 +2,17 @@ package org.NooLab.somsprite;
 
 import java.util.ArrayList;
 
+import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.engines.det.SomMapTable;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.SpriteSettings;
 
+import org.NooLab.somtransform.CandidateTransformation;
 import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
-import org.NooLab.utilities.strings.StringsUtil;
+import org.apache.commons.collections.CollectionUtils;
  
 
 /**
@@ -53,21 +54,27 @@ public class SomSprite {
 	SomSpriteProcess sprity;
 	boolean spriteProcessIsRunning = false;
 	
+	protected SomFluidProperties sfProperties;
 	ModelingSettings modelingSettings ;
 	SpriteSettings spriteSettings ;
 	
 	Evaluator evaluator ;
-	ArrayList<PotentialSpriteImprovement> candidates = new ArrayList<PotentialSpriteImprovement>();
+	ArrayList<AnalyticFunctionSpriteImprovement> candidates = new ArrayList<AnalyticFunctionSpriteImprovement>();
+	ArrayList<AnalyticFunctionSpriteImprovement> previousProposals = new ArrayList<AnalyticFunctionSpriteImprovement>();
 	
 	ArrUtilities arrutil = new ArrUtilities();
-	PrintLog out;
+	PrintLog out = new PrintLog(2,false) ;
 	
 	// ========================================================================
-	public SomSprite( SomTransformer transformer, ModelingSettings modset) {
+	public SomSprite( SomDataObject somDataObj, SomTransformer transformer, SomFluidProperties sfProperties ){
 		
 		this.transformer = transformer;
+		this.sfProperties = sfProperties;
 		
-		modelingSettings = modset;
+		out.setPrefix("[SomFluid-sprite]");
+		
+		modelingSettings = sfProperties.getModelingSettings() ;
+	 
 		spriteSettings = modelingSettings.getSpriteSettings() ;
 		
 		evaluator = new Evaluator(this);
@@ -75,7 +82,8 @@ public class SomSprite {
 		
 		spriteMain = this;
 		
-		 
+		somData = somDataObj;
+		
 	}
 	// ========================================================================
 	
@@ -193,7 +201,23 @@ public class SomSprite {
 			return -3;
 		}
 		
-		startSpriteProcess( null );
+		startSpriteProcess( null , wait);
+		
+		return 0;
+	}
+
+
+
+	public void startSpriteProcess( ProcessCompletionMsgIntf msgOnCompletion ,int wait) {
+		// will immediately return after starting the process
+		
+		if (msgOnCompletion!=null){
+			this.msgOnCompletion = msgOnCompletion;
+		}
+		
+		sprity = new SomSpriteProcess(); 
+		sprity.startSprite() ;
+		out.delay(10) ;
 		
 		while (spriteProcessIsRunning==false){
 			out.delay(5) ;	
@@ -208,21 +232,7 @@ public class SomSprite {
 			}
 		}
 		out.print(2, "sprite process has been completed.");
-		return 0;
-	}
 
-
-
-	public void startSpriteProcess( ProcessCompletionMsgIntf msgOnCompletion ) {
-		// will immediately return after starting the process
-		
-		if (msgOnCompletion!=null){
-			this.msgOnCompletion = msgOnCompletion;
-		}
-		
-		sprity = new SomSpriteProcess(); 
-		sprity.startSprite() ;
-		out.delay(10) ;
 	}
 
 
@@ -249,14 +259,19 @@ public class SomSprite {
 			DependencyScreener dScreener ;
 			
 			dScreener = new DependencyScreener( spriteMain, somMapTable , evaluator);
-			dScreener.go();
+			
+			// it will also remove those items that have been imported as known ones...
+			dScreener.go(); 
+			
 			candidates = dScreener.getListOfCandidatePairs();
 			
 			// send candidates into SomTransformer, they will be put just to a queue, 
 			// but NOTHING will be changed regarding the transformations...  
-			  
-			if (transformer!=null){
-				transformer.perceiveCandidateTransformations(candidates) ;
+			// implementation will be triggered by instances of SomHostIntf (such like ModelOptimizer)
+			if ((transformer!=null) && (candidates.size()>0)){
+				// TODO if some candidate transformations are already available, they will be filtered out over there
+				transformer.perceiveCandidateTransformations(candidates,1) ;
+				 
 			}
 		}
 		
@@ -283,6 +298,104 @@ public class SomSprite {
 		this.spriteProcessIsRunning = spriteProcessIsRunning;
 	}
 
+	public ArrayList<AnalyticFunctionSpriteImprovement> getProposedCandidates() {
+		return candidates;
+	}
+
+	/**
+	 * @return the candidates
+	 */
+	public ArrayList<AnalyticFunctionSpriteImprovement> getCandidates() {
+		return candidates;
+	}
+
+	/**
+	 * @return the somData
+	 */
+	public SomDataObject getSomData() {
+		return somData;
+	}
+
+	/**
+	 * @return the previousProposals
+	 */
+	public ArrayList<AnalyticFunctionSpriteImprovement> getPreviousProposals() {
+		return previousProposals;
+	}
+
+	
+	
+	
+	/**
+	 * @param previousProposals the previousProposals to set
+	 */
+	public void setPreviousProposals( ArrayList<AnalyticFunctionSpriteImprovement> prevproposals) {
+		
+		try{
+		
+			if ((prevproposals!=null) && (prevproposals.size()>0)){
+				previousProposals = new ArrayList<AnalyticFunctionSpriteImprovement>();
+				
+				for (int i=0;i<prevproposals.size();i++){
+					previousProposals.add( new AnalyticFunctionSpriteImprovement(prevproposals.get(i)) ) ;
+				}
+			} // ?
+		}catch(Exception e){
+		}
+		
+	}
+	
+	public void addProposalsAsKnown( ArrayList<AnalyticFunctionSpriteImprovement> proposals) {
+		
+		boolean hb;
+		
+		try{
+			if (previousProposals==null)previousProposals = new ArrayList<AnalyticFunctionSpriteImprovement>();
+
+			if ((proposals!=null) && (proposals.size()>0)){
+				
+				for (int i=0;i<proposals.size();i++){
+					
+					hb = false;
+				
+					for (int k=0;k<previousProposals.size();k++){
+						hb = (previousProposals.get(k).isEqual( proposals.get(i)));
+						if (hb){
+							break;
+						}
+					} // k-> 
+
+					if (hb==false){
+						previousProposals.add( new AnalyticFunctionSpriteImprovement(proposals.get(i)) ) ;
+					}
+
+				} // i->
+				  
+			} // ?
+			
+		}catch(Exception e){
+		}
+		
+	}
+
+	public boolean isProposalKnown( AnalyticFunctionSpriteImprovement fs) {
+		boolean hb,rB=false;;
+		
+		if ((previousProposals==null) || (previousProposals.size()==0)){
+			return rB;
+		}
+		
+		for (int k=0;k<previousProposals.size();k++){
+			
+			hb = (previousProposals.get(k).isEqual( fs ));
+			if (hb){
+				rB=hb;
+				break;
+			}
+		}
+		
+		return rB;
+	}
 	
 	
 }

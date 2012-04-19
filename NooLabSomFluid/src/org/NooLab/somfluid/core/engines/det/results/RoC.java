@@ -42,7 +42,7 @@ public class RoC implements Serializable {
 	public double[][] getRocCurve() {
 		double[][] xRoc = new double[0][0] ;
 		
-		if (rocCurve!=null){
+		if ((rocCurve!=null) && (rocCurve.length>0) && (rocCurve[0].length>0) && (rocCurve[1].length>0)){
 			int z = rocCurve[0].length;
 			xRoc = new double[2][z];
 

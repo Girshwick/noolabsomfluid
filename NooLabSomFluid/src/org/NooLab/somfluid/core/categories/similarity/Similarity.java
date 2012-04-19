@@ -83,13 +83,71 @@ public class Similarity implements
 	}
 	// ------------------------------------------------------------------------
 	 
+	@Override
+	public void adjustLengthOfUsageIndicationVector(int newsize) {
+ 
+		
+		int uvn = usageIndicationVector.size() ;
+		
+		if (uvn<newsize){
+			for (int i=0;i<(newsize-uvn);i++){
+				usageIndicationVector.add(0.0) ;
+				 
+			}
+		}
+		if (uvn>newsize){
+			for (int i=0;i<(uvn-newsize);i++){
+				if (newsize < usageIndicationVector.size()){
+					usageIndicationVector.remove(newsize) ;
+				}
+			}
+		}
+		
+		usageIndicationVector.trimToSize() ;
+		
+		isoSizingVectors( blacklistIndicationVector,0.0 );
+		isoSizingVectors( useIntensity ,0.5);
+	}
+	
+	private void isoSizingVectors( ArrayList<Double> tVector, double dval ){
+		int uvn, bvn ; 
+		
+		uvn = usageIndicationVector.size();
+		bvn = tVector.size() ;
+		
+		if (uvn>bvn){
+			for (int i=0;i<(uvn-bvn);i++){
+				tVector.add(dval);
+			}
+		}
+		if (uvn<bvn){
+			for (int i=0;i<(bvn-uvn);i++){
+				tVector.remove(uvn) ; 
+			}
+		}
+		tVector.trimToSize() ;
+	}
+	
+	
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void setBlacklistIndicationVector(int[] blacklistPositions) {
 
 		
-		Collection cL = Arrays.asList(ArrayUtils.toObject(blacklistPositions));
-		blacklistIndicationVector = new ArrayList<Double>( cL );	
+		// Collection cL = Arrays.asList(ArrayUtils.toObject(blacklistPositions));
+		// DON'T DO THIS!!! it will store the vlaues as Integer obj in the Double object,
+		// any later usage will throw a cast exception (Integer -> Double)
+		
+		if ((blacklistPositions==null) || (blacklistPositions.length==0)){
+			return;
+		}
+		
+		blacklistIndicationVector = new ArrayList<Double>();
+		
+		for (int i=0;i<blacklistPositions.length;i++){
+			blacklistIndicationVector.add( blacklistPositions[i]*1.0 ) ;
+		}
+		
 	}
 
 
@@ -230,7 +288,8 @@ public class Similarity implements
 		for (int i=0;i<usagevector.length;i++){
 			usageIndicationVector.add( (double)(1.0*usagevector[i]) ) ;
 		}
-		// this does not work, underneath it remains integer, and later (next read op) a ClassCastException will be thrown!
+		// this does not work, despite the values are put into the array, underneath it 
+		// remains integer, and later (next read op) a ClassCastException will be thrown!!!!
 		// Collection cL = Arrays.asList(ArrayUtils.toObject(usagevector));
 		// usageIndicationVector = new ArrayList<Double>( cL );
 	}

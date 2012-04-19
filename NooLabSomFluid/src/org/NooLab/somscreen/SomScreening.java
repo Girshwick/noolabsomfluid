@@ -1,12 +1,16 @@
 package org.NooLab.somscreen;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Random;
 
 import org.apache.commons.collections.CollectionUtils;
 
 
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
+import org.NooLab.utilities.datatypes.IndexedDistances;
+import org.NooLab.utilities.logging.LogControl;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
 
@@ -98,12 +102,15 @@ public class SomScreening {
 	
 	ArrayList<Variable>	originalBlacklist;
 	
+	ArrayList<String> basicPowsetItems = new ArrayList<String>();;
+	
 	int totalSelectionSize;
 	int[] selectionMode;
 	
 	// .... data ................................
 	
 	private ArrayList<String> currentVariableSelection = new ArrayList<String>() ;
+	private ArrayList<String> specialInterestVariables = new ArrayList<String>();
 	
 	EvoMetrices evoMetrices;
 	EvoBasics  evoBasics;
@@ -113,16 +120,15 @@ public class SomScreening {
 	// .... control .............................
 	private boolean screeningIsRunning = false;
 	private boolean stoppingCriteriaSatisfied = false;
+	int dedicatedChecks=0;
 	
 	int largePeriod = 4;
 	double closeInspectionMultiple = 3.0;
 	
 	ArrUtilities arrutil = new ArrUtilities ();
-	PrintLog out;
-	
-
-	
-	
+	PrintLog out = new PrintLog(2,true);
+	private Random random;
+		
 	// ========================================================================
 	public SomScreening( SomHostIntf somhost ) {
 	
@@ -137,11 +143,13 @@ public class SomScreening {
 		modelingSettings = sfProperties.getModelingSettings() ;
 		optimizerSettings = modelingSettings.getOptimizerSettings() ;
 		
+		random = modelingSettings.getRandom();
 		//somTargetedModeling = dSom.getEmbeddingInstance();
 		 
 		variables = somData.getVariables() ;
 		originalBlacklist = new ArrayList<Variable>( somData.getVariables().getBlacklist() ); 
 
+		
 		evoMetrices = new EvoMetrices( somHost,largePeriod ) ;
 		evoBasics = evoMetrices.getEvoBasics() ;
 		
@@ -150,10 +158,17 @@ public class SomScreening {
 		evoBasics.setKnownVariables( somData.getVariablesLabels() );
 		
 		
-		out = sfFactory.getOut() ;
+		
+		out.setPrefix("[SomFluid-screen]") ;
 	}
 	// ========================================================================
 	
+	public void close() {
+		
+		evoMetrices.close();
+		evoMetrices=null;
+	}
+
 	public void acquireMapTable( SomMapTable smt) {
 			somMapTable = new SomMapTable(smt) ;
 			 
@@ -177,7 +192,104 @@ public class SomScreening {
 	}
 
 
-	public void startScreening( int wait) {
+	public void setInitialVariableSelection( ArrayList<String> vs) {
+	
+		currentVariableSelection = new ArrayList<String>();
+		currentVariableSelection.addAll(vs) ;
+		
+	}
+
+	public void setInitialRelevanciesOfVariables(EvoBasics evoBasics) {
+		// will be passed through to generation of powerset in "startScreening" 
+		int i;
+		double ew;
+		IndexDistance ixd;
+		IndexedDistances ixds = new IndexedDistances();
+		String varlabel ;
+		Variables variables;
+		ArrayList<String> blackliststr;
+		
+		basicPowsetItems.clear();
+		basicPowsetItems.addAll( somData.getNormalizedDataTable().getColumnHeaders() );
+		
+		variables = somData.getVariables() ;
+		blackliststr = variables.getBlacklistLabels() ;
+		
+		if (blackliststr.size()>0){
+
+			i=basicPowsetItems.size()-1;
+			
+			while (i>=0){
+				varlabel = basicPowsetItems.get(i) ;
+			
+				if (blackliststr.indexOf(varlabel)>=0){
+					basicPowsetItems.remove(i);
+				}
+				i--;
+			}
+		} // any blacklisted variables ?
+
+		try{
+			
+
+			// now resorting, using IndexedDistances
+			if (evoBasics!=null){
+				i=0;
+				// first we transfer it ixds
+				for (int k=0;k<variables.size();k++){
+					
+					varlabel = variables.getItem(k).getLabel();
+					if (basicPowsetItems.indexOf(varlabel)>=0){
+						// new variables will be added at the end
+						if (k<evoBasics.evolutionaryWeights.size()){
+							ew = evoBasics.evolutionaryWeights.get(k) ;
+							if (ew<=0)ew=0.72 ;
+							ixd = new IndexDistance(k,ew , varlabel );
+							ixds.add(ixd) ;
+						}else{
+							ixd = new IndexDistance(k, 0.9 + (random.nextDouble()/20.0 - random.nextDouble()/20.0) , varlabel );
+							ixds.add(ixd) ;
+						}
+					}
+				} // k-> all positions in evoweight
+				ixds.sort(-1) ;
+				
+				// now reestablishing the sorted item set
+				basicPowsetItems.clear() ;
+				for (int k=0;k<ixds.size();k++){
+					basicPowsetItems.add( ixds.getItem(k).getGuidStr()) ;
+				}
+				//this.evoBasics.evolutionaryWeights = new ArrayList<Double>();
+			} // evoweights available ?
+		}catch(Exception e){
+			e.printStackTrace() ;
+		}
+		i=0;
+	}
+	
+	
+	public void setSpecialInterestVariables( ArrayList<Integer> variableIxes ) {
+		ArrayList<String> varSelection;
+		
+		specialInterestVariables.clear() ;
+		
+		if ((variableIxes==null) || (variableIxes.size()==0)){
+			return ;
+		}
+		
+		varSelection = somData.getVariables().deriveVariableSelection( variableIxes, 0) ;
+		
+		if ((varSelection!=null) && (varSelection.size()>0)){
+			specialInterestVariables.addAll(varSelection) ;
+		}
+		
+	}
+	
+	
+	
+
+	public void startScreening( int wait, int ithScreen) {
+		
 		
 		EvolutionarySearch evoSearch ;
 		
@@ -190,8 +302,15 @@ public class SomScreening {
 		screeningIsRunning=false;
 		
 		// define the set sampling mechanism
-		powerset.setItems( somData.getVariablesLabels() );
 		
+		// we sort them according to some rule, such that the relevant items are taken first
+		// we also remove those which are defined as black apriori, or absolutely not accessible
+		
+		powerset.setScramblingActive( true) ;
+		powerset.setAbsoluteSizeLimit(15000) ;	
+
+		powerset.setItems( basicPowsetItems, ithScreen ); // ithScreen is measuring the evo-loopcount, and can be used for inducing further scrambling of items
+					 
 		
 		
 		powerset.getConstraints().addExcludingItems( variables.getBlacklistLabels() );
@@ -211,7 +330,7 @@ public class SomScreening {
 		powerset.activateConstraints(1);
 		
 		// start the process... 
-		evoSearch  = new EvolutionarySearch();
+		evoSearch  = new EvolutionarySearch( ithScreen );
 		evoSearch.start() ;
 		
 		while (screeningIsRunning==false){
@@ -488,13 +607,13 @@ public class SomScreening {
 		private long startTime;
 		private long timeSinceStart;
 		double hoursFraction ;
-		
+		int loopCount;
 		
 		// --------------------------------------------------------------------
-		public EvolutionarySearch(){
+		public EvolutionarySearch(int loopcount){
 			
 			evosearchThrd = new Thread(this, "evosearchThrd") ; 
-			
+			loopCount = loopcount;
 		}
 		// --------------------------------------------------------------------		
 		
@@ -503,7 +622,7 @@ public class SomScreening {
 		@SuppressWarnings("unchecked")
 		@Override
 		public void run() {
-			int z=0, r=0;
+			int z=1, r=0;
 			 
 			startTime = System.currentTimeMillis();
 			out.delay(120);
@@ -515,17 +634,27 @@ public class SomScreening {
 				// ArrayList<Integer> usixes = somHost.getSomProcess().getUsedVariablesIndices() ;
 				// ArrayList<Double> uv = (ArrayList<Double>)variables.transcribeUseIndications( usixes ) ;
 				uv = somHost.getSomProcess().getUsageIndicationVector(false) ;
+				     /* somHost    = org.NooLab.somfluid.components.ModelOptimizer
+				      * SomProcess = org.NooLab.somfluid.core.engines.det.SomTargetedModeling
+				      * 			 UsageIndicationVector
+				      */
 				previousUseVector = new ArrayList<Double>(uv);
 				evoMetrices.registerMetricAsExplored(uv);
 				
+				// 
+				z = dedicatedVariableCheck( specialInterestVariables ,z) ;
+				dedicatedChecks = z ;
+				 
+if ((specialInterestVariables!=null) && 
+	(specialInterestVariables.size()>0)){
+	z=1;
+	// LogControl.Level = 3 ; 
+}
 				while ((stoppingCriteriaSatisfied == false) && (userBreak==false)){
 					z++;
 					
-					// this integrates new variales as they have been constructed by SomSprite
-					// ??? would be only necesary, if sprite and screening would be mixed... 
-					// adoptNewVariables() ;
-					
 					r = performEvoSearch(z);
+				
 						if (r<0){ // in case of critical errors
 							stoppingCriteriaSatisfied = true;
 						}
@@ -541,7 +670,7 @@ public class SomScreening {
 				} // ->
 
 											String str = evoMetrices.toString();
-											out.print(2, "\n"+str+"\n") ;
+											out.print(2, "explored metrices : \n"+str+"\n") ;
 
 											out.printErr(2,	"Looping for evolutionary search has been stopped "+
 													    	"(reason: "+r+
@@ -563,6 +692,140 @@ public class SomScreening {
 			screeningIsRunning = false;
 		}
 		
+		
+		/**
+		 * 
+		 * 
+		 * 
+		 * @param specialInterestVariables
+		 */
+		@SuppressWarnings("unchecked")
+		private int dedicatedVariableCheck( ArrayList<String> specialVariables, int z) {
+			 
+			int result = -1;
+			String selectedVariable,str;
+			boolean isNewBest, improvement=false;
+			int  smode=1;
+			
+			ArrayList<String> baseMetric = new ArrayList<String>(), bestMetric = new ArrayList<String>();
+			ArrayList<Integer> proposedSelection = null, baseMetricIndexes, av=null, rv=null ;
+			ArrayList<Double> uv ;
+			
+			ModelProperties results;
+			
+			
+			
+			if ((specialVariables==null) || (specialVariables.size()==0)){
+				return 0;
+			}
+			
+			if ((currentVariableSelection==null) || (currentVariableSelection.size()<=1)){
+				return 0;
+			}
+			
+			
+			try{
+				
+				improvement= true;
+				
+				while (improvement){
+					improvement = false;
+					
+					baseMetricIndexes = variables.getIndexesForLabelsList(currentVariableSelection) ; 
+					baseMetric = new ArrayList<String>(currentVariableSelection);
+						
+					previousUseVector = variables.getUseIndicationForLabelsList( baseMetric ) ;
+					evoMetrices.currentBaseMetrik = evoMetrices.bestResult;
+
+					
+					int i=0;
+					while (i<specialVariables.size()){
+						z++;
+						
+						selectedVariable = specialVariables.get(i) ;
+
+						if (baseMetric.indexOf(selectedVariable)>=0){
+							i++;
+							continue;
+						}
+						currentVariableSelection.clear();
+						currentVariableSelection.addAll( baseMetric );
+						currentVariableSelection.add(selectedVariable);
+						
+						uv = variables.getUseIndicationForLabelsList(currentVariableSelection) ;
+						proposedSelection = (ArrayList<Integer>) variables.transcribeUseIndications( currentVariableSelection ) ;
+	 
+						av = variables.determineAddedVariables( previousUseVector, uv, false);
+						rv = variables.determineRemovedVariables( previousUseVector, uv,false);
+						
+						results = performSingleRun(z);  //  
+											
+						// ..................................................
+													//out.print(2, "lattice address : "+targetMod.getdSom().getSomLattice().toString());
+						// calculates "SomQuality2 and stores it in "evoResultItem" 
+						if (results.getTrainingSample().getObservationCount()<8 ){
+							return 5;
+						}
+												
+												str = arrutil.arr2text(proposedSelection);
+												out.printErr(1, "proposed Selection: "+str+"\n") ;	
+						// results = ModelProperties as retrieved from somHost.getSomResults()
+						isNewBest = evoMetrices.registerResults( z, results , uv, smode) ; 
+						
+						// adapting the evoweights
+						// calls "evoBasics.getEvoTasks().updateEvoTaskItem", 
+						// for the respective variable index positions, then renormalizeParameters();
+						evoMetrices.registerMetricChangeEffects(av, rv, isNewBest);
+						
+													String ewstr = ArrUtilities.arr2Text( evoMetrices.evoBasics.evolutionaryWeights, 2) ;
+													String ecstr = ArrUtilities.arr2Text( evoMetrices.evoBasics.evolutionaryCounts);
+													out.print(2,"\nevolutionary weights :  "+ewstr);
+													out.print(2,"evolutionary counts  :  "+ecstr+"\n");
+						
+						evoMetrices.registerMetricAsExplored(uv);
+						
+						
+						if ((isNewBest) || (z<=1)){
+							// update "somMapTable" because this table is used as input for PCA etc...
+							somMapTable = somProcess.getSomLattice().exportSomMapTable() ;
+							
+							bestMetric = variables.getLabelsForUseIndicationVector( somData.getVariables(), evoMetrices.bestResult.usageVector) ;
+							// baseMetricIndexes = variables.getIndexesForLabelsList( baseMetric ) ; 
+							// we do not change the basis before having checked all the variables, 
+							// instead we keep track and buffer the best one, THEN restart subsequently!
+							
+							currentBestHistoryIndex = z;
+							// evoMetrices.evmItems.size();
+							improvement = true;
+						}
+						
+						i++;
+					} // i-> all items from provided list
+					
+					
+					if ((improvement) && (bestMetric.size()>0)){
+						currentVariableSelection.clear();
+						currentVariableSelection.addAll( bestMetric ) ;
+						
+					}
+					
+				} // -> improvement ?
+				
+				
+				if (baseMetric.size()>0){
+					currentVariableSelection.clear();
+					currentVariableSelection.addAll( baseMetric ) ;
+				}
+				
+				result = 0;
+			}catch(Exception e){
+				e.printStackTrace() ;
+			}
+			return z;
+		}
+		
+		
+		
 		private int performEvoSearch(int z){
 			
 			int result = -1,smode=0;
@@ -577,7 +840,7 @@ public class SomScreening {
 			 								if ((evoMetrices!=null) && (evoMetrices.bestResult!=null) && (evoMetrices.bestResult.sqData!=null)){
 			 									double v = evoMetrices.bestResult.sqData.score ;
 			 									str = String.format("%.2f", v) ;
-			 									out.print(2,"performEvoSearch(), step: "+z+" (best metric from step "+(currentBestHistoryIndex-1)+" of score = "+str+")   ");
+			 									out.print(2,"performEvoSearch(), step: "+z+" (best metric from step "+(currentBestHistoryIndex)+" of score = "+str+")   ");
 			 								}
 			try{
 
@@ -603,11 +866,23 @@ public class SomScreening {
 					
 					proposedSelection = specifySmallChanges(z); modestr="small"; smode=2;
 				}
+				
 				if (proposedSelection.size()<=1){ // it includes the tv
 					proposedSelection = evoBasics.getQuantilByWeight(0.2, 0.45, 0.8 , true) ; // there are different versions of it 
 				} // whatever is met first: fraction of all, lo, hi value for weight
+				if (modelingSettings.getTargetedModeling()){
+					
+					str = variables.getActiveTargetVariableLabel(); 
+					int tvix = somData.getNormalizedDataTable().getColumnHeaders().indexOf(str) ;
+					
+					if ((tvix>=0) && (proposedSelection.indexOf(tvix)<0)){
+						proposedSelection.add(tvix);
+					}
+				}
+				Collections.sort(proposedSelection) ;
+				
 											str = arrutil.arr2text(proposedSelection);
-											out.printErr(1, "proposedSelection: "+str+"\n") ;											
+											out.printErr(1, "proposed Selection: "+str+"\n") ;											
 				if (proposedSelection.size()==0){
 					return -3;
 				}
@@ -675,7 +950,7 @@ if (results.getTrainingSample().getRoc().getAuC()>0.86){
 					
 					currentBestHistoryIndex = z; // store best uv separately ???
 				}
-				checkStoppingCriteria( somProcess, z , currentBestHistoryIndex);
+				checkStoppingCriteria( somProcess, z-dedicatedChecks , currentBestHistoryIndex);
 				
 				if ( z % ((int)(((double)largePeriod) * closeInspectionMultiple )) ==0){
 					// perform a close inspection of the "top" models according to the spela scheme
@@ -716,7 +991,19 @@ if (results.getTrainingSample().getRoc().getAuC()>0.86){
 			 *     where some are rules out, some are preferred and most are within [0.46 .. 0.65]  
 			 */
 			 
+			if (z<1)z=1;
+			
 			int maxs = optimizerSettings.getMaxStepsAbsolute() ;
+			
+			if (loopCount==0){
+				if ( optimizerSettings.isShortenedFirstCycleAllowed()){
+					if ((optimizerSettings.getMaxStepsAbsolute()>47) || (optimizerSettings.getMaxStepsAbsolute()<0)){
+						maxs = 23 ;
+					}
+				}
+			}
+			maxs = maxs + dedicatedChecks;
+			
 			if (evoMetrices.evmItems.size()>=maxs){
 				out.print(2, ""+(evoMetrices.evmItems.size())+" steps have been performed by optimizer, now stopping because it reached the <MaxStepsAbsolute="+maxs+"> ");
 				hb = true;
@@ -787,7 +1074,8 @@ if (z==24){
 	z=24;
 }
 			// we have to use the sommap of the best model here, not the first one!
-			calculateVariableStatus(); // TODO should not access String variables (scaling=8+)
+			calculateVariableStatus();
+			// TODO should not access String variables (scaling=8+)
 			// linearIndexSelection contains variable indices
 			if (linearIndexSelection.size()>0){
 				
@@ -802,13 +1090,16 @@ if (z==24){
 
 				// consider evoweights ...
 			}
-
+											out.print(2, "specifyLargeChange(), getNextVariableSelection calling ...");
+			// care about the indices over there !!! 
 			selection = evoMetrices.getNextVariableSelection(z, 1);
-			
+											out.print(2, "specifyLargeChange(), getNextVariableSelection done.");
 if (selection.size()<=1){
 	     // independent large change: evoMetrices + best + usageVector
 	        selection = evoMetrices.getNextVariableSelection(z, 3);
 }
+
+ 
 			updateVariablesCoreWeight();
 
 			return selection;
@@ -914,7 +1205,7 @@ if (selection.size()<=1){
 
 			IndexDistance ixd ;
 			// testing the pca:  pca = new PCA();
-											out.print(2,"evaluating principal components ...");
+											out.print(3,"evaluating principal components ...");
 			try{
 				if ((somMapTable==null) || (somMapTable.values.length<=5) || (somMapTable.variables.length<=3)){
 					return selection;
@@ -951,7 +1242,7 @@ if (selection.size()<=1){
 				// selection = arrutil.changeArrayStyle(vix) ;
 				
 				// cerating a list of IndexedDistances
-												out.print(2,"evaluating principal components done.");
+												out.print(3,"evaluating principal components done.");
 				if (selection.size()>0)selection.trimToSize() ;
 				
 			}catch(Exception e){
@@ -1019,8 +1310,22 @@ if (selection.size()<=1){
 	}
 
 
+	/**
+	 * @return the evoMetrices
+	 */
+	public EvoMetrices getEvoMetrices() {
+		return evoMetrices;
+	}
+
 	public EvoBasics getEvoBasics() {
 		return evoBasics;
+	}
+	
+	public EvoBasics getEvoBasicsEx() {
+		
+		EvoBasics eb = new EvoBasics( evoBasics );
+		 
+		return eb;
 	}
 
 
@@ -1048,19 +1353,6 @@ if (selection.size()<=1){
 		this.screeningIsRunning = screeningIsRunning;
 	}
 
-
-	/**
-	 * @return the evoMetrices
-	 */
-	public EvoMetrices getEvoMetrices() {
-		return evoMetrices;
-	}
-
-	public void setInitialVariableSelection( ArrayList<String> vs) {
-
-		currentVariableSelection = new ArrayList<String>();
-		currentVariableSelection.addAll(vs) ;
-		
-	}
+	
 }
 

@@ -2,6 +2,7 @@ package org.NooLab.somfluid.data;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
  
 
 public class Variable implements Serializable{
@@ -18,15 +19,16 @@ public class Variable implements Serializable{
 	private int index ; 
 
 	private int valueScaleNiveau = 0 ;
+	private int rawFormat = -1;
 	
 	private double minimum;
 	private double maximum;
 
 	private double selectionWeight;
-	private int selectionCount;
+	private int    selectionCount;
 
 	
-	private String label;
+	private String  label;
 	private boolean isTV=false;
 	private boolean isID=false;
 	private boolean Used=false;
@@ -35,7 +37,11 @@ public class Variable implements Serializable{
 	private int     mvCount;
 	private double  median;
 	private boolean isDerived=false;
-	private long    derivationID = -1L;
+	
+	/** the ID of the Transformation Stack as it is kept by the TransformationModel
+	 *  SomTransformer maintains a map that links variables and transformations 
+	 */
+	private  String parentTransformID = ""; 
 	
 	
 	// such, the variable can move itself, and inform all other variables about changed indexes!
@@ -45,9 +51,12 @@ public class Variable implements Serializable{
 
 	private boolean isIndexcandidate;
 
+	
 	private int isEmpty = 0 ;
 
 	private int serialID = -1 ;
+
+	String[] parentItems = new String[0];
 
 	
 	// ========================================================================
@@ -64,7 +73,11 @@ public class Variable implements Serializable{
 		
 		minimum = iitem.minimum ;
 		maximum = iitem.maximum ;
+		median = iitem.median ;
+		
 		selectionWeight = iitem.selectionWeight ;
+		selectionCount = iitem.selectionCount ;
+		
 		label = iitem.label ;
 		isTV = iitem.isTV ;
 		isID =iitem.isID ;
@@ -73,8 +86,12 @@ public class Variable implements Serializable{
 		
 		mvCount = iitem.mvCount ;
 		
+		rawFormat = iitem.rawFormat ;
+		valueScaleNiveau = iitem.valueScaleNiveau  ;
+		
+		
 		isDerived = iitem.isDerived ;
-		derivationID = iitem.derivationID ;
+		parentTransformID = iitem.parentTransformID ;
 		
 		parentCollection = new ArrayList<Variable>();
 		if (iitem.parentCollection!=null){
@@ -105,11 +122,30 @@ public class Variable implements Serializable{
 	}
 
 
-	public void setParentCollection(ArrayList<Variable> parentCollection) {
-		this.parentCollection = parentCollection;
+	public void setParentCollection(ArrayList<Variable> parentcollection) {
+		// this.parentCollection = new ArrayList<Variable>(parentCollection);
+		this.parentCollection = parentcollection;
 	}
 	
 	
+	public void setParentItems(String[] varLabels) {
+
+		
+		if ((varLabels==null) || (varLabels.length==0)){
+			return;
+		}
+		parentItems = new String[varLabels.length] ;
+		System.arraycopy(varLabels, 0, parentItems, 0, parentItems.length) ;
+		
+	}
+
+	/**
+	 * @return the parentItems
+	 */
+	public String[] getParentItems() {
+		return parentItems;
+	}
+
 	public void setMinimum(double minimum) {
 		this.minimum = minimum;
 	}
@@ -154,6 +190,20 @@ public class Variable implements Serializable{
 	public boolean isID() {
 		return isID;
 	}
+	/**
+	 * @return the parentTransformID
+	 */
+	public String getParentTransformID() {
+		return parentTransformID;
+	}
+
+	/**
+	 * @param parentTransformID the parentTransformID to set
+	 */
+	public void setParentTransformID(String parentTransformID) {
+		this.parentTransformID = parentTransformID;
+	}
+
 	public void setUsed(boolean used) {
 		Used = used;
 	}
@@ -212,13 +262,7 @@ public class Variable implements Serializable{
 		this.isDerived = isDerived;
 	}
 
-	public long getDerivationID() {
-		return derivationID;
-	}
-
-	public void setDerivationID(long derivationID) {
-		this.derivationID = derivationID;
-	}
+ 
 
 	public void setIndexcandidate(boolean flag) {
 		
@@ -232,6 +276,20 @@ public class Variable implements Serializable{
 
 	public int getIsEmpty() {
 		return isEmpty;
+	}
+
+	/**
+	 * @return the rawFormat
+	 */
+	public int getRawFormat() {
+		return rawFormat;
+	}
+
+	/**
+	 * @param rawFormat the rawFormat to set
+	 */
+	public void setRawFormat(int rawFormat) {
+		this.rawFormat = rawFormat;
 	}
 
 	public int getValueScaleNiveau() {

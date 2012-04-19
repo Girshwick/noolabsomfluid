@@ -36,6 +36,10 @@ public class OptimizerSettings  implements Serializable{
 
 
 	private double durationHours = 25.0;
+
+
+
+	private boolean shortenedFirstCycleAllowed = true;
 	
 	
 	// ========================================================================
@@ -114,6 +118,19 @@ public class OptimizerSettings  implements Serializable{
 	 */
 	public void setStopAtNormalizedQuality(double stopAtNormalizedQuality) {
 		this.stopAtNormalizedQuality = stopAtNormalizedQuality;
+	}
+
+
+	public boolean isShortenedFirstCycleAllowed() {
+		return shortenedFirstCycleAllowed;
+	}
+
+
+	/**
+	 * @param shortenedFirstCycleAllowed the shortenedFirstCycleAllowed to set
+	 */
+	public void setShortenedFirstCycleAllowed(boolean flag) {
+		shortenedFirstCycleAllowed = flag;
 	}
 	
 	

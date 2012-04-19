@@ -102,6 +102,8 @@ public interface SimilarityIntf {
 	public void clear();
 
 	public int[] getUseIndicatorArray();
+
+	public void adjustLengthOfUsageIndicationVector(int size);
 	
 	
 	

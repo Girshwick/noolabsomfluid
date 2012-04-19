@@ -33,6 +33,19 @@ public class ParetoPopulationExplorer {
 	SomQuality somQuality ;
 	
 	
+	/**
+	 * 
+	 * determines the alpha/beta trade-off,
+	 * calculates a neg exponential fitting
+	 * 
+	 * then observing the change in structure between alpha-beta preference
+	 * for those models
+	 * 
+	 * describing the asymmetry of models of a given preference when switching to its mirror
+	 * as a distance to the pareto frontier
+	 * 
+	 * @param mopti
+	 */
 	public ParetoPopulationExplorer(ModelOptimizer mopti) {
 
 		moptiParent = mopti ;
