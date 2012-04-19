@@ -32,11 +32,11 @@ public class IndexDistance implements Serializable, IndexDistanceIntf{
 	 * @param distance
 	 * @param guidStr
 	 */
-	public IndexDistance(int index ,double distance, String guidStr){
+	public IndexDistance(int index ,double distance, String str){
 		
 		this.index = index ;  
 		this.distance = distance ; 
-		this.guidStr = guidStr ;
+		this.guidStr = str ;
 	}
 
 	
@@ -51,6 +51,16 @@ public class IndexDistance implements Serializable, IndexDistanceIntf{
 		guidStr = GUID.randomvalue() ;
 	}
 
+	public IndexDistance(int primIndex, int secIndex, String str) {
+
+		index = primIndex;
+		secindex = secIndex;
+		
+		distance = 0.0;
+		guidStr = str ;
+	}
+	
+	
 	public int getIndex2() {
 		return secindex;
 	}

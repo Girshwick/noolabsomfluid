@@ -20,6 +20,19 @@ public class IndexedDistances {
 		items.addAll(iitems) ;
 	}	
 	// ========================================================================
+
+	
+	public void clear() {
+		 
+		items.clear();
+	}
+
+	
+	public int size(){
+		return items.size() ;
+	}
+
+
 	
 	public int indexOfIndex(int ix) {
 		int pos=-1;
@@ -33,6 +46,21 @@ public class IndexedDistances {
 		}
 		return pos;
 	}
+	
+	public int getIndexByStr( String checkstr){
+		int pos=-1;
+		
+		// we should maintain a treemap...
+		for (int i=0;i<items.size();i++){
+			String str = items.get(i).guidStr ;
+			if (checkstr.contentEquals(str)){
+				pos=i;
+				break;
+			}
+		}
+		return pos;
+	}
+	
 	
 	@SuppressWarnings("unchecked")
 	public void sort(int direction){
@@ -98,10 +126,6 @@ public class IndexedDistances {
 		}
 	}
 	
-	public int size(){
-		return items.size() ;
-	}
-	
 	public IndexDistance getItem( int index){
 		return items.get(index);
 	}
@@ -155,6 +179,14 @@ public class IndexedDistances {
 			return result;
 		}
 		
+	}
+
+
+	public void addAll( ArrayList<IndexDistanceIntf> ixdiList ) {
+		 
+		for (int i=0;i<ixdiList.size();i++){
+			items.add( (IndexDistance) ixdiList.get(i)) ;
+		}
 	}
 	
 }

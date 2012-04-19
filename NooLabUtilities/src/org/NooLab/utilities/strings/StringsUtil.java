@@ -115,7 +115,7 @@ public class StringsUtil {
 	 */
 	public String setposition( String str, int position, String insertstr){
 		String rStr = str;
-		String part1="", part2="" ;
+		String part1="", part2="";
 		
 		try{
 			
@@ -2749,6 +2749,27 @@ if (str.contains("1. 5")){
 		}
 		return return_value ;
 	}
+	
+	public boolean isNumericX(Object obj ) {
+		boolean return_value = false;
+		String cn="" ;
+		
+		try{
+		
+			cn = obj.getClass().getSimpleName().toLowerCase() ;
+			
+			return_value = (cn.startsWith("int")) || (cn.startsWith("double") || cn.startsWith("float")) ;
+			
+			if (return_value==false){
+				return_value = isNumericX((String)obj) ;
+			}
+			
+		}catch(Exception e){
+		}
+		
+		return return_value ;
+	}
+	
 	public boolean isNumericX(String str){
 		boolean return_value = false;
 		String regex_for_num = "^[-+]?\\d+([.,]?\\d+)?$";
@@ -4107,6 +4128,8 @@ if (str.contains("1. 5")){
 	
 		return languageID; 
 	}
+
+
 
 
 

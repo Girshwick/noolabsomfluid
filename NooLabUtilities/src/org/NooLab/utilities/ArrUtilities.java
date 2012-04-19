@@ -817,6 +817,28 @@ public class ArrUtilities {
 		
 	}
 	
+	public double arrayMax( ArrayList<Double> valarr, double defaultValue){
+		
+		if ((valarr==null) || (valarr.size()==0)){
+			return defaultValue;
+		}
+		 
+		double return_value=0.0, max = -9999999999.9;
+		int i;
+		
+		i=0;
+		for ( i = 0; i < valarr.size(); i++) {
+			  if (max<valarr.get(i)){
+				  max = valarr.get(i) ;
+			  }
+		}
+		if (max == -9999999999.9){
+			max = defaultValue;
+		}
+		return_value = max ;
+		
+		return return_value ;
+	}
 
 	public double arrayMax( Vector<Double> valarr, double defaultValue){
 		
