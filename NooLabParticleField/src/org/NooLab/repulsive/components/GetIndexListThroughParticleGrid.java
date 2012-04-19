@@ -474,7 +474,7 @@ public class GetIndexListThroughParticleGrid {
 				pgrid.rfCore.out.print(4, "radius will be corrected next time by factor rcf = "+ pgrid.radiusCorrectionFactor);
 			}
 			
-			pgrid.rfCore.out.print(3, "actual selection count n="+neighbors.length);
+			pgrid.rfCore.out.print(4, "actual selection count n="+neighbors.length);
 		}catch(Exception e){
 		}
 		

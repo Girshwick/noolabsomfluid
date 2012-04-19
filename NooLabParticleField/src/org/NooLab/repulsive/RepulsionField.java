@@ -503,7 +503,7 @@ public class RepulsionField implements 	Runnable,
 			int pix;
 			int surroundN=7;
 
-												out.print(3,"getSurround("+index+"), ready to use ? -> "+isReadyToUse());
+												out.print(4,"getSurround("+index+"), ready to use ? -> "+isReadyToUse());
 			int z=0;
 			while (( isReadyToUse()==false) && (z<100)){ //  && (surroundBuffers.isAllBuffersUpdating()
 				out.delay(10); z++;
@@ -1236,7 +1236,7 @@ public class RepulsionField implements 	Runnable,
 	public void surroundRetrievalUpdate( SurroundRetrieval Observable, String guid) {
 		SurroundRetrieval sr = null;
 		
-		out.print(3, "result returned to field from SurroundRetrieval(), result id = "+guid );
+		out.print(4, "result returned to field from SurroundRetrieval(), result id = "+guid );
 		
 		try{
 			

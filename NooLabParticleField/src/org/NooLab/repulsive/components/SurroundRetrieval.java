@@ -598,12 +598,12 @@ public class SurroundRetrieval implements Runnable {
 		
 		Particle p = particles.get( index ) ;
 		
-		out.print(3, "going to retrieve particles (b)...");
+		out.print(4, "going to retrieve particles (b)...");
 		
 		// ParticleGrid._CIRCLE == default , setShape is optional
 		indexedDistances = particleGrid.getIndexListRetriever().setConstraints( selectionConstraints ).getIndexedDistancesFromNeighboorhood( p.x, p.y, surroundN ) ;
 		
-		out.print(3, "particles retrieved ...");
+		out.print(4, "particles retrieved ...");
 		
 		if ((results!=null) && (p!=null)){
 			results.getCoordinate()[0] = p.x;
