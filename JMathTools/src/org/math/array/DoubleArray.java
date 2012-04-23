@@ -1,5 +1,7 @@
 package org.math.array;
 
+import java.util.Arrays;
+
 import org.math.array.util.Function;
 import org.math.array.util.IndexFunction;
 import org.math.array.util.Random;
@@ -386,6 +388,9 @@ public class DoubleArray {
 	 * @return A copy of the input matrix
 	 */
 	public static double[][] copy(double[][] M) {
+		if (M==null){
+			return null;
+		}
 		double[][] array = new double[M.length][M[0].length];
 		for (int i = 0; i < array.length; i++)
 			System.arraycopy(M[i], 0, array[i], 0, M[i].length);
@@ -720,6 +725,109 @@ public class DoubleArray {
 	}
 
 	/**
+	 * perform an Union-operation from two arrays and returns the result in a new array,
+	 * the length of the new array is likely to be different from the input arrays
+	 * 
+	 * All values in the result arr will be unique 
+	 * 
+	 * @param values1
+	 * @param values2
+	 * @return
+	 */
+	
+	public static double[] mergeValues( double[] values1, double[] values2){
+	
+		double[] mArr0 = new double[values1.length+values2.length];
+		double[] mArr ;
+		double v1,v2, min1,min2 ;
+		int z, kix;
+		
+		min1 = min(values1);
+		min2 = min(values2);
+		
+
+		z=0;
+		for (int i=0;i<values1.length;i++){
+			v1 = values1[i];
+			kix = -1;
+			for (int k=0;k<mArr0.length;k++){
+				if (v1==mArr0[k]){
+					kix=k; break ;
+				}
+			}
+			if (kix<0){
+				mArr0[z]=v1;
+				z++;
+			}
+		}
+		for (int j=0;j<values2.length;j++){
+			v1 = values1[j];
+			kix = -1;
+			for (int k=0;k<mArr0.length;k++){
+				if (v1==mArr0[k]){
+					kix=k; break ;
+				}
+			}
+			if (kix<0){
+				mArr0[z]=v1;
+				z++;
+			}
+		}
+
+		mArr = new double[z];
+		System.arraycopy(mArr0, 0, mArr, 0, z);
+		return mArr;
+	}
+	
+	
+	public static int[] mergeValues( int[] values1, int[] values2){
+		
+		int[] mArr0 = new int[values1.length+values2.length];
+
+		int[] mArr;
+		 
+		int v1,v2, min1,min2 ;
+		int z, kix;
+		
+		min1 = min(values1);
+		min2 = min(values2); if (min1>min2)min1=min2;
+		
+		for (int i=0;i<mArr0.length;i++){ mArr0[i] = min1-1; }
+		z=0;
+		for (int i=0;i<values1.length;i++){
+			v1 = values1[i];
+			kix = -1;
+			for (int k=0;k<mArr0.length;k++){
+				if (v1==mArr0[k]){
+					kix=k; break ;
+				}
+			}
+			if (kix<0){
+				mArr0[z]=v1;
+				z++;
+			}
+		}
+		kix=0;
+		for (int j=0;j<values2.length;j++){
+			v1 = values2[j];
+			kix = -1;
+			for (int k=0;k<mArr0.length;k++){
+				if (v1==mArr0[k]){
+					kix=k; break ;
+				}
+			}
+			if (kix<0){
+				mArr0[z]=v1;
+				z++;
+			}
+		}
+
+		mArr = new int[z];
+		System.arraycopy(mArr0, 0, mArr, 0, z);
+		return mArr;
+	}
+	
+	/**
 	 * Combine a set of arrays into a matrix. Each array becomes a row. Rows may be of different lengths.
 	 * Example:<br>
 	 * <code>
@@ -766,24 +874,6 @@ public class DoubleArray {
 	}
 
 	/**
-	 * Converts an n element array into an n x 1 matrix. Handy for matrix math.
-	 * @param x n element array
-	 * @return n x 1 matrix
-	 */
-	public static double[][] columnVector(double[] x) {
-		return mergeColumns(x);
-	}
-
-	/**
-	 * Converts an n element array into an 1 x n matrix. Handy for matrix math.
-	 * @param x n element array
-	 * @return 1 x n matrix
-	 */
-	public static double[][] rowVector(double[] x) {
-		return mergeRows(x);
-	}
-
-	/**
 	 * Concatenates arrays.
 	 * Example:<br>
 	 * <code>
@@ -805,6 +895,24 @@ public class DoubleArray {
 		for (int i = 1; i < x.length; i++)
 			System.arraycopy(x[i], 0, array, xlength_array[i - 1], x[i].length);
 		return array;
+	}
+
+	/**
+	 * Converts an n element array into an n x 1 matrix. Handy for matrix math.
+	 * @param x n element array
+	 * @return n x 1 matrix
+	 */
+	public static double[][] columnVector(double[] x) {
+		return mergeColumns(x);
+	}
+
+	/**
+	 * Converts an n element array into an 1 x n matrix. Handy for matrix math.
+	 * @param x n element array
+	 * @return 1 x n matrix
+	 */
+	public static double[][] rowVector(double[] x) {
+		return mergeRows(x);
 	}
 
 	// I didn't favor this insertColumns method because it was so different from insertRows()
@@ -1205,6 +1313,13 @@ public class DoubleArray {
 		return min;
 	}
 
+	public static int min(int... M) {
+		int min = M[0];
+		for (int i = 1; i < M.length; i++)
+			min = Math.min(min, M[i]);
+		return min;
+	}
+	
 	/**
 	 * Finds the maximum value in each column of a matrix.
 	 * Example:<br>
@@ -1316,14 +1431,119 @@ public class DoubleArray {
 	 * @param M Can be a list of values e.g. maxIndex(11,22,44,2) or an array
 	 * @return index of maximum value in M
 	 */
-	public static int maxIndex(double... M) {
+	public static int maxIndex(double... md) {
+		
 		int maxI = 0;
-		for (int i = 1; i < M.length; i++)
-			if (M[i] > M[maxI])
+		for (int i = 1; i < md.length; i++){
+			
+			if (md[i] > md[maxI]){
 				maxI = i;
+			}
+		}
+		
 		return maxI;
 	}
 
+	
+	public static int maxIndexBeyondIndex( double[] md, int beyIndex) {
+		 
+		int maxI = 0;
+		if (beyIndex<1)beyIndex=1;
+		
+		for (int i = beyIndex; i < md.length; i++){
+			
+			if (md[i] > md[maxI]){
+				maxI = i;
+			}
+		}
+		
+		
+		return maxI;
+	}
+
+	/**
+	 * looks for the top N largest values within the list of maxima per row and 
+	 * returns the indices of those values, such that int[0] of the 
+	 * resulting array points to the maximum value
+	 * 
+	 * @param values
+	 * @param topN
+	 * @param target 0-=rows, 1+=columns
+	 * @return
+	 */
+	public static int[] maxIndices(double[][] values, int topN, int target){
+		int _target = target;
+		double[][] tm = new double[0][0] ;
+
+		
+		if ((topN<0) || (topN>values.length)){
+			topN = values.length;
+		}
+		if (_target<0)_target=0;
+		if (_target>1)_target=1;
+		
+		
+		int[] maxIndexes = new int[topN];
+		double[] maxima = new double[0];
+		
+		if (_target==0){
+			tm= values;
+		}
+		if (_target==1){
+			// transpose, and set _target to 1
+			tm = transpose(values);
+			_target = 0;
+		}
+		if ((_target==0) && (tm.length>0)){
+			maxima = new double[tm.length] ;
+			for (int i=0; i<tm.length;i++){
+				maxima[i] = max(tm[i]); 
+			}
+		}
+		
+		maxIndexes = maxIndices(maxima, topN) ;
+		return maxIndexes;
+	}
+	
+	
+	/**
+	 * looks for the top N largest values within the list of values and 
+	 * returns the indices of those values, such that int[0] of the 
+	 * resulting array points to the maximum value
+	 * 
+	 * @param values
+	 * @param topN
+	 * @return
+	 */
+	public static int[] maxIndices(double[] values, int topN){
+		
+		int mxi;
+		double mx;
+		if ((topN<0) || (topN>values.length)){
+			topN = values.length;
+		}
+		int[] maxIndexes = new int[topN];
+		
+		double[] _values = copy(values);
+		
+		double minimum = min(_values);
+		
+		int z=0;
+		while (z<topN){
+			
+			mxi = maxIndex(_values) ;
+			mx  = _values[mxi] ;
+			
+			if (mxi>=0){
+				_values[mxi]= minimum - 1.0;
+				maxIndexes[z] = mxi ;
+				z++ ;
+			}else{ break;}
+		}
+		
+		return maxIndexes;
+	}
+	
 	// cumulative methods
 
 	/**
@@ -1358,6 +1578,99 @@ public class DoubleArray {
 		return X;
 	}
 
+
+	/**
+	 * it is assumed that the second index of the array denotes the columns
+	 * 
+	 * @param values
+	 */
+	public static double[] marginalSumCol( double[][] values ){
+		double[] margins = new double[values.length];
+		double vs;
+		
+		
+		for (int c=0;c<values[0].length;c++){
+			vs=0;
+			
+			for (int j=0;j<values.length;j++){
+				vs = vs + values[j][c] ;
+			}
+			margins[c] = vs;
+		}
+		
+		return margins;
+	}
+	
+	/**
+	 * it is assumed that the first index of the array denotes the rows
+	 * 
+	 * @param values
+	 */
+	public static double[] marginalSumRow( double[][] values ) throws Exception{
+		
+		if (values==null){
+			throw(new Exception("array to be handled is null!  "));
+		}
+		double[] margins = new double[values.length];
+		double vs;
+		
+		
+		for (int i=0;i<values.length;i++){
+			vs=0;
+			
+			for (int j=0;j<values[i].length;j++){
+				vs = vs + values[i][j] ;
+			}
+			margins[i] = vs;
+		}
+		
+		return margins;
+	}
+	
+	private static double lazyvariance( double sum, double sqsum, int n){
+		return  sqsum /n - (sum/n)*(sum/n) ;
+	}
+	
+	
+	public static double[] marginalVariancesRow( double[][] values ){
+		double[] margins = new double[values.length];
+		double vs, vqs=0, variance ;
+		
+		
+		for (int i=0;i<values.length;i++){
+			vs=0;vqs=0;
+			
+			for (int j=0;j<values[i].length;j++){
+				vs = vs + values[i][j] ;
+				vqs= vqs+ (values[i][j]*values[i][j]) ;
+			}
+			variance = lazyvariance(vs,vqs,values[i].length);
+			margins[i] = variance ;
+		}
+		
+		return margins;
+	}
+	
+	public static double[] marginalVariancesCol( double[][] values ){
+		double[] margins = new double[values.length];
+		double vs, vqs=0, variance;
+		
+		
+		for (int c=0;c<values[0].length;c++){
+			vs=0; vqs=0 ;
+			
+			for (int j=0;j<values.length;j++){
+				vs = vs  + values[j][c] ;
+				vqs= vqs + (values[j][c] * values[j][c]) ;
+			}
+			variance = lazyvariance(vs,vqs,values.length);
+			margins[c] = variance ;
+		}
+		
+		return margins;
+	}
+	
+	
 	/**
 	 * Calculates the cumulative sum of an array. Think of it as an integral.
 	 * Example:<br>
@@ -1523,6 +1836,8 @@ public class DoubleArray {
 	 * @return A string of a nicely organized version of the matrix or array.
 	 */
 	public static String toString(double[]... v) {
+		String outStr="" ;
+		
 		StringBuffer str = new StringBuffer();
 		for (int i = 0; i < v.length; i++) {
 			for (int j = 0; j < v[i].length - 1; j++)
@@ -1531,7 +1846,8 @@ public class DoubleArray {
 			if (i < v.length - 1)
 				str.append("\n");
 		}
-		return str.toString();
+		outStr = str.toString() ;
+		return outStr ;
 	}
 
 	/**

@@ -6,5 +6,9 @@ package org.math.array.util;
  * @author Yann RICHET
  */
 public interface Function {
+	
     public double f(double x);
+    
+    public double fxy(double x, double xy);
+    
 }

@@ -320,7 +320,16 @@ public class StatisticSample extends DoubleArray {
 
     public static double[] variance(double[][] v) {
         int m = v.length;
+        
+        if ((v==null) || (m==0)){
+        	return new double[0];
+        }
         int n = v[0].length;
+
+        if (n==0){
+        	return new double[0];
+        }
+
         double[] var = new double[n];
         int degrees = (m - 1);
         double c;

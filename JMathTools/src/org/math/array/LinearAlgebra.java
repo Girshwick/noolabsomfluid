@@ -343,6 +343,12 @@ public class LinearAlgebra extends DoubleArray {
 		return new EigenvalueDecomposition(new Matrix(v));
 	}
 
+	public EigenValueDecomposition eeigen(double[][] v) {
+		EigenValueDecomposition evd;
+		evd = new EigenValueDecomposition(new Matrix(v));
+		return evd ;
+	}
+	
 	public static QRDecomposition QR(double[][] v) {
 		return new QRDecomposition(Matrix.constructWithCopy(v));
 	}
