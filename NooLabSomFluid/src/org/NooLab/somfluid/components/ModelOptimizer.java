@@ -542,23 +542,32 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			
 			SomTargetedModeling targetedModeling;
 			
-			sfTask.setCallerStatus(0) ;
 			
-			targetedModeling = new SomTargetedModeling( modOpti, sfFactory, sfProperties, sfTask, serialID);
-			
-			targetedModeling.setSource(0);
-			
-			targetedModeling.prepare(usedVariables);
-			
-			String guid = targetedModeling.perform(0);
-			
-			out.print(2, "\nSom ("+z+") is running , identifier: "+guid) ; 
+			try{
+				
 
-			while (targetedModeling.isCompleted()==false){
-				out.delay(10);
+				sfTask.setCallerStatus(0) ;
+				
+				targetedModeling = new SomTargetedModeling( modOpti, sfFactory, sfProperties, sfTask, serialID);
+				
+				targetedModeling.setSource(0);
+				
+				targetedModeling.prepare(usedVariables);
+				
+				String guid = targetedModeling.perform(0);
+				
+				out.print(2, "\nSom ("+z+") is running , identifier: "+guid) ; 
+
+				while (targetedModeling.isCompleted()==false){
+					out.delay(10);
+				}
+				targetedModeling.clear() ;
+				targetedModeling = null;
+				
+			}catch(Exception e){
+				e.printStackTrace();
 			}
-			targetedModeling.clear() ;
-			targetedModeling = null;
+			
 	}
 
 	

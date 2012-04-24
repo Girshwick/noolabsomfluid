@@ -310,7 +310,7 @@ public class SomTargetedModeling    extends
 	}
 
 
-	public void prepare( ArrayList<Integer> usedVariables){
+	public void prepare( ArrayList<Integer> usedVariables) throws Exception{
 		
 		int ix;
 		String tvlabel = null;
@@ -325,8 +325,8 @@ public class SomTargetedModeling    extends
 		}
 		for (int i=0;i<variables.size();i++){
 			if (i>=usageVector.size())usageVector.add(0.0) ;
+			if (usedVariables.indexOf(i)>=0){ usageVector.set(i, 1.0);}
 		}
-
 		
 		if (variables.getUsageIndicationVector().size()==0){
 			for (int i=0;i<variables.size();i++){
@@ -359,17 +359,27 @@ public class SomTargetedModeling    extends
 			tvlabel = modelingSettings.getActiveTvLabel() ;
 			 
 			 
-			ix = variables.getIndexByLabel(tvlabel) ;
+			ix = variables.getIndexByLabel(tvlabel) ; 
+			// on initial failure, this will also apply StringsUtil.matchSimpleWildcard(String compareThisSnip, String toFullString)
+			
 			
 			if ((ix<0) && (tvlabel.indexOf("*")>=0)){
 				 
+				if (modelingSettings.getTargetedModeling()){
+					String errmsg = "Critical failure!\n                     Targeted modeling has been requested and a generic target variable has been provided ('"+tvlabel+"'),\n"+
+					                "                     but no matching variable label has been found!\n";
+					throw(new Exception(errmsg));
+				}
 			}else{
 				v = variables.getItem(ix) ;
 				tvlabel = v.getLabel();
 				variables.setTargetVariable(v) ;
 				
 			}
-			usageVector.set(ix, 1.0);
+			if (ix>=0){
+				usageVector.set(ix, 1.0);
+			}
+			
 		}
 		if ((v != null) && (v.getLabel().length()>0)){
 			vars.additem( v );

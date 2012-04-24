@@ -695,12 +695,13 @@ public class Variables implements Serializable, VariablesIntf{
 		Variable item;
 		
 		for (int i=0;i<items.size();i++){
+			
 			item = items.get(i) ;
 			if ((item!=null) && (item.getLabel().contentEquals(varLabel))){
 				index=i;
 				break ;
 			}else{
-				hb = strgutil.matchSimpleWildcard( varLabel, item.getLabel()) ;
+				hb = strgutil.matchSimpleWildcard( varLabel.toLowerCase(), item.getLabel().toLowerCase() ) ;
 				if (hb){
 					index = i;
 					break ;
