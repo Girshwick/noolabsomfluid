@@ -201,6 +201,10 @@ public class DescriptiveStatistics implements StatisticalSummary, Serializable {
     public void addValues( int[] values) {
     	boolean consider;
     	
+    	if (values==null){
+    		return;
+    	}
+    	
     	for (int i=0;i<values.length;i++){
     		consider = true;
     		if ((missingValue != null) && (missingValue.isActive())){
@@ -214,6 +218,10 @@ public class DescriptiveStatistics implements StatisticalSummary, Serializable {
     
     public void addValues( ArrayList<Double> values) {
     	boolean consider;
+    	
+    	if (values==null){
+    		return;
+    	}
     	
     	for (int i=0;i<values.size();i++){
     		consider = true;
