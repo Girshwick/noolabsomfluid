@@ -11,7 +11,12 @@ import org.NooLab.utilities.strings.*;
 
 
 
-
+/**
+ * 
+ * 
+ * 
+ *
+ */
 public class DirectoryContent extends Observable  {
 	 
 	 

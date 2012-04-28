@@ -454,7 +454,17 @@ public abstract class XMessageAbs {
     	
     	root = this.contentRoot ;
     	
+    	domainSpecs = domainSpecs.trim();
+    	itemSpecs = itemSpecs.trim();
+    	
+    	if ((domainSpecs.endsWith("/")==false) && (itemSpecs.startsWith("/")==false) && (itemSpecs.length()>0)){
+    		itemSpecs = "/"+itemSpecs;
+    	}
     	domainSpecs = domainSpecs + itemSpecs;
+    	
+    	if (xpathQuery.domDoc==null){
+    		xpathQuery.setXml( rawXmlMsg ) ;
+    	}
     	
     	listItems = xpathQuery.getAttributesValues( domainSpecs , itemSpecs, attrSpecs );
     	// Vector<Integer> listItems

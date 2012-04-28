@@ -157,6 +157,28 @@ public class ArrUtilities {
 		return return_value.trim() ;
 	}
 
+	
+	public String arr2text( ArrayList<String> vector,
+            			    String separator){
+		
+		String return_value="";
+		int i;
+		
+		if (separator.length()==0){
+			separator="\t";
+		}
+		
+		 for ( i = 0; i < vector.size(); i++) {
+			 
+			 return_value = return_value + vector.get(i);
+			 
+			 if (i<vector.size()-1){
+				 return_value = return_value + separator ;
+			 }
+		 }
+		return return_value;
+
+	}
 	public String arr2text( String[] vector,
 	                        String separator){
 		
@@ -427,6 +449,7 @@ public class ArrUtilities {
 		return strval ;
 	}
 	
+	/*
 	public static int[] changeArraystyle(  ArrayList<Integer> values) {
 		
 		int[] vi = new int[values.size()];
@@ -437,6 +460,46 @@ public class ArrUtilities {
 		
 		return vi;
 	}
+	*/
+	
+	@SuppressWarnings("rawtypes")
+	public static Object changeArraystyle( ArrayList<?> valuesObj) {
+		
+		Object arrayObj=null, obj ;
+		String cn;
+		ArrayList<Integer> ivalues;
+		ArrayList<Double> dvalues;
+		
+		if ((valuesObj==null) || (valuesObj.size()==0)){
+			return null;
+		}
+		
+		obj = valuesObj.get(0) ;
+		cn = obj.getClass().getSimpleName().toLowerCase() ;
+		
+		if (cn.startsWith("int")){
+
+			int[] vi = new int[valuesObj.size()];
+			
+			for(int i=0;i<vi.length;i++){
+				vi[i] = (int)((Integer) valuesObj.get(i)) ;
+			}
+			arrayObj = vi;
+		}
+		
+		if (cn.startsWith("double")){
+			double[] di = new double[valuesObj.size()];
+			
+			for(int i=0;i<di.length;i++){
+				di[i] = (double)((Double) valuesObj.get(i)) ;
+			}
+			arrayObj = di;			
+		}
+		
+		return arrayObj;
+	}
+	
+	
 	public static ArrayList<Double> changeArraystyle(double[] values) {
 		ArrayList<Double> xa = new ArrayList<Double>();
 		
@@ -991,6 +1054,23 @@ public class ArrUtilities {
 	}
 
 	
+	public int arraySum(int[] values, double posLoP, double posHiP) {
+		
+		int[] xvalues ;
+		
+		int posLo =  (int) (posLoP * values.length) ;
+		int posHi =  (int) (posHiP * values.length) ;
+		
+		if (posLo<0)posLo=0;
+		if (posHi<0)posHi=values.length;
+		
+		xvalues = new int[posHi-posLo] ;
+		System.arraycopy(values, posLo, xvalues, 0, xvalues.length);
+		
+		return arraySum(xvalues);
+	}
+
+
 	public double arraySum( double[] d_arr){
 		return arraysum(d_arr);
 	}
@@ -1769,6 +1849,8 @@ public class ArrUtilities {
 		outStr = str.toString() ;
 		return outStr ;
 	}
+
+ 
 
 
 	

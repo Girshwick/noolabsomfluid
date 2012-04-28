@@ -1392,7 +1392,10 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 			
 			return rB;
 		}
-
+		
+		compareThisSnip=compareThisSnip.toLowerCase() ;
+		toFullString = toFullString.toLowerCase() ;
+		
 		if (compareThis.startsWith("*") ){
 			compareThis = compareThis.replace("*", "");
 			rB = toFullString.endsWith(compareThis) ;
@@ -2324,6 +2327,24 @@ if (str.contains("1. 5")){
 		return rb;
 	}
 	
+	public String extractCapitals(String str){
+		String xstr = "" ;
+
+		try{
+
+			for (int i=0;i<str.length();i++){
+				if (isCharUpperCase(str, i)){
+					xstr = xstr + str.substring(i,i+1) ;
+				}
+			}
+
+		}catch(Exception e){
+		}
+		return xstr;
+	}
+	
+	
+
 	public boolean isNounCase( String str) {
 		
 		return isNounCase( str," ");
@@ -2840,7 +2861,6 @@ if (str.contains("1. 5")){
 		return rb;
 	}
 	
- 
 	public Vector<String> extractNumsFromString(String str){
 
 		Vector<String> numbers = new Vector<String>();
@@ -4127,6 +4147,27 @@ if (str.contains("1. 5")){
 		languageID = Integer.parseInt(str) ;  
 	
 		return languageID; 
+	}
+
+	public static String separateLast(String string, String separator) {
+		String separatedPart = ""; 
+		String[] parts;
+		
+		try{
+			
+			if (string.contains(separator)==false){
+				parts = new String[]{ string } ;
+			}else{
+				parts = string.split(separator);
+			}
+			
+			separatedPart = parts[parts.length-1];
+			
+		}catch(Exception e){
+			
+		}
+		
+		return separatedPart;
 	}
 
 

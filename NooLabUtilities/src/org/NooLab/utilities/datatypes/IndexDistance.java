@@ -1,6 +1,7 @@
 package org.NooLab.utilities.datatypes;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 import org.NooLab.utilities.net.GUID;
 
@@ -24,7 +25,9 @@ public class IndexDistance implements Serializable, IndexDistanceIntf{
 	double distance = -1.0;
 	String guidStr="";
 	
+	ArrayList<Object> data = new ArrayList<Object>();
 	
+	// ========================================================================
 	/**
 	 * the constructor requires the data to fill the new element
 	 * 
@@ -40,7 +43,16 @@ public class IndexDistance implements Serializable, IndexDistanceIntf{
 	}
 
 	
-	
+	public IndexDistance(int primIndex, int secIndex, double dValue, String str) {
+		index = primIndex;
+		secindex = secIndex;
+		
+		distance = dValue;
+		
+		guidStr = str ;
+	}
+
+		
 	public IndexDistance(int primIndex, int secIndex, double dValue) {
 
 		index = primIndex;
@@ -61,6 +73,15 @@ public class IndexDistance implements Serializable, IndexDistanceIntf{
 	}
 	
 	
+	public IndexDistance(int primIndex, String str) {
+		index = primIndex ;
+		secindex = -1 ;
+		distance = 0.0 ;
+		guidStr = str  ; 
+	}
+	// ========================================================================
+
+
 	public int getIndex2() {
 		return secindex;
 	}
@@ -87,6 +108,24 @@ public class IndexDistance implements Serializable, IndexDistanceIntf{
 
 	public void setGuidStr(String guidStr) {
 		this.guidStr = guidStr;
+	}
+
+
+	public Object getDataObject() {
+		return data;
+	}
+	
+	public void setDataObject(Object obj) {
+		if (obj!=null){
+			data.clear();
+			data.add(obj) ;
+		}
+	}
+
+	public void addDataObject(Object obj) {
+		if (obj!=null){
+			data.add(obj) ;
+		}
 	}
 	
 	

@@ -127,7 +127,13 @@ public class IndexedDistances {
 	}
 	
 	public IndexDistance getItem( int index){
-		return items.get(index);
+		
+		IndexDistance item=null;
+		if ((index>=0) &&(index<items.size())){
+			item =items.get(index);
+		}
+		
+		return item;
 	}
 
 	public void removeItem( int index){
@@ -188,5 +194,13 @@ public class IndexedDistances {
 			items.add( (IndexDistance) ixdiList.get(i)) ;
 		}
 	}
+
+
+	public void addItems(IndexedDistances listOfPutativeTransforms) {
+		// TODO Auto-generated method stub
+		
+	}
+
+ 	 
 	
 }
