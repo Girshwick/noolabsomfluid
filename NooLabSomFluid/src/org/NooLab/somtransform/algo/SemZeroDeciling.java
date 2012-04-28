@@ -1,5 +1,5 @@
 package org.NooLab.somtransform.algo;
 
-public class BasicNumericalAdjustments {
+public class SemZeroDeciling {
 
 }

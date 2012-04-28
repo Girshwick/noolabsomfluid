@@ -206,6 +206,17 @@ public class Variables implements Serializable, VariablesIntf{
 	
 	}
 	
+	public ArrayList<String> getLabelsForIndexList(ArrayList<Integer> indexes){
+		
+		ArrayList<String> labels = new ArrayList<String>();
+		Variable v;
+		
+		for (int i=0;i<indexes.size();i++){
+			v = items.get( indexes.get(i)) ;
+			labels.add( v.getLabel()) ;
+		}
+		return labels;
+	}
 	
 	public ArrayList<String> getLabelsForVariablesList(ArrayList<Variable> vars){
 	
@@ -695,13 +706,12 @@ public class Variables implements Serializable, VariablesIntf{
 		Variable item;
 		
 		for (int i=0;i<items.size();i++){
-			
 			item = items.get(i) ;
 			if ((item!=null) && (item.getLabel().contentEquals(varLabel))){
 				index=i;
 				break ;
 			}else{
-				hb = strgutil.matchSimpleWildcard( varLabel.toLowerCase(), item.getLabel().toLowerCase() ) ;
+				hb = strgutil.matchSimpleWildcard( varLabel, item.getLabel()) ;
 				if (hb){
 					index = i;
 					break ;

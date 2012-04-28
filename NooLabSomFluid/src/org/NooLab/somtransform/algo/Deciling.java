@@ -53,6 +53,15 @@ public class Deciling extends AlgoColumnWriterAbstract {
 		return null;
 	}
 
+	
+	@Override
+	public void setParameters(ArrayList<Object> params) {
+		
+		super.setParameters(params) ;
+		
+	}
+	
+	
 	@Override
 	public ArrayList<Double> writeTransformedValues(String outColumnLabel,
 			int bufferIndex) {
@@ -70,6 +79,20 @@ public class Deciling extends AlgoColumnWriterAbstract {
 			int[] bufferIndexes) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	 
+
+	@Override
+	public int getRangeViolationCounter() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void setRangeViolationCounter(int rangeViolationCounter) {
+		// TODO Auto-generated method stub
+		
 	}
 
 

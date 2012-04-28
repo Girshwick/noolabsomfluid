@@ -142,6 +142,13 @@ public class NomValEnum extends AlgoTransformationAbstract{
 	public ArrayList<Double> getTransformedValues() {
 		return outvalues;
 	}
+
+
+	@Override
+	public String getDescription() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 	
 	

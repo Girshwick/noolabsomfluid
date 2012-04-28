@@ -12,4 +12,10 @@ public interface AlgoTransformationIntf  extends AlgorithmIntf{
 	public void setDatDescription(DataDescription dataDescription);
 
 	public boolean hasParameters() ;
+	
+	public String getDescription() ;
+
+	double handlingRangeProtection(double value);
+		
+	
 }

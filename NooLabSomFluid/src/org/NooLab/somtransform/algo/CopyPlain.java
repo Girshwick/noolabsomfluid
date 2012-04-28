@@ -81,4 +81,20 @@ public class CopyPlain extends AlgoColumnWriterAbstract{
 		return null;
 	}
 
+
+
+
+	@Override
+	public int getRangeViolationCounter() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+
+	@Override
+	public void setRangeViolationCounter(int rangeViolationCounter) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

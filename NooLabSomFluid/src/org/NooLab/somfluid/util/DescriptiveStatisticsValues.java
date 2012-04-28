@@ -20,10 +20,12 @@ public class DescriptiveStatisticsValues implements Serializable {
 	
 	// portion of bins filled with more than 1 value;
 	double variety= -1.0;
-	/** variety 100%-quantil : variety 75%-quantil */
+	/** variety 95%-quantil : variety 75%-quantil */
 	double boxRatio1 = -1.0; 
-	/** variety 90%-quantil : variety 50%-quantil */
+	/** variety 50%-quantil : variety 75%-quantil */
 	double boxRatio2 = -1.0;
+	/** absolute size of 95% quantil */
+	private double boxRatio3;
 	
 	double[] outliers = new double[0] ;
 	
@@ -42,6 +44,14 @@ public class DescriptiveStatisticsValues implements Serializable {
 	
 	// ..........................................
 	StringsUtil strgutil = new StringsUtil () ;
+
+
+	int[] sumOnSplit = new int[2];
+
+
+	double sumosRatio = 0.0;
+
+
 	
 	
 	// ========================================================================
@@ -51,6 +61,42 @@ public class DescriptiveStatisticsValues implements Serializable {
 	// ========================================================================	
 	
 	
+	public void clear() {
+		fDescriptions.clear() ;
+		
+		
+	}
+
+
+	// ------------------------------------------------------------------------
+	
+	public DescriptiveStatisticsValues clone(){
+		DescriptiveStatisticsValues ds = new DescriptiveStatisticsValues();
+		
+		ds.cofv = cofv;
+		
+		ds.distrsupports = distrsupports;
+		ds.excludeMV = excludeMV;
+		ds.kurtosis = kurtosis;
+		ds.max = max;
+		ds.mean = mean;
+		ds.min = min;
+		ds.missingvalue = missingvalue;
+		ds.modus = modus;
+		ds.variance =  variance;
+		ds.skewness =  skewness;
+		
+		if (outliers.length>0)
+			ds.outliers = outliers.clone();
+		if (quantils.length>0)
+			ds.quantils = quantils.clone();
+		if (distribution.length>0)
+			ds.distribution = distribution.clone();
+		
+		return ds;
+	}
+
+
 	public int calcDescriptiveStats( double[] values ){
 		int result= -1;
 		double sum=0.0, ssq=0.0,  mi, mx; 
@@ -144,33 +190,6 @@ public class DescriptiveStatisticsValues implements Serializable {
 	
 	// ------------------------------------------------------------------------
 
-	public DescriptiveStatisticsValues clone(){
-		DescriptiveStatisticsValues ds = new DescriptiveStatisticsValues();
-		
-		ds.cofv = cofv;
-		
-		ds.distrsupports = distrsupports;
-		ds.excludeMV = excludeMV;
-		ds.kurtosis = kurtosis;
-		ds.max = max;
-		ds.mean = mean;
-		ds.min = min;
-		ds.missingvalue = missingvalue;
-		ds.modus = modus;
-		ds.variance =  variance;
-		ds.skewness =  skewness;
-		
-		if (outliers.length>0)
-			ds.outliers = outliers.clone();
-		if (quantils.length>0)
-			ds.quantils = quantils.clone();
-		if (distribution.length>0)
-			ds.distribution = distribution.clone();
-		
-		return ds;
-	}
-	
-	
 	public double getMean() {
 		return mean;
 	}
@@ -250,10 +269,18 @@ public class DescriptiveStatisticsValues implements Serializable {
 
 
 	public void setDistribution(int[] values) {
-		double[] distribution = new double[values.length];
+		double[] distribution ;
 		
-		for (int i=0;i<distribution.length;i++){
-			distribution[i] = values[i];
+		if (values==null){
+			distribution = new double[100];
+		}else{
+			distribution = new double[values.length];
+		}
+		
+		if (values!=null){
+			for (int i = 0; i < distribution.length; i++) {
+				distribution[i] = values[i];
+			}
 		}
 		
 	}
@@ -415,6 +442,16 @@ public class DescriptiveStatisticsValues implements Serializable {
 	}
 
 
+	public int[] getSumOnSplit() {
+		return sumOnSplit;
+	}
+
+
+	public void setSumOnSplit(int[] sumOnSplit) {
+		this.sumOnSplit = sumOnSplit;
+	}
+
+
 	public double getBoxRatio1() {
 		return boxRatio1;
 	}
@@ -430,8 +467,30 @@ public class DescriptiveStatisticsValues implements Serializable {
 	}
 
 
-	public void setBoxRatio2(double boxRatio2) {
-		this.boxRatio2 = boxRatio2;
+	public void setBoxRatio2(double boxRatio ) {
+		this.boxRatio2 = boxRatio ;
+	}
+
+
+	public double getBoxRatio3() {
+		 
+		return boxRatio3;
+	}
+
+
+	public void setBoxRatio3(double boxRatio) {
+		this.boxRatio3 = boxRatio ;
+		
+	}
+
+
+	public double getSumosRatio() {
+		return sumosRatio;
+	}
+
+
+	public void setSumosRatio(double sumosRatio) {
+		this.sumosRatio = sumosRatio;
 	}
 
 

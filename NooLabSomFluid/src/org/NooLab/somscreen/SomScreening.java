@@ -104,6 +104,8 @@ public class SomScreening {
 	
 	ArrayList<String> basicPowsetItems = new ArrayList<String>();;
 	
+	EvoBasics previousEvoBasics;
+	
 	int totalSelectionSize;
 	int[] selectionMode;
 	
@@ -260,7 +262,12 @@ public class SomScreening {
 					basicPowsetItems.add( ixds.getItem(k).getGuidStr()) ;
 				}
 				//this.evoBasics.evolutionaryWeights = new ArrayList<Double>();
+				
+				previousEvoBasics = new EvoBasics(evoBasics) ;
+				evoMetrices.setEvoBasics( previousEvoBasics ) ;
 			} // evoweights available ?
+			
+			
 		}catch(Exception e){
 			e.printStackTrace() ;
 		}

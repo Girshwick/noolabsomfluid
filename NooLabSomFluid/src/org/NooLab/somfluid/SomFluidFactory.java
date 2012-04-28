@@ -18,6 +18,8 @@ import org.NooLab.somfluid.env.data.DataFileReceptorIntf;
 import org.NooLab.somfluid.env.data.DataReceptor;
 import org.NooLab.somfluid.storage.SomPersistence;
 import org.NooLab.somtransform.SomTransformer;
+import org.NooLab.somtransform.algo.externals.AlgorithmPluginsLoader;
+import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
 
@@ -105,6 +107,16 @@ public class SomFluidFactory  implements 	//
 		fieldFactory = new PhysicalFieldFactory() ;
 		
 		persistence = new SomPersistence(sfProperties) ;
+		
+		
+		try {
+			(new AlgorithmDeclarationsLoader(sfProperties)).load() ;
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-7);
+		}
+				
 		
 		// we need to create the SomFluid object in a rudimentary form right now,
 		// because we need it as a event sink for the "PhysicalFieldFactory()"

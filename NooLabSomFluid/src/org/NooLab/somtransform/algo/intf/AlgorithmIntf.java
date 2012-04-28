@@ -14,8 +14,17 @@ public interface AlgorithmIntf extends AlgorithmParameterIntf, Serializable{
 	public static final int _ALGOTYPE_PASSIVE = 2 ; 
 	public static final int _ALGOTYPE_VALUE   = 3 ; 
 	public static final int _ALGOTYPE_WRITER  = 4 ; 
-	
 
+	/** range violation will lead to an Exception  */
+	public static final int _ALGO_RANGEVIOLATION_EXCEPTION   = 1;
+	
+	/** range violation will lead to missing value  */
+	public static final int _ALGO_RANGEVIOLATION_DROPVALUE   = 3;
+	
+	/** simple changes values such that they fit into [0..1] (except for missing value)  */
+	public static final int _ALGO_RANGEVIOLATION_AUTOCORRECT = 4;
+
+	
 	public int getType();
 	
 	public String getVersion();
@@ -34,10 +43,14 @@ public interface AlgorithmIntf extends AlgorithmParameterIntf, Serializable{
 	
 	public AlgorithmParameters getParameters() ;
 	
-	public void setParameters( ArrayList<Object> params) ;
+	public void setParameters( ArrayList<Object> params) throws Exception ;
 
 	public int setValues(ArrayList<ArrayList<?>> inValues);
 	
 
+	public int getRangeViolationCounter() ;
+
+	public void setRangeViolationCounter(int rangeViolationCounter) ;
+	
 	
 }

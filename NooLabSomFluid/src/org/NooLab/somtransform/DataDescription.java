@@ -41,10 +41,29 @@ public class DataDescription implements
 	public DataDescription(){
 		
 	}
+	
+	// for cloning
+	public DataDescription(DataDescription tmplDescription) {
+		
+		isComplete = tmplDescription.isComplete  ; 
+		
+		mean   = tmplDescription.mean  ;
+		max    = tmplDescription.max  ;
+		min    = tmplDescription.min  ;
+		
+		median   = tmplDescription.median  ;
+		
+		variance = tmplDescription.variance  ;
+		coeffvar = tmplDescription.coeffvar  ;
+
+		kurtosis = tmplDescription.kurtosis  ;
+		skewness = tmplDescription.skewness  ;
+		
+		quantiles = new ArrayList<Double>(tmplDescription.quantiles);
+	}
+	
 	// ========================================================================
 
-	
-	
 	/**
 	 * @return the mean
 	 */

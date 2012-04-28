@@ -152,7 +152,7 @@ if (i>=89){
 	public int[] identifyMindi( double contrastByMean, int windowSize, int maxN) {
 		int[] mindi = new int[0];
 		double avgRaw= -1.0, dv,nmin,nmax;
-		// strategy flip vertically at the average line of the values,
+		// strategy: flip vertically at the average line of the values,
 		// and apply modi search
 		
 		avgRaw = arrutil.arraySum( values)/(values.length) ;

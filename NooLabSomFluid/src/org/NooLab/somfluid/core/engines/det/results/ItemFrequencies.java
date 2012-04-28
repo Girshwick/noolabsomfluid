@@ -85,6 +85,49 @@ public class ItemFrequencies {
 	}
 	
 	
+	public int countValues( double tvalue) {
+		int c=0;
+		for (int i=0;i<items.size();i++){
+			if ( (Math.abs( tvalue-items.get(i).observedValue )<0.00000000001)) {
+				c++;
+			}
+		}
+		return c;
+	}
+
+	public int countNegatives() {
+		int c=0;
+		for (int i=0;i<items.size();i++){
+			if (items.get(i).observedValue<0){
+				c++;
+			}
+		}
+		return c;
+	}
+	
+	public double countPositives() {
+		int c=0;
+		for (int i=0;i<items.size();i++){
+			if (items.get(i).observedValue>0){
+				c++;
+			}
+		}
+		return c;
+	}
+	public ItemFrequencies selectNonZeroes() {
+		ItemFrequencies selitems = new ItemFrequencies ();
+		
+		int c=0;
+		for (int i=0;i<items.size();i++){
+			if (items.get(i).observedValue>=0.0){
+				c++;
+				selitems.add(items.get(i)) ;
+			}
+		}
+		
+		return selitems;
+	}
+	
 	
 	public void add( ItemFrequency item){
 		

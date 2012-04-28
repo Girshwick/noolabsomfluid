@@ -3,6 +3,7 @@ package org.NooLab.somfluid;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.NooLab.somfluid.components.AlgorithmDeclarationsLoader;
 import org.NooLab.somfluid.components.DataFilter;
 import org.NooLab.somfluid.core.engines.det.ResultRequests;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
@@ -44,6 +45,7 @@ public class SomFluidProperties implements 	//
 	
 	
 	transient SomFluidFactory sfFactory ;
+	transient AlgorithmDeclarationsLoader algoDeclarations;
 	
 	int glueType = 0;
 	
@@ -60,6 +62,8 @@ public class SomFluidProperties implements 	//
 	DataUseSettings dataUseSettings = new DataUseSettings() ;
 	PersistenceSettings persistenceSettings = new PersistenceSettings();
 		
+	SomFluidPluginSettings pluginSettings = new SomFluidPluginSettings();
+	
 	// lattice
 	int somType = -1; // mandatory 
 	int initialNodeCount = -1;
@@ -76,6 +80,10 @@ public class SomFluidProperties implements 	//
 	private int absoluteFieldExclusionsMode;
 
 	private int showSomProgressMode;
+
+	private boolean isPluginsAllowed = true;
+
+	private String algorithmsConfigPath;
 
 	
 	static SettingsTransporter settingsTransporter;
@@ -158,6 +166,16 @@ public class SomFluidProperties implements 	//
 	// ------------------------------------------------------------------------
 	
 
+	public AlgorithmDeclarationsLoader getAlgoDeclarations() {
+		return algoDeclarations;
+	}
+
+
+	public void setAlgoDeclarations(AlgorithmDeclarationsLoader algoDeclarations) {
+		this.algoDeclarations = algoDeclarations;
+	}
+
+
 	public PersistenceSettings getPersistenceSettings() {
 		
 		return persistenceSettings;
@@ -179,6 +197,16 @@ public class SomFluidProperties implements 	//
 		return modelingSettings.getSpriteSettings() ;
 	}
 	
+	public SomFluidPluginSettings getPluginSettings() {
+		return pluginSettings;
+	}
+
+
+	public void importTransformationParameterDefaults(String filename) {
+		// TODO 
+	}
+
+
 	public int getSomType() {
 		return somType;
 	}
@@ -582,6 +610,36 @@ public class SomFluidProperties implements 	//
  
 	public void setShowSomProgressMode(int showSomProgressMode) {
 		this.showSomProgressMode = showSomProgressMode;
+	}
+
+
+	public boolean isPluginsAllowed() {
+		return isPluginsAllowed;
+	}
+
+
+	public void setPluginsAllowed(boolean isPluginsAllowed) {
+		this.isPluginsAllowed = isPluginsAllowed;
+	}
+
+	/**
+	 * refers to "builtinscatalog.xml" which is necessary for global indexing and activation of built-in algorithms;
+	 * if it does not exist (path or file) only the most basic algorithms are available
+	 * 
+	 * @param pathstring
+	 */
+	public void setAlgorithmsConfigPath(String pathstring) {
+		// 
+		if (pathstring.endsWith("/")==false){
+			pathstring = pathstring+"/" ; 
+		}
+		String ps = DFutils.createPath( "", pathstring);
+		algorithmsConfigPath = pathstring;
+	}
+
+
+	public String getAlgorithmsConfigPath() {
+		return algorithmsConfigPath;
 	}
 
 

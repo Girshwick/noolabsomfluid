@@ -54,8 +54,9 @@ public class DataTable implements Serializable{
 	
 	public static final int __FORMAT_NUM    = 1;
 	public static final int __FORMAT_INT    = 2;
-	public static final int __FORMAT_ORGINT = 3;
-	public static final int __FORMAT_BIN    = 4; //   it is basically a value or a string
+	public static final int __FORMAT_ORD    = 3;
+	public static final int __FORMAT_ORGINT = 4;
+	public static final int __FORMAT_BIN    = 5; //   it is basically a value or a string
 	
 	public static final int __FORMAT_TIME   = 6; //   it is basically a string
 	public static final int __FORMAT_DATE   = 7; //     ./.
@@ -66,6 +67,8 @@ public class DataTable implements Serializable{
 	public static final int __FORMAT_TXT    = 12;
 	public static final int __FORMAT_BINSTR = 13;
 
+	public static final int __FORMAT_IGNORE = 99;
+	
 	public static final int _MAX_ORDSTR_VARIABILITY = 50 ;
 
 	
@@ -494,7 +497,7 @@ if (i>=9){
 							// apply NVE: recode into integer, save mapping into the table 
 							// as item in a list of mapping objects (index, map)
 							
-							/*  TODO:  NVE NOT HERE !!!! move down to a stage behind format determination
+							/*  NVE NOT HERE !!!! move down to a stage behind format determination
 							NveMapping nveMap = new NveMapping( sdl ) ; // createMap()
 							this.nveMaps.add( nveMap );
 							column.applyNveRecodeMap( nveMap );
@@ -542,13 +545,7 @@ if (i>=9){
 				
 				column.setFormat(formats[i]);
 				column.makeNumeric( tableHasHeader ) ;
-				
-				/*
-				newColumn.setFormat(formats[i]);
-				newColumn.reset(0) ;
-				newColumn.importColumn( column, 1 ) ;
-				*/
-				 
+			
 				
 				// introduce into this table: structure is created, values copied
 				

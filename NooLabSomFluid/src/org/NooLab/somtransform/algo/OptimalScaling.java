@@ -144,6 +144,13 @@ public class OptimalScaling extends AlgoTransformationAbstract {
 		return parameters;
 	}
 
+
+	@Override
+	public String getDescription() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	
 	
 }

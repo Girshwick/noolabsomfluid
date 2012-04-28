@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.core.engines.det.DSom;
-import org.NooLab.somtransform.algo.EmpiricDistribution;
 
 
 

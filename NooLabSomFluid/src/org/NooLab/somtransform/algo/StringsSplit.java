@@ -1,5 +1,5 @@
 package org.NooLab.somtransform.algo;
 
-public interface EmpiricDistributionIntf {
+public class StringsSplit {
 
 }

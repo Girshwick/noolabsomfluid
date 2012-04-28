@@ -429,11 +429,11 @@ public class VirtualLattice implements LatticeIntf{
 	public void updateIntensionalProfiles(int mode) {
 
 		boolean calcThis;
-		String varLabel ;
+		String varLabel = "" ;
 		MetaNode node;
 		ExtensionalityDynamicsIntf extension;
 		
-		int recordIndex, rcount ;
+		int recordIndex, rcount, nodix=-1 ;
 		ArrayList<IndexDistanceIntf> ixdsList; IndexedDistances ixds = new IndexedDistances();
 		DataTable data;
 		DataTableCol column;
@@ -449,6 +449,7 @@ public class VirtualLattice implements LatticeIntf{
 			
 			for (int i = 0; i < nodes.size(); i++) {
 
+				nodix = i;
 				node = nodes.get(i);
 				extension = node.getExtensionality();
 				
@@ -492,6 +493,13 @@ public class VirtualLattice implements LatticeIntf{
 						
 						column = data.getColumn( varLabel) ;
 						
+						if (column==null){
+							// on option: silent or Exception
+							String str = "Critical error in VirtualLattice.updateIntensionalProfiles(), column not found by <varLabel> :\n"+
+							             "   variable label : "+varLabel+" \n"+
+				             			 "   node index     : "+nodix+"\n";
+							throw(new Exception(str)) ;
+						}
 						// looping through all values in column colix of normalized data, collecting data, calculating basic stats, 
 						// and saving it to stats description
 						
@@ -502,7 +510,10 @@ public class VirtualLattice implements LatticeIntf{
 						
 						for (int k = 0; k < rcount; k++) {
 							recordIndex = ixds.getItem(k).getIndex() ;
-						
+							value = -1.0;
+							if (recordIndex>column.getCellValues().size()){
+								// TODO: on option: exception, or silent
+							}
 							value = column.getCellValues().get(recordIndex);
 							if ( value >= 0.0 ){
 								vsum = vsum  + value;

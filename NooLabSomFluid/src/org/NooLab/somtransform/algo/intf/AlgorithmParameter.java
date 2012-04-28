@@ -83,6 +83,66 @@ public class AlgorithmParameter implements AlgorithmParameterIntf{
 	public void setStrValue(double strValue) {
 		this.strValue = strValue;
 	}
+
+
+
+	public int[] getIntValues() {
+		return intValues;
+	}
+
+
+
+	public void setIntValues(int[] intValues) {
+		this.intValues = intValues;
+	}
+
+
+
+	public double[] getNumValues() {
+		return numValues;
+	}
+
+
+
+	public void setNumValues(double[] numValues) {
+		this.numValues = numValues;
+	}
+
+
+
+	public String[] getStrValues() {
+		return strValues;
+	}
+
+
+
+	public void setStrValues(String[] strValues) {
+		this.strValues = strValues;
+	}
+
+
+
+	public ArrayList<Object> getList() {
+		return list;
+	}
+
+
+
+	public void setList(ArrayList<Object> list) {
+		this.list = list;
+	}
+
+
+
+	public Object getObj() {
+		return obj;
+	}
+
+
+
+	public void setObj(Object obj) {
+		this.obj = obj;
+	}
 	
 	
 	

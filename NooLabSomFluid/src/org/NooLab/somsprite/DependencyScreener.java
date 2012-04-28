@@ -955,11 +955,15 @@ if (vesti>1000){
 	 
 	
 
-	public ArrayList<AnalyticFunctionSpriteImprovement> getListOfCandidatePairs() {
+	public AnalyticFunctionTransformationsIntf getListOfCandidatePairs() { // ArrayList<AnalyticFunctionSpriteImprovement> 
+		
+		AnalyticFunctionTransformations afCandidates = new AnalyticFunctionTransformations();
 		
 		ArrayList<AnalyticFunctionSpriteImprovement> candidates ;
-		candidates = new ArrayList<AnalyticFunctionSpriteImprovement>(bestEstimatedUtilities);
-		return candidates;
+		
+		afCandidates.items = new ArrayList<AnalyticFunctionSpriteImprovement>(bestEstimatedUtilities);
+		
+		return afCandidates;
 	}
 
 	public int getdCountThreshold() {

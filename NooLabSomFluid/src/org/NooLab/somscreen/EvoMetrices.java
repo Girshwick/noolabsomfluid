@@ -166,6 +166,10 @@ public class EvoMetrices implements Serializable{
 		proposedVariableIndexes.clear() ;
 	}
 
+	public int size() {
+		return evmItems.size() ;
+	}
+
 	/**
 	 * this method registers 
 	 *  - "model" = use vector, 
@@ -381,7 +385,10 @@ public class EvoMetrices implements Serializable{
 			evoBasics.evolutionaryWeights.set(ix, ew) ;
 			
 			String varLabel = somData.getVariables().getItem(ix).getLabel() ;
-			evoBasics.getEvoTasks().updateEvoTaskItem(varLabel, actionIndicator ) ;
+			EvoTasks et = evoBasics.getEvoTasks();
+			if (et!=null){
+				et.updateEvoTaskItem(varLabel, actionIndicator ) ;
+			}
 		}
 		
 		// ------------------------------------------------
@@ -578,7 +585,7 @@ if (z==10){
 		double uv ,sprob; 
 		int n, suggix;
 		
-		String vlabel;
+		String vlabel = "";
 		 
 		// is the new metric completely contained in the best one?
 		ArrayList<Integer> proposedVarIxes = new ArrayList<Integer>();
@@ -619,12 +626,19 @@ if (z==10){
 			n = bestResult.usageVector.size() ;
 			
 			selectionProbabilities.addAll( evoBasics.evolutionaryWeights );
-			
+			if (n>selectionProbabilities.size()){
+				selectionProbabilities.add(0.5);
+			}
+			if (n>=evoBasics.evolutionaryWeights.size()){
+				evoBasics.evolutionaryWeights.add(0.5);
+			}
+
 			{
 				// translate it into index values
 				for (int i = 0; i < n; i++) {
 					uv = bestResult.usageVector.get(i);
 					if (uv > 0) {
+						
 						sprob = selectionProbabilities.get(i);
 						sprob = sprob + (1.0 - sprob) * 0.3;
 						selectionProbabilities.set(i, sprob);
@@ -678,6 +692,8 @@ if (z==10){
 			currentBaseMetrikIndex = evmItems.size()-1 ;
 			
 		}catch(Exception e){
+			String str= "vlabel " + vlabel;
+			out.print(2, str) ;
 			e.printStackTrace() ;
 		}
 				
@@ -1093,8 +1109,10 @@ if (setItems.size()<=1){
 		for (int i=0;i<ixes.size();i++){
 			
 			ix = ixes.get(i) ;
-			String str = somData.getVariables().getItem(ix).getLabel() ;
-			items.add(str);
+			if (ix>=0){
+				String str = somData.getVariables().getItem(ix).getLabel() ;
+				items.add(str);
+			}
 		}// i->
 		
 		return items;

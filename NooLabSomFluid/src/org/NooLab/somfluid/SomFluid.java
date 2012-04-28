@@ -42,6 +42,13 @@ import org.NooLab.somtransform.SomTransformer;
  * format of exchange is standardized, such the displayed info can be switched easily 
  * 
  * 
+ * TODO:
+ * 
+ * transposing the data table, 
+ * - clustering variables
+ * 
+ *  cross-validation by utans
+ * 
  * 
  */
 public class SomFluid 
@@ -181,6 +188,11 @@ public class SomFluid
 		moz.perform();
 		// will return in "onTaskCompleted()"
 		
+		/*
+		 * 
+		 * don't forget about SomBags as kind of ensemble learning !!!
+		 * 
+		 */
 	}
 	
 	
@@ -195,6 +207,7 @@ public class SomFluid
 		
 		
 	}
+
 
 	private void performAssociativeStorage(SomFluidTask sfTask) {
 		 
@@ -389,22 +402,6 @@ public class SomFluid
 	
 	
 	
-	public boolean loadLastOfKnownTransformerModels( SomDataObject somDataObj ) {
-		
-		SomTransformer somTransformer;
-		 
-		somTransformer = somDataObj.getTransformer();
-		
-		
-		
-		
-		
-		return false;
-	}
-
-
-
-
 	public SomDataObject loadSource( String srcname ) throws Exception{
 		
 		SomDataObject somDataObject;
@@ -438,14 +435,14 @@ public class SomFluid
 	
 		
 		SomTransformer transformer = new SomTransformer( somDataObject, sfProperties );
-
+	
 		somDataObject.setTransformer(transformer) ;
 		
 		DataReceptor dataReceptor = new DataReceptor( sfProperties, somDataObject );
 		
 		// establishes a "DataTable" from a physical source
 		dataReceptor.loadFromFile(srcName);
- 
+	
 		// imports the DataTable into the SomDataObject, and uses a SomTransformer instance 
 		// in order to provide a basic numeric version of the data by calling SomTransformer.basicTransformToNumericalFormat()
 		somDataObject.importDataTable( dataReceptor, 1 ); 
@@ -456,9 +453,27 @@ public class SomFluid
 											out.print(4, "somDataObject instance @ loadSource : "+somDataObject.toString()) ;
 											
 		return somDataObject;
-
+	
 	}
- 
+
+
+
+
+	public boolean loadLastOfKnownTransformerModels( SomDataObject somDataObj ) {
+		
+		SomTransformer somTransformer;
+		 
+		somTransformer = somDataObj.getTransformer();
+		
+		
+		
+		
+		
+		return false;
+	}
+
+
+
 
 	public SomDataObject getSomDataObject(int index) {
 		SomDataObject _somDataObject=null;

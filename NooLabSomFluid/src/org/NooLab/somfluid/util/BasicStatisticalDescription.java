@@ -1,8 +1,9 @@
 package org.NooLab.somfluid.util;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
-import org.NooLab.somtransform.algo.EmpiricDistribution;
+import org.NooLab.somtransform.algo.distribution.EmpiricDistribution;
 
 /**
  * 
@@ -37,7 +38,7 @@ public class BasicStatisticalDescription implements Serializable {
 			 invsum , // sum of inverses (kehrwert) for harmonic means
 			 variance, autocorr, mini, maxi, skewness, kurtosis;
 	
-	double[] modalPoints = new double[2] ;
+	double[] modalPoints = new double[3] ;
 
 	double[][] histogramValues;
 
@@ -92,7 +93,7 @@ public class BasicStatisticalDescription implements Serializable {
 		// (Object src,int srcPos,Object dest,int destPosint length)
 
 		if ((inStatsDescr.histogramValues!=null) && (inStatsDescr.histogramValues.length>0)){
-			bsd.histogramValues = new double[2][inStatsDescr.histogramValues[0].length] ;
+			bsd.histogramValues = new double[3][inStatsDescr.histogramValues[0].length] ;
 			System.arraycopy( inStatsDescr.histogramValues, 0, bsd.histogramValues, 0, inStatsDescr.histogramValues.length) ;
 		}
 		
@@ -100,6 +101,7 @@ public class BasicStatisticalDescription implements Serializable {
 			bsd.histogramPolyfitCoefficients = new double[inStatsDescr.histogramPolyfitCoefficients.length] ;
 			System.arraycopy( inStatsDescr.histogramPolyfitCoefficients, 0, bsd.histogramPolyfitCoefficients, 0, inStatsDescr.histogramPolyfitCoefficients.length) ;
 		}
+		
 		if ((bsd!=null) && (bsd.empiricDistribution!=null)){
 			empiricDistribution = new EmpiricDistribution (bsd.empiricDistribution);
 		}else{
@@ -111,14 +113,31 @@ public class BasicStatisticalDescription implements Serializable {
 		}
 	}
 
+	public void setData(ArrayList<Double> values) {
+		introduceValues(values);
+	}
+	public void introduceValues(double[] values) {
+		
+		for (int i=0;i<values.length;i++){
+			introduceValue(values[i]);
+		}
+	}
 	
+	public void introduceValues(ArrayList<Double> values) {
+		
+		for (int i=0;i<values.size();i++){
+			introduceValue(values.get(i));
+		}
+	}
 	/** 
 	 * instead of calling all the single methods one after another,
 	 * we introduce it here in a single step 
 	 */
 	public void introduceValue(double fieldValue) {
 	 
-		if (fieldValue == -1.0){
+		if (fieldValue == -1.0){ // TODO: not perfectly correct for the general case, 
+								 // in this form, it expects normalized data ;
+								 // we should use a flag whether data a "raw", and a reference to an instance of an MV object
 			mvCount++;
 			return;
 		}
@@ -169,7 +188,6 @@ public class BasicStatisticalDescription implements Serializable {
 	
 	public void removeValue(double fieldValue) {
 		
-		double rv;
 		
 		if (fieldValue == -1.0){
 			mvCount--;
@@ -252,7 +270,7 @@ public class BasicStatisticalDescription implements Serializable {
 		modalPoints = new double[2];
 		modalPoints[0] = -1; modalPoints[1] = -1; 
 		
-		histogramValues = new double[2][100] ;
+		histogramValues = new double[3][100] ;
 
 		histogramPolyfitCoefficients = new double[20] ;
 		
@@ -262,6 +280,7 @@ public class BasicStatisticalDescription implements Serializable {
 
 	public void clear() {
 		 
+		empiricDistribution.clear();
 		reset();
 	}
 
@@ -279,6 +298,10 @@ public class BasicStatisticalDescription implements Serializable {
 
 	public void setPolynomialFitDegree(int polynomialFitDegree) {
 		this.polynomialFitDegree = polynomialFitDegree;
+	}
+
+	public EmpiricDistribution getEmpiricDistribution() {
+		return empiricDistribution;
 	}
 
 	public int getCount() {
@@ -377,10 +400,6 @@ public class BasicStatisticalDescription implements Serializable {
 		this.median = median;
 	}
 
-	public void setTimeSeries(boolean isTimeSeries) {
-		this.isTimeSeries = isTimeSeries;
-	}
-
 	public double getMini() {
 		return mini;
 	}
@@ -435,6 +454,10 @@ public class BasicStatisticalDescription implements Serializable {
 
 	public void setHistogramPolyfitCoefficients( double[] histogramPolyCoeff) {
 		this.histogramPolyfitCoefficients = histogramPolyCoeff;
+	}
+
+	public void setTimeSeries(boolean isTimeSeries) {
+		this.isTimeSeries = isTimeSeries;
 	}
 
 	public boolean isTimeSeries() {

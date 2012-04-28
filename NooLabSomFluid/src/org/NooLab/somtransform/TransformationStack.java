@@ -4,7 +4,9 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 
+import org.NooLab.somfluid.SomFluidPluginSettings;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somtransform.algo.intf.AlgoColumnWriterIntf;
@@ -20,13 +22,13 @@ import org.NooLab.utilities.net.GUID;
  * the "TransformationStack" is a series of "StackedTransformation"s in a fixed order 
  * 
  * a "StackedTransformation" is a container that provides 1 out of 3 possible standardized interfaces:
- * - for purely passive measurement like StandardStatistics, no transformation is applied
+ * - for purely passive measurement like StatisticalDescriptionStandard, no transformation is applied
  * - a classical transformation, holding a column of in-values, 1+ buffered columns of values and precisely 1 column of out-values 
  * - for generating columns: as a simply copy of values into a new column, or writing    
  * 
  * input is taken as a a list of values of any format, i.e. also strings
  * 
- * any of the fields owns a minimum stack of MV, StandardStatistics, and Linear Normalization
+ * any of the fields owns a minimum stack of MV, StatisticalDescriptionStandard, and Linear Normalization
  * 
  * insertion is allowed only for "plaincopy", 
  * 
@@ -38,20 +40,25 @@ import org.NooLab.utilities.net.GUID;
  * - 
  *
  */
-public class TransformationStack implements Serializable{
+public class TransformationStack implements Serializable {
 
 	private static final long serialVersionUID = 4830618315665484506L;
 
 	public static final String _DERIVAR_PREFIX = "d[##]_" ;
+	
+	transient SomFluidPluginSettings pluginSettings;
 	
 	// this is really globally unique
 	String transformGuid = ""; // The SomTransformer has to maintain a map 
 	
 	int index;
 	
+	boolean isExported = true;
+	
 	/** the variable to which this stack is associated  */
 	Variable baseVariable ;
-	/**  the fnal variable label as it appears in the data table */
+	
+	/**  the final variable label as it appears in the data table */
 	String varLabel ;
 	
 	ArrayList<String> inputVarLabels = new ArrayList<String>() ;
@@ -63,10 +70,10 @@ public class TransformationStack implements Serializable{
 	
 	/** the positions of measurement items */
 	ArrayList<Integer> dataDescriptionItems = new ArrayList<Integer>();
-	int latestDataDescriptionItem = -1;
+	private int latestDataDescriptionItem = -1;
 	
-	private int firstFormat = -1;
-	private int lastestFormat = -1;
+	int firstFormat = -1;
+	int lastestFormat = -1;
 	
 	int firstItemForUpdate = 0;
 
@@ -77,10 +84,12 @@ public class TransformationStack implements Serializable{
 	
 
 	// ========================================================================
-	public TransformationStack(){
+	public TransformationStack( SomFluidPluginSettings pluginsettings){
 		
 		transformGuid = GUID.randomvalue(); 
+		pluginSettings = pluginsettings;
 		
+		// -> TransformationEnvIntf. get
 	}
 	// ========================================================================	
 
@@ -118,14 +127,14 @@ public class TransformationStack implements Serializable{
 																						throws Exception {
 
 		String newLabel = "";
-		StackedTransformation st = new StackedTransformation();
+		StackedTransformation st = new StackedTransformation( pluginSettings );
 
 		// introduce an algorithm
 		newLabel = varLabel + "_c";  // TODO: do this by a method which cares for double names...
 
 		st.algorithmName = algoName; //
 		
-		// looking up the interface that an algo implements
+		// looking up the interface that an algorithm implements
 		int algorithmtype = determineAlgoType( st.algorithmName );
 		
 			if (algorithmtype<0){
@@ -135,7 +144,9 @@ public class TransformationStack implements Serializable{
 		//
 		st.algorithmType = algorithmtype; // AlgorithmIntf._ALGOTYPE_WRITER;
 		st.outputColumnLabel = newLabel;
-		st.createAlgoObject(st.algorithmType);
+		
+		st.createAlgoObject(st.algorithmType); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+		
 		st.idString = GUID.randomvalue() ;
 		
 		//
@@ -148,6 +159,7 @@ public class TransformationStack implements Serializable{
 		
 		if (st.algorithmType == AlgorithmIntf._ALGOTYPE_PASSIVE ){
 				AlgoMeasurementIntf am = (((AlgoMeasurementIntf) st.algorithm));
+				latestDataDescriptionItem = items.size() ;
 				c = am.getClass();
 		}
 		if (st.algorithmType == AlgorithmIntf._ALGOTYPE_VALUE ){
@@ -227,10 +239,10 @@ public class TransformationStack implements Serializable{
 					if (sti.inData.size()==0){
 						stp = items.get(i-1) ;
 						previousOutValues = stp.outData ;
-						sti.inData.add( previousOutValues ) ; // XXX in case of arithmet expression, there could be several sources !
+						sti.inData.add( previousOutValues ) ; // 
 					}
 				}
-				// providing the outdata of step (i) as indata for step (i+1)
+				// providing the out-data of step (i) as in-data for step (i+1)
 				if ((i>0) && (previousOutValues!=null) && (previousOutValues.size()>0)){
 					
 					
@@ -313,11 +325,11 @@ public class TransformationStack implements Serializable{
 					malgo = ((AlgoMeasurementIntf)sti.algorithm) ;
 					
 					malgo.setValues( sti.inData ) ;
-					malgo.calculate() ;
+					malgo.calculate() ; // calc of standard stats correct ?
 					
-					sti.dataDescription = malgo.retrieveDescriptiveResults() ;
+					sti.dataDescription = new DataDescription( malgo.retrieveDescriptiveResults()) ;
 					sti.createOutData( previousOutValues ) ;
-					 
+					double vv = items.get(i).dataDescription.max;
 					// sti.outData.addAll( previousOutValues );
 
 					dataDescriptionItems.add(i); 
@@ -342,8 +354,55 @@ public class TransformationStack implements Serializable{
 		return result ;
 	}
 	
-	
 	/**
+	 * returns the latest out-data of the stack (=out-data of the last transformation) either as 
+	 * reference or as copy;</br>
+	 * if the stack needs to get updated an "update()" will be performed.</br></br>
+	 * 
+	 * null will be returned, if</br>
+	 * - there are no items in the stack</br>
+	 * - there are no in-data</br> 
+	 * 
+	 * </br>
+	 * @param asCopy 0=as reference, 1=as copy
+	 * @return
+	 */
+	public ArrayList<Double> getOutData( int asCopy) {
+		 
+		ArrayList<Double> values=null, _cvalues;
+		
+		
+		_cvalues = getLatestColumnValues(0);
+		
+		if ((items.size()>0) && ((_cvalues==null) || (_cvalues.size()==0))){
+			update();
+			if ((_cvalues==null) || (_cvalues.size()==0)){
+				
+			}else{
+				_cvalues = getLatestColumnValues(0);
+			}
+		}
+		
+		if (asCopy<=0){
+			values = _cvalues;
+		}else{
+			if ((_cvalues!=null) && (_cvalues.size()>0)){
+				values = new ArrayList<Double>(_cvalues) ;
+			}
+		}
+		
+		return values;
+	}
+
+
+
+	/**
+	 * this visits the last transformation item in the stack, and returns the reference to the values as
+	 * they are stored in the stack;</br></br>
+	 * 
+	 * dependent on the state of the embedding processing, these data could differe from the data in
+	 * the tables of the SomDataObject: only after explicitly writing the stack data to the table the
+	 * data will be identicial.</br></br>
 	 * 
 	 * @param checkValueRange  0=no check, 1=throw an exception, 2=set range violation to -1, 3=set range violation to next border of [0..1]
 	 * @return
@@ -413,7 +472,7 @@ public class TransformationStack implements Serializable{
 	private int determineAlgoType(String algorithmName) {
 		int atyp = -1;
 		
-		StackedTransformation st = new StackedTransformation();
+		StackedTransformation st = new StackedTransformation(pluginSettings);
 		
 		st.algorithmName = algorithmName;
 		st.createAlgoObject( AlgorithmIntf._ALGOTYPE_GENERIC );
@@ -452,6 +511,15 @@ public class TransformationStack implements Serializable{
 		return varLabel;
 	}
 
+
+
+	public boolean isExported() {
+		return isExported;
+	}
+
+	public void setExported(boolean isExported) {
+		this.isExported = isExported;
+	}
 
 
 	/**
@@ -534,8 +602,16 @@ public class TransformationStack implements Serializable{
 
 
 	public boolean algorithmIsLatest(String algoLabel) {
-		boolean rB=false;
 		
+		boolean rB=false;
+		StackedTransformation item ; 
+		
+		if (items.size()>0){
+			item = items.get(items.size()-1);
+			if (item.algorithmName.contentEquals(algoLabel)){
+				rB=true;
+			}
+		}
 		
 		return rB;
 	}
@@ -593,5 +669,6 @@ public class TransformationStack implements Serializable{
 			inputVarLabels.add( varLabel );
 		}
 	}
+	 
 	
 }

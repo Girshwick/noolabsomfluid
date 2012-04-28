@@ -12,7 +12,7 @@
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/math/Jama-1.0.2.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/math/flanaganScientificLib/flanagan.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/math/apache/commons-math-2.2/commons-math-2.2.jar"/>
-	<classpathentry kind="src" path="/apache-math-kmeans"/>
+	<classpathentry kind="src" path="/NooLabMathCommonsAdapt"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/math/jsc/jsc.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/math/expressions/jep241/jep-2.4.1.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/math/expressions/jep241/ext-1.1.1.jar"/>

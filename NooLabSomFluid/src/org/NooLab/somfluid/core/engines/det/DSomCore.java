@@ -329,7 +329,7 @@ public class DSomCore {
 				continue;
 			}
 			 
-			if (col.getDataFormat()>=8){
+			if (col.getDataFormat()>=DataTable.__FORMAT_ORDSTR){
 				usagevector[i] = 0; 
 				continue;
 			}

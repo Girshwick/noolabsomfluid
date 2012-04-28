@@ -17,7 +17,8 @@ import org.NooLab.somtransform.algo.NveMapping;
 
 
 
-public class DataTableCol implements Serializable{
+public class DataTableCol implements Serializable,
+									 DataTableColIntf{
 
 	private static final long serialVersionUID = 1223985229527744867L;
 
@@ -553,7 +554,7 @@ public class DataTableCol implements Serializable{
  
 	
 	public void setFormat(int formatid){
-		if ((formatid>=8) && (dataFormat<=2)){
+		if ((formatid>= DataTable.__FORMAT_TIME) ){
 			// TODO copy everything into the cellValuesStr...
 		}
 		dataFormat = formatid;

@@ -1,4 +1,4 @@
-package org.NooLab.somtransform.algo;
+package org.NooLab.somtransform.algo.distribution;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -9,7 +9,6 @@ import java.util.Vector;
 import jsc.curvefitting.*;
 import jsc.datastructures.PairedData;
   
-import org.NooLab.somfluid.mathstats.FourierTransform;
 
 import org.apache.commons.math.ArgumentOutsideDomainException;
 import org.apache.commons.math.analysis.interpolation.SplineInterpolator;
@@ -21,14 +20,23 @@ import org.apache.commons.math.optimization.fitting.PolynomialFitter;
 import org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer;
 import org.apache.commons.math.stat.descriptive.StatisticalSummary;
 
-
 import org.NooLab.math3.stat.descriptive.DescriptiveStatistics;
+
+import org.NooLab.utilities.ArrUtilities;
+
+import org.NooLab.somfluid.util.BasicStatisticalDescription;
+import org.NooLab.somfluid.util.BasicStatistics;
 import org.NooLab.somfluid.util.DescriptiveStatisticsValues;
 import org.NooLab.somfluid.util.FDescription;
-import org.NooLab.somtransform.algo.distribution.DistributionBin;
-import org.NooLab.somtransform.algo.distribution.DistributionBins;
-import org.NooLab.somtransform.algo.distribution.Distributions;
-import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.somfluid.util.NumUtils;
+import org.NooLab.somfluid.core.engines.det.results.ItemFrequencies;
+import org.NooLab.somfluid.core.engines.det.results.ItemFrequency;
+import org.NooLab.somfluid.mathstats.FourierTransform;
+
+import org.NooLab.somtransform.algo.MaxPositions;
+
+
+
 
 
 
@@ -57,7 +65,8 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 	
 	// for each type, we have three versions : global, first part up to 50% of data (NOT the quantile), around 50% quantile  
 	 
-	
+	BasicStatisticalDescription basicStatistics ;
+		
 	int count = 0 ;
 	
 	// these values refer to the data!
@@ -83,13 +92,15 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 	int medianPos=-1;
 	int zeroCount = 0;
 	int lastZeroBinPosition =-1,lastNonZeroBinPosition=-1;
-	
+	SimpleHistogramDescription histodescription = new SimpleHistogramDescription() ;
 	
 	
 	ArrayList<Integer> salientBins = new ArrayList<Integer>();
 	EmpiricDistribution dis;
 	
 	ArrUtilities arrutil = new ArrUtilities() ;
+
+	private double negExpScore;
 	
 	// ========================================================================
 	public EmpiricDistribution(Distributions distributions){
@@ -115,10 +126,15 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 	}
 	// ========================================================================
 	
-
+	public void clear() {
+		salientBins.clear() ;
+		
+		histoStats.clear();
+		descriptiveStats.clear();
+	}
+	
 	public void importStatsDescription(StatisticalSummary samplestats) {
-		 
-		   
+		  
 		count = (int) samplestats.getN() ;
 			
 		variance = samplestats.getVariance()  ;
@@ -129,10 +145,23 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 		max = samplestats.getMax()  ;
 	}
 
+	public void importParentReference(BasicStatisticalDescription basicStats) {
+		// TODO Auto-generated method stub
+		basicStatistics = basicStats;
+		
+		count =  basicStatistics.getCount();
+		
+		variance = basicStatistics.getVariance()  ;
+		stdev = Math.sqrt( variance )  ;
+		mean = basicStatistics.getMean()  ;
+
+		min = basicStatistics.getMini()  ; // this is the normalized stuff... since we are working throughout on the data from norm table..
+		max = basicStatistics.getMaxi()  ;
+	}
 	/**
 	 * this is the powerful core: we will fit three different types of analytic kernels,
 	 * and also measure some characteristic points about it (min,max, periodicity, number of zeroes, spatial distribution of zeroes); 
-	 * then we give a probablistic estimation about the number scale (binary, ord, real ) and 
+	 * then we give a probabilistic estimation about the number scale (binary, ord, real ) and 
 	 * the type (=possible actions) of the distribution
 	 *
 	 * all of that we may use to train a Som that selects a particular transformation for a particular distribution
@@ -141,10 +170,15 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 		int n = this.count ;
 		double v;
 		boolean hb=false;
-		double pquant[] = new double[4];
+		double pquant[] = new double[5];
 		
 		// [116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 107, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 138, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 125, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 105, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 106, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 117]
 		n = salientBins.size() ;
+		 
+		if (count==0){
+			count = arrutil.arraySum(frequencies);
+		}
+	 
 		 
 		descriptiveStats.addValues( frequencies );
 		
@@ -157,23 +191,28 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 		histoStats.setMax(descriptiveStats.getMax());
 		histoStats.setVariance(descriptiveStats.getVariance());
 		
-		pquant[0] = descriptiveStats.getPercentile(95);
-		pquant[1] = descriptiveStats.getPercentile(75);
-		pquant[2] = descriptiveStats.getPercentile(95);
-		pquant[3] = descriptiveStats.getPercentile(50);
+		pquant[0] = descriptiveStats.getPercentile(5); // ???
+		pquant[1] = descriptiveStats.getPercentile(25);
+		pquant[2] = descriptiveStats.getPercentile(50);
+		pquant[3] = descriptiveStats.getPercentile(75);
+		pquant[4] = descriptiveStats.getPercentile(95);
 		
-		if ((pquant[0]>0) && (pquant[1]>0)){
-			v = pquant[1]/pquant[0] ;
+		if ((pquant[3]>0) && (pquant[4]>0)){
+			v = pquant[4]/pquant[3] ;
 			histoStats.setBoxRatio1(v);
+		}else{
+			histoStats.setBoxRatio1(0.0);
 		}
-		if ((pquant[2]>0) && (pquant[3]>0)){
+		if (  (pquant[3]>0)){
 			v = pquant[2]/pquant[3] ;
 			histoStats.setBoxRatio2(v);
 		}
-		
+		histoStats.setBoxRatio3( pquant[4]/((double)frequencies.length) ); 
+		// frequencies == null ??
 		for (int i=0;i<frequencies.length;i++){
+			
 			if (frequencies[i] == histoStats.getMax()){
-				v = ((double)i)*((max-min)/100.0) ;
+				v = ((double)i)*((histoStats.getMax()-histoStats.getMin())/100.0) ;
 				histoStats.setModus(i);
 				modus = v;
 				break;
@@ -184,7 +223,8 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 		histoStats.setModi( mxp.setData(frequencies).identifyModi( 0.27, 11 , 21 ) ) ; // parameters: contrast as a fraction of mean, window size, max n
 		histoStats.setMindi(mxp.setData(frequencies).identifyMindi(0.27, 11 , 21 ) ) ; // parameters: contrast as a fraction of mean, window size, max n
 		
-		
+		histoStats.getSumOnSplit()[0] = arrutil.arraySum( frequencies, 0.0, 0.32 );
+		histoStats.getSumOnSplit()[1] = arrutil.arraySum( frequencies, 0.32, 1.0 );
 		
 		int runsum=0; medianPos=0;
 		for (int i=0;i<frequencies.length;i++){
@@ -214,34 +254,230 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 		   org.apache.commons.math3.analysis.polynomials -> provides derivative 
 		*/ 
 		
-		// creating a list of FDescription-s, which comprise the results of fitting
-		calculateFitCoefficients();
 		
 		hb = variableIsNominal();
 		
-		// creating a fingerprint from those values for classification
-		createDescripriveFingerPrint( hb ) ;
-		
+		if (hb==false)
+		{
+			// creating a list of FDescription-s, which comprise the results of fitting
+			calculateFitCoefficients();
+			
+
+			
+			
+			// creating a fingerprint from those values for classification
+			createDescripriveFingerPrint( hb ) ;
+			
+		}
 		
 		variableIsNominal = hb;
-		
-		
-		
 	}
 	 
 	
+	/**
+	 * this accomplishes the following tasks:  </br></br>
+	 * - finding out whether ordinal or even binary  </br>
+	 * - count of different values (variety), count of zeroes
+	 * - description of the arrangement of zeroes and non-zeroes in the series of histogram bins
+	 *   as 'statistics' of longest series of zeroes (or non-zeroes)
+	 *   ... min max mean var median of values (NOT the positions...) from the frequency bins
+	 * - series of running differences and its statistical description
+	 *   for checking monotonicity
+	 *   
+	 *    
+	 */
+	public void describeHistogramAsSeries() {
+		
+		zeroCount = 0;		
+		ArrayList<Integer> zintv = new ArrayList<Integer>();
+		ArrayList<Integer> nonzintv = new ArrayList<Integer>();
+		int lastNonZpos, lastZpos, _czintv=0, _cznintv=0 ;
+		boolean currIsNonZ,currIsZ;
+		int ndv,nrd,negrd;
+		double negportionA, negportionB, histogramsVariety;
+
+		
+		ItemFrequencies frequs, runDiffs , nonZeroItems ;
+		ItemFrequency frItem;
+		 
+		if (frequencies==null){
+			return;
+		}
+		if (frequencies[0]!=0){
+			lastNonZpos=0;
+			lastZpos=-1;
+			currIsNonZ=true;
+			currIsZ=false; 
+		}else{
+			lastNonZpos=-1;
+			lastZpos=0;
+			zeroCount++;
+			currIsNonZ=false;
+			currIsZ=true; 
+		}
+		
+		frequs = new ItemFrequencies();
+		runDiffs = new ItemFrequencies();
+		nonZeroItems = new ItemFrequencies();
+		
+		for (int i=1;i<frequencies.length;i++){
+			
+			frItem = new ItemFrequency();
+			runDiffs.introduceValue( 1.0*(frequencies[i]-frequencies[i-1]) ) ;
+			frequs.introduceValue( 1.0*frequencies[i] ) ;
+			
+			if (frequencies[i]!=0){
+				if (currIsZ){
+					zintv.add(_czintv) ;
+					_czintv=0;
+					_cznintv=1;
+				}else{
+					_czintv=0;
+					_cznintv++;
+				}
+				currIsZ = false;
+			}else{ // value = 0 ?
+				zeroCount++;
+				if (currIsZ){
+					// next zero
+					_czintv++;
+				}else{
+					// first zero
+					_czintv=1;
+					nonzintv.add(_cznintv); // fixing last value of non-zero series
+					_cznintv=0;
+				}	
+				currIsZ=true;
+			} // value = 0 ?
+			
+		} // -> all values in frequencies / histogram
+
+		
+		histodescription = new SimpleHistogramDescription();
+		
+		double[] zeroes,nonzeroes;
+		
+		// small statistics about the series of zeroes and non-zeroes in the histogram
+		// note that zintv, nonzintv contain REPEATED zeroes, non-zeroes, thus, they could be empty!!
+		zeroes = NumUtils.simpleFirstMoments( zintv );
+		nonzeroes = NumUtils.simpleFirstMoments( nonzintv );
+		// this describes the distances between snippets consisting from 0 or non-0
+		// ... from which we can conclude whether its ordinal or binary
+		// actually, we should use an implied classification for that instead of hard boundaries
+		/*
+		  [0] = _min;
+		  [1] = _max;
+		  [2] = mean;
+		  [3] = variance;
+		  [4] = coeffvar;
+		  [5] = median; // misses ....
+		  [6] = minat;
+		  [7] = maxat;
+		 */
+		
+		
+		// this works on frequencies, stored in a list of items
+		nrd = runDiffs.size();
+		negrd = runDiffs.countNegatives();
+		double posrd = runDiffs.countPositives();
+		nonZeroItems = runDiffs.selectNonZeroes();
+		ndv = frequs.size(); // this should be the frequency of the frequencies
+		
+		// this also expresses the number of non-zero bins !!
+		negportionA = (double)negrd/(double)nrd;
+		
+		
+		// as -p log p ??
+		histodescription.histogramsVariety = NumUtils.informationMeasureOnDistribution(frequencies);
+		histodescription.variety = (posrd-negrd)/(posrd+negrd);
+		histodescription.negativesRatio = (double)negrd/(double)(posrd+negrd);
+		histodescription.nonZeroes = (double)(frequencies.length - zeroCount)/(double)frequencies.length;
+		histodescription.zeroCount = zeroCount;
+		histodescription.zeroesRuns = zeroes;
+		histodescription.nonzeroesRuns = nonzeroes;
+	}
+	
+	
+	
+	
+	public void identifySalientBins(int maxmode) {
+		// strong contrast s/n ratio, such as: singularized values =low/hi values on both sides, modus, fat tails  
+		
+	}
+	
+	
+	public boolean variableIsPoly() {
+		
+		boolean rB=false;
+		
+		
+		
+		
+		return rB;
+	}
+
+
+	public boolean variableIsHarmonic() {
+		
+		boolean rB=false;
+		
+		
+		
+		
+		return rB;
+	}
+
+	public boolean variableIsNegExp() {
+		
+		boolean rB=false;
+		
+		double sumosRatio, v;
+		double propScore = 0.0;
+		
+		
+		int[] sumos =  histoStats.getSumOnSplit() ; // sum of occurrences from bins [0.. 0.32*count]
+		histoStats.setSumosRatio(((double)sumos[0]+1.0)/((double)sumos[1]+1.0));
+		
+		propScore = propScore + (( 8.0 * Math.log(1.0 + histoStats.getSumosRatio() ) )) ;
+		
+		double kurt = histoStats.getKurtosis();
+			   if (kurt<0)kurt=0.0;
+		propScore = propScore + (Math.round( 2.0 * Math.log(1.0 + kurt ))) ;
+		
+		
+		// TODO actually, we need the zerocount right off the max - zerocount left of the max 
+		
+		propScore = propScore + ( ( 1.0 * Math.log(1.0 + (double)histodescription.zeroCount/5.0 ))) ;
+		
+		v = (1.0-histoStats.getBoxRatio3())*50.0 ;
+		propScore = propScore + ( ( 3.0 * Math.log(1.0 + v ) )) ;
+		
+		rB =  propScore>38 ;
+		setNegExpScore(0.0);
+		if (rB){
+			setNegExpScore(propScore);
+		}
+		return rB;
+	}
+	/*
+	// checking the power spectrum
+	FDescription description = histoStats.getDescriptionItemByDescriptor("osci",0) ;
+	double[] cfparams = description.getCfParams();
+	double r= cfparams[3] ;
+	if (Math.abs(r-1.0)<0.1) nomScore = nomScore + 5 ;
+	if (Math.abs(r-1.0)<0.01) nomScore = nomScore + 5 ;
+	if (cfparams[1]>100)nomScore = nomScore + 10 ;
+	*/
+	
 	
 	/**
-	 * this method uses msome of the measurements for a judgment whether the 
-	 * variable = its frequency distibution could be due a nominal scaled origin
-	 * 
-	 * - modi: difference between their positions ~ constant ?
-	 *         first and last element of frequencies a modus?
-	 * -
+	 * this method uses some of the measurements for a judgment whether the 
+	 * variable = its frequency distribution could be due a nominal scaled origin
 	 * 
 	 * @return
 	 */
-	private boolean variableIsNominal() {
+	public boolean variableIsNominal() {
+		
 		boolean isNominal = false;
 		int[] modi = histoStats.getModi() ;
 		int dp=-1,p,p1,p2,mp;
@@ -283,7 +519,7 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 			double avgd = (dpr - (double)Math.round(dpr));
 			
 			if (avgd<0.12){	nomScore = nomScore + 5 ;}
-			if (avgd<0.04){	nomScore = nomScore + 10 ;}
+			if (avgd<0.04){	nomScore = nomScore + 5 ;}
 
 		}
 		
@@ -299,22 +535,32 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 		
 		mp = frequencies.length-1 ;
 		p2 = Arrays.binarySearch( histoStats.getModi(), mp);
-		if ((p1!=p2) && (p1>=0) && (p2>=0))nomScore = nomScore + 10 ;
+		if ((p1!=p2) && (p1>=0) && (p2>=0))nomScore = nomScore + 4 ;
 		
 		if ((double)zeroCount>((double)frequencies.length*0.78)){
 			if (histoStats.getModi().length>=2){
-				nomScore = nomScore + 10 ;
+				nomScore = nomScore + 6 ;
 			}
 		}
-		// checking the power spectrum
-		FDescription description = histoStats.getDescriptionItemByDescriptor("osci",0) ;
-		double[] cfparams = description.getCfParams();
-		double r= cfparams[3] ;
-		if (Math.abs(r-1.0)<0.1) nomScore = nomScore + 5 ;
-		if (Math.abs(r-1.0)<0.01) nomScore = nomScore + 5 ;
-		if (cfparams[1]>100)nomScore = nomScore + 10 ;
+		 
 		
-		if (nomScore>42){
+		double zcr = 100.0 * (double)histodescription.zeroCount/((double)frequencies.length );
+		nomScore = nomScore + (int)(Math.round( 1.5 * Math.log(1.0 + zcr ) )) ;
+		
+		double zi = histodescription.zeroesRuns[2];
+		nomScore = nomScore + (int)(Math.round( 6.0 * Math.log(1.0 + (int)zi ) )) ;
+		
+		if ( (zi - histodescription.zeroesRuns[3])>1.8)nomScore = nomScore + 5 ;
+		if ((histodescription.zeroesRuns[0]>1.8) && (histodescription.nonzeroesRuns[0]==0.0)) nomScore = nomScore + 3;
+		// the minimum of running lengths
+		if (histodescription.zeroesRuns[0]>=3) nomScore = nomScore + (int)(Math.round( 4.0 * Math.log(1.0 + histodescription.zeroesRuns[0] ) ));
+		if ((histodescription.zeroesRuns[0]>=3) &&(Math.abs( histodescription.zeroesRuns[1]-histodescription.zeroesRuns[0])<2))nomScore = nomScore + 5; 
+		if ((histodescription.nonzeroesRuns[2]<1.1) )nomScore = nomScore + 7 ;
+		if ((histodescription.nonzeroesRuns[3]<0.1))nomScore = nomScore + 3;
+		if ((Math.abs( histodescription.negativesRatio -0.5)) <0.1)nomScore = nomScore + 6 ;
+		
+		
+		if (nomScore>41){
 			isNominal = true;
 		}
 		
@@ -341,11 +587,12 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 		fitting = new MultiFit( this, "poly", frequencies,0, frequencies.length );
 		fDescription = fitting.calculate(1,2);
 		   			   histoStats.getfDescriptions().add(fDescription) ;
-        			
+        
+		 /*
 		fitting = new MultiFit( this, "poly", frequencies,0, frequencies.length );
 		fDescription = fitting.calculate(1,3);
 					   histoStats.getfDescriptions().add(fDescription) ;		 
-        			
+        */			
 		// ......................................
 
 		fitting = new MultiFit( this, "expo", frequencies,0, frequencies.length );
@@ -355,20 +602,21 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 		fitting = new MultiFit( this, "expo", frequencies,0, frequencies.length );
 		fDescription = fitting.calculate(2,2);
 					   histoStats.getfDescriptions().add(fDescription) ;
-		
+		/*
 		fitting = new MultiFit( this, "expo", frequencies,0, frequencies.length );
 		fDescription = fitting.calculate(2,3);
 					   histoStats.getfDescriptions().add(fDescription) ;
+	    */
 		// ......................................
 		
 		fitting = new MultiFit( this, "osci", frequencies,0, frequencies.length );
 		fDescription = fitting.calculate(3,1);
 		   			   histoStats.getfDescriptions().add(fDescription) ;
-		/*
+		 
 		fitting = new MultiFit( this, "osci", frequencies,0, frequencies.length );
 		fDescription = fitting.calculate(3,2);
 					   histoStats.getfDescriptions().add(fDescription) ;
-		*/
+		 
 	}
 	
 	
@@ -445,6 +693,20 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 
 	}
 
+	public void setBinFrequency(int[] values) {
+		frequencies = values;
+		bins = new DistributionBins(100) ;
+	}
+
+	public void setBinFrequency(double[] values) {
+		frequencies = new int[values.length] ;
+		for (int i=0;i<values.length;i++){
+			frequencies[i] = (int) Math.round( values[i]);
+		}
+		bins = new DistributionBins(100) ;
+	}
+	
+	
 	public int[] split() {
 		int[] splitSupportPositions = new int[0];
 		
@@ -545,13 +807,42 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 	public void setSalientBins(ArrayList<Integer> salientBins) {
 		this.salientBins = salientBins;
 	}
+	public void setNegExpScore(double negExpScore) {
+		this.negExpScore = negExpScore;
+	}
+	public double getNegExpScore() {
+		return negExpScore;
+	}
+	public DescriptiveStatisticsValues getHistoStats() {
+		return histoStats;
+	}
+	public SimpleHistogramDescription getHistodescription() {
+		return histodescription;
+	}
 	
 	
 	
 }
 
 
+/**
+ * a description without approximated analytic function (polynomial etc)
+ * 
+ */
+class SimpleHistogramDescription{
+	
+	public int zeroCount;
+	public double[] nonzeroesRuns;
+	public double[] zeroesRuns;
+	public double nonZeroes;
+	public double negativesRatio;
+	public double variety;
+	public double histogramsVariety;
 
+	public SimpleHistogramDescription(){
+		
+	}
+}
 
 
 class MultiFit{
@@ -633,12 +924,15 @@ class MultiFit{
 			for (int i=0;i<frequencies.length;i++){
 				runsum = runsum + frequencies[i];
 				if (runsum > ((double)gtotal)*0.45){
-					endPos =i;
+					endPos = (int) Math.max( frequencies.length*0.3, i);
 					break ;
 				}
 			}
 		}  //   median
+		
+		
 		if (sampletype==3){
+			
 			int d=dis.medianPos;
 			if (d<=0){
 				d=frequencies.length/3 ;
@@ -764,7 +1058,7 @@ class MultiFit{
 		double[] coeffd2 ,py;
 		ArrayList<Integer> minimaList = new ArrayList<Integer>();
 
-		PolynomialFunction  pf ,pfd1, pfd2;
+		PolynomialFunction  pf=null ,pfd1, pfd2;
 		PolynomialFitter polyfitter = new PolynomialFitter( 7, new LevenbergMarquardtOptimizer());
 
 		dataLen = endPos - startPos;
@@ -786,7 +1080,19 @@ class MultiFit{
 	
 		try {
 		
-			pf = polyfitter.fit();
+			try{
+				
+				pf = polyfitter.fit();
+				
+			}catch(Exception e){
+				pf=null;
+				String str=e.getMessage() ;
+			}
+			
+			if (pf==null){
+				return;
+			}
+			
 			pfd1 = pf.polynomialDerivative() ;
 	
 			coefficients  = pf.getCoefficients();
@@ -834,84 +1140,97 @@ class MultiFit{
 		}
 		 
 	}
-	private void expoFitForDistribution() {
+	private int expoFitForDistribution() {
+		
+		int result = -1;
 		PairedData data = null ;
 		int p;
 		double eps = 0.001, weight, dy ;
 		int[] _frequencies ;
 		
-		int maxf = dis.arrutil.arrayMax( frequencies, 0);
+		try{
 		
-		dataLen = endPos - startPos;
-		
-		_frequencies = new int[frequencies.length];
-		System.arraycopy(frequencies, 0, _frequencies, 0, frequencies.length) ;
-		
-		_frequencies = getSplinedValues(_frequencies);
-		_frequencies = getSplinedValues(_frequencies);
-		_frequencies = getSplinedValues(_frequencies);
-		
-		
-		int maxf2 = dis.arrutil.arrayMax(_frequencies, 0) ;
-		double maxr = (double)maxf/(double)maxf2 ;
-		_frequencies = dis.arrutil.arrScale( _frequencies, maxf2);
-		// scale it back such that  maxf==maxf2 (then put it to the arrutil...)
-		// we need that in order to make the deviances at least roughly comparable across fitting functions
-		
-		double[] x = new double[_frequencies.length] ;
-		double[] y = new double[_frequencies.length] ;
-		double[] w = new double[_frequencies.length] ;
-	
-		for (int i=startPos;i<dataLen;i++){
-			weight=1.0 ;
-			if (i<=10)weight = 1.5 ; 
-			if (i<=3) weight = 2.0 ;
-			
-			x[i] = ((double)i)/10.0;
-			y[i] = (0.001 + (double)_frequencies[i])/1.0 ;//  .../((double)dis.count)+0.01
-			w[i] = weight;
-		}
-		
-		double fmin = dis.arrutil.arrayMin( y, 0.00) ;
-		while (fmin<0.00001){
-			p = dis.arrutil.arrayMinPos( y ) ;
-			fmin = dis.arrutil.arrayMin( y, 0.00) ;
-			if ((p>=0) &&(fmin<0.000000001)){
-				y[p] = 0.001 ;
-			}
-		}
-		
-		coefficients = new double[3];
-		coefficients[0] = -1;
-		coefficients[1] = -1;
-		coefficients[2] = -1;
 
-		data = new PairedData( x , y);
-		ExponentialFit expoFitter = new ExponentialFit( data, w, eps) ;
+			int maxf = dis.arrutil.arrayMax( frequencies, 0);
+			
+			dataLen = endPos - startPos;
+			
+			_frequencies = new int[frequencies.length];
+			System.arraycopy(frequencies, 0, _frequencies, 0, frequencies.length) ;
+			
+			_frequencies = getSplinedValues(_frequencies);
+			_frequencies = getSplinedValues(_frequencies);
+			_frequencies = getSplinedValues(_frequencies);
+			
+			
+			int maxf2 = dis.arrutil.arrayMax(_frequencies, 0) ;
+			double maxr = (double)maxf/(double)maxf2 ;
+			
+			//_frequencies = dis.arrutil.arrScale( _frequencies, maxr);
+			
+			// scale it back such that  maxf==maxf2 (then put it to the arrutil...)
+			// we need that in order to make the deviances at least roughly comparable across fitting functions
+			
+			double[] x = new double[_frequencies.length] ;
+			double[] y = new double[_frequencies.length] ;
+			double[] w = new double[_frequencies.length] ;
 		
-		// parameters for y = A*exp(-B*x) .... this function provided by jsc is not complete: y = A*exp(-B* (x+c)) would be more correct
-		coefficients[0] = expoFitter.getA();
-		coefficients[1] = expoFitter.getB();
-		// coefficients[2] = expoFitter.getN();
-		
-		// get the values of the function and the deviances, squared dev's
-		
-		funcValues[0] = new double[x.length] ;
-		funcValues[1] = new double[x.length] ;
-		
-		
-		devSum=0.0 ;
-		double a = expoFitter.getA();
-		double b = expoFitter.getB();
-		// coefficients[2] = expoFitter.;
-		
-		for (int i=0;i<dataLen;i++){
-			// preparing the measurement the deviation, error
-			funcValues[0][i] = x[i] ;
-			dy = (a * Math.exp(b*x[i])) - y[i];
-			funcValues[1][i] = dy;
+			for (int i=startPos;i<dataLen;i++){
+				weight=1.0 ;
+				if (i<=10)weight = 1.5 ; 
+				if (i<=3) weight = 2.0 ;
+				
+				x[i] = ((double)i)/10.0;
+				y[i] = (0.001 + (double)_frequencies[i])/1.0 ;//  .../((double)dis.count)+0.01
+				w[i] = weight;
+			}
+			
+			double fmin = dis.arrutil.arrayMin( y, 0.00) ;
+			while (fmin<0.00001){
+				p = dis.arrutil.arrayMinPos( y ) ;
+				fmin = dis.arrutil.arrayMin( y, 0.00) ;
+				if ((p>=0) &&(fmin<0.000000001)){
+					y[p] = 0.001 ;
+				}
+			}
+			
+			coefficients = new double[3];
+			coefficients[0] = -1;
+			coefficients[1] = -1;
+			coefficients[2] = -1;
+
+			data = new PairedData( x , y);
+			ExponentialFit expoFitter = new ExponentialFit( data, w, eps) ;
+			
+			// parameters for y = A*exp(-B*x) .... this function provided by jsc is not complete: y = A*exp(-B* (x+c)) would be more correct
+			coefficients[0] = expoFitter.getA();
+			coefficients[1] = expoFitter.getB();
+			// coefficients[2] = expoFitter.getN();
+			
+			// get the values of the function and the deviances, squared dev's
+			
+			funcValues[0] = new double[x.length] ;
+			funcValues[1] = new double[x.length] ;
+			
+			
+			devSum=0.0 ;
+			double a = expoFitter.getA();
+			double b = expoFitter.getB();
+			// coefficients[2] = expoFitter.;
+			
+			for (int i=0;i<dataLen;i++){
+				// preparing the measurement the deviation, error
+				funcValues[0][i] = x[i] ;
+				dy = (a * Math.exp(-b*x[i])) - y[i];
+				funcValues[1][i] = dy;
+			}
+			dy=0;
+			result = 0;
+		}catch(Exception e){
+			e.printStackTrace() ;
+			result = -7;
 		}
-		dy=0;
+		return result;
 	}
 
 	
@@ -1058,7 +1377,7 @@ class MultiFit{
 		maxv = -1.0; xp=-1;		
 		for (int i=0;i<mmxs.length;i++){
 			p = mmxs[i];
-			if (maxv<values[p]){
+			if ((p>=0) && (p<values.length) && (maxv<values[p])){
 				maxv=values[p];
 				xp = p;
 			}

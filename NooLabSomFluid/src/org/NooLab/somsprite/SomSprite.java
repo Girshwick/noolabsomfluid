@@ -59,7 +59,10 @@ public class SomSprite {
 	SpriteSettings spriteSettings ;
 	
 	Evaluator evaluator ;
-	ArrayList<AnalyticFunctionSpriteImprovement> candidates = new ArrayList<AnalyticFunctionSpriteImprovement>();
+	
+	// ArrayList<AnalyticFunctionSpriteImprovement> candidates = new ArrayList<AnalyticFunctionSpriteImprovement>();
+	AnalyticFunctionTransformationsIntf candidates = new AnalyticFunctionTransformations();
+	
 	ArrayList<AnalyticFunctionSpriteImprovement> previousProposals = new ArrayList<AnalyticFunctionSpriteImprovement>();
 	
 	ArrUtilities arrutil = new ArrUtilities();
@@ -263,12 +266,13 @@ public class SomSprite {
 			// it will also remove those items that have been imported as known ones...
 			dScreener.go(); 
 			
+			
 			candidates = dScreener.getListOfCandidatePairs();
 			
 			// send candidates into SomTransformer, they will be put just to a queue, 
 			// but NOTHING will be changed regarding the transformations...  
 			// implementation will be triggered by instances of SomHostIntf (such like ModelOptimizer)
-			if ((transformer!=null) && (candidates.size()>0)){
+			if ((transformer!=null) && (candidates.getItems().size()>0)){
 				// TODO if some candidate transformations are already available, they will be filtered out over there
 				transformer.perceiveCandidateTransformations(candidates,1) ;
 				 
@@ -298,14 +302,14 @@ public class SomSprite {
 		this.spriteProcessIsRunning = spriteProcessIsRunning;
 	}
 
-	public ArrayList<AnalyticFunctionSpriteImprovement> getProposedCandidates() {
+	public AnalyticFunctionTransformationsIntf getProposedCandidates() {
 		return candidates;
 	}
 
 	/**
 	 * @return the candidates
 	 */
-	public ArrayList<AnalyticFunctionSpriteImprovement> getCandidates() {
+	public AnalyticFunctionTransformationsIntf getCandidates() {
 		return candidates;
 	}
 

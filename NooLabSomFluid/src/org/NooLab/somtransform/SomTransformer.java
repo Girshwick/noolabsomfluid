@@ -1,19 +1,22 @@
 package org.NooLab.somtransform;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
-import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.components.AlgorithmDeclarationsLoader;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somfluid.env.data.NormValueRangesIntf;
+import org.NooLab.somfluid.util.BasicStatisticalDescription;
+import org.NooLab.somfluid.util.BasicStatistics;
 
 import org.NooLab.somsprite.AnalyticFunctionSpriteImprovement;
+import org.NooLab.somsprite.AnalyticFunctionTransformationsIntf;
+import org.NooLab.somtransform.algo.distribution.EmpiricDistribution;
+import org.NooLab.somtransform.algo.intf.AlgoTransformationAbstract;
 import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
@@ -27,24 +30,26 @@ import org.NooLab.utilities.strings.StringsUtil;
  * 
  * the most basic functionality of this is normalization of input data;
  * 
- * it also maintains a "transformation model", which is a collecotin of stacks of elementary transformations;
+ * it also maintains a "transformation model", which is a collection of stacks of elementary transformations;
  * any of the variables can be assigned such a stack 
+ * </br></br>
  * 
- * Handling the algorithm stacks
- * (1) transformation and creating new columns is strictly separated
- * (2) algorithms can change the format from in-data to out-data 
- * (3) stack can be supplemented with plug-in algorithms, that need to implement 
- *     one of three interfaces: for transforming, writing new columns, or measurements
+ * Handling the algorithm stacks</br>
+ * (1) transformation and creating new columns is strictly separated</br>
+ * (2) algorithms can change the format from in-data to out-data </br>
+ * (3) stack can be supplemented with plug-in algorithms, that need to implement </br> 
+ *     one of three interfaces: for transforming, writing new columns, or measurements </br>
+ * </br></br>
  * 
+ * 1+2 mark a strong difference to Prospero's transformer </br></br>
  * 
- * 1+2 mark a strong difference to Prospero's transformer
+ * the very first position in the transformation stack receives raw, NON_NORMALIZED data !!!! </br></br>
  * 
- * the very first position in the transformation stack receives raw, NON_NORMALIZED data !!!!
+ * TODO: analysis of residuals relative to outcome, also on the level of modeling </br></br>
  * 
- * TODO: analysis of residuals relative to outcome, also on the level of modeling
  * 
  */
-public class SomTransformer {
+public class SomTransformer implements SomTransformerIntf{
 
 	//SomFluidFactory sfFactory;
 	SomDataObject somData;
@@ -64,6 +69,8 @@ public class SomTransformer {
 	TransformationModel transformationModel;
  
 	SomTransformerInitialization initialization;
+	
+	IndexedDistances advAutoTransformations = new IndexedDistances();
 	
 	/**
 	 * for any variable that is already know as blacklisted apriori, we may block its transformation 
@@ -95,7 +102,8 @@ public class SomTransformer {
  
 	/**
 	 * creates the basic structures : 
-	 * for each of the variables a TransformationStack will be initialized
+	 * for each of the variables a TransformationStack will be initialized;</br>
+	 * this stack remains empy though!
 	 * 
 	 */
 	public void initializeTransformationModel(){
@@ -118,14 +126,12 @@ public class SomTransformer {
 			ix = this.transformationModel.findTransformationStackByVariable( variable ); // not the label, but the object !
 			
 			if (ix<0){
-				tstack = new TransformationStack();
+				tstack = new TransformationStack( sfProperties.getPluginSettings() );
 			
 				// such the stack knows about the raw in-format (valueScaleNiveau), the label, basic min & max 
 				tstack.baseVariable = variable; 
 				tstack.varLabel = variable.getLabel() ;
 			
-				// TODO: the variable should know from type checking, whether there are any negative values,
-				//       we conclude that neg values are semantically different, 
 				transformationModel.variableTransformations.add(tstack) ;
 			}
 		}
@@ -133,22 +139,52 @@ public class SomTransformer {
 		initialization.setInitialized(true, somData.getRecordCount(), variables.size()  );
 	}
  
+	
+	
 
+	public static int getAlgorithmIndexValue(String string) {
+		int index = -1;
+		
+		
+		
+		return index;
+	}
+	
+	public int algorithmIndexValue(String str) {
+		return getAlgorithmIndexValue(str) ;
+	}
+	
+
+	/**
+	 * this provides numeric versions of the data in the provided table.</br>
+	 * this transformation is accomplished by means of a transformation stack;</br></br>
+	 * 
+	 * this method applies the minimal stack for such "numericalization":</br>
+	 * - missing values interpreter </br>
+	 * - calculation of basic statistics, without histograms </br>
+	 * - linear normalization </br></br>
+	 * 
+	 * in case of non-numerical input data, conversions are applied where possible (and reasonable)</br>
+	 * - string data with a few different values are transformed into ordinal values by simple enumeration</br>
+	 * - date formats are translated into a serial integer, applying a base data of 1.1.1850 ;</br></br>
+	 * 
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	public int basicTransformToNumericalFormat(){
 			
 			int result = -1;
 			int cn,n,n1,n2 ;
-			boolean treatit, copyIsMandatory;
-			int newIndex, currentFormat;
+			boolean  copyIsMandatory;
+			int currentFormat;
 			String varLabel ;
 			ArrayList<Double> numvals;
 			ArrayList<String> strvals ;
 			DataTableCol dtc ;
 			
-			Variable v,newVariable ;
+			Variable v;
 	
-			StackedTransformation st,sta,stp ;
+			StackedTransformation st,sta ;
 			Variables variables;
 			
 			TransformationStack newTStack,varTStack ;
@@ -156,9 +192,9 @@ public class SomTransformer {
 			// known: dataTableObj = the data table , the items in the tstack have access to the variable objects
 			// uses transformations as algos even for basic stuff !!
 			
-			int fieldExclusionsMode = sfProperties.getAbsoluteFieldExclusionsMode() ;
+			// int fieldExclusionsMode = sfProperties.getAbsoluteFieldExclusionsMode() ;
 			ArrayList<String> absoluteBlackList = sfProperties.getAbsoluteFieldExclusions() ;
-			boolean isBlacklisted, importIsDenied;  
+			boolean isBlacklisted;  
 			
 			try{
 				
@@ -185,9 +221,21 @@ public class SomTransformer {
 						v = varTStack.baseVariable ;
 						
 						varLabel = v.getLabel() ;
+if (varLabel.contentEquals("KundenNr")){ 
+	int zz;
+	zz=0;
+}						
 						currentFormat = varTStack.getLatestFormat() ; // is a sibling of the call "varTStack.getFormatAtStackPos()" ;
 						if (currentFormat<0){
 							currentFormat = v.getRawFormat() ;
+						}
+						
+						if (varTStack.firstFormat<0){
+							varTStack.firstFormat = v.getRawFormat() ;
+							if (varTStack.firstFormat<0){
+								// determine it again ...
+								
+							}
 						}
 						
 						isBlacklisted = absoluteBlackList.indexOf(varLabel)>=0 ;
@@ -250,7 +298,7 @@ public class SomTransformer {
 							
 							st  = varTStack.introduceAlgorithmizedStackPosition("DateConverter") ;
 								  varTStack.introduceAlgorithmizedStackPosition("MissingValues") ;
-								  varTStack.introduceAlgorithmizedStackPosition("StandardStatistics") ;
+								  varTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
 								  
 							dtc = somData.getDataTable().getColumn(i);
 							strvals = dtc.getCellValueStr() ;
@@ -294,7 +342,7 @@ public class SomTransformer {
 							    ((AlgorithmIntf)sta.algorithm).setParameters(params) ;
 							} 
 							
-							varTStack.introduceAlgorithmizedStackPosition("StandardStatistics") ;
+							varTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
 							
 							// somData.getDataTable().getColumn(i).getCellValues() ) ;
 							dtc = somData.getDataTable().getColumn(i);
@@ -330,35 +378,39 @@ public class SomTransformer {
 							if (varTStack.items.size()==0){
 								
 								sta = varTStack.introduceAlgorithmizedStackPosition("MissingValues") ;
-								      varTStack.introduceAlgorithmizedStackPosition("StandardStatistics") ;
+								      varTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
 							}
 							
 							sta = varTStack.getItems().get(0) ;
 							
-							if (sta.getInData().size()==0){
-								int ix = i;
-								if (v.isDerived()){ // v.parentTransformID = ba9a0d28-c345-477e-be9d-0b8997bca1a9
-									//  
-									connectTransformStacksForData( varTStack, 1,false ) ; // 
-									
-								} else{
-									
-									if (ix>=0){
-										// these data will be replaced in the StackedTransformation will be replaced by 
-										// normalized values !
-										sta.getInData().add( somData.getDataTable().getColumn(ix).getCellValues() ) ;
-										n=sta.getInData().size() ;
+						if (sta.getInData().size() == 0) {
+							int ix = i;
+							if (v.isDerived()) { // v.parentTransformID =
+													// ba9a0d28-c345-477e-be9d-0b8997bca1a9
+								//
+								connectTransformStacksForData(varTStack, 1, false); //
+
+							} else {
+
+								if (ix >= 0) {
+									// these data will be replaced in the
+									// StackedTransformation will be replaced by
+									// normalized values !
+									sta.getInData().add(somData.getDataTable().getColumn(ix).getCellValues());
+									n = sta.getInData().size();
+
+									if (varLabel.toLowerCase().contains("sales")) {
+										n = 0;
 										
-if (varLabel.toLowerCase().contains("sales")){
-	n=0;
-}								
-										
-									}else{
-										ix=-1;
-									}	
+									}
+
+								} else {
+									ix = -1;
 								}
-								 
-								
+							}
+
+						 
+
 								varTStack.update();
 								n=0;
 							} // col is num && no data defined so far?
@@ -443,215 +495,74 @@ if (varLabel.toLowerCase().contains("sales")){
 		}
 
 
-	private void connectTransformStacksForData(TransformationStack varTStack, int mode, boolean overwrite) {
-		
-		int ix,ptix,vix;
-		boolean normdataAvail, parentStackAvail ;
-		ArrayList<Double> outValues = new ArrayList<Double>();
-		String tid;
-		StackedTransformation st ;
-		Variables variables;
-		Variable variable, parentVariable ;
-		TransformationStack parentStack ;
-		
-		
-		try{
-			
-
-			variables = this.somData.getVariables() ;
-			variable = variables.getItemByLabel(varTStack.varLabel) ;
-			
-			tid = varTStack.transformGuid ;          // abfa0368-0862-4715-8b04-fedd7b5b0f71
-			// this tid refers to one of the outputColumnIds in the parent stack
-			
-			// tid2 = variable.getParentTransformID() ;  // 632b039f-bd97-4b9c-9c35-74933c0f585d
-			
-			vix = variables.getIndexByLabel(varTStack.varLabel) ;
-			ptix = transformationModel.getIndexByOutputReferenceGuid( tid ) ; // reference to parent stack
-			
-			parentVariable = variables.getItemByLabel( varTStack.getInputVariable(0) );
-			
-			parentStack = transformationModel.variableTransformations.get(ptix) ;
-			parentVariable = variables.getItemByLabel(parentStack.varLabel) ;
-				
-			normdataAvail = (parentVariable.isID()==false) && 
-							(parentVariable.isIndexcandidate()==false) && 
-							(variables.getBlacklistLabels().indexOf(parentStack.varLabel)<0);
-			 
-			parentStackAvail = (parentStack!=null) && (parentStack.size()>0); 
-			
-			if ((mode<0) || ((mode==0) && (normdataAvail==false) && (parentStackAvail==false))){
-				// raw data from table
-				DataTable dt = this.somData.getDataTable();
-				ix = dt.getColumnHeaders().indexOf(varTStack.varLabel);
-				if (ix>=0){
-					outValues = dt.getColumn(ix).getCellValues();
-					
-					if (overwrite){
-						varTStack.getItem(0).inData.clear();
-					}
-					varTStack.getItem(0).inData.add(outValues) ;
-				}
-				return;
-			}
-			
-			if (((mode==0) && (normdataAvail)) || ((mode>0) && (parentStackAvail==false) && (normdataAvail))){
-				// normalized data from table
-				DataTable dt = this.somData.getNormalizedDataTable();
-				ix = dt.getColumnHeaders().indexOf(varTStack.varLabel);
-
-				if (ix>=0){
-					outValues = dt.getColumn(ix).getCellValues();
-					if (overwrite){
-						varTStack.getItem(0).inData.clear();
-					}
-					varTStack.getItem(0).inData.add(outValues) ;
-				}
-
-				return;
-			}
-
-			if ((mode>0) && (parentStackAvail)){
-			// ((ix>=0) && (varTStack.items.size()>0) ){
-				// get the out data from the last stack position
-				if (parentStack.size()>0){
-					for (int i=parentStack.size()-1;i>=0;i--){
-						st = parentStack.getItem(i);
-						if (st.outData.size()>0){
-							outValues = st.outData ;
-							break;
-						}
-					}
-					if (overwrite){
-						varTStack.getItem(0).inData.clear();
-					}
-					if (varTStack.size()>0){
-						varTStack.getItem(0).inData.add(outValues) ;
-					}
-				}else{
-					out.print(2,"???") ;
-				}
-				// st = varTStack.items.get(ix);
-				// ensureInDataForFirstTransformation()
-				
-			}
-			
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-		
-	}
-
-
 	/**
-	 * 
-	 * shifting distributions (kurtosis, skewness), 
-	 * splitting (deciling) variables based on histogram splines, outlier compression, NVE
-	 * this extends the basic transformer model
-	 * 
-	 */
-	public void applyBasicNumericalAdjustments() {
-		
-		TransformationStack varTStack ;
-		Variable v;
-		
-		
-		
-		try{
+		 * use this to provide candidate transformations;
+		 * the "candidates" bject need to implement the interface "AnalyticFunctionTransformationsIntf"
+		 * 
+		 */
+		public void perceiveCandidateTransformations( AnalyticFunctionTransformationsIntf candidates, int intoFreshStack) {
+									
 			
-			int cn = transformationModel.variableTransformations.size() ;
+			String expr,exprName;
+			String[] varStr = new String[2] ;
+			int[] varix = new int[2] ;
+			AnalyticFunctionSpriteImprovement item;
+			CandidateTransformation ctrans ;
+			
+			try{
+				
 	
-			// here we trat ONLY NUMERICAL COLUMNS !!!
-			for (int i=0;i<cn; i++){
+				if (intoFreshStack<=0)intoFreshStack=-1;
+				if (intoFreshStack>1) intoFreshStack= 1;
+	
+				// we translate it into a more economic form, just the variables and the formula
+				for (int i=0;i<candidates.getItems().size();i++){
+					item = candidates.getItems().get(i) ;
+					       expr = item.getExpression();
+					       exprName = item.getExpressionName() ;
+					       varix[0] = item.varIndex1 ;
+					       varix[1] = item.varIndex2 ;
+					       
+					       varStr[0] = somData.getVariables().getItem( varix[0]).getLabel() ;
+					       varStr[1] = somData.getVariables().getItem( varix[1]).getLabel() ;
+					       
+					       // varStr[0] = somData.getVariablesLabels().get(varix[0]);
+					       // varStr[1] = somData.getVariablesLabels().get(varix[1]);
+					       
+					ctrans = new CandidateTransformation(exprName,expr,varix,varStr);
+					ctrans.setDemandForFreshStack(intoFreshStack) ;
+					candidateTransformations.add(ctrans) ;
+				}
 				
-				varTStack = transformationModel.variableTransformations.get(i) ;
-				v = varTStack.baseVariable ;
-				
-				// check numerical characteristics: log shift? deciling? semantic zero?
-				// where is the description of the histogram ?
-					
-				if ((v.getRawFormat() > DataTable.__FORMAT_ID) && (v.getRawFormat() <= DataTable.__FORMAT_INT)){
-					
-					// NumPropertiesChecker npc = new NumPropertiesChecker(this, dataTableObj, i) ;
-					
-					// npc.performChecks( new int[]{1,2,3}) ;
-						
-					// dependent on the result we introduce this or that transformation
-					
-					
-				} // num col ?
 				
 				
-				
-			} // i-> all variables == all positions in transformatoinmodel = list of tstacks
-			
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-		
-	}
-
-
-	// send candidates into SomTransformer, they will be put just to a queue, 
-	// but NOTHING will be changed regarding the transformations...  until a refresh or request for implementation will be sent...
-	public void perceiveCandidateTransformations(ArrayList<AnalyticFunctionSpriteImprovement> candidates, int intoFreshStack) {
-		
-		int n;
-		String expr,exprName;
-		String[] varStr = new String[2] ;
-		int[] varix = new int[2] ;
-		AnalyticFunctionSpriteImprovement item;
-		CandidateTransformation ctrans ;
-		
-		try{
-			
-
-			if (intoFreshStack<=0)intoFreshStack=-1;
-			if (intoFreshStack>1) intoFreshStack= 1;
-if (somData.getVariablesLabels().size()<=1){
-	n=0;
-	n = somData.getVariables().size() ;
-}
-
-			// we translate it into a more economic form, just the variables and the formula
-			for (int i=0;i<candidates.size();i++){
-				item = candidates.get(i) ;
-				       expr = item.getExpression();
-				       exprName = item.getExpressionName() ;
-				       varix[0] = item.varIndex1 ;
-				       varix[1] = item.varIndex2 ;
-				       
-				       varStr[0] = somData.getVariables().getItem( varix[0]).getLabel() ;
-				       varStr[1] = somData.getVariables().getItem( varix[1]).getLabel() ;
-				       
-				       // varStr[0] = somData.getVariablesLabels().get(varix[0]);
-				       // varStr[1] = somData.getVariablesLabels().get(varix[1]);
-				       
-				ctrans = new CandidateTransformation(exprName,expr,varix,varStr);
-				ctrans.setDemandForFreshStack(intoFreshStack) ;
-				candidateTransformations.add(ctrans) ;
+			}catch(Exception e){
+				e.printStackTrace() ;
 			}
 			
 			
-			
-		}catch(Exception e){
-			e.printStackTrace() ;
 		}
-		
-		
-	}
 
 
+	public SomDataObject implementWaitingTransformations( ) {
+	
+		return implementWaitingTransformations(1) ;
+	} 
+
+	 
 	/**
-	 * TODO: putting format conversion algos into the queue: especially for date columns
-	 *       and implementing it BEFORE the modeloptimizer
 	 * 
+	 * this takes "candidateTransformations" (a list of simple classes of type "CandidateTransformation") and
+	 * implements it to the requested TransformationStacks;
+	 * 
+	 * the candidate transformations have been imported into a queue before by the method
+	 * perceiveCandidateTransformations( AnalyticFunctionTransformationsIntf )
 	 * 
 	 * the transformation task itself knows whether it should be placed into a new variable or
 	 * whether the transformation should be added to the stack
 	 * 
 	 *  
-	 * @param target 0=base data table , 1=normalized data table
+	 * @param target 0=base data table , 1=normalized data table (the usual target)
 	 * @return
 	 */
 	public SomDataObject implementWaitingTransformations( int target ) {
@@ -670,7 +581,7 @@ if (somData.getVariablesLabels().size()<=1){
 		StackedTransformation st , stDataSourceStackItem ;
 		ArrayList<Object> params;
 		Variables variables;
-		Variable variable;
+		
 		int sourcemode=1;
 		
 		// putting candidateTransformations to the transformation model, 
@@ -687,7 +598,7 @@ if (somData.getVariablesLabels().size()<=1){
 		 * note that the original data table must remain unchanged if target=1 !
 		 * 
 		 */
-		variables = somData.getVariables() ;
+		variables = somData.getVariables() ; 
 		realizedCount=0;
 		
 		for (int i=0; i<candidateTransformations.size(); i++){
@@ -723,7 +634,7 @@ if (basevarLabel.contains("Bisher_c2")){
 }
 			tix = transformationModel.getIndexByLabel(basevarLabel) ;
 			vix = variables.getIndexByLabel(basevarLabel) ;
-			variable = variables.getItem(vix) ;
+			// Variable variable = variables.getItem(vix) ;
 			 
 			varTStack = transformationModel.variableTransformations.get(tix) ;
 			// contains now a reference to the parent in the tree, == the first variable in the expression
@@ -731,10 +642,10 @@ if (basevarLabel.contains("Bisher_c2")){
 			// should be able to deal with string also ... StringExpression
 			try {
 				if (ct.demandForFreshStack>0){
-					// create a new variable
+					
 					newVarLabel = createLabelForSpriteDerivedVariable( ct.variablesStr ) ;
 					
-					// should also define single-column input data
+					// should also define single-column input data, it also inserts it into the targeted table !
 					newVarTStack = createAddVariableByCopy( target, varTStack, newVarLabel); 
 					// 
 					varTStack = newVarTStack;  
@@ -747,7 +658,9 @@ if (basevarLabel.contains("Bisher_c2")){
 					
 				}
 				
-				// ensuring the indata for the first transformation
+				// ensuring the in-data for the first transformation...
+				// note that all transformations also exist as columns in the normalized table, thus there 
+				// always should be a basevarLabel.. TODO XXX TEST THAT for transforms on transforms
 				ensureInDataForFirstTransformation( this.somData.getNormalizedDataTable(),  varTStack , basevarLabel, 1 );
 				// connectTransformStacksForData( varTStack, 1, false); 
 				
@@ -766,7 +679,7 @@ if (basevarLabel.contains("Bisher_c2")){
 				((AlgorithmIntf) st.algorithm).setParameters(params);
 
 				
-				// indata has n columns  (n>=1), dependent on transformation ...
+				// in-data has n columns  (n>=1), dependent on transformation ...
 				varTStack.items.get(0).inData.clear() ;
 				varTStack.items.get(arexIndex).inData.clear() ;
 				
@@ -864,6 +777,851 @@ if (basevarLabel.contains("Bisher_c2")){
 		// 
 	}
 
+	public void applyAdvNumericalTransforms(  ) {
+		applyAdvNumericalTransforms( null) ;
+	}
+	
+	/**
+	 * at this stage we have only standard transforms
+	 * this method checks for "non-normality" in the widest sense, but also only by simple means.</br></br>
+	 * basically, it checks the distribution of values for the following properties:</br>
+	 *  - strong left or right shift (skewness) </br>
+	 *  - presence of multi-modes (2+ maxima in the distribution of non-ordinal values, =kurtosis) </br>
+	 *  - presence of negative values </br></br>
+	 *     
+	 * the method organizes the respective more specialized "workers" (which act as classes);</br>
+	 * such they could also be called one-by-one; the "workers" calculate the histogram by their own;</br></br>
+	 * 
+	 * else, the package of the transformations that are understood as "basic adjustments" can be changed easily.</br></br>  
+	 * 
+	 */
+	public void applyAdvNumericalTransforms( IndexedDistances listOfPutativeTransforms ) {
+		
+		int n,k,r, advAprioriTransformsCount=0;
+		String tvLabel, varlabel ;
+		boolean hb,targetDefined=false ;
+		TransformationStack varTStack, newVarTStack ;
+		Variable variable;
+		
+		advAutoTransformations = new IndexedDistances(); // will be overwritten most likely... 
+		IndexDistance advAutoTransformation ;
+		
+		NumPropertiesChecker npc ; 
+		ArrayList<Double> values,tvalues=null;
+		DataTable dataTable ;
+		BasicStatisticalDescription statisticalDescription=null ;
+		 
+		
+		if ((listOfPutativeTransforms==null) || (listOfPutativeTransforms.size()==0)){
+			
+			advAutoTransformations = createDefaultListOfAdvancedTransforms();
+			 
+		}else{
+			
+			advAutoTransformations.addItems( listOfPutativeTransforms );
+		}
+		
+		boolean a=false;
+		try{
+			
+			dataTable = dataTableNormalized ;
+			int cn = transformationModel.variableTransformations.size() ;
+	
+			// here we treat ONLY NUMERICAL COLUMNS !!!
+			for (int i=0;i<cn; i++){
+				
+				varTStack = transformationModel.variableTransformations.get(i) ;
+				variable = varTStack.baseVariable ;
+				
+				npc = new NumPropertiesChecker(this, dataTable, i) ;
+				// check numerical characteristics: log shift? deciling? semantic zero?
+				// where is the description of the histogram ?
+					
+				if ( (varTStack.items.size()>0) && (variable.getRawFormat() > DataTable.__FORMAT_ID) && 
+					 (variable.getRawFormat() <= DataTable.__FORMAT_INT)){
+
+					// check whether this column has already been identified as "ordinal"
+					if (varTStack.outputColumnIds.size()>0){
+						int fid = variable.getRawFormat(); // // e.g. __FORMAT_INT = 2;  __FORMAT_ORD = 3
+					}
+					
+					// get the out-data of the last transformation in the stack
+					values = varTStack.getOutData(0);
+
+					if ((values == null) || (values.size() == 0)) {
+						varTStack.setExported(false);
+						continue;
+					}
+					
+					varlabel = variable.getLabel() ;
+					 
+					npc = new NumPropertiesChecker(this, values);
+					npc.setColumnHeaderLabel(variable.getLabel());
+
+					tvLabel = sfProperties.getModelingSettings().getActiveTvLabel();
+					targetDefined = (sfProperties.getModelingSettings().getTargetedModeling() && (tvLabel.length()>0));
+					
+					// no correlation or residual methods in this case
+					if (targetDefined) {
+						int tmode = sfProperties.getModelingSettings().getClassifySettings().getTargetMode();
+						if ((tmode == 0) || (tmode == 5)) {
+							targetDefined = false; // ???
+						}
+					}
+					 
+					int tix = somData.getVariables().getIndexByLabel(tvLabel) ;
+					if (somData.getVariables().getTvColumnIndex()<0)somData.getVariables().setTvColumnIndex(tix);
+					
+					tvalues = null;
+					if (tix<0)targetDefined=false;
+					if (targetDefined) {
+						
+						hb=true;
+						tvalues = dataTableNormalized.getColumn(tix).getCellValues();
+						if (tvalues.size()==0){hb=false;}
+						if (hb){
+							npc.setTargetValues(tvalues);
+						}
+					}
+if (varlabel.toLowerCase().contentEquals("stammkapital")){ // stammkapital is a strong candidate for logshift!!!
+	k=0;
+}
+											out.print(3, "analyzing variable for transformation : "+varlabel );
+					
+					try{
+						
+						// contains the class "statistics package" as methods and results, which  
+						// can be transferred to the algorithm if required
+						npc.prepareStatisticalDescription();
+						
+						EmpiricDistribution ed = npc.statisticalDescription.getEmpiricDistribution();
+						if (ed.isVariableIsNominal()){
+							// stop processing of this var, just make an entry to the variables data format
+							int vix = somData.getVariables().getIndexByLabel(varlabel) ;
+							
+							variable.setRawFormat( DataTable.__FORMAT_ORD ) ;
+							variable.setValueScaleNiveau(Variable._VARIABLE_SCALE_NOMINAL);
+							dataTableNormalized.getColumn(tix).setFormat( DataTable.__FORMAT_ORD ) ;
+							
+							continue;
+						}
+						 
+					}catch(Exception e){
+						 
+					}
+					
+					 
+					statisticalDescription = npc.getStatisticalDescription() ;
+					
+					
+					// ...........................
+					// if (a) 
+					for (int t=0;t<advAutoTransformations.size();t++){
+						
+						advAutoTransformation = advAutoTransformations.getItem(t);
+						
+						ArrayList<Object> params = new ArrayList<Object>();
+						                                         
+						// this refers to "builtinscatalog.xml", while the "advAutoTransformations" are declared in "catalog.xml"
+						int ix = sfProperties.getAlgoDeclarations().getIndications().getIndexByStr("ResidualsByCorrelation");
+						// better check for group label, which is "residuals" ...
+						
+						if ((ix>=0) && (advAutoTransformations.getItem(t).getIndex2() >= ix)){
+							if (targetDefined == false) {
+								continue;
+							}
+						} // ?
+						
+						try{
+							hb = npc.checkFor( advAutoTransformations.getItem(t).getIndex2());
+							 
+						} catch (Exception e) {
+							// in this case, the test ID is unknown by the NumPropertiesChecker
+							hb = false;
+							out.print(2, "numerical properties for variable  <"+varlabel+"> could not be determined." );
+						}
+
+						 
+						if (hb){
+							advAprioriTransformsCount++;
+							// the column header in DataTable remains <label>_c !!!
+							
+							// dependent on the result we introduce first a new column for the new transformation
+							// we define a particular name for it
+							// TODO get defined abbreviation
+							String str = varTStack.varLabel+"_" + createAlgorithmIndicatorLabel( advAutoTransformation );
+					 
+							newVarTStack = createAddVariableByCopy(1, varTStack, str); // 1= table of normalized data
+						
+							newVarTStack.introduceAlgorithmizedStackPosition("MissingValues") ;
+							newVarTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
+							
+							// ------------------------------
+							// TODO make this dynamic ... needs a map from task to name of algo
+							// ...then the requested stack to the new variable / branch 
+							// varTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
+							
+							String algoLabel = advAutoTransformation.getGuidStr() ; 
+							       // e.g. "AdaptiveLogShift"
+							StackedTransformation stnew = newVarTStack.introduceAlgorithmizedStackPosition( algoLabel ) ;
+							
+							params = npc.determineAdaptedParameters( advAutoTransformation.getIndex2(), values);
+							
+							if ((params!=null) && (params.size()>0)){
+								 
+								// last position in list => 
+								//    1= produce normalized data, 
+								//    0= leave it raw : default, (column will contain values <0, >1 !)
+								// params.add(1.0) ;
+								
+								// is declared in the top-most interface "AlgorithmIntf" !!!						
+								AlgorithmIntf algo = ((AlgorithmIntf)stnew.algorithm) ;
+								algo.setParameters(params);
+								
+								
+							}
+							// ------------------------------
+														
+							newVarTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
+							newVarTStack.update() ;
+							
+							newVarTStack.introduceAlgorithmizedStackPosition("LinearNormalization") ;
+							 
+							// ensuring the in-data for the first transformation
+							String basevarLabel = varTStack.baseVariable.getLabel() ;
+							ensureInDataForFirstTransformation( this.somData.getNormalizedDataTable(),  newVarTStack , basevarLabel, 1 );
+						 	
+							// in DataTable, -1 are replaced by 0 !!! see also writing the table...
+							r = newVarTStack.update() ;
+							k = newVarTStack.getOutData(0).size();
+							if ((r<0) || (k==0)){
+								throw(new Exception("introducing advanced transformation (<"+algoLabel+">) failed."));
+							}
+						}
+						
+						
+					} // t-> all suggested transformations 
+					
+					
+					if (statisticalDescription!=null){
+						statisticalDescription.clear() ;
+					}
+					statisticalDescription=null;
+				} // num col ?
+				
+				
+				
+			} // i-> all variables == all positions in transformation model = list of tstacks
+			
+			if (advAprioriTransformsCount>0){
+				out.print(2, ""+advAprioriTransformsCount+" advanced transformations have been applied.");
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		k=0; // in DataTable, -1 are replaced by 0 !!! see also writing the table...
+	}
+
+	
+	private String createAlgorithmIndicatorLabel(IndexDistance transformItem) {
+		String labelSnip="", str, xstr;
+		
+		str = transformItem.getGuidStr() ;
+		
+		// check whether the group label is available
+		
+		// extract all capital letters
+		xstr = strgutils.extractCapitals(str);
+		if (xstr.length()==0){
+			xstr = str.substring(0,3); 
+		}
+		if (xstr.length()==1){
+			xstr = xstr + str.substring(1,2); 
+		}
+		labelSnip = xstr.toLowerCase();
+		
+		return labelSnip;
+	}
+
+
+	/**
+	 * 
+	 * hard-coded set of advanced but still rather simple transforms
+	 *  
+	 * these are all mapped to algorithms
+	 * 
+	 */
+	public IndexedDistances createDefaultListOfAdvancedTransforms() {
+		
+		IndexedDistances autoTransforms;
+		
+		AlgorithmDeclarationsLoader  adecl = sfProperties.getAlgoDeclarations();
+		
+		autoTransforms = adecl.readAdvAutoTransforms();
+		 
+		return autoTransforms;   
+		 
+	}
+
+
+	/**
+	 * this takes data from the main DataTable and for each variable then feeds the data
+	 * into the TransformationStack.</br>
+	 * According to the type of the in-data the TransformationStack then will be extended
+	 * by the appropriate methods.</br></br>
+	 * 
+	 * The data will NOt be written to the normalized table, which is also 
+	 * part of the SomDataObject!
+	 * 	 
+	 * 
+	 */
+	public void normalizeData(){
+		
+		int cn,i,sn ;
+		boolean hb;
+		String varLabel;
+		
+		TransformationStack varTStack;
+		Variable v;
+		Variables variables;
+	
+		
+		try{
+			
+			/*
+			 *	the normalized table will still contain non-num columns,
+			 *  yet we will create an structural identifier, that contains only those headers which are numeric 
+			 */
+	
+			variables = somData.getVariables() ;
+			
+			cn = transformationModel.variableTransformations.size() ;
+			i = -1;
+			
+			while (i<cn-1){
+				i++;
+	
+				varTStack = transformationModel.variableTransformations.get(i) ;
+				v = varTStack.baseVariable ;
+				
+				varLabel = v.getLabel() ;
+				variables.getAbsoluteAccessible().add(0) ;
+				
+				if (v.getRawFormat() > DataTable.__FORMAT_ORGINT){
+					variables.getAbsoluteAccessible().set(i,0) ;
+					variables.addBlacklistLabel( v.getLabel() ) ;
+					continue;
+				}
+	
+				
+				if (v.getRawFormat() == DataTable.__FORMAT_ID){
+					// put to index candidates if it is not already there, and to blacklist					 
+					{
+						v.setIndexcandidate(true);
+						
+						if ( v.isDerived()){
+							variables.getAbsoluteAccessible().set(i,1) ;
+							variables.addBlacklistLabel(varLabel);
+						}else{
+							// ensure that raw values are transferred
+							sn = varTStack.items.size();
+							
+							if (sn==0){
+								varTStack.introduceAlgorithmizedStackPosition("MissingValues") ;
+							}
+							varTStack.update() ;
+						}
+						if ( v.isDerived()){
+							varTStack.introduceAlgorithmizedStackPosition("LinearNormalization") ;
+							varTStack.update() ;
+						}
+						
+						variables.addBlacklistLabel( v.getLabel() ) ;
+						continue;
+					}
+					
+				}
+				
+				variables.getAbsoluteAccessible().set(i,1) ;  
+				
+				// note that freshly added columns are automatically set to num
+				hb = (v.getRawFormat() > DataTable.__FORMAT_ID) && (v.getRawFormat() <= DataTable.__FORMAT_INT);
+				
+				if (hb){
+					hb = (varTStack.items.size()>0) ;
+				}
+				if (hb){
+					hb = varTStack.stackProvidesOutData() ;
+				}
+				if (hb){
+	
+					 
+						// does it contain stdstats below of other transforms?  if not, add it
+						
+						hb = varTStack.checkDescriptionPosition();
+						
+						if (hb){
+							varTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
+						}
+						
+						hb = varTStack.algorithmIsLatest("LinearNormalization");
+						
+						if (hb==false){
+							varTStack.introduceAlgorithmizedStackPosition("LinearNormalization") ;
+						}
+						varTStack.setFirstItemForUpdate( varTStack.items.size()-1);
+						varTStack.update();
+						int k;
+						k=0;
+					
+				} // format ?
+				
+			} // ->
+			
+			cn=0;
+			
+		}catch(Exception e){
+			e.printStackTrace() ;
+		}
+		 
+	}
+
+
+	/**
+	 * this does NOT just ensure a linear normalization for the TransformationStack;
+	 * it does so only if the values are outside [0..1];
+	 * 
+	 * this allows to "compress" binary variables which otherwise 
+	 *  (1) dominate non-binary variables, due to their salient variance effects
+	 *  (2) do not allow to introduce noising
+	 * 
+	 */
+	public void ensureNormalizedDataRange(){
+		
+		
+	}
+
+
+	/**
+		 * 
+		 * creating the table of normalized data:
+		 * - if a transformation stack is available && -> if a linear norm is at the end && -> [min,max] is from  [0,1]
+		 *   then take the values tron tstack
+		 * - else take values from raw datatable and set col to absoluteAccessible = -1  
+		 * 
+		 * @return
+		 */
+
+		public DataTable writeNormalizedData( ){  
+			 
+			String varLabel,errmsg="";
+			int i,cn,rc;
+			boolean emptyList;
+			TransformationStack varTStack;
+			Variable v;
+			Variables variables;
+			
+			DataTableCol colNorm;
+			ArrayList<String> colheaders;
+			ArrayList<Double> normvalues = new ArrayList<Double>();
+			ArrayList<DataTableCol> normDataTable;
+			
+			
+			try{
+			
+				dataTableNormalized = new DataTable(somData, true); // the whole object
+				// ------------------------------------------------
+				
+				variables = somData.getVariables() ;
+				cn = transformationModel.variableTransformations.size() ;
+				// int vn = variables.size() ; 
+				
+				dataTableNormalized.setSourceFileName( dataTableObj.getSourceFilename() );
+				dataTableNormalized.setTableHasHeader( dataTableObj.isTableHasHeader() ) ;
+				dataTableNormalized.setFormats( dataTableObj.getFormats().clone() ) ;
+				dataTableNormalized.setColcount( variables.size() ) ;
+				rc = dataTableObj.getRowcount();
+				dataTableNormalized.setRowcount( rc ) ;
+				
+					colheaders = new ArrayList<String>( dataTableObj.getColumnHeaders());
+					colheaders = variables.getLabelsForVariablesList(variables) ;
+				dataTableNormalized.setColumnHeaders( colheaders );
+				
+				normDataTable = dataTableNormalized.getDataTable();
+				
+				
+				
+				i = -1;
+				
+				while (i<cn-1){
+					i++;
+					normvalues.clear() ;
+					emptyList  =true;
+					// boolean rawList = false;
+					
+					varTStack = transformationModel.variableTransformations.get(i) ;
+					v = varTStack.baseVariable ;
+					varLabel = v.getLabel() ;
+
+					
+					colNorm = new DataTableCol(dataTableNormalized,i);
+					
+					if (v.getRawFormat() == DataTable.__FORMAT_ID){
+						colNorm.setIndexColumnCandidate(true);
+					}
+					
+					
+												errmsg = "variable: "+v.getLabel()+" , row : "+i ;
+					if ((variables.getAbsoluteAccessible().get(i)>=1) | (v.isDerived())){
+						
+						if (v.getRawFormat() == DataTable.__FORMAT_ID){
+							if (v.isDerived()==false){
+								normvalues = dataTableObj.getColumn( varLabel ).getCellValues(); 
+							}else{
+								normvalues = varTStack.getLatestColumnValues(1);
+							}
+							colNorm.setDataFormat( DataTable.__FORMAT_NUM ) ;
+						}else{
+							
+							normvalues = varTStack.getLatestColumnValues(1) ; // 1 = mode of value checking (1=yes)
+	 
+							colNorm.setDataFormat( DataTable.__FORMAT_NUM ) ;
+							dataTableNormalized.getColumnHeaders().set(i, varTStack.varLabel);
+							
+						}
+						colNorm.setNumeric(true);
+					
+						
+					}else{
+						// rawList = true;
+					}
+					
+					emptyList = (normvalues==null) || (normvalues.size()<=1) ;
+					
+					if (emptyList){
+						// all to -1 ; 
+						for (int k=0;k<rc;k++){
+							normvalues.add(-1.0) ;
+						}
+					}
+					
+					colNorm.setCellValues(normvalues) ;
+					colNorm.setSerialID(i) ;
+					normDataTable.add(colNorm);
+					
+				} // while ->
+				
+				
+			}catch(Exception e){
+				out.printErr(1, errmsg);
+				e.printStackTrace();
+			}
+			
+			out.print(4, "SomTransformer instance @ writeNormalizedData : "+this.toString() ) ;
+			
+			return dataTableNormalized;
+	}
+
+
+	/**
+	 * 
+	 */
+	public int addDataColumn( DataTableCol column, String name, int target ){
+		int result = -1;
+		
+		
+		return result ;
+	}
+	
+	
+	public int addDataRecords( ){
+		int result = -1;
+		
+		
+		return result ;
+	}
+
+	
+	/**
+	 * creates a deep clone with content of inDatatable
+	 *  
+	 */
+	public void setDataTable( DataTable inDatatable ) {
+		 
+		try{
+			dataTableObj = new DataTable( inDatatable ) ; 
+			
+		}catch(Exception e){
+			
+		}
+	}
+
+
+	public void createSurrogateData( double percentage , int mode){
+		
+	}
+	 
+
+	
+	public DataTable getNormalizedDataTable(){
+		return dataTableNormalized;
+	}
+
+	public void importExpectedNormValueRanges( String filename ){
+		
+	}
+	
+	public void importExpectedNormValueRanges( NormValueRangesIntf valueRanges){
+		
+	}
+	/**
+	 * 
+	 * this has to take place in SomTransformer, because we need the reference to the variables. 
+	 * 
+	 * ... and adopting the out label name of the latest copy operator in the source stack
+	 * it looks for the transformation = stack item, that has the property outputColumnId = transformGuid
+	 * @param dataTableObj 
+	 * 					 
+	 * @param targetColGuid
+	 * @param adjLabel
+	 * @return 
+	 */
+	public boolean setOutcolumnLabelForLastWriter( int target, TransformationStack tstack, String targetColGuid, String adjLabel ) {
+		
+		boolean rB=false;
+		String idstr, initialOutColumnLabel="";
+		DataTable _dataTable;
+		
+		// which table (of type DataTable)? basic, or normalized
+		if (target==0){
+			_dataTable = dataTableObj;
+		} else{
+			_dataTable = somData.getNormalizedDataTable() ;
+		}
+		
+		
+		for (int i= tstack.items.size()-1;i>=0;i--){
+			
+			idstr = tstack.items.get(i).outputColumnId ;
+			if (idstr.contentEquals(targetColGuid)){
+				
+				initialOutColumnLabel = tstack.items.get(i).outputColumnLabel;
+				tstack.items.get(i).outputColumnLabel = adjLabel;
+				
+				rB=true;
+				break;
+			}
+			
+		} // i->
+		
+		if (initialOutColumnLabel.length()>0){
+			int ix = _dataTable.getColumnHeaders().indexOf(initialOutColumnLabel) ;
+			if (ix>=0){
+				_dataTable.getColumnHeaders().set(ix,adjLabel  );
+			}
+			// TODO: we even need a callback / event that allows us to update the added variables...
+			ix = somData.getVariables().getIndexByLabel( initialOutColumnLabel);
+			if (ix>=0){
+				String str ;
+				Variable v ;
+				
+				v = somData.getVariables().getItem(ix);
+				str = v.getLabel() ;
+				if (str.contentEquals(initialOutColumnLabel)){
+					v.setLabel( adjLabel );
+				}
+	
+			}
+		}
+		 
+		return rB;
+	}
+
+
+	/**
+	 * 
+	 * basic normalization outside of transformation model
+	 * 
+	 * @param variables
+	 * @return
+	 */
+	public DataTable normalizeData( Variables variables) {
+		
+		DataTableCol col, colNorm;
+		ArrayList<DataTableCol> inDataTable = dataTableObj.getDataTable();
+		ArrayList<DataTableCol> normDataTable;
+		
+		
+		try{
+			
+			dataTableNormalized = new DataTable(somData, true); // the whole object
+			
+			dataTableNormalized.setSourceFileName( dataTableObj.getSourceFilename() );
+			dataTableNormalized.setTableHasHeader( dataTableObj.isTableHasHeader() ) ;
+			dataTableNormalized.setFormats( dataTableObj.getFormats().clone() ) ;
+			dataTableNormalized.setColcount( dataTableObj.getColcount() ) ;
+			dataTableNormalized.setRowcount( dataTableObj.getRowcount() ) ;
+			dataTableNormalized.setColumnHeaders( new ArrayList<String>(dataTableObj.getColumnHeaders()) );
+			
+			normDataTable = dataTableNormalized.getDataTable();
+			
+		
+			
+			for (int i=0; i<inDataTable.size();i++){
+				
+				col = inDataTable.get(i);
+				
+				if ((col.getRecalculationIndicator()>0)){
+					
+					if (col.isIndexColumnCandidate()==false){
+						col.calculateBasicStatistics();
+					}
+					// ArrayList<Double> cellValues
+				}else{
+					continue;
+				}
+				
+				// we do not normalize index columns, we won't include it in the analysis anyway
+				col.setRecalculationIndicator(0);
+				colNorm = new DataTableCol(dataTableNormalized, col);//  dataTableNormalized, i
+				
+				if ((col.getDataFormat() <= DataTable.__FORMAT_DATETIME) && (col.isIndexColumnCandidate()==false)){
+					
+					colNorm.normalize( col.getStatisticalDescription().getMini(), col.getStatisticalDescription().getMaxi() );
+	
+					// calculate stats for the normalized column
+					colNorm.calculateBasicStatistics();
+					// store the statistical description for the raw data in the column  
+					// that contain the normalized data... such we will be able to translate ! 
+					colNorm.setRawDataStatistics(col.getStatisticalDescription()) ;
+					colNorm.setNumeric(true);
+					colNorm.setDataFormat(DataTable.__FORMAT_NUM) ;
+					
+				}else{
+					col.setRecalculationIndicator(-3); // ignore, like blacklisted variables
+					colNorm.setDataFormat( DataTable.__FORMAT_IGNORE ) ;
+				}
+				
+				colNorm.setSerialID(i) ;
+				normDataTable.add(colNorm);
+				 
+			} // all columns
+			
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return dataTableNormalized;
+	}
+
+
+	/**
+	 * @return the addedVariablesByIndex
+	 */
+	public ArrayList<Integer> getAddedVariablesByIndex() {
+		return addedVariablesByIndex;
+	}
+
+
+	private void connectTransformStacksForData(TransformationStack varTStack, int mode, boolean overwrite) {
+		
+		int ix,ptix;
+		boolean normdataAvail, parentStackAvail ;
+		ArrayList<Double> outValues = new ArrayList<Double>();
+		String tid;
+		StackedTransformation st ;
+		Variables variables;
+		Variable parentVariable ;
+		TransformationStack parentStack ;
+		
+		
+		try{
+			
+	
+			variables = this.somData.getVariables() ;
+			// Variable variable = variables.getItemByLabel(varTStack.varLabel) ;
+			
+			tid = varTStack.transformGuid ;          // abfa0368-0862-4715-8b04-fedd7b5b0f71
+			// this tid refers to one of the outputColumnIds in the parent stack
+			
+			// tid2 = variable.getParentTransformID() ;  // 632b039f-bd97-4b9c-9c35-74933c0f585d
+			
+			// int vix = variables.getIndexByLabel(varTStack.varLabel) ;
+			ptix = transformationModel.getIndexByOutputReferenceGuid( tid ) ; // reference to parent stack
+			
+			parentVariable = variables.getItemByLabel( varTStack.getInputVariable(0) );
+			
+			parentStack = transformationModel.variableTransformations.get(ptix) ;
+			parentVariable = variables.getItemByLabel(parentStack.varLabel) ;
+				
+			normdataAvail = (parentVariable.isID()==false) && 
+							(parentVariable.isIndexcandidate()==false) && 
+							(variables.getBlacklistLabels().indexOf(parentStack.varLabel)<0);
+			 
+			parentStackAvail = (parentStack!=null) && (parentStack.size()>0); 
+			
+			if ((mode<0) || ((mode==0) && (normdataAvail==false) && (parentStackAvail==false))){
+				// raw data from table
+				DataTable dt = this.somData.getDataTable();
+				ix = dt.getColumnHeaders().indexOf(varTStack.varLabel);
+				if (ix>=0){
+					outValues = dt.getColumn(ix).getCellValues();
+					
+					if (overwrite){
+						varTStack.getItem(0).inData.clear();
+					}
+					varTStack.getItem(0).inData.add(outValues) ;
+				}
+				return;
+			}
+			
+			if (((mode==0) && (normdataAvail)) || ((mode>0) && (parentStackAvail==false) && (normdataAvail))){
+				// normalized data from table
+				DataTable dt = this.somData.getNormalizedDataTable();
+				ix = dt.getColumnHeaders().indexOf(varTStack.varLabel);
+	
+				if (ix>=0){
+					outValues = dt.getColumn(ix).getCellValues();
+					if (overwrite){
+						varTStack.getItem(0).inData.clear();
+					}
+					varTStack.getItem(0).inData.add(outValues) ;
+				}
+	
+				return;
+			}
+	
+			if ((mode>0) && (parentStackAvail)){
+			// ((ix>=0) && (varTStack.items.size()>0) ){
+				// get the out data from the last stack position
+				if (parentStack.size()>0){
+					for (int i=parentStack.size()-1;i>=0;i--){
+						st = parentStack.getItem(i);
+						if (st.outData.size()>0){
+							outValues = st.outData ;
+							break;
+						}
+					}
+					if (overwrite){
+						varTStack.getItem(0).inData.clear();
+					}
+					if (varTStack.size()>0){
+						varTStack.getItem(0).inData.add(outValues) ;
+					}
+				}else{
+					out.print(2,"???") ;
+				}
+				// st = varTStack.items.get(ix);
+				// ensureInDataForFirstTransformation()
+				
+			}
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
+	}
+
 
 	/**
 	 * 
@@ -889,7 +1647,7 @@ if (basevarLabel.contains("Bisher_c2")){
 			
 		}
 		
-
+	
 		variables = this.somData.getVariables() ;
 		st = varTStack.items.get(0) ;
 		
@@ -992,13 +1750,6 @@ if (basevarLabel.contains("Bisher_c2")){
 	}
 
 
-	public void implementTransformations(){
-		// putting candidateTransformations to the transformation model
-		
-	}
-
-
-
 	private String createLabelForSpriteDerivedVariable(String[] varStrings) {
 		
 		String newLabel = "",dLevelIndicationStr;
@@ -1014,15 +1765,15 @@ if (basevarLabel.contains("Bisher_c2")){
 		// also determine the expected total length
 		
 		for (int i=0;i<varStrings.length;i++){
-
+	
 			prepVarStrings[i] = varStrings[i] ;
 		} // all provided parts
 		
-
+	
 		// then we reduce the names to a shorter version: suffixes, for each part as defined by capital letters
 		
 		for (int i=0;i<prepVarStrings.length;i++){
- 
+	
 		}
 		
 		// 
@@ -1031,13 +1782,18 @@ if (basevarLabel.contains("Bisher_c2")){
 		dLevelIndicationStr = "d"+dmax+"_" ;
 		newLabel = dLevelIndicationStr;
 		
+		// TODO XXX  abc124 create a new variable 
+		//						d1b_Anzahl_Mitarbeiter_Gründungsdatum_c, ->  d1b_AnzMit_Gründc 
+		//						d1_Anzahl_Mitarbeiter_Kunde_seit_c       ->  d1_AnzMit_Kundseitc
+		//                
 		for (int i=0;i<prepVarStrings.length;i++){
+			
 			newLabel = newLabel + prepVarStrings[i];
 			if (i<prepVarStrings.length-1){
 				newLabel = newLabel + "_" ;
 			}
 		} // all provided parts
-
+	
 		// loop: if this label already exists, we have to modify it inserting a char-enm (a,b,c)
 		//       just before the "_" , e.g. as d2b_ , from "dLevelIndicationStr"
 		
@@ -1064,17 +1820,31 @@ if (basevarLabel.contains("Bisher_c2")){
 		return newLabel;
 	}
 
-
+	/**
+	 * 
+	 * 
+	 * @param target  0=base data table , 1=normalized data table (the usual target)
+	 * @param srcVarTStack
+	 * @return
+	 */
 	private TransformationStack createAddVariableByCopy( int target, TransformationStack srcVarTStack){
 		return createAddVariableByCopy(target, srcVarTStack,"");
 	}
-	
-	private TransformationStack createAddVariableByCopy( int target, TransformationStack srcVarTStack, String proposedVariableName ) {
 
+	/**
+	 * 
+	 * 
+	 * @param target  0=base data table , 1=normalized data table (the usual target)
+	 * @param srcVarTStack
+	 * @param proposedVariableName
+	 * @return
+	 */
+	private TransformationStack createAddVariableByCopy( int target, TransformationStack srcVarTStack, String proposedVariableName ) {
+	
 		StackedTransformation st;
 		TransformationStack newTStack=null;
 		DataTable _dataTable;
-		int cn,newIndex,currentFormat,srcvarix=-1;
+		int newIndex,currentFormat,srcvarix=-1;
 		String varLabel, newVarLabel="" ;
 		Variable newVariable, v;
 		
@@ -1099,10 +1869,10 @@ if (basevarLabel.contains("Bisher_c2")){
 			} else{
 				_dataTable = somData.getNormalizedDataTable() ;
 			}
-
+	
 			// opening the derived column to the data table, will copy the data from the originating column
 			newIndex = _dataTable.addDerivedColumn( srcVarTStack, st,1 ) ;
-
+	
 			int[] colFormats = _dataTable.getFormats() ;
 			int[] newColFormats = new int[colFormats.length+1] ;
 			System.arraycopy(colFormats, 0, newColFormats, 0, colFormats.length) ;
@@ -1135,9 +1905,10 @@ if (basevarLabel.contains("Bisher_c2")){
 			newVariable.setDerived(true);
 			
 			srcVarTStack.setLatestFormat( currentFormat ) ; // no format change
+			_dataTable.getColumnHeaders().set(newIndex, newVarLabel);
 			
 			// else, we have to create a new TransformationStack that reflects the new variable
-			newTStack = new TransformationStack();
+			newTStack = new TransformationStack( sfProperties.getPluginSettings() );
 			newTStack.baseVariable = newVariable ;
 			newTStack.varLabel = newVarLabel ;
 			newTStack.setLatestFormat(currentFormat) ;
@@ -1169,432 +1940,6 @@ if (basevarLabel.contains("Bisher_c2")){
 		
 		return newTStack;
 	}
-	
-	 
-	
-	/**
-	 * 
-	 * this has to ake place in SomTransformer, because we need the reference to the variables. 
-	 * 
-	 * ... and adopting the out label name of the latest copy operator in the source stack
-	 * it looks for the transformation = stack item, that has the property outputColumnId = transformGuid
-	 * @param dataTableObj 
-	 * 					 
-	 * @param targetColGuid
-	 * @param adjLabel
-	 * @return 
-	 */
-	public boolean setOutcolumnLabelForLastWriter( int target, TransformationStack tstack, String targetColGuid, String adjLabel ) {
-		
-		boolean rB=false;
-		String idstr, initialOutColumnLabel="";
-		DataTable _dataTable;
-		
-		// which table (of type DataTable)? basic, or normalized
-		if (target==0){
-			_dataTable = dataTableObj;
-		} else{
-			_dataTable = somData.getNormalizedDataTable() ;
-		}
-		
-		
-		for (int i= tstack.items.size()-1;i>=0;i--){
-			
-			idstr = tstack.items.get(i).outputColumnId ;
-			if (idstr.contentEquals(targetColGuid)){
-				
-				initialOutColumnLabel = tstack.items.get(i).outputColumnLabel;
-				tstack.items.get(i).outputColumnLabel = adjLabel;
-				
-				rB=true;
-				break;
-			}
-			
-		} // i->
-		
-		if (initialOutColumnLabel.length()>0){
-			int ix = _dataTable.getColumnHeaders().indexOf(initialOutColumnLabel) ;
-			if (ix>=0){
-				_dataTable.getColumnHeaders().set(ix,adjLabel  );
-			}
-			// TODO: we even need a callback / event that allows us to update the added variables...
-			ix = somData.getVariables().getIndexByLabel( initialOutColumnLabel);
-			if (ix>=0){
-				String str ;
-				Variable v ;
-				
-				v = somData.getVariables().getItem(ix);
-				str = v.getLabel() ;
-				if (str.contentEquals(initialOutColumnLabel)){
-					v.setLabel( adjLabel );
-				}
-
-			}
-		}
-		 
-		return rB;
-	}
-
-
-	public void applyAprioriLinkChecking() {
-	 
-		try{
-			
-			
-			
-		}catch(Exception e){
-			
-		}
-	}
-
-
-	public void normalizeData(){
-		
-		int cn,i,n,sn,j;
-		boolean hb;
-		String varLabel;
-		StackedTransformation st;
-		TransformationStack varTStack;
-		Variable v;
-		Variables variables;
-		DataTable normedDataTable;
-		
-		try{
-			
-			/*
-			 *	the normalized table will still contain non-num columns,
-			 *  yet we will create an structural identifier, that contains only those headers which are numeric 
-			 */
-	
-			variables = somData.getVariables() ;
-			
-			cn = transformationModel.variableTransformations.size() ;
-			i = -1;
-			
-			while (i<cn-1){
-				i++;
-if (i>15){
-	n=0;
-}
-				varTStack = transformationModel.variableTransformations.get(i) ;
-				v = varTStack.baseVariable ;
-				
-				varLabel = v.getLabel() ;
-				variables.getAbsoluteAccessible().add(0) ;
-				
-				if (v.getRawFormat() > DataTable.__FORMAT_ORGINT){
-					variables.getAbsoluteAccessible().set(i,0) ;
-					variables.addBlacklistLabel( v.getLabel() ) ;
-					continue;
-				}
-				
-if (varLabel.toLowerCase().contains("id_c")){
-	n=0;
-}	
-				
-				if (v.getRawFormat() == DataTable.__FORMAT_ID){
-					// put to index candidates if it is not already there, and to blacklist					 
-					{
-						v.setIndexcandidate(true);
-						
-						if ( v.isDerived()){
-							variables.getAbsoluteAccessible().set(i,1) ;
-							variables.addBlacklistLabel(varLabel);
-						}else{
-							// ensure that raw values are transferred
-							sn = varTStack.items.size();
-							
-							if (sn==0){
-								varTStack.introduceAlgorithmizedStackPosition("MissingValues") ;
-							}
-							varTStack.update() ;
-						}
-						if ( v.isDerived()){
-							varTStack.introduceAlgorithmizedStackPosition("LinearNormalization") ;
-							varTStack.update() ;
-						}
-						
-						variables.addBlacklistLabel( v.getLabel() ) ;
-						continue;
-					}
-					
-				}
-				
-				variables.getAbsoluteAccessible().set(i,1) ;  
-				
-				// note that freshly added columns are automatically set to num
-				hb = (v.getRawFormat() > DataTable.__FORMAT_ID) && (v.getRawFormat() <= DataTable.__FORMAT_INT);
-				
-				if (hb){
-					hb = (varTStack.items.size()>0) ;
-				}
-				if (hb){
-					hb = varTStack.stackProvidesOutData() ;
-				}
-				if (hb){
-
-					 
-						// does it contain stdstats below of other transforms?  if not, add it
-						
-						hb = varTStack.checkDescriptionPosition();
-						
-						if (hb){
-							st = varTStack.introduceAlgorithmizedStackPosition("StandardStatistics") ;
-						}
-						
-						hb = varTStack.algorithmIsLatest("LinearNormalization");
-						
-						if (hb==false){
-							st = varTStack.introduceAlgorithmizedStackPosition("LinearNormalization") ;
-						}
-						varTStack.setFirstItemForUpdate( varTStack.items.size()-1);
-						varTStack.update();
-						j=0;
-					
-				} // format ?
-				
-			} // ->
-			
-			cn=0;
-			
-		}catch(Exception e){
-			e.printStackTrace() ;
-		}
-		 
-	}
-
-
-	/**
-	 * 
-	 * creating the table of normalized data:
-	 * - if a transformation stack is available && -> if a linear norm is at the end && -> [min,max] is from  [0,1]
-	 *   then take the values tron tstack
-	 * - else take values from raw datatable and set col to absoluteAccessible = -1  
-	 * 
-	 * @return
-	 */
-	@SuppressWarnings("unchecked")
-	public DataTable writeNormalizedData( ){  
-		 
-		String varLabel,errmsg="";
-		int i,cn,n,rc,vn,j,tix;
-		boolean emptyList,rawList;
-		TransformationStack varTStack;
-		Variable v;
-		Variables variables;
-		
-		DataTableCol col, colNorm;
-		ArrayList<String> colheaders;
-		ArrayList<Double> normvalues = new ArrayList<Double>();
-		ArrayList<DataTableCol> normDataTable;
-		
-		StackedTransformation st ;
-		
-		
-		try{
-		
-			dataTableNormalized = new DataTable(somData, true); // the whole object
-			// ------------------------------------------------
-			
-			variables = somData.getVariables() ;
-			cn = transformationModel.variableTransformations.size() ;
-			vn = variables.size() ; 
-			
-			dataTableNormalized.setSourceFileName( dataTableObj.getSourceFilename() );
-			dataTableNormalized.setTableHasHeader( dataTableObj.isTableHasHeader() ) ;
-			dataTableNormalized.setFormats( dataTableObj.getFormats().clone() ) ;
-			dataTableNormalized.setColcount( variables.size() ) ;
-			rc = dataTableObj.getRowcount();
-			dataTableNormalized.setRowcount( rc ) ;
-			
-				colheaders = new ArrayList<String>( dataTableObj.getColumnHeaders());
-				colheaders = variables.getLabelsForVariablesList(variables) ;
-			dataTableNormalized.setColumnHeaders( colheaders );
-			
-			normDataTable = dataTableNormalized.getDataTable();
-			
-			
-			
-			i = -1;
-			
-			while (i<cn-1){
-				i++;
-				normvalues.clear() ;
-				emptyList  =true;
-				rawList = false;
-				
-				varTStack = transformationModel.variableTransformations.get(i) ;
-				v = varTStack.baseVariable ;
-				varLabel = v.getLabel() ;
-if ((i>15)){
-	n=0;
-}
- 
-				colNorm = new DataTableCol(dataTableNormalized,i);
-				
-				if (v.getRawFormat() == DataTable.__FORMAT_ID){
-					colNorm.setIndexColumnCandidate(true);
-				}
-				
-				
-											errmsg = "variable: "+v.getLabel()+" , row : "+i ;
-				if ((variables.getAbsoluteAccessible().get(i)>=1) | (v.isDerived())){
-					
-					if (v.getRawFormat() == DataTable.__FORMAT_ID){
-						if (v.isDerived()==false){
-							normvalues = dataTableObj.getColumn( varLabel ).getCellValues(); 
-						}else{
-							normvalues = varTStack.getLatestColumnValues(1);
-						}
-						colNorm.setDataFormat(1) ;
-					}else{
-						
-						normvalues = varTStack.getLatestColumnValues(1) ; // 1 = mode of value checking (1=yes)
- 
-						colNorm.setDataFormat(1) ;
-						dataTableNormalized.getColumnHeaders().set(i, varTStack.varLabel);
-						
-					}
-					colNorm.setNumeric(true);
-				
-					
-				}else{
-					rawList = true;
-				}
-				
-				emptyList = (normvalues==null) || (normvalues.size()<=1) ;
-				
-				if (emptyList){
-					j=0; // all to -1 ; 
-					for (int k=0;k<rc;k++){
-						normvalues.add(-1.0) ;
-					}
-				}
-				
-				colNorm.setCellValues(normvalues) ;
-				colNorm.setSerialID(i) ;
-				normDataTable.add(colNorm);
-				
-			} // while ->
-			
-			tix=0;
-			
-			
-		}catch(Exception e){
-			out.printErr(1, errmsg);
-			e.printStackTrace();
-		}
-		
-		out.print(4, "SomTransformer instance @ writeNormalizedData : "+this.toString() ) ;
-		
-		return dataTableNormalized;
-	}
-
-
-	/**
-	 * 
-	 * basic normalization outside of transformation model
-	 * 
-	 * @param variables
-	 * @return
-	 */
-	public DataTable normalizeData( Variables variables) {
-		int z;
-		DataTableCol col, colNorm;
-		ArrayList<DataTableCol> inDataTable = dataTableObj.getDataTable();
-		ArrayList<DataTableCol> normDataTable;
-		
-		
-		try{
-			
-			dataTableNormalized = new DataTable(somData, true); // the whole object
-			
-			dataTableNormalized.setSourceFileName( dataTableObj.getSourceFilename() );
-			dataTableNormalized.setTableHasHeader( dataTableObj.isTableHasHeader() ) ;
-			dataTableNormalized.setFormats( dataTableObj.getFormats().clone() ) ;
-			dataTableNormalized.setColcount( dataTableObj.getColcount() ) ;
-			dataTableNormalized.setRowcount( dataTableObj.getRowcount() ) ;
-			dataTableNormalized.setColumnHeaders( new ArrayList<String>(dataTableObj.getColumnHeaders()) );
-			
-			normDataTable = dataTableNormalized.getDataTable();
-			
-			z=0;
-			
-			for (int i=0; i<inDataTable.size();i++){
-				
-				col = inDataTable.get(i);
-				
-				if ((col.getRecalculationIndicator()>0)){
-					
-					if (col.isIndexColumnCandidate()==false){
-						col.calculateBasicStatistics();
-					}
-					// ArrayList<Double> cellValues
-				}else{
-					continue;
-				}
-				
-				// we do not normalize index columns, we won't include it in the analysis anyway
-				col.setRecalculationIndicator(0);
-				colNorm = new DataTableCol(dataTableNormalized, col);//  dataTableNormalized, i
-				
-				if ((col.getDataFormat()<8) && (col.isIndexColumnCandidate()==false)){
-					
-					colNorm.normalize( col.getStatisticalDescription().getMini(), col.getStatisticalDescription().getMaxi() );
-	
-					// calculate stats for the normalized column
-					colNorm.calculateBasicStatistics();
-					// store the statistical description for the raw data in the column  
-					// that contain the normalized data... such we will be able to translate ! 
-					colNorm.setRawDataStatistics(col.getStatisticalDescription()) ;
-					colNorm.setNumeric(true);
-					colNorm.setDataFormat(1) ;
-					
-				}else{
-					col.setRecalculationIndicator(-3); // ignore, like blacklisted variables
-					colNorm.setDataFormat(17) ;
-				}
-				
-				colNorm.setSerialID(i) ;
-				normDataTable.add(colNorm);
-				 
-			} // all columns
-			
-			z=0 ;
-			
-			
-			
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-		return dataTableNormalized;
-	}
-
-
-	public void setDataTable( DataTable inDatatable ) {
-		 
-		try{
-			
-			// creates a deep clone with content of inDatatable 
-			dataTableObj = new DataTable( inDatatable ) ; 
-			
-		}catch(Exception e){
-			
-		}
-	}
-
-
-	public DataTable getDataTableNormalized() {
-		return dataTableNormalized;
-	}
-
-
-	/**
-	 * @return the addedVariablesByIndex
-	 */
-	public ArrayList<Integer> getAddedVariablesByIndex() {
-		return addedVariablesByIndex;
-	}
 
 
 	class SomTransformerInitialization{
@@ -1620,3 +1965,6 @@ if ((i>15)){
 		}
 	}
 }
+
+
+ 

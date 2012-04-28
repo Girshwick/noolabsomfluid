@@ -18,8 +18,10 @@ public class Variable implements Serializable{
 	
 	private int index ; 
 
-	private int valueScaleNiveau = 0 ;
-	private int rawFormat = -1;
+	private int valueScaleNiveau = 0 ;    
+	private int rawFormat = -1; 
+	// one of the value as defined as constants in DataTable
+	// e.g. __FORMAT_INT = 2;  __FORMAT_ORD = 3;
 	
 	private double minimum;
 	private double maximum;

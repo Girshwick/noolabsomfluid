@@ -2,6 +2,7 @@ package org.NooLab.somfluid.components;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
@@ -16,6 +17,7 @@ import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.OptimizerSettings;
 import org.NooLab.somscreen.EvoBasics;
 import org.NooLab.somscreen.EvoMetrices;
+import org.NooLab.somscreen.EvoMetrik;
 import org.NooLab.somscreen.SomQuality;
 import org.NooLab.somscreen.SomQualityData;
 import org.NooLab.utilities.ArrUtilities;
@@ -65,6 +67,7 @@ public class SomModelDescription implements Serializable{
 	ArrUtilities arrutil = new ArrUtilities ();
 
 	private boolean completeCheck = false;
+
 	
 	
 	// ========================================================================
@@ -110,11 +113,15 @@ public class SomModelDescription implements Serializable{
 
 	private void dedicatedVariableChecking() {
 		
-		dedicatedVariableCheck( -1 );
+		ContributionChecks cochk = new ContributionChecks();
 		
-		if (completeCheck){
-			dedicatedVariableCheck( 1 );
+		cochk.start() ;
+		
+		while (cochk.checkingIsRunning==false){
+			out.delay(100);
 		}
+		
+		
 		
 		classifyingContributions();
 	}
@@ -131,13 +138,14 @@ public class SomModelDescription implements Serializable{
 	 * 
 	 * </br></br>
 	 * control parameter :
-	 *  &lt;0 : removing single variables of the base metric;</br> 
-	 *  &gt;0 : adding non-blacklisted variables
+	 *  &lt;0 : check by removing single variables of the base metric;</br> 
+	 *  =1 : check by adding non-blacklisted variables, from top 10 of metrices, which are not used in the best one (="baseMetric")
+	 *  &gt;2 : check by adding non-blacklisted variables (could be expensive in case of large initial sets)
 	 * 
 	 * @param mode 
 	 */
+	@SuppressWarnings("unused")
 	private void dedicatedVariableCheck( int mode ) {
-		 
 		 
 		String selectedVariable,str;
 		boolean isNewBest ;
@@ -156,7 +164,6 @@ public class SomModelDescription implements Serializable{
 		System.gc();
 		
 		try{
-			
 			  								out.print(2, "...\nSomModelDescription, dedicatedVariableCheck(): a posteriori test for contribution per variable...\n ");
 				
 				baseMetricIndexes = variables.getIndexesForLabelsList(currentVariableSelection) ; 
@@ -188,10 +195,19 @@ public class SomModelDescription implements Serializable{
 					av = variables.determineAddedVariables( previousUseVector, uv, false);
 					rv = variables.determineRemovedVariables( previousUseVector, uv,false);
 					
-					results = performSingleRun(z);  //  
-										
+					
+					          System.gc(); out.delay(100) ;  
+					results = performSingleRun(z);  // TODO : object separation, takes incredible long !!!! 
+					/*
+					 * how is it done in SomScreener ?? check threads... 
+					 * the difference is that in SomScreener it runs in a further encapsulating thread ("EvolutionarySearch")
+					 */ 
 					// ..................................................
-
+					
+					// sqdata = null -> how to fill it ... check SomScreener ...
+					// evoMetrices.getBestResult().getSqData() ==  EvoMetrik.SomQualityData sqData
+					
+					
 					if (results.getTrainingSample().getObservationCount()<8 ){
 						continue;
 					}
@@ -204,7 +220,7 @@ public class SomModelDescription implements Serializable{
 					_evometrices.registerMetricChangeEffects(av, rv, true);
 					_evometrices.registerMetricAsExplored(uv);
 					
-
+											Collections.sort(proposedSelection);
 											str = arrutil.arr2text(proposedSelection);
 											out.printErr(1, "proposed Selection: "+str+"\n") ;	
 				
@@ -219,11 +235,36 @@ public class SomModelDescription implements Serializable{
 					Variable v = somData.getVariables().getItemByLabel( selectedVariable ) ; 
 					VariableContribution vc = new VariableContribution( variableContributions, v );
 					
+					int resultsAvailable= 1;
+					// one of them is null???
+					if (variableContributions==null){
+						str = "variableContributions = null";  out.printErr(2, str) ;
+						resultsAvailable= 0;
+					}
+					if (resultsAvailable== 0){
+						out.printErr(2, "proposed selection has been skipped...") ;
+						continue;
+					}
+					
+					
+					EvoMetrik em = evoMetrices.getItems().get( evoMetrices.size()-1) ;
+					double _cScore = em.getSqData().getScore() ;
+					
+					results.sqData = new SomQualityData( em.getSqData() );
+					
 					vc.scoreDelta = variableContributions.baseScore - results.sqData.getScore() ;
+					 
 					vc.sqData = new SomQualityData( results.sqData ) ; 
 					
 					variableContributions.getItems().add(vc);
 					
+					int zn = somProcess.getSomLattice().nodes.size();
+					zn = somProcess.getSomLattice().nodes.size();
+					
+					// somProcess.getSomLattice().refreshDataSourceLink();
+					// somProcess.getSomLattice().reInitNodeData(0);
+					
+					evoMetrices.close() ;
 					System.gc();
 					i++;
 				} // i-> all items from provided list
@@ -238,6 +279,9 @@ public class SomModelDescription implements Serializable{
 			 
 			 
 		}catch(Exception e){
+			str="";
+			out.printErr(2, str);
+			
 			e.printStackTrace() ;
 		}
 		
@@ -269,7 +313,7 @@ public class SomModelDescription implements Serializable{
 		_task.setNoHostInforming(true);
 		
 		if (somProcess!=null){
-			// clear the extensionality of the lattics
+			// clear the extensionality of the lattice
 		}
 		
 		
@@ -291,12 +335,44 @@ public class SomModelDescription implements Serializable{
 		somResults.setIndex(index);
 		
 		somProcess.clear();
-		
+		simo = null; // ??
+		System.gc(); out.delay(100) ;
 		return somResults;
 	}
 
 
+	class ContributionChecks implements Runnable{
+		
+		SomQuality somquality;
+		Thread contriChkThrd;
+		boolean checkingIsRunning;
+		
+		public ContributionChecks(){
+			contriChkThrd = new Thread(this, "contchkThrd") ;
+		}
+		
+		public void start() {
+		 
+			contriChkThrd.start() ;
+		}
 
+	 
+		@Override
+		public void run() {
+			 
+			checkingIsRunning = true;
+			
+			dedicatedVariableCheck( -1 );
+			
+			if (completeCheck){
+				dedicatedVariableCheck( 1 );
+			}
+			
+			checkingIsRunning = false;
+		}
+	
+		
+	}
 	/**
 	 * @return the completeCheck
 	 */

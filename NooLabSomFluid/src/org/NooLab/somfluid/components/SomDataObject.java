@@ -26,7 +26,7 @@ import org.NooLab.somfluid.env.data.DataReceptor;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.somtransform.algo.AdaptiveDiscretization;
-import org.NooLab.somtransform.algo.EmpiricDistribution;
+import org.NooLab.somtransform.algo.distribution.EmpiricDistribution;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.files.FileDataSource;
@@ -919,6 +919,7 @@ public class SomDataObject 	implements
 			
 			// --- transforming data ------------------------------------------
 			
+			// this creates a clone of the DataTable !
  			transformer.setDataTable(data) ;
 			
  			// no transformations are applied here, just Transform.Stacks initialized, MV+StdStats prepared, 
@@ -941,6 +942,7 @@ public class SomDataObject 	implements
 			transformer.normalizeData(); // just adding everywhere LinNorm, caring for output data
 			
 			// creating the usable table as an instance of DataTable
+			// should also be a clone? in order to decouple process interferences?
 			normalizedSomData = transformer.writeNormalizedData() ; 
 			normalizedSomData.setName("normalized table");
 			
@@ -948,11 +950,17 @@ public class SomDataObject 	implements
 			// shifting distributions (kurtosis, skewness), 
  			// splitting (deciling) variables based on histogram splines, outlier compression, NVE (thus quite expensive) 
  			// this also extends the basic transformer model
- 			// will add a LinNorm at the end if necessary
+ 			// will draw a copy from numerical columns and add a LinNorm at the end if necessary
 			
-				transformer.applyBasicNumericalAdjustments();
-			}
+				 
+				transformer.applyAdvNumericalTransforms();
 
+				/*
+				//again writing the table containing the normalized data
+				normalizedSomData = transformer.writeNormalizedData() ; 
+				normalizedSomData.setName("normalized table");
+				*/
+			}
 			
 			normalizedSomData.createRowOrientedTable( ) ;
 			

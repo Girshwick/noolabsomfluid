@@ -90,6 +90,13 @@ public class DateConverter extends AlgoTransformationAbstract  {
 		
 		return r;
 	}
+
+
+	@Override
+	public String getDescription() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 	
 	

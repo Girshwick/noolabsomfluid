@@ -339,7 +339,7 @@ public class PCA {
 				}
 			}
 		}
-		selectedIx = ArrUtilities.changeArraystyle(selix) ;
+		selectedIx = (int[]) ArrUtilities.changeArraystyle(selix) ;
 		
 		return selectedIx;
 	}

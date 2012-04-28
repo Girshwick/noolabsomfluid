@@ -2,11 +2,7 @@ package org.NooLab.somtransform.algo;
 
 import java.util.ArrayList;
 
-import org.NooLab.somtransform.DataDescription;
 import org.NooLab.somtransform.algo.intf.AlgoTransformationAbstract;
-import org.NooLab.somtransform.algo.intf.AlgoTransformationIntf;
-import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
-import org.NooLab.somtransform.algo.intf.AlgorithmParameter;
 
 
 public class LinearNormalization extends AlgoTransformationAbstract {
@@ -34,8 +30,8 @@ public class LinearNormalization extends AlgoTransformationAbstract {
 	public int calculate() {
 		int result = -1;
 		double v, vr, _min, _max;
-		
-		outvalues.clear();
+		boolean hb;
+		 
 		
 		// get parameters 
 		_min = dataDescription.getMin() ;
@@ -45,26 +41,33 @@ public class LinearNormalization extends AlgoTransformationAbstract {
 			return -2;
 		}
 		
+			
 		// perform linear normalization
 		try{
-			
+			if (outvalues==null){
+				outvalues = new ArrayList<Double>();
+			}
 			outvalues.clear() ;
 			
 			for (int i=0;i<values.size(); i++){
 				
 				v = (Double)values.get(i) ;
+				// NOT here in LinNorm!!! but in any other algorithm... v = handlingRangeProtection(v);
 				
 				if ( v!= -1.0 ){
+					
+					// the actual calculation ...
 					if (_max - _min == 0.0){
 						vr = 0.0 ;
 					}else{
 						vr = (v- _min)/(_max - _min) ;
 					}
+					
+					hb = setCalculationResultValue(i,vr) ;
+					// put value to outvalues<>
 				} else{
-					vr = -1.0 ;
+					setCalculationResultValue(i,-1.0) ;
 				}
-				
-				outvalues.add(vr);
 				
 			}// -> all values
 			
@@ -81,13 +84,22 @@ public class LinearNormalization extends AlgoTransformationAbstract {
  
 
 	@Override
-	public void setParameters(ArrayList<Object> params) {
-		// TODO Auto-generated method stub
-		
+	public void setParameters(ArrayList<Object> params) throws Exception {
+		if ((params==null) || (params.size()==0)){
+			return;
+		}
 	}
+	
 
 	@Override
 	public ArrayList<Double> getDescriptiveResults() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	@Override
+	public String getDescription() {
 		// TODO Auto-generated method stub
 		return null;
 	}

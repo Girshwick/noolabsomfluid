@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.NooLab.somfluid.SomFluidPluginSettings;
 import org.NooLab.somtransform.algo.clazz.AlgoClassLoader;
 import org.NooLab.somtransform.algo.intf.AlgoColumnWriterIntf;
 import org.NooLab.somtransform.algo.intf.AlgoMeasurementIntf;
@@ -17,11 +18,11 @@ import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
  * 
  * a "StackedTransformation" is a container that provides 1 out of 3 possible standardized interfaces:
  * 
- * - for purely passive measurement like StandardStatistics, no transformation is applied
+ * - for purely passive measurement like StatisticalDescriptionStandard (formerly: StandardStatistics), no transformation is applied
  * - a classical transformation, holding a column of in-values, 1+ buffered columns of values and precisely 1 column of out-values 
  * - for generating columns: as a simply copy of values into a new column, or writing  
  * 
- * column writers are used to create new columns on behalf of preceeding algorithms that produce several columns
+ * column writers are used to create new columns on behalf of preceding algorithms that produce several columns
  * 
  * The division of labor and structure is organized in this way: 
  *                                "StackedTransformation"    Algorithm
@@ -34,10 +35,17 @@ public class StackedTransformation  implements Serializable{
  
 	private static final long serialVersionUID = 3159521555594775507L;
 
+	transient SomFluidPluginSettings pluginSettings ;
+	transient TransformationEnvIntf transformOriginator ;
+	
 	/** its indeed an ID , not an index position ! */
 	int serialID = -1; 
 	String idString;
 	
+	
+	/**  this package path we have to make dynamic */ 
+	String packagePath = "org.NooLab.somtransform.algo." ;
+
 	
 	/** Reflection is used to create an instance  */
 	String algorithmName = "";
@@ -65,7 +73,10 @@ public class StackedTransformation  implements Serializable{
 	int inFormat  = -1 ;
 	int outFormat = -1 ;
 
-	DataDescription dataDescription ;
+	/** count of missing values in in-data [=0] or out-data [=1] */
+	int[] mvCount= new int[2];
+	
+	DataDescription dataDescription = new DataDescription();
 
 	public boolean multiVarInput = false;
 
@@ -73,7 +84,10 @@ public class StackedTransformation  implements Serializable{
 	
 	
 	// ========================================================================
-	public StackedTransformation(){
+	public StackedTransformation( SomFluidPluginSettings pluginsettings){
+		// we need access to pluginsettings 
+		pluginSettings = pluginsettings ;
+		transformOriginator = pluginSettings.getTransformationOriginator() ;
 		
 	}
 	// ========================================================================
@@ -86,6 +100,7 @@ public class StackedTransformation  implements Serializable{
 		// Method[] mm;
 		
 		try {
+			 
 			 
 		    algorithm = loadAlgoClass( algorithmName, algorithmType );
 
@@ -178,6 +193,7 @@ public class StackedTransformation  implements Serializable{
 	public void setStackPosForInData(int stackPosForInData) {
 		this.stackPosForInData = stackPosForInData;
 	}
+
 
 
 
@@ -298,6 +314,15 @@ public class StackedTransformation  implements Serializable{
 
 
 
+	/**
+	 * @return the dataDescription
+	 */
+	public DataDescription getDataDescription() {
+		return dataDescription;
+	}
+
+
+
 	public void _main() throws Exception {
 	   // String s = getInstanceOf(String.class);
 	}
@@ -314,22 +339,47 @@ public class StackedTransformation  implements Serializable{
 															IllegalAccessException, 
 															InstantiationException {
 		
-		ClassLoader parentClassLoader ;
+		ClassLoader parentClassLoader = null ;
 		AlgoClassLoader classLoader ;
+		
+		Class algoObjectClass = null;
 		
 		AlgoColumnWriterIntf algoWriterObject = null ;
 		AlgoTransformationIntf algoValueTransformObject = null ;
 		AlgoMeasurementIntf algoMeasureObject=null;
 		AlgorithmIntf algoGenObject=null;
 		
-		String packagePath = "org.NooLab.somtransform.algo." ;
-		String classToLoad = packagePath + algoname ;
+		String classToLoad ;
 		
-		parentClassLoader = AlgoClassLoader.class.getClassLoader();
-		classLoader = new AlgoClassLoader(parentClassLoader);
+		// is it a plugin class ?
 		
-		Class algoObjectClass = classLoader.loadClass( classToLoad );
+		 
+		if (transformOriginator.isAlgorithmPluggedin(algoname)){
+			
+			// classToLoad = packagePath + algoname ;
+			
+			// use "algoname" to look up in pluginSettings.getLoadedPluginClasses()
+			algoObjectClass = transformOriginator.getPluginClassByName(algoname) ;
+			classLoader = new AlgoClassLoader( algoObjectClass.getClassLoader());
+			parentClassLoader =	classLoader.getParent() ; 
+			
+			classToLoad = algoObjectClass.getName() ;
+			
+			// TODO and now we have to create a further instance for the next request, otherwise
+			//      the permanent settings will overlap, and no parallel execution would be possible
+			
+			
+		}else{
+			classToLoad = packagePath + algoname ;
+			
+			parentClassLoader = AlgoClassLoader.class.getClassLoader();
 
+			classLoader = new AlgoClassLoader(parentClassLoader);
+
+			algoObjectClass = classLoader.loadClass(classToLoad);
+		}
+		
+		/*
 		if (algorithmType == AlgorithmIntf._ALGOTYPE_GENERIC){
 			// this is just used for reading/returning the type of the desired algorithm
 			algoGenObject  = (AlgorithmIntf) algoObjectClass.newInstance();
@@ -344,10 +394,10 @@ public class StackedTransformation  implements Serializable{
 		if (algorithmType == AlgorithmIntf._ALGOTYPE_WRITER){
 			algoWriterObject = (AlgoColumnWriterIntf) algoObjectClass.newInstance();
 		}
-
+		*/
 		// create new class loader so classes can be reloaded.
-		classLoader = new AlgoClassLoader(parentClassLoader);
-		algoObjectClass = classLoader.loadClass( classToLoad );
+		// classLoader = new AlgoClassLoader(parentClassLoader);
+		// algoObjectClass = classLoader.loadClass( classToLoad );
 
 		Object algoObject = null;
 		
@@ -389,6 +439,18 @@ public class StackedTransformation  implements Serializable{
 	 */
 	public void setOutputColumnId(String outputColumnId) {
 		this.outputColumnId = outputColumnId;
+	}
+
+
+
+	public String getPackagePath() {
+		return packagePath;
+	}
+
+
+
+	public void setPackagePath(String packagePath) {
+		this.packagePath = packagePath;
 	}
 
  

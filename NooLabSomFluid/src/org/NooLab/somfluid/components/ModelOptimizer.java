@@ -33,7 +33,12 @@ import org.apache.commons.collections.CollectionUtils;
  * note that the particle field remains the same, but the event sink is reestablished anew each time
  * when the child has been created 
  * 
- * TODO: checking the top metrices against different samples and selecting the most robust one
+ * TODO: - checking the top metrices against different samples and selecting the most robust one
+ *       - checking a model where sprite variables are replaced by their raw parents
+ *         - one by one
+ *         - all at once
+ *         -> this provides the argument that the sprite contains more information that the mere difference (opposing Minsky's difference engine)
+ *          
  */
 public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 
@@ -201,7 +206,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			EvoBasics _evoBasics =null ;
 			EvoMetrices _evoMetrices=null;
 			// ArrayList<CandidateTransformation> lastDependencyProposals;
-			ArrayList<AnalyticFunctionSpriteImprovement> lastDependencyProposals = null;
+			AnalyticFunctionTransformationsIntf lastDependencyProposals = null;
 			
 			PowerSetSpringSource pset;
 			currentVariableSelection = modelingSettings.getInitialVariableSelection() ;
@@ -210,11 +215,12 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			somLattice = somProcess.getSomLattice();
 
 			// ................................................................
+			
 			int z=0;
 			while ((done==false) && (somFluid.getUserbreak()==false)){
 				
 				
-				// after any sprite+evo opti, a further pair of sprite+evo opti may yield even better results 
+				// after any sprite+evo optimization, a further pair of sprite+evo opti may yield even better results 
 				if (modelingSettings.getMaxL2LoopCount()>0){
 					
 											// out.print(2, "variables(a1) n = "+somDataObj.variables.size()	);
@@ -273,6 +279,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 											out.print(4, "somDataObj, size of variableLabels (b) : "+vn);
 											
 						evoMetrices = somScreening.getEvoMetrices() ;	
+						evoMetrices.sort( EvoMetrices._SORT_SCORE,-1 );
 						
 						_mScore1 = evoMetrices.getBestResult().getSqData().getScore();
 						
@@ -282,13 +289,12 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 							_mScore2 = _mScore1 ;
 						}
 						
-						
+						// TODO does this work ? in second run, counts start at zero...
 						_evoMetrices = integrateEvoMetricHistories( _evoMetrices, evoMetrices) ;
 						
 						evoBasics = somScreening.getEvoBasics() ;
 						_evoBasics = new EvoBasics(evoBasics);
 						
-						evoMetrices = somScreening.getEvoMetrices() ;
 						evoMetrices.sort( EvoMetrices._SORT_SCORE,-1 );
 						
 					} // checking variable metrices ? == modelingSettings.getEvolutionaryAssignateSelection() ?
@@ -305,15 +311,20 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 						
 						dependencyCheck = new SomSprite( somDataObj, somTransformer, sfProperties);
 						
-						//  salesorg is exported int sommaptable as column 0, but is completely 0 
-						dependencyCheck.acquireMapTable( somLattice.exportSomMapTable(11) );
-						dependencyCheck.addProposalsAsKnown(lastDependencyProposals) ;
+						// 
+						SomMapTable smt = somLattice.exportSomMapTable(11); // 1+10 = 11: sort mode 1,  
+						dependencyCheck.acquireMapTable( smt ); 
+						if (lastDependencyProposals!=null){
+							dependencyCheck.addProposalsAsKnown( lastDependencyProposals.getItems()) ;
+						}else{
+							//  nothing, it is ???
+						}
 						
 						// TODO check that... returns the same proposals even with a different sommap
 						dependencyCheck.startSpriteProcess( modOpti,1 );
 						
 						candidatesOK = false;
-						if ((dependencyCheck!=null) && (dependencyCheck.getCandidates()!=null) && (dependencyCheck.getCandidates().size()!=0)){
+						if ((dependencyCheck!=null) && (dependencyCheck.getCandidates()!=null) && (dependencyCheck.getCandidates().getItems().size()!=0)){
 							candidatesOK = true;
 						}else{
 							// if no additional derived variables -> we may exit the L2-loop 
@@ -359,7 +370,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 											out.print(4, "somDataObj, size of variableLabels (f) : "+vn);
 
 					
-					_mozResults = null ;
+					_mozResults = null ; // -> checking whether evocounts are taken in/from previous run ?
 					
 					// 
 					somScreening.close();
@@ -380,8 +391,15 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			
 			evoMetrices = _evoMetrices;
 											String str = arrutil.arr2text( evoMetrices.getBestResult().getVarIndexes());
+											// translate into variable names
+											ArrayList<String> mlabels= somDataObj.variables.getLabelsForIndexList(evoMetrices.getBestResult().getVarIndexes()) ;
+											
+											String vstr =  arrutil.arr2text(mlabels, ",");
+											
 											double _score = Math.round( 1000.0 * evoMetrices.getBestResult().getActualScore())/1000.0 ;
 											out.printErr(2, "best model (score: "+_score+"): "+str );
+											out.print(2, "variable labels : "+vstr +"\n ");
+											                 
 											
 			somQuality = somScreening.getSomQuality();
 			
@@ -391,6 +409,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 				
 				populationExplorer = new ParetoPopulationExplorer( moptiParent );
 				populationExplorer.explore();
+				
 				
 				modelDescription = new SomModelDescription( moptiParent );
 				modelDescription.setInitialVariableSelection( currentVariableSelection  ) ;
@@ -455,6 +474,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			
 			int ec,ec1, ec2;
 			double ew1,ew2, ew;
+			
 			// first integrating positions into em2 (which is always longer by ADDED positions) based on counts of em1 
 			for (int i=0;i<eb1.getEvolutionaryCounts().size();i++){
 				ec1 = eb1.getEvolutionaryCounts().get(i) ;
@@ -542,32 +562,23 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			
 			SomTargetedModeling targetedModeling;
 			
+			sfTask.setCallerStatus(0) ;
 			
-			try{
-				
+			targetedModeling = new SomTargetedModeling( modOpti, sfFactory, sfProperties, sfTask, serialID);
+			
+			targetedModeling.setSource(0);
+			
+			targetedModeling.prepare(usedVariables);
+			
+			String guid = targetedModeling.perform(0);
+			
+			out.print(2, "\nSom ("+z+") is running , identifier: "+guid) ; 
 
-				sfTask.setCallerStatus(0) ;
-				
-				targetedModeling = new SomTargetedModeling( modOpti, sfFactory, sfProperties, sfTask, serialID);
-				
-				targetedModeling.setSource(0);
-				
-				targetedModeling.prepare(usedVariables);
-				
-				String guid = targetedModeling.perform(0);
-				
-				out.print(2, "\nSom ("+z+") is running , identifier: "+guid) ; 
-
-				while (targetedModeling.isCompleted()==false){
-					out.delay(10);
-				}
-				targetedModeling.clear() ;
-				targetedModeling = null;
-				
-			}catch(Exception e){
-				e.printStackTrace();
+			while (targetedModeling.isCompleted()==false){
+				out.delay(10);
 			}
-			
+			targetedModeling.clear() ;
+			targetedModeling = null;
 	}
 
 	

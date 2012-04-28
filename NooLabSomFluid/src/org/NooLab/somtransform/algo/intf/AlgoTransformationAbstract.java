@@ -12,7 +12,7 @@ abstract public class AlgoTransformationAbstract implements AlgoTransformationIn
 	private static final long serialVersionUID = 2971433693993395455L;
 
 	int typeInfo = AlgorithmIntf._ALGOTYPE_VALUE ;
-	
+	 
 	// ....................................................
 
 	protected DataDescription dataDescription;
@@ -26,27 +26,72 @@ abstract public class AlgoTransformationAbstract implements AlgoTransformationIn
 	
 	protected boolean isStrData ;
 	
+	protected int rangeViolationHandlingMode = AlgorithmIntf._ALGO_RANGEVIOLATION_AUTOCORRECT ;
+	protected int rangeViolationCounter=0;
+	
 	protected boolean hasParameters = false; // will be true in case of algos like NumValEnum
 	
 	protected AlgorithmParameters parameters ; 
 	
+	protected String autoDescription = "" ;
+	
 	// ------------------------------------------------------------------------
 	public AlgoTransformationAbstract(){
-		
+		parameters = new AlgorithmParameters( this) ;
 	}
 	// ------------------------------------------------------------------------
 	 
-
+	@Override
+	public double handlingRangeProtection( double value){
+		
+		if ((value<0) || (value>1.0)){
+			if (value!=1.0){
+				rangeViolationCounter++;
+			}
+			if (rangeViolationHandlingMode == AlgorithmIntf._ALGO_RANGEVIOLATION_EXCEPTION){
+				
+			}
+			if (rangeViolationHandlingMode == AlgorithmIntf._ALGO_RANGEVIOLATION_DROPVALUE){
+				value = -1.0 ;
+			}
+			if (rangeViolationHandlingMode == AlgorithmIntf._ALGO_RANGEVIOLATION_AUTOCORRECT){
+				if ((value<0) || (value!=1.0)){
+					value=0.0;
+				}
+				if (value>1.0){
+					value = 1.0 ;
+				}
+			}
+		}
+		
+		return value;
+	}
+	
 	@Override
 	public int getType() {
 		return typeInfo;
 	}
+	
+	abstract public String getDescription() ;
 	
 	
 	@Override
 	public void setDatDescription(DataDescription datadescription) {
 		
 		dataDescription = datadescription; 
+	}
+	
+	
+	protected boolean setCalculationResultValue(int index, double value) {
+		boolean rB=true;
+		
+		if (index < outvalues.size()) {
+			outvalues.set(index , value);
+		} else {
+			outvalues.add(value);
+		}
+		
+		return rB;
 	}
 	
 	
@@ -130,13 +175,18 @@ abstract public class AlgoTransformationAbstract implements AlgoTransformationIn
 	
 	
 	@Override
-	public void setParameters(ArrayList<Object> params) {
+	public void setParameters(ArrayList<Object> params) throws Exception {
 		 
 		Object obj ;
 		String cn, str;
 		AlgorithmParameter algoparam ;
 		
 		str="";
+		if ((params!=null) && (params.size()>0)){
+			if (parameters==null){
+				parameters = new AlgorithmParameters( this) ;
+			}
+		}
 		
 		for (int i=0;i<params.size();i++){
 			
@@ -160,11 +210,38 @@ abstract public class AlgoTransformationAbstract implements AlgoTransformationIn
 				continue;
 			}
 			if (cn.toLowerCase().contains("double[]")){
+
+				double[] numvalues = (double[])(obj);
+
+				algoparam = new AlgorithmParameter();
+				algoparam.setNumValues(numvalues) ;
+				parameters.add(algoparam);
+
 				continue;
 			}
+			
+			if (cn.toLowerCase().contains("int")){
+				
+				int numvalue = (int)((Integer)obj);
+				
+				algoparam = new AlgorithmParameter();
+				algoparam.setNumValue( (double)numvalue ) ;
+				parameters.add(algoparam);
+
+				continue;
+			}
+			
 			if (cn.toLowerCase().contains("double")){
+				
+				double numvalue = (double)((Double)obj);
+				
+				algoparam = new AlgorithmParameter();
+				algoparam.setNumValue(numvalue) ;
+				parameters.add(algoparam);
+
 				continue;
 			}
+
 			if (cn.toLowerCase().contains("arraylist")){
 				continue;
 			}
@@ -176,6 +253,20 @@ abstract public class AlgoTransformationAbstract implements AlgoTransformationIn
 			parameters.add(algoparam);
 		}
 		
+	}
+	
+	public String[] showAvailableParameters() {
+		String[] paramsDescription = new String[0];
+		return paramsDescription;
+	}	
+	
+
+	public int getRangeViolationCounter() {
+		return rangeViolationCounter;
+	}
+
+	public void setRangeViolationCounter(int rvCounter) {
+		this.rangeViolationCounter = rvCounter;
 	}
 	
 }

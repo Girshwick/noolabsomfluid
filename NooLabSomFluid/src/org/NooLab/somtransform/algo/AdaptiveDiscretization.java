@@ -20,6 +20,7 @@ import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somtransform.algo.distribution.DistributionBin;
 import org.NooLab.somtransform.algo.distribution.Distributions;
+import org.NooLab.somtransform.algo.distribution.EmpiricDistribution;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.math3.distribution.EmpiricalDistribution;
 
@@ -101,6 +102,7 @@ public class AdaptiveDiscretization implements FrequencyListGeneratorIntf {
 		
 		EmpiricDistribution distribution = new EmpiricDistribution( distributions );
 		DistributionBin bin ;
+		// this is from package org.NooLab.math3.distribution, which is derived from commons.math
 		EmpiricalDistribution empiricsDens = new EmpiricalDistribution( 100 );
 		
 		aValues = new double[sampleRecordIndexes.size()];
@@ -126,6 +128,7 @@ public class AdaptiveDiscretization implements FrequencyListGeneratorIntf {
 
 		// for all bins we retrieve the "SummaryStatistics"  
 		for (int i=0;i<bstats.size();i++){
+			
 			bstats.get(i) ;
 			n = bstats.get(i).getN();
 			

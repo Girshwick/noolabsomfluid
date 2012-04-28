@@ -3,6 +3,9 @@ package org.NooLab.somfluid.util;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.components.MissingValues;
+import org.NooLab.somtransform.algo.distribution.EmpiricDistribution;
+import org.NooLab.utilities.ArrUtilities;
+import org.apache.commons.math.stat.descriptive.StatisticalSummary;
 
 import flanagan.analysis.Regression;
 import flanagan.analysis.RegressionFunction;
@@ -70,11 +73,13 @@ public class BasicStatistics {
 	}
 	
 	public void calculate() {
+		
 		// flanagan.analysis.Stat for static methods for higher stats
 		BasicStatisticalDescription sd;
 		int z=0;
 		double dv;
 		double[] dvs ;
+		ArrayList<Double> dvsList = new ArrayList<Double>(); 
 		Regression reg ;
 		
 		sd = statisticalDescription;
@@ -84,9 +89,9 @@ public class BasicStatistics {
 		sd.mini = 9999999999999999.9;
 		sd.maxi = -9999999999999999.9;
 		
-		dvs = new double[values.size()] ;
+	 
 		
-		// note that cellvalues do NEVER contain the header
+		// note that cell values do NEVER contain the header
 		for (int i=startIndex; i<=endIndex; i++ ){
 			
 			dv = values.get(i); 
@@ -102,10 +107,14 @@ public class BasicStatistics {
 			if (sd.mini>dv) sd.mini=dv;
 			if (sd.maxi<dv) sd.maxi=dv;
 
-			dvs[z] = dv;
+			dvsList.add( dv );
 			z++;
 		} // i -> all values
-
+		
+		// dvs now contains only value != MV !!!
+		dvs = (double[])ArrUtilities.changeArraystyle(dvsList);
+			  dvsList.clear();dvsList.trimToSize() ;dvsList=null;
+		
 		if (z<=0){
 			return;
 		}
@@ -119,7 +128,7 @@ public class BasicStatistics {
 		}else{
 			sd.cov = 0;
 		}
-		
+		// Stat is from flanagan library ...
 		sd.geoMean = Stat.harmonicMean(dvs) ;
 		sd.median = Stat.median( dvs);
 		sd.kurtosis = Stat.kurtosis(dvs) ;
@@ -127,9 +136,39 @@ public class BasicStatistics {
 		
 		double binWidth = (sd.maxi - sd.mini)/sd.histogramResolution;
 		if (binWidth >0){
+			
+			
 			// [0] = bins
-			// [1] = data
-			sd.histogramValues = Stat.histogramBins(dvs, binWidth) ;
+			// [1] = data as frequs
+			// [2] = relative frequs
+			
+			int n = dvs.length ;
+			double[][] _histogramValues = Stat.histogramBins(dvs, binWidth) ;
+			
+			System.arraycopy(_histogramValues[0], 0, sd.histogramValues[0], 0, sd.histogramValues[0].length);
+			System.arraycopy(_histogramValues[1], 0, sd.histogramValues[1], 0, sd.histogramValues[0].length);
+			
+			// count 0's, values different from zero's , longest sequence of zero's and non-zero's , mean and stdev of that
+			int vn = Math.min( _histogramValues[0].length, sd.histogramValues[0].length) ;
+			// relative values for histogram for further calculations
+			for (int i=0;i<vn;i++){
+				sd.histogramValues[2][i] = (_histogramValues[1][i]/((double)(n))) ;
+				
+			}
+			
+			
+			EmpiricDistribution ed = sd.empiricDistribution ;
+			ed.setBinFrequency( sd.histogramValues[1] );
+			ed.describeHistogramAsSeries();
+			
+			ed.identifySalientBins(1); // maxima 
+			// ed.setBinFrequency(sd.histogramValues[1]);
+			// ed.importStatsDescription( statisticalDescription.);// StatisticalSummary samplestats);
+			// ??? StatisticalSummary samplestats
+			ed.importParentReference(this.statisticalDescription) ;
+			
+			ed.describe() ;
+			
 			// get polynomial fit
 			 
 			// reg = new Regression(sd.histogramValues); = reg.bestPolynomial();
@@ -145,14 +184,17 @@ public class BasicStatistics {
 		return  sqsum /n - (sum/n)*(sum/n) ;
 	}
 	
-	private boolean isMissingValue(Double double1) {
-		
+	private boolean isMissingValue(double value) {
+		boolean rB=false;
 		/* TODO
 		 * this refers to the local MV, whether the data are already normalized, and
 		 * to the global MissingValues object
 		 */
 		
-		return false;
+		if (value==-1.0){
+			rB=true;
+		}
+		return rB;
 	}
 }
 

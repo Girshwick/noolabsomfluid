@@ -49,10 +49,18 @@ public class EvoBasics implements Serializable{
 	// ========================================================================
 
 	
-	public void incEvolutionaryCount(int index) {
+	public int incEvolutionaryCount(int index) {
+		if (index>evolutionaryCounts.size()){
+			evolutionaryCounts.add(0) ;
+		}	
+		if (evolutionaryCounts.size() > this.evolutionaryWeights.size()){
+			evolutionaryWeights.add(0.5) ;
+		}
 		int ec = evolutionaryCounts.get(index) ;
 		ec++;
 		evolutionaryCounts.set(index, ec);
+		
+		return ec; 
 	}
 	
 	public void setSelectionparameters(){
