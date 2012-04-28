@@ -1,0 +1,14 @@
+#Fat Jar Configuration File
+#Tue Apr 24 17:16:25 CEST 2012
+onejar.license.required=true
+manifest.classpath=
+manifest.removesigners=true
+onejar.checkbox=false
+jarname=D\:\\dev\\java\\workspace\\NooLabTransformAlgo.jar
+manifest.mergeall=true
+manifest.mainclass=
+manifest.file=<createnew>
+jarname.isextern=true
+onejar.expand=
+excludes=<jar|NooLabSomFluid.jar>;<jar|NooLabUtilities.jar>
+includes=
