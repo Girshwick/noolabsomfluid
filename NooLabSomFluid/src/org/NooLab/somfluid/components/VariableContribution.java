@@ -4,7 +4,20 @@ import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somscreen.SomQualityData;
  
 
-
+/**
+ * 
+ * This class is used to collect the data and objects required for measuring the contribution
+ * of individual variables. </br></br>
+ * 
+ * Basically, two score values are compared: that of the base metric (usually the best available one)
+ * and the modified metric, which is the base metric without just the targeted variable.</br></br> 
+ * 
+ * The score difference is negative if the model gets worse.
+ * Since the score's max value is normalized approximately to 100 (which course is dependent on the
+ * error cost ratio), this value reflects the change as a "percentage" that expresses predictivity,
+ * not however predicability!!! the baseline is given by another model 
+ *
+ */
 public class VariableContribution {
 
 	transient VariableContributions parent;

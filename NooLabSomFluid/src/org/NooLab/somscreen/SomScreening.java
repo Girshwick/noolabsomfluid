@@ -49,28 +49,28 @@ import org.NooLab.somscreen.linear.*;
  * The most important property is that the resulting feature selection is NOT 
  * assuming anything about linearity of the model 
  * 
- * the search for an appropriate model ceate many models that are almost of identical power,
+ * the search for an appropriate model create many models that are almost of identical power,
  * but of different structure.
  * As a consequence, a meta-reasoning about variables becomes possible, describing their
  * structural contribution to the model;
  * 
  * - contribution to discrimination of a variable within a model
  * - degree of non-linearity
- * - degee of saliency: milieu variable, or active variable
+ * - degree of saliency: milieu variable, or active variable
  * - detection of pseudo targets
  * 
  * the search may be accelerated by partitioning the data (limiting the size of the bags), both, per
  * variable and per record
  *
  * after the pre-last com phase, i.e. in the creative phase before mere clustering, we could apply a 
- * PCA / eigenvalue decompoision across the profiles (with or without refering to the usevector),
+ * PCA / eigenvalue decomposition across the profiles (with or without referring to the usevector),
  * in order to infer the main components 
  * 
  * TODO: - periodically (every n*larger period) , we test the top-3 models completely, 
  *       
- *       - confounder identification
+ *       - confounder identification : large evo-weight , large contribution, small model
  *        
- *        
+ *       - evolution on the symbolic level: after each screening raid, metrices from 10 (N, an apriori set constant (at least 3+ == default)    
  *        
  */
 public class SomScreening {
@@ -701,8 +701,12 @@ if ((specialInterestVariables!=null) &&
 		
 		
 		/**
+		 * from SomScreen 2 on, we may meet added variables that have been derived by the sprite process;</br>
+		 * these added variables will now be tested dedicatedly, since with a larger number of variables the
+		 * effect of the introduced synthetic variables could remain unknown for a long time.</br></br>
 		 * 
-		 * 
+		 * The test consists simply by taking the best known metric, and adding the new variables one by one;
+		 * if an improvement is found, pairs of new variables will also be tested.</br></br> 
 		 * 
 		 * @param specialInterestVariables
 		 */
@@ -732,7 +736,19 @@ if ((specialInterestVariables!=null) &&
 			
 			
 			try{
+				// adjusting the length of evo vector
+				int en, vn;
+				en = evoMetrices.evoBasics.evolutionaryCounts.size() ;
+				vn = variables.size() ;
 				
+				if (vn>en){
+					for (int c=0;c<vn-en;c++){
+						evoMetrices.evoBasics.evolutionaryCounts.add(0) ;
+						evoMetrices.evoBasics.evolutionaryWeights.add(0.5) ;
+					}
+				}
+				
+				// looping
 				improvement= true;
 				
 				while (improvement){
@@ -783,12 +799,12 @@ if ((specialInterestVariables!=null) &&
 						// calls "evoBasics.getEvoTasks().updateEvoTaskItem", 
 						// for the respective variable index positions, then renormalizeParameters();
 						evoMetrices.registerMetricChangeEffects(av, rv, isNewBest);
-						
-													String ewstr = ArrUtilities.arr2Text( evoMetrices.evoBasics.evolutionaryWeights, 2) ;
-													String ecstr = ArrUtilities.arr2Text( evoMetrices.evoBasics.evolutionaryCounts);
-													out.print(2,"\nevolutionary weights :  "+ewstr);
-													out.print(2,"evolutionary counts  :  "+ecstr+"\n");
-						
+													if (sfProperties.getShowSomProgressMode() == SomFluidProperties._SOMDISPLAY_PROGRESS_STEPS ){
+														String ewstr = ArrUtilities.arr2Text( evoMetrices.evoBasics.evolutionaryWeights, 2) ;
+														String ecstr = ArrUtilities.arr2Text( evoMetrices.evoBasics.evolutionaryCounts);
+														out.print(2,"\nevolutionary weights :  "+ewstr);
+														out.print(2,"evolutionary counts  :  "+ecstr+"\n");
+													}
 						evoMetrices.registerMetricAsExplored(uv);
 						
 						
@@ -942,12 +958,12 @@ if (results.getTrainingSample().getRoc().getAuC()>0.86){
 				// calls "evoBasics.getEvoTasks().updateEvoTaskItem", 
 				// for the respective variable index positions, then renormalizeParameters();
 				evoMetrices.registerMetricChangeEffects(av, rv, isNewBest);
-				
-											String ewstr = ArrUtilities.arr2Text( evoMetrices.evoBasics.evolutionaryWeights, 2) ;
-											String ecstr = ArrUtilities.arr2Text( evoMetrices.evoBasics.evolutionaryCounts);
-											out.print(2,"\nevolutionary weights :  "+ewstr);
-											out.print(2,"evolutionary counts  :  "+ecstr+"\n");
-				
+											if (sfProperties.getShowSomProgressMode() == SomFluidProperties._SOMDISPLAY_PROGRESS_STEPS ){
+												String ewstr = ArrUtilities.arr2Text( evoMetrices.evoBasics.evolutionaryWeights, 2) ;
+												String ecstr = ArrUtilities.arr2Text( evoMetrices.evoBasics.evolutionaryCounts);
+												out.print(2,"\nevolutionary weights :  "+ewstr);
+												out.print(2,"evolutionary counts  :  "+ecstr+"\n");
+											}
 				evoMetrices.registerMetricAsExplored(uv);
 				
 				

@@ -118,10 +118,11 @@ public class SomModelDescription implements Serializable{
 		cochk.start() ;
 		
 		while (cochk.checkingIsRunning==false){
+			out.delay(10);
+		}
+		while (cochk.checkingIsRunning){
 			out.delay(100);
 		}
-		
-		
 		
 		classifyingContributions();
 	}
@@ -157,15 +158,16 @@ public class SomModelDescription implements Serializable{
 		ArrayList<Double> previousUseVector ;
 		
 		ModelProperties results;
-		
+		Variable variable;
 		EvoMetrices _evometrices = variableContributions.evometrices ;
 		
 		Variables variables = somData.getVariables() ;
 		System.gc();
 		
 		try{
-			  								out.print(2, "...\nSomModelDescription, dedicatedVariableCheck(): a posteriori test for contribution per variable...\n ");
-				
+											System.out.println();
+											out.printErr(2, "\n...SomModelDescription, dedicatedVariableCheck(): a posteriori test for contribution per variable...");
+			  								System.out.println();
 				baseMetricIndexes = variables.getIndexesForLabelsList(currentVariableSelection) ; 
 				baseMetric = new ArrayList<String>(currentVariableSelection);
 					
@@ -177,11 +179,20 @@ public class SomModelDescription implements Serializable{
 				int i=0;
 				while (i<currentVariableSelection.size()){
 					z++;
-					
+					 
 					// this variable we remove, then we check the results, the difference provides the contribution
 					// there are 2*3 types of contributions: affecting TP, FP or both, either positively or negatively
 					// additionally we may distinguish between pure TP, pure FP efficacy
 					selectedVariable = currentVariableSelection.get(i) ;
+					
+					int _ix = variables.getIndexByLabel(selectedVariable);
+					variable = variables.getItem(_ix);
+					
+					boolean hb = (variable.isIndexcandidate() || (_ix==variables.getTvColumnIndex()) ||
+								  variable.isTVcandidate() || variable.isTV() || variable.isID() || 
+								  variables.getBlacklistLabels().indexOf(selectedVariable)>=0 );
+					if (hb)continue;
+					
 											out.print(2,"...checking contribution for variable: "+selectedVariable);
 					currentVariableSelection.clear();
 					currentVariableSelection.addAll( baseMetric );
@@ -191,7 +202,7 @@ public class SomModelDescription implements Serializable{
 					
 					uv = variables.getUseIndicationForLabelsList(currentVariableSelection) ;
 					proposedSelection = (ArrayList<Integer>) variables.transcribeUseIndications( currentVariableSelection ) ;
- 
+								        Collections.sort(proposedSelection);
 					av = variables.determineAddedVariables( previousUseVector, uv, false);
 					rv = variables.determineRemovedVariables( previousUseVector, uv,false);
 					
@@ -204,8 +215,8 @@ public class SomModelDescription implements Serializable{
 					 */ 
 					// ..................................................
 					
-					// sqdata = null -> how to fill it ... check SomScreener ...
-					// evoMetrices.getBestResult().getSqData() ==  EvoMetrik.SomQualityData sqData
+					// EvoMetrik.SomQualityData.sqdata still = null here... 
+					// 
 					
 					
 					if (results.getTrainingSample().getObservationCount()<8 ){
@@ -224,7 +235,6 @@ public class SomModelDescription implements Serializable{
 											str = arrutil.arr2text(proposedSelection);
 											out.printErr(1, "proposed Selection: "+str+"\n") ;	
 				
-					
 					if ((isNewBest) || (z<=1)){
 						
 						bestMetric = variables.getLabelsForUseIndicationVector( somData.getVariables(), evometrices.getBestResult().getUsageVector()) ;
@@ -260,11 +270,8 @@ public class SomModelDescription implements Serializable{
 					
 					int zn = somProcess.getSomLattice().nodes.size();
 					zn = somProcess.getSomLattice().nodes.size();
-					
-					// somProcess.getSomLattice().refreshDataSourceLink();
-					// somProcess.getSomLattice().reInitNodeData(0);
-					
-					evoMetrices.close() ;
+					 
+					 
 					System.gc();
 					i++;
 				} // i-> all items from provided list
@@ -276,22 +283,32 @@ public class SomModelDescription implements Serializable{
 			}
 			
 			
-			 
-			 
 		}catch(Exception e){
 			str="";
 			out.printErr(2, str);
 			
 			e.printStackTrace() ;
 		}
-		
+		ix=0;
 	}
 
 
-
+	/**
+	 * characterizing the contributions: there are 4 different classes, regarding TP and FP; </br>
+	 * this method just provides a collection of it
+	 * 
+	 */
 	private void classifyingContributions() {
 		 
+		VariableContribution vc ;
 		
+		variableContributions.sort(1) ; // smallest score deltas (strongest negative ones) first == those with highest contribution
+		
+		for (int i=0;i<variableContributions.size();i++){
+			vc = variableContributions.getItem(i) ;
+			
+			
+		} // i->
 	}
 
 

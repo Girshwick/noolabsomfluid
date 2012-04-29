@@ -251,6 +251,10 @@ public class ModelingSettings implements Serializable{
 	ArrayList<String> initialVariableSelection = new ArrayList<String>();
 
 	private boolean isExtendedDiagnosis = false;
+
+	private boolean determineRobustModels = true;
+
+	private boolean checkingSamplingRobustness;
 		
 
 	
@@ -947,6 +951,22 @@ public class ModelingSettings implements Serializable{
 	 */
 	public void setExtendedDiagnosis(boolean flag) {
 		isExtendedDiagnosis = flag ;
+	}
+
+	public boolean isDetermineRobustModels() {
+		return determineRobustModels;
+	}
+
+	public void setDetermineRobustModels(boolean flag) {
+		this.determineRobustModels = flag;
+	}
+
+	public boolean isCheckingSamplingRobustness() {
+		return checkingSamplingRobustness;
+	}
+
+	public void setCheckingSamplingRobustness(boolean flag) {
+		this.checkingSamplingRobustness = flag;
 	}
 	
 	

@@ -154,16 +154,24 @@ public class EvoMetrices implements Serializable{
 
 
 	public void close() {
-		evoBasics.evolutionaryCounts.clear();
-		evoBasics.evolutionaryWeights.clear() ;
-		evoBasics.knownVariables.clear() ;
-		powerset.close();
-		powerset = null;
 		
-		exploredMetrices.clear() ;
-		evmItems.clear() ;
-		suggestedVarIxes.clear() ;
-		proposedVariableIndexes.clear() ;
+		try{
+			evoBasics.evolutionaryCounts.clear();
+			evoBasics.evolutionaryWeights.clear() ;
+			evoBasics.knownVariables.clear() ;
+			if (powerset!=null){
+				powerset.close();
+			}
+			powerset = null;
+			
+			exploredMetrices.clear() ;
+			evmItems.clear() ;
+			suggestedVarIxes.clear() ;
+			proposedVariableIndexes.clear() ;
+			
+		}catch(Exception e){
+			// lazy silence ...
+		}
 	}
 
 	public int size() {
@@ -583,7 +591,7 @@ if (z==10){
 	@SuppressWarnings("unchecked")
 	private void prepareSmallSelectionChange( int z,int vChgCount) {
 		double uv ,sprob; 
-		int n, suggix;
+		int n,vn, suggix;
 		
 		String vlabel = "";
 		 
@@ -593,6 +601,8 @@ if (z==10){
 		ArrayList<String> setItems2;
 		ArrayList<Double> uvec ; 
 		ArrayList<Double> selectionProbabilities = new ArrayList<Double>();
+		
+		
 		try{
 		
 			// TODO: also asking variables for participation
@@ -624,12 +634,17 @@ if (z==10){
 			
 			Variables variables = somData.getVariables();
 			n = bestResult.usageVector.size() ;
+			vn = variables.size();
+			
+			if (n>vn){
+				out.print(2,"vector sizes, var count ?");
+			}
 			
 			selectionProbabilities.addAll( evoBasics.evolutionaryWeights );
 			if (n>selectionProbabilities.size()){
 				selectionProbabilities.add(0.5);
 			}
-			if (n>=evoBasics.evolutionaryWeights.size()){
+			if (n>evoBasics.evolutionaryWeights.size()){
 				evoBasics.evolutionaryWeights.add(0.5);
 			}
 
@@ -650,6 +665,9 @@ if (z==10){
 			
 			 
 			n = selectionProbabilities.size();
+			if (n>vn){
+				selectionProbabilities.remove(selectionProbabilities.size()-1);
+			}
 			for (int i=0; i<n;i++ ){
 				vlabel = variables.getItem(i).getLabel() ;
 				powerset.setSelectionProbability( vlabel, selectionProbabilities.get(i) );

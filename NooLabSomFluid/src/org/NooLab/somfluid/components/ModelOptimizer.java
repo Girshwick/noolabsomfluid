@@ -54,6 +54,9 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 	ModelingSettings modelingSettings;
 	OptimizerSettings optimizerSettings ;
 	
+	SomOptimizerXmlReport xmlReport;
+	 
+	
 	int numberOfRuns = -1, dependenciesDepth=-1 ;
 	
 	private ArrayList<Integer> usedVariables = new ArrayList<Integer>();
@@ -100,6 +103,8 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		modOpti = this;
 		
 		spelaResults = new SpelaResults();
+		
+		xmlReport = new SomOptimizerXmlReport( this );
 		
 		prepare();
 	}
@@ -403,9 +408,23 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 											
 			somQuality = somScreening.getSomQuality();
 			
-			// finally a lot of diagnostic stuff 
+			// sort the evo metrices
 			
+			if (moptiParent.modelingSettings.isDetermineRobustModels()){
+				
+				RobustModelSelector robustModel;
+				robustModel = new RobustModelSelector( modOpti );  
+				
+				robustModel.isSamplingIncluded( moptiParent.modelingSettings.isCheckingSamplingRobustness() );
+				robustModel.setTopNSubsetSize(10) ;
+				
+				EvoMetrik em = robustModel.getBest() ;
+			}
+			
+			// finally a lot of diagnostic stuff 
 			if (moptiParent.modelingSettings.isExtendedDiagnosis()){
+				
+				
 				
 				populationExplorer = new ParetoPopulationExplorer( moptiParent );
 				populationExplorer.explore();
@@ -426,8 +445,14 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 				
 			} // ?
 			
-			// TODO make results persistent: save model and its properties into a dir structure, 
+			// TODO make results persistent: save data, model and its properties into a dir structure, 
 			//      which later can be unpacked, searching in archive and selective unpacking should be allowed
+			//      saving is delegated, the "Persistencer" class just organizes it
+			
+			
+			// TODO create a report as xml, which can be rendered into a result display elsewhere 
+			//      creating the xml is delegated to the respective worker classes, it is just organized there
+			createModelOptimizerReport(); 
 			
 			// consoleDisplay(); // of profile values for nodes
 			// release event message, better use an event listener instead of a direct callback
@@ -439,6 +464,13 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		}
 	  
 
+		private void createModelOptimizerReport() {
+			
+			 
+			String xstr = xmlReport.toString();
+			sfFactory.publishReport(xstr);
+		}
+		
 		@SuppressWarnings("unchecked")
 		private EvoMetrices integrateEvoMetricHistories( EvoMetrices ems1, EvoMetrices ems2) {
 
@@ -726,7 +758,10 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			return subset;
 		}
 		
-	}
+	} // inner class VariableSubsets
+
+	
+	
 
 	@Override
 	public void onTargetedModelingCompleted(ModelProperties results) {
@@ -736,12 +771,6 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		double tps = results.getTrainingSample().getTpSingularity();
 
 	}
-
-
- 
-
-
-
 
 
 	// ========================================================================

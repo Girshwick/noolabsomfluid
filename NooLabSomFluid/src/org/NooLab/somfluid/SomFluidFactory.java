@@ -426,6 +426,11 @@ public class SomFluidFactory  implements 	//
 		return random;
 	}
 
+	public void publishReport(String xmlReportStr) {
+		// 
+		
+	}
+
 
 	
 	
