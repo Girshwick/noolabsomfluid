@@ -366,6 +366,7 @@ public class DependencyScreener {
 	}
 	
 	private void reduceListOfCandidates( ArrayList<AnalyticFunctionSpriteImprovement> items) {
+		
 		AnalyticFunctionSpriteImprovement item, coitem;
 		int n,i,lastN=-1;
 		boolean hb;
@@ -390,7 +391,7 @@ public class DependencyScreener {
 		
 		while ((items.size()>dCountThreshold) && (nFromSamePair>0)){
  			
-			// note htat the list is sorted...
+			// note that the list is sorted...
  			for (int k = 0; k < items.size()-1; k++) {
  				
  				item = items.get(k) ;

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
+import org.apache.commons.collections.CollectionUtils;
 
 public class EvoBasics implements Serializable{
 
@@ -50,19 +51,135 @@ public class EvoBasics implements Serializable{
 
 	
 	public int incEvolutionaryCount(int index) {
-		if (index>evolutionaryCounts.size()){
-			evolutionaryCounts.add(0) ;
-		}	
-		if (evolutionaryCounts.size() > this.evolutionaryWeights.size()){
-			evolutionaryWeights.add(0.5) ;
+		int ec=1 ;
+		try{
+
+			if (index>evolutionaryCounts.size()){
+				evolutionaryCounts.add(0) ;
+			}	
+			if (evolutionaryCounts.size() > this.evolutionaryWeights.size()){
+				evolutionaryWeights.add(0.5) ;
+			}
+			
+			ec = evolutionaryCounts.get(index) ;
+			ec++;
+			evolutionaryCounts.set(index, ec);
+
+			
+		}catch(Exception e){
+			ec=-1;
 		}
-		int ec = evolutionaryCounts.get(index) ;
-		ec++;
-		evolutionaryCounts.set(index, ec);
 		
 		return ec; 
 	}
 	
+	@SuppressWarnings("unchecked")
+	public EvoMetrices integrateEvoMetricHistories( EvoMetrices ems1, EvoMetrices ems2, int loopcount) {
+	
+		int k;
+		double _score = -1.0 ;
+		EvoBasics eb1,eb2 ;
+		ArrayList<Double> ews;
+		ArrayList<Integer> ecs; 
+		
+		if ((ems2.getBestResult()!=null) && (ems2.getBestResult().getSqData()!=null) ){
+			_score = ems2.getBestResult().getSqData().getScore();
+		}
+		ems2.getBestResult().setActualScore( _score );
+		if ((ems1!=null) && (ems1.getEvmItems().size()>0)){
+			k = ems1.getEvmItems().size() ;
+		}else{
+			k=0;
+		}
+		for (int i=0;i<ems2.getEvmItems().size();i++){
+			ems2.getEvmItems().get(i).setLoopCount(loopcount+1) ;
+			ems2.getEvmItems().get(i).setStep( k + i + 1) ;
+		}
+		
+		if (ems1==null){
+			ems1 = new EvoMetrices(ems2, false); 
+			
+			ems1.setCurrentBaseMetrik( ems2.getCurrentBaseMetrik() );
+			ems1.addEvmItems( ems2.getEvmItems() );
+			
+			ems1.getProposedVariableIndexes().clear();
+			ems1.getProposedVariableIndexes().addAll( ems2.getBestResult().getVarIndexes() );
+			
+			return ems1;
+		}
+	
+		// just the metrices as indices of variables (list of list)
+		// removes all double entries
+		ems1.setExploredMetrices( (ArrayList<ArrayList<Integer>>) CollectionUtils.union( ems1.getExploredMetrices(), ems2.getExploredMetrices()) );
+	
+		// history of compressed results , may contain double entries from different runs, TODO need to be removed...
+		ems1.addEvmItems( ems2.getEvmItems() );
+		
+		// integrating evo weights and counts
+		eb1 = ems1.getEvoBasics() ;
+		eb2 = ems2.getEvoBasics() ;
+		
+		int ec,ec1, ec2;
+		double ew1,ew2, ew;
+		
+		// first integrating positions into em2 (which is always longer by ADDED positions) based on counts of em1 
+		for (int i=0;i<eb1.getEvolutionaryCounts().size();i++){
+			ec1 = eb1.getEvolutionaryCounts().get(i) ;
+			ec2 = eb2.getEvolutionaryCounts().get(i) ;
+			ew1 = eb1.getEvolutionaryWeights().get(i) ;
+			ew2 = eb2.getEvolutionaryWeights().get(i) ;
+			
+			ew = (((double)ec1)*ew1) + (((double)ec2)*ew2);
+			ec = ec1+ec2;
+			if (ec>0){
+				ew = ew/((double)ec) ;
+			}else{
+				ew=0.0;
+			}
+			eb2.getEvolutionaryCounts().set(i, ec);
+			eb2.getEvolutionaryWeights().set(i, ew) ;
+			
+		}
+		
+		ews = new ArrayList<Double>(eb2.getEvolutionaryWeights());
+		ecs = new ArrayList<Integer>(eb2.getEvolutionaryCounts());
+		
+		// then changing references
+		eb1.setEvolutionaryCounts(ecs);
+		eb1.setEvolutionaryWeights(ews);
+		
+	
+		// is the second one (last) better than the previous (first) one ? 
+		if ( ems2.getBestResult().getActualScore() < ems1.getBestResult().getActualScore()){
+			// creates a new instance by cloning 
+			ems1.setBestResult( ems2.getBestResult() ) ;
+			ems1.setCurrentBaseMetrik( ems2.getBestResult() );
+			ems1.getProposedVariableIndexes().clear();
+			ems1.getProposedVariableIndexes().addAll( ems2.getBestResult().getVarIndexes() );
+		}
+		
+		ems1.sort( EvoMetrices._SORT_SCORE,-1 ) ;
+		
+		// in evoBasics, adjust bestModelHistoryIndex, acc. to the respective index values in evmItems<>
+		return ems1;
+	}
+
+	public void adjustEvoVectorsForChanges(int lengthDiff, ArrayList<String> addedLabels) {
+		int n;
+		
+		for (int i=0;i<addedLabels.size();i++){
+			knownVariables.add( addedLabels.get(i) );
+			n = knownVariables.size() ;
+			if (n>evolutionaryCounts.size()){
+				evolutionaryCounts.add(0) ;
+			}
+			if (n>evolutionaryWeights.size()){
+				evolutionaryWeights.add(0.5) ;
+			}
+		}
+
+	}
+
 	public void setSelectionparameters(){
 		
 	}

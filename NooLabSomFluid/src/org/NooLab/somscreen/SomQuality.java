@@ -91,14 +91,25 @@ public class SomQuality implements QualityDescriptionIntf{
 	}
 	// ========================================================================
 	
-	
+	private int metricSize(){
+		
+		if (metricSize<=1){
+			int n = somData.getVariables().getLabelsForUseIndicationVector(somData.getVariables(), usagevector).size() ;
+			if (n>1){
+				metricSize = n ;
+			}
+		}
+		
+		return metricSize;
+	}
 
 	public void acquireResultValues(){
 		
+		 
 		if ( (somQualityData.targetMode == ClassificationSettings._TARGETMODE_SINGLE) || 
 			 ((somQualityData.targetMode == ClassificationSettings._TARGETMODE_MULTI))){
 			
-			calculateClassificationScore(metricSize);
+			calculateClassificationScore(metricSize());
 		}
 		
 		if (somQualityData.targetMode == ClassificationSettings._TARGETMODE_REGR){

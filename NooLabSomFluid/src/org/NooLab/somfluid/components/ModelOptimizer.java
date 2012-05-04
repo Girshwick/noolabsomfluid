@@ -2,6 +2,7 @@ package org.NooLab.somfluid.components;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.*;
@@ -54,6 +55,11 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 	ModelingSettings modelingSettings;
 	OptimizerSettings optimizerSettings ;
 	
+	SomModelDescription modelDescription ;
+	ParetoPopulationExplorer populationExplorer;
+	Coarseness coarseness;
+
+	RobustModelSelector robustModel; 
 	SomOptimizerXmlReport xmlReport;
 	 
 	
@@ -176,8 +182,6 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		SomSprite dependencyCheck;
 		
 		SomScreening somScreening  =null;
-		SomModelDescription modelDescription ;
-		ParetoPopulationExplorer populationExplorer;
 		
 		Thread moptiThrd;
 		ArrayList<Integer> variableSubsetIndexes ;
@@ -202,6 +206,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		
 		@SuppressWarnings("unchecked")
 		public void optimizeOnVariableSubset(){
+			
 			// variableSubsetIndexes
 			boolean done=false, candidatesOK;
 			int loopcount=0, n, vn;
@@ -209,7 +214,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			VirtualLattice somLattice ;
 			ModelProperties _mozResults=null;
 			EvoBasics _evoBasics =null ;
-			EvoMetrices _evoMetrices=null;
+			EvoMetrices _evoMetrices = null;
 			// ArrayList<CandidateTransformation> lastDependencyProposals;
 			AnalyticFunctionTransformationsIntf lastDependencyProposals = null;
 			
@@ -219,6 +224,8 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			performSingleRun(loopcount, true);
 			somLattice = somProcess.getSomLattice();
 
+			 
+			
 			// ................................................................
 			
 			int z=0;
@@ -252,7 +259,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 							// initializing the basic itemset, from which then the powerset is constructed 
 						somScreening.setInitialRelevanciesOfVariables( _evoBasics );
 
-						if (loopcount>0){
+						if (loopcount>0){ //
 							// will imply firstly a special check of new variables, which will be tested
 							// together with top N (1..3)  metrices of previous loop step
 							somScreening.setSpecialInterestVariables(freshlyAddedVariables);
@@ -264,27 +271,31 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 											vn = somDataObj.variableLabels.size() ; 
 											out.print(4, "somDataObj, size of variableLabels (a) : "+vn);						
 						somScreening.startScreening(1,loopcount);
-											// out.print(2, "variables(a3) n = "+somDataObj.variables.size() );						
+						
+															
 						// first getting it, we have to check whether the new results are better than the last one 
 											out.print(2, "SomScreening has been finished, re-establishing the best of the evaluated models...");
+											
 						_mozResults = restoreModelFromHistory( somScreening,  -1 ) ; 
 						 				
-// pset = somScreening.getEvoMetrices().getPowerset();
 						
 											out.print(2, "The best model has been re-established.");
-											somScreening.getEvoBasics().getBestModelHistoryIndex();
+											
+						somScreening.getEvoBasics().getBestModelHistoryIndex();
+						
 											String str = ArrUtilities.arr2Text( somScreening.getEvoMetrices().getBestResult().getVarIndexes() ) ;
 											out.print(2, "Indices of selected Variables : "+ str);
 											
-											// the starting metric for the next loop is just the best of the previous screening ...
-											currentVariableSelection = somDataObj.variables.deriveVariableSelection( somScreening.getEvoMetrices().getBestResult().getVarIndexes(), 0) ;
-											_mozResults.setVariableSelection(currentVariableSelection);
+						// the starting metric for the next loop is just the best of the previous screening ...
+						currentVariableSelection = somDataObj.variables.deriveVariableSelection( somScreening.getEvoMetrices().getBestResult().getVarIndexes(), 0) ;
+						_mozResults.setVariableSelection(currentVariableSelection);
 											
 											vn = somDataObj.variableLabels.size() ; 
 											out.print(4, "somDataObj, size of variableLabels (b) : "+vn);
 											
 						evoMetrices = somScreening.getEvoMetrices() ;	
-						evoMetrices.sort( EvoMetrices._SORT_SCORE,-1 );
+						 
+						// evoMetrices.sort( EvoMetrices._SORT_SCORE,-1 );
 						
 						_mScore1 = evoMetrices.getBestResult().getSqData().getScore();
 						
@@ -294,23 +305,24 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 							_mScore2 = _mScore1 ;
 						}
 						
-						// TODO does this work ? in second run, counts start at zero...
-						_evoMetrices = integrateEvoMetricHistories( _evoMetrices, evoMetrices) ;
-						
+						// 
+						 
 						evoBasics = somScreening.getEvoBasics() ;
 						_evoBasics = new EvoBasics(evoBasics);
+						
+						_evoMetrices = _evoBasics.integrateEvoMetricHistories( _evoMetrices, evoMetrices, loopcount) ;
 						
 						evoMetrices.sort( EvoMetrices._SORT_SCORE,-1 );
 						
 					} // checking variable metrices ? == modelingSettings.getEvolutionaryAssignateSelection() ?
 					
 					
-					 
+					int s1,s2 ;
 					boolean hb = ( (modelingSettings.getMaxL2LoopCount()> loopcount ) && (modelingSettings.getSpriteAssignateDerivation() )&& (somFluid.getUserbreak()==false));
 					 
 					if ((hb)  ){ // ...AND HERE && (_mozResults != null )){
 						// not in the last one of the L2-loops, such we always have (n-1) sprites for (n) evo opti
-				
+						s1 = evoBasics.getEvolutionaryWeights().size() ;
 											// vn = somDataObj.variableLabels.size() ; 
 											// out.print(4, "somDataObj, size of variableLabels (c) : "+vn);
 						
@@ -318,6 +330,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 						
 						// 
 						SomMapTable smt = somLattice.exportSomMapTable(11); // 1+10 = 11: sort mode 1,  
+						
 						dependencyCheck.acquireMapTable( smt ); 
 						if (lastDependencyProposals!=null){
 							dependencyCheck.addProposalsAsKnown( lastDependencyProposals.getItems()) ;
@@ -348,6 +361,15 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 							// register in order to avoid repetitions AND avoid repetitions across loops !!
 							freshlyAddedVariables = (ArrayList<Integer>) CollectionUtils.disjunction(  freshlyAddedVariables, somTransformer.getAddedVariablesByIndex()) ;
 							allAddedVariables = somTransformer.getAddedVariablesByIndex() ;
+							
+							// are the vectors evo-weight, evo-count ok ? -> adjust their length
+							s2 = evoBasics.getEvolutionaryWeights().size() ;
+							int kd = s2-s1 ;
+							if ((freshlyAddedVariables!=null) &&(kd<freshlyAddedVariables.size())){
+								Collections.sort(freshlyAddedVariables) ;
+								ArrayList<String> addedVariableLabels = (ArrayList<String>)somDataObj.variables.getLabelsForIndexList(freshlyAddedVariables) ; 
+								evoBasics.adjustEvoVectorsForChanges(kd, addedVariableLabels) ;
+							}
 							
 							// now we need to re-init the somlattice, as the structure has been changed !
 							// for instance next "exportSomMapTable()" will likely fail, since it is still of different size
@@ -384,6 +406,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 					
 											vn = somDataObj.variableLabels.size() ; 
 											out.print(4, "somDataObj, size of variableLabels (g) : "+vn);
+				    
 				} // getMaxL2LoopCount ?
 				
 				loopcount++;
@@ -395,6 +418,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			evoMetrices.close() ;
 			
 			evoMetrices = _evoMetrices;
+			evoMetrices.prepare();
 											String str = arrutil.arr2text( evoMetrices.getBestResult().getVarIndexes());
 											// translate into variable names
 											ArrayList<String> mlabels= somDataObj.variables.getLabelsForIndexList(evoMetrices.getBestResult().getVarIndexes()) ;
@@ -408,51 +432,77 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 											
 			somQuality = somScreening.getSomQuality();
 			
-			// sort the evo metrices
+			if (moptiParent.modelingSettings.isDetermineRobustModels()){ 
+				// we run the som screening in a special mode, just to dedicatedly explore the less visited variables
+				
+				
+			}
 			
+			// validation only if: moptiParent.modelingSettings.getValidationSettings().getActivation() ;
+			
+			// in the following post-processing, we should collect the metrices as well !!
 			if (moptiParent.modelingSettings.isDetermineRobustModels()){
 				
-				RobustModelSelector robustModel;
-				robustModel = new RobustModelSelector( modOpti );  
+				robustModel = new RobustModelSelector( modOpti );  // check "evoMetrices" ...
+				// includes  MultiCrossValidation & SomModelDescription !
+				
+				robustModel.setBaseVariableSelection( currentVariableSelection );
 				
 				robustModel.isSamplingIncluded( moptiParent.modelingSettings.isCheckingSamplingRobustness() );
 				robustModel.setTopNSubsetSize(10) ;
 				
+				robustModel.check();  
+				
 				EvoMetrik em = robustModel.getBest() ;
+				modelDescription = robustModel.modelDescription ;
+				
 			}
 			
 			// finally a lot of diagnostic stuff 
 			if (moptiParent.modelingSettings.isExtendedDiagnosis()){
 				
 				
-				
+				if ((modelDescription==null) || (modelDescription.isCalculated()==false)){
+					modelDescription = new SomModelDescription( moptiParent );
+					modelDescription.setInitialVariableSelection( currentVariableSelection  ) ;
+					modelDescription.calculate() ;
+				}
+
+				// metrics remains constant , max number of clusters changes 
+				coarseness = new Coarseness( moptiParent );
+				coarseness.setBaseVariableSelection( currentVariableSelection  ) ;
+				coarseness.evaluate();
+								
 				populationExplorer = new ParetoPopulationExplorer( moptiParent );
 				populationExplorer.explore();
 				
-				
-				modelDescription = new SomModelDescription( moptiParent );
-				modelDescription.setInitialVariableSelection( currentVariableSelection  ) ;
-				modelDescription.calculate() ;
-				
-				// metrics remains constant , max number of clusters changes 
-				Coarseness coarseness = new Coarseness( moptiParent );
-				
-				// metrics remains constant, based on different samplings
-				MultiCrossValidation validation = new MultiCrossValidation( moptiParent );
+				if ((robustModel==null) || (robustModel.getMultiCrossValidation()==null) || (robustModel.getMultiCrossValidation().isCalculated()==false)){
+					// metrics remains constant, based on different samplings
+					MultiCrossValidation validation = new MultiCrossValidation( moptiParent );
+					validation.setBaseVariableSelection( currentVariableSelection  ) ;
+					validation.perform();
+				}
 				
 				
 				MetricsStructure metricsStructure = new MetricsStructure( moptiParent, evoMetrices);
 				
 			} // ?
 			
+		
+			
 			// TODO make results persistent: save data, model and its properties into a dir structure, 
 			//      which later can be unpacked, searching in archive and selective unpacking should be allowed
 			//      saving is delegated, the "Persistencer" class just organizes it
 			
 			
+			
 			// TODO create a report as xml, which can be rendered into a result display elsewhere 
 			//      creating the xml is delegated to the respective worker classes, it is just organized there
-			createModelOptimizerReport(); 
+			//      == a summarizing call
+			OutResults outresult= new OutResults( modOpti ,sfProperties);
+			outresult.createModelOptimizerReport();  
+			// according to OutputSettings, writes to files and creates a dir package
+			
 			
 			// consoleDisplay(); // of profile values for nodes
 			// release event message, better use an event listener instead of a direct callback
@@ -464,90 +514,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		}
 	  
 
-		private void createModelOptimizerReport() {
-			
-			 
-			String xstr = xmlReport.toString();
-			sfFactory.publishReport(xstr);
-		}
-		
-		@SuppressWarnings("unchecked")
-		private EvoMetrices integrateEvoMetricHistories( EvoMetrices ems1, EvoMetrices ems2) {
-
-			EvoBasics eb1,eb2 ;
-			ArrayList<Double> ews;
-			ArrayList<Integer> ecs; 
-			
-			
-			ems2.getBestResult().setActualScore( ems2.getBestResult().getSqData().getScore() );
-			
-			if (ems1==null){
-				ems1 = new EvoMetrices(ems2, false); 
-				
-				ems1.setCurrentBaseMetrik( ems2.getCurrentBaseMetrik() );
-				ems1.addEvmItems( ems2.getEvmItems() );
-				
-				ems1.getProposedVariableIndexes().clear();
-				ems1.getProposedVariableIndexes().addAll( ems2.getBestResult().getVarIndexes() );
-				
-				return ems1;
-			}
-
-			// just the metrices as indices of variables (list of list)
-			// removes all double entries
-			ems1.setExploredMetrices( (ArrayList<ArrayList<Integer>>) CollectionUtils.union( ems1.getExploredMetrices(), ems2.getExploredMetrices()) );
-
-			// history of compressed results , may contain double entries from different runs, TODO need to be removed...
-			ems1.addEvmItems( ems2.getEvmItems() );
-			
-			// integrating evo weights and counts
-			eb1 = ems1.getEvoBasics() ;
-			eb2 = ems2.getEvoBasics() ;
-			
-			int ec,ec1, ec2;
-			double ew1,ew2, ew;
-			
-			// first integrating positions into em2 (which is always longer by ADDED positions) based on counts of em1 
-			for (int i=0;i<eb1.getEvolutionaryCounts().size();i++){
-				ec1 = eb1.getEvolutionaryCounts().get(i) ;
-				ec2 = eb2.getEvolutionaryCounts().get(i) ;
-				ew1 = eb1.getEvolutionaryWeights().get(i) ;
-				ew2 = eb2.getEvolutionaryWeights().get(i) ;
-				
-				ew = (((double)ec1)*ew1) + (((double)ec2)*ew2);
-				ec = ec1+ec2;
-				if (ec>0){
-					ew = ew/((double)ec) ;
-				}else{
-					ew=0.0;
-				}
-				eb2.getEvolutionaryCounts().set(i, ec);
-				eb2.getEvolutionaryWeights().set(i, ew) ;
-				
-			}
-			
-			ews = new ArrayList<Double>(eb2.getEvolutionaryWeights());
-			ecs = new ArrayList<Integer>(eb2.getEvolutionaryCounts());
-			
-			// then changing references
-			eb1.setEvolutionaryCounts(ecs);
-			eb1.setEvolutionaryWeights(ews);
-			
-
-			// is the second one (last) better than the previous (first) one ? 
-			if ( ems2.getBestResult().getActualScore() < ems1.getBestResult().getActualScore()){
-				// creates a new instance by cloning 
-				ems1.setBestResult( ems2.getBestResult() ) ;
-				ems1.setCurrentBaseMetrik( ems2.getBestResult() );
-				ems1.getProposedVariableIndexes().clear();
-				ems1.getProposedVariableIndexes().addAll( ems2.getBestResult().getVarIndexes() );
-			}
-			
-			ems1.sort( EvoMetrices._SORT_SCORE,-1 ) ;
-			
-			// in evoBasics, adjust bestModelHistoryIndex, acc. to the respective index values in evmItems<>
-			return ems1;
-		}
+		 
 		
 		
 		

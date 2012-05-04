@@ -64,6 +64,8 @@ public class SomFluidProperties implements 	//
 		
 	SomFluidPluginSettings pluginSettings = new SomFluidPluginSettings();
 	
+	OutputSettings outputSettings = new OutputSettings();
+	
 	// lattice
 	int somType = -1; // mandatory 
 	int initialNodeCount = -1;
@@ -84,6 +86,8 @@ public class SomFluidProperties implements 	//
 	private boolean isPluginsAllowed = true;
 
 	private String algorithmsConfigPath;
+
+	
 
 	
 	static SettingsTransporter settingsTransporter;
@@ -640,6 +644,12 @@ public class SomFluidProperties implements 	//
 
 	public String getAlgorithmsConfigPath() {
 		return algorithmsConfigPath;
+	}
+
+
+	public OutputSettings getOutputSettings() {
+		// TODO Auto-generated method stub
+		return outputSettings;
 	}
 
 

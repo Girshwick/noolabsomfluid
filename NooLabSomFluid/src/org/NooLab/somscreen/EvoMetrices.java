@@ -72,6 +72,7 @@ public class EvoMetrices implements Serializable{
 	
 	ArrayList<ArrayList<Integer>> exploredMetrices = new ArrayList<ArrayList<Integer>>();
 	
+	MetricsHistory  emHistory;
 	
 	transient Random jrandom;
 	transient PrintLog out; 
@@ -90,8 +91,8 @@ public class EvoMetrices implements Serializable{
 		modelingSettings = somHost.getSfProperties().getModelingSettings() ;
 		optimizerSettings = modelingSettings.getOptimizerSettings() ;
 		
-		evoBasics = new EvoBasics();
 		
+		evoBasics = new EvoBasics();
 		bestResult = new EvoMetrik() ;
 		
 		jrandom = sfFactory.getRandom() ;
@@ -174,6 +175,16 @@ public class EvoMetrices implements Serializable{
 		}
 	}
 
+	public void reset() {
+		for (int i=0;i<evoBasics.evolutionaryCounts.size();i++){
+			evoBasics.evolutionaryCounts.set(i, 0);
+		}
+		for (int i=0;i<evoBasics.evolutionaryWeights.size();i++){
+			evoBasics.evolutionaryWeights.set(i, 0.5);
+		}
+		evmItems.clear();
+	}
+
 	public int size() {
 		return evmItems.size() ;
 	}
@@ -232,6 +243,8 @@ public class EvoMetrices implements Serializable{
 		sq.acquireResultValues() ;
 		
 		evoResultItem.index = z;
+		evoResultItem.step  = evmItems.size()+1 ;
+		
 		evoResultItem.sqData = sq.somQualityData ;
 		evoResultItem.usageVector = new ArrayList<Double>(usevector) ;
 		// we should save it in compressed form also ...
@@ -372,6 +385,12 @@ public class EvoMetrices implements Serializable{
 			ix = addedVarIxes.get(i) ;
 			evoBasics.incEvolutionaryCount(ix) ;
 			ec = evoBasics.evolutionaryCounts.get(ix) ;
+if (ec<0){
+	ec=ec+1-1;
+}
+			if (ec<0){
+				continue;
+			}
 			ew = evoBasics.evolutionaryWeights.get(ix);
 			
 			if (scoreDelta>0) {
@@ -454,6 +473,133 @@ public class EvoMetrices implements Serializable{
 		
 	}
 
+	public void prepare() {
+		prepare(-1) ;
+	}
+	
+	public void prepare( int maxN ) {
+		
+		EvoMetrik em ;
+		int k;
+		
+		try{
+		
+			sort(EvoMetrices._SORT_SCORE, -1);
+			
+			emHistory = new MetricsHistory(somHost, this) ;
+			
+			for (int i=0;i<evmItems.size();i++){
+				
+				try{
+				
+					em = evmItems.get(i);
+					emHistory.addEvoMetrikAsItem(em) ;
+
+				}catch(Exception e){
+				}
+			}// i->
+			
+			if (maxN>3){
+				// apply various filter modes, dependent on limits on count of metrices 
+				
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		k=0;
+	}
+	
+
+	public String getAsXml() {
+		
+		return "";
+	}
+
+	
+	public MetricsHistory getAsHistory() {
+		
+		return emHistory;
+	}
+
+	public String getStringTable( ) {
+		return getStringTable( 0, new String[]{},"\t");
+	}
+	
+	public String getStringTable( int mode, String[] indicators, String colSeparator ) {
+		
+		ArrayList<ArrayList<String>> rows;
+		ArrayList<String> row;
+		String tableStr="";
+		
+		setOutputColumns( indicators, emHistory);
+			 
+		rows = prepareMetricsHistoryOutput();
+		
+		// translating into a single string
+		for (int i=0;i<rows.size();i++){
+			row = rows.get(i) ;
+			
+			for (int c=0;c<row.size();c++){
+				tableStr = tableStr+row.get(c);
+				if (c<row.size()-1){
+					tableStr = tableStr + colSeparator;
+				}
+			}
+			if (i<rows.size()-1){
+				tableStr = tableStr + "\n";
+			}
+		}
+		
+		return tableStr;
+	}
+	
+
+	
+
+	private ArrayList<ArrayList<String>> prepareMetricsHistoryOutput(){
+		
+		
+		// creating the header as list of strings
+		ArrayList<String> headers = emHistory.createHeaderRow();
+		
+		// creating the body of table, as list of (list of strings)
+		ArrayList<ArrayList<String>> trows = emHistory.createTableRows( emHistory, headers ) ;
+		
+		// inserting header
+		trows.add(headers) ;
+		
+		//
+		return trows;
+	}
+	
+	
+	private void setOutputColumns( String[] listOfFieds, MetricsHistory emHistory){
+		
+		
+		// just a lookup for the programmer
+		// ArrayList<String> _tmp_allfields = emHistory.getAllFieldLabels();    
+		
+		// TODO take this from the output properties
+		// Map<String,Integer> outdef = new HashMap<String,Integer>();
+		// emHistory.setOutputColumns( outdef ) ; not functional yet
+		emHistory.resetOutputDefinition();
+		
+		if ((listOfFieds==null) || (listOfFieds.length==0)){
+			emHistory.setOutputColumn("index", 1);
+			emHistory.setOutputColumn("step", 2);
+			emHistory.setOutputColumn("score", 3);
+			emHistory.setOutputColumn("tprate", 4);
+			emHistory.setOutputColumn("fprate", 5);
+			emHistory.setOutputColumn("ppv", 6);
+			emHistory.setOutputColumn("rocstp", 7);
+			emHistory.setOutputColumn("variableindexes", 8);
+		}else{
+			for (int i=0;i<listOfFieds.length;i++){
+				emHistory.setOutputColumn(listOfFieds[i], i+1);
+			}
+		}
+	}
+	
 	private void initializeEvoBasicsData(){
 		int n,z;
 		double v;
@@ -480,6 +626,7 @@ public class EvoMetrices implements Serializable{
 	}
 	
 
+	@SuppressWarnings("unused")
 	private void updateEvoBasicsData( double scoreDifference,
 									  ArrayList<Double> referUsageVector, 
 									  ArrayList<Double> comparedVector,
@@ -1309,6 +1456,7 @@ if ((z%5==0) || (z==11)){
 	 * @return
 	 */
 	private ArrayList<Integer> getExtremeEvoWeightVarIxes( ArrayList<Integer> indexList, int xN, int direction) {
+		
 		ArrayList<Integer> xEvoIxes = new ArrayList<Integer>();
 		int ix;
 		double ew,minew = 9999.09, maxew = -9.09;
@@ -1576,6 +1724,7 @@ if ((z%5==0) || (z==11)){
 		
 		for (int i=0;i<evmitems.size();i++){
 			evmItems.add( new EvoMetrik( evmitems.get(i) ) );
+			evmItems.get( evmItems.size()-1).step = evmItems.size() ;
 		}
 	}
 
@@ -1883,8 +2032,18 @@ if ((z%5==0) || (z==11)){
 		}
 		
 	}
-
+ 
 	
 	
 	
 }
+
+
+
+
+
+
+
+
+
+

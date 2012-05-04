@@ -23,7 +23,6 @@ import org.NooLab.somscreen.SomQualityData;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
 
-
 /**
  * 
  * describes the model on the level of the variables, given a particular "best" model
@@ -31,7 +30,7 @@ import org.NooLab.utilities.logging.PrintLog;
  * - removing any of them singularly,  
  * - correlations in data vs across the map vs within TP(0,ECR) clusters
  * 
- * 
+ * - linearity in terms of contrast between target group and non-target group 
  * 
  */
 public class SomModelDescription implements Serializable{
@@ -63,12 +62,12 @@ public class SomModelDescription implements Serializable{
 		
 	VariableContributions variableContributions; 
 	
+	boolean completeCheck = false;
+	boolean isCalculated = false;
+	
 	private PrintLog out;
 	ArrUtilities arrutil = new ArrUtilities ();
 
-	private boolean completeCheck = false;
-
-	
 	
 	// ========================================================================
 	public SomModelDescription( ModelOptimizer mopti ) {
@@ -91,7 +90,11 @@ public class SomModelDescription implements Serializable{
 		evoMetrices = mopti.evoMetrices;
 		somQuality = mopti.somQuality;
 		
-		evometrices = new EvoMetrices(moptiParent, 0);
+		// evoMetrices = modelOptimizer.evoMetrices ;
+		evometrices = new EvoMetrices(moptiParent.evoMetrices, false); // moptiParent, 0);
+		evometrices.reset();
+		
+		// is this copying correct ??? 
 		variableContributions = new VariableContributions( somHost, evometrices);
 		
 		
@@ -145,13 +148,14 @@ public class SomModelDescription implements Serializable{
 	 * 
 	 * @param mode 
 	 */
-	@SuppressWarnings("unused")
+	@SuppressWarnings({ "unused", "unchecked" })
 	private void dedicatedVariableCheck( int mode ) {
 		 
 		String selectedVariable,str;
 		boolean isNewBest ;
 		int  smode=1,ix, currentBestHistoryIndex=-1;
 		
+		SomQualityData bestSqData = new SomQualityData();
 		ArrayList<String> baseMetric = new ArrayList<String>(), bestMetric = new ArrayList<String>();
 		ArrayList<Integer> proposedSelection = null, baseMetricIndexes, av=null, rv=null ;
 		ArrayList<Double> uv ;
@@ -159,19 +163,24 @@ public class SomModelDescription implements Serializable{
 		
 		ModelProperties results;
 		Variable variable;
-		EvoMetrices _evometrices = variableContributions.evometrices ;
+		EvoMetrices _evometrices ;// = new EvoMetrices( variableContributions.evometrices, false ); 
+		 
 		
 		Variables variables = somData.getVariables() ;
 		System.gc();
 		
 		try{
 											System.out.println();
-											out.printErr(2, "\n...SomModelDescription, dedicatedVariableCheck(): a posteriori test for contribution per variable...");
+											out.printErr(2, "\n...SomModelDescription, dedicatedVariableCheck(): a posteriori test for contribution per variable, base metric: { }...");
 			  								System.out.println();
 				baseMetricIndexes = variables.getIndexesForLabelsList(currentVariableSelection) ; 
 				baseMetric = new ArrayList<String>(currentVariableSelection);
-					
+				
+				bestMetric = new ArrayList<String>(currentVariableSelection) ;
 				previousUseVector = variables.getUseIndicationForLabelsList( baseMetric ) ;
+				
+				_evometrices = new EvoMetrices(somHost, 0 ); 
+				// _evometrices.setCurrentBaseMetrik( evoMetrices.getBestResult() );
 				_evometrices.setCurrentBaseMetrik( evoMetrices.getBestResult() );
 				variableContributions.baseScore = evoMetrices.getBestResult().getActualScore() ;
 				
@@ -191,15 +200,18 @@ public class SomModelDescription implements Serializable{
 					boolean hb = (variable.isIndexcandidate() || (_ix==variables.getTvColumnIndex()) ||
 								  variable.isTVcandidate() || variable.isTV() || variable.isID() || 
 								  variables.getBlacklistLabels().indexOf(selectedVariable)>=0 );
-					if (hb)continue;
+					if (hb){
+						i++; continue;
+					}
 					
-											out.print(2,"...checking contribution for variable: "+selectedVariable);
+											
 					currentVariableSelection.clear();
 					currentVariableSelection.addAll( baseMetric );
 					
 					ix = currentVariableSelection.indexOf( selectedVariable );
 					currentVariableSelection.remove( ix ) ;
-					
+											out.print(2,"...checking contribution for variable (index:"+ix+"): "+selectedVariable);
+											
 					uv = variables.getUseIndicationForLabelsList(currentVariableSelection) ;
 					proposedSelection = (ArrayList<Integer>) variables.transcribeUseIndications( currentVariableSelection ) ;
 								        Collections.sort(proposedSelection);
@@ -218,11 +230,11 @@ public class SomModelDescription implements Serializable{
 					// EvoMetrik.SomQualityData.sqdata still = null here... 
 					// 
 					
-					
-					if (results.getTrainingSample().getObservationCount()<8 ){
+					if (results.getTrainingSample().getObservationCount()<8 ){ 
+						i++;
 						continue;
 					}
-
+					// _evometrices is shortcut for "variableContributions.evometrices"
 					isNewBest = _evometrices.registerResults( z, results , uv, smode) ; 
 					
 					// adapting the evoweights
@@ -237,8 +249,8 @@ public class SomModelDescription implements Serializable{
 				
 					if ((isNewBest) || (z<=1)){
 						
-						bestMetric = variables.getLabelsForUseIndicationVector( somData.getVariables(), evometrices.getBestResult().getUsageVector()) ;
-						currentBestHistoryIndex = z;
+						bestMetric = variables.getLabelsForUseIndicationVector( somData.getVariables(), _evometrices.getBestResult().getUsageVector()) ;
+						currentBestHistoryIndex = z-1;
 					}
 					
 					// logging for the contribution table
@@ -253,6 +265,7 @@ public class SomModelDescription implements Serializable{
 					}
 					if (resultsAvailable== 0){
 						out.printErr(2, "proposed selection has been skipped...") ;
+						i++;
 						continue;
 					}
 					
@@ -270,18 +283,28 @@ public class SomModelDescription implements Serializable{
 					
 					int zn = somProcess.getSomLattice().nodes.size();
 					zn = somProcess.getSomLattice().nodes.size();
-					 
+					
+					if (isNewBest){
+						bestSqData = new SomQualityData( em.getSqData() );
+					}
 					 
 					System.gc();
 					i++;
 				} // i-> all items from provided list
-				 
+				  
 			
 			if (baseMetric.size()>0){
 				currentVariableSelection.clear();
 				currentVariableSelection.addAll( baseMetric ) ;
 			}
 			
+			// integrating metrices 
+			variableContributions.evometrices = evoBasics.integrateEvoMetricHistories(variableContributions.evometrices, _evometrices, 0);
+			
+			EvoMetrik em = evoMetrices.getItems().get( currentBestHistoryIndex );
+			if ((variableContributions.evometrices.getBestResult().getSqData()==null) && (bestSqData!=null)){
+				variableContributions.evometrices.getBestResult().setSqData( em.getSqData() ) ;
+			}
 			
 		}catch(Exception e){
 			str="";
@@ -358,6 +381,25 @@ public class SomModelDescription implements Serializable{
 	}
 
 
+	/**
+	 * @return the completeCheck
+	 */
+	public boolean isCompleteCheck() {
+		return completeCheck;
+	}
+	/**
+	 * @param completeCheck the completeCheck to set
+	 */
+	public void setCompleteCheck(boolean completeCheck) {
+		this.completeCheck = completeCheck;
+	}
+	
+	
+	public VariableContributions getVariableContributions() {
+		return variableContributions;
+	}
+
+
 	class ContributionChecks implements Runnable{
 		
 		SomQuality somquality;
@@ -386,24 +428,21 @@ public class SomModelDescription implements Serializable{
 			}
 			
 			checkingIsRunning = false;
+			isCalculated = true;
 		}
 	
 		
 	}
-	/**
-	 * @return the completeCheck
-	 */
-	public boolean isCompleteCheck() {
-		return completeCheck;
+
+
+	public boolean isCalculated() {
+		return isCalculated;
 	}
 
 
 
-	/**
-	 * @param completeCheck the completeCheck to set
-	 */
-	public void setCompleteCheck(boolean completeCheck) {
-		this.completeCheck = completeCheck;
+	public void setCalculated(boolean isCalculated) {
+		this.isCalculated = isCalculated;
 	}
 		 
 	

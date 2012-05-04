@@ -49,7 +49,7 @@ import org.NooLab.utilities.xml.*;
  * actively check for new data: file, http, ftp
  * 
  *  
- * TODO:  prepare the interface DataSourceIntf !
+ * 
  */
 public class SomDataObject 	implements  
 										//	used for read access, e.g. by nodes and other applications
@@ -1224,6 +1224,7 @@ public class SomDataObject 	implements
 	
 
 	public ArrayList<String> getVariablesLabels() {
+		
 		ArrayList<String> strings ;
 		int i,k ;
 		String str ;

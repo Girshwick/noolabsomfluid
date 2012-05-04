@@ -29,7 +29,9 @@ public class SomQualityData implements Serializable{
 	
 	public SomQualityData(SomQualityData iSqData) {
 
-
+		if (iSqData==null){
+			return;
+		}
 		targetMode = iSqData.targetMode ;
 		score = iSqData.score ;
 		

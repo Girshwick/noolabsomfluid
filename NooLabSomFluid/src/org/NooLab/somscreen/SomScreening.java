@@ -532,7 +532,30 @@ public class SomScreening {
 		return targetMod; 
 	}
 
-
+	protected ArrayList<Integer> checkProposedSelectionForBlockedVariables( ArrayList<Integer> selection ){
+		int ix , bix;
+		String vlabel;
+		ArrayList<String> blacks = variables.getBlacklistLabels();
+		
+		int i=selection.size()-1;
+		while (i>=0){
+			
+			ix = selection.get(i) ;
+			vlabel = variables.getItem(ix).getLabel() ;
+			
+			
+			
+			bix = blacks.indexOf(vlabel);
+			if (bix>=0){
+				selection.remove(i);
+			}
+			
+			i--;
+		}
+			
+			
+		return selection;
+	}
 	
 	public void setModelResultSelection(int[] selectionmode) {
 		// TODO Auto-generated method stub
@@ -692,6 +715,7 @@ if ((specialInterestVariables!=null) &&
 					
 				}
 				
+				
 			}catch(Exception e){
 				e.printStackTrace() ;
 			}
@@ -791,7 +815,7 @@ if ((specialInterestVariables!=null) &&
 						}
 												
 												str = arrutil.arr2text(proposedSelection);
-												out.printErr(1, "proposed Selection: "+str+"\n") ;	
+												out.printErr(1, "proposed Selection (a): "+str+"\n") ;	
 						// results = ModelProperties as retrieved from somHost.getSomResults()
 						isNewBest = evoMetrices.registerResults( z, results , uv, smode) ; 
 						
@@ -890,6 +914,8 @@ if ((specialInterestVariables!=null) &&
 					proposedSelection = specifySmallChanges(z); modestr="small"; smode=2;
 				}
 				
+				proposedSelection = checkProposedSelectionForBlockedVariables( proposedSelection );
+				
 				if (proposedSelection.size()<=1){ // it includes the tv
 					proposedSelection = evoBasics.getQuantilByWeight(0.2, 0.45, 0.8 , true) ; // there are different versions of it 
 				} // whatever is met first: fraction of all, lo, hi value for weight
@@ -905,7 +931,7 @@ if ((specialInterestVariables!=null) &&
 				Collections.sort(proposedSelection) ;
 				
 											str = arrutil.arr2text(proposedSelection);
-											out.printErr(1, "proposed Selection: "+str+"\n") ;											
+											out.printErr(1, "proposed Selection (b): "+str+"\n") ;											
 				if (proposedSelection.size()==0){
 					return -3;
 				}
@@ -948,7 +974,7 @@ if (results.getTrainingSample().getRoc().getAuC()<0.67){
 }
 if (results.getTrainingSample().getRoc().getAuC()>0.86){
 	z=z+1-1 ;
-	//  5 6 11 14 15 : good AuC but bad score ???
+	// 
 }
 				
 				// results = ModelProperties as retrieved from somHost.getSomResults()
@@ -958,6 +984,7 @@ if (results.getTrainingSample().getRoc().getAuC()>0.86){
 				// calls "evoBasics.getEvoTasks().updateEvoTaskItem", 
 				// for the respective variable index positions, then renormalizeParameters();
 				evoMetrices.registerMetricChangeEffects(av, rv, isNewBest);
+				
 											if (sfProperties.getShowSomProgressMode() == SomFluidProperties._SOMDISPLAY_PROGRESS_STEPS ){
 												String ewstr = ArrUtilities.arr2Text( evoMetrices.evoBasics.evolutionaryWeights, 2) ;
 												String ecstr = ArrUtilities.arr2Text( evoMetrices.evoBasics.evolutionaryCounts);

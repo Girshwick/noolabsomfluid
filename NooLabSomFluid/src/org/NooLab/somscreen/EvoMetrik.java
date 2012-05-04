@@ -30,10 +30,13 @@ public class EvoMetrik  implements Serializable{
 	ArrayList<Double> usageVector;
 
 	int index = -1;
-
+	int step = -1;
+	int loopCount;
+	
 	ArrayList<Integer> varIndexes = new ArrayList<Integer>();
+
 	
-	
+ 
 	
 	// 
 	
@@ -148,6 +151,18 @@ public class EvoMetrik  implements Serializable{
 
 
 
+	public int getStep() {
+		return step;
+	}
+
+
+
+	public void setStep(int step) {
+		this.step = step;
+	}
+
+
+
 	/**
 	 * @return the varIndexes
 	 */
@@ -162,6 +177,18 @@ public class EvoMetrik  implements Serializable{
 	 */
 	public void setVarIndexes(ArrayList<Integer> varIndexes) {
 		this.varIndexes = varIndexes;
+	}
+
+
+
+	public void setLoopCount(int loopcount) {
+		loopCount = loopcount ;
+	}
+
+
+
+	public int getLoopCount() {
+		return loopCount;
 	}
 	
 }

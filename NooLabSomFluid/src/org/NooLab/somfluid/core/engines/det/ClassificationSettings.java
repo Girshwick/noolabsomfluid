@@ -110,6 +110,13 @@ public class ClassificationSettings implements Serializable{
 	double[] 		ECRs = null;  // optional for _TARGETMODE_MULTI 
 	
 	/**   */
+	double preferredSensitivity = -1.0;
+
+	/**   */
+	boolean isEcrAdaptationAllowed;
+
+	
+	/**   */
 	int maxTypeIcount  = -1;
 	/**   */
 	int maxTypeIIcount = -1;
@@ -444,15 +451,9 @@ public class ClassificationSettings implements Serializable{
 
 
 
-
-
 	public ArrayList<ResultRequests> getExtendedResultRequests() {
 		return extendedResultRequests;
 	}
-
-
-
-
 
 	public void setExtendedResultRequests(
 			ArrayList<ResultRequests> extendedResultRequests) {
@@ -461,18 +462,31 @@ public class ClassificationSettings implements Serializable{
 
 
 
-
-
 	public double getEcr() {
 		return ecr;
 	}
 
-
-
-
-
 	public void setEcr(double ecr) {
 		this.ecr = ecr;
+	}
+
+
+	
+	public void setPreferredSensitivity(double value) {
+		preferredSensitivity = value ;
+	}
+
+	public double getPreferredSensitivity() {
+		return preferredSensitivity;
+	}
+
+ 
+	public void setEcrAdaptationAllowed(boolean flag) {
+		isEcrAdaptationAllowed = flag ;
+	}
+ 
+	public boolean isEcrAdaptationAllowed() {
+		return isEcrAdaptationAllowed;
 	}
 	
 	

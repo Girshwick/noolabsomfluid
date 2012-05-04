@@ -57,7 +57,7 @@ public class SomTargetResults {
 	Roccer roccer;
 	ModelProperties modelProperties = new ModelProperties ();
 	
-	
+	double ecrForAdjustment = -1.0;
 	
 	boolean singleModeUndefined = false;
 	
@@ -375,6 +375,11 @@ public class SomTargetResults {
 	}
 
 
+	public double getEcrForAdjustment() {
+		return ecrForAdjustment;
+	}
+
+
 	/**
 	 * @return the sampleValidator
 	 */
@@ -496,17 +501,19 @@ public class SomTargetResults {
 		 * used in case of single group targets 
 		 * @throws Exception 
 		 */
+		@SuppressWarnings("unchecked")
 		public void determineTargetGroups( VirtualLattice somLattice ) throws Exception{
 			
 			boolean hb;
-			int nodeCases=0,nodeTN = 0, nodeTP = 0, nodeFP = 0, nodeFN = 0, ix,totalRecordCount;
+			int nodeCases=0,nodeTN = 0, nodeTP = 0, nodeFP = 0, nodeFN = 0, ix,totalRecordCount,k;
 			double groupIdentifyingValue, generalECR = -1.0 ;
-			MetaNodeIntf node;
+			MetaNodeIntf node, vnode;
 			ArrayList<Double> tvValues  ;
 			double[][] tgDef;
 			String[] tgLabels;
-			IndexDistance idx;
+			IndexDistance idx, nirsk;
 			IndexedDistances idxs = new IndexedDistances();
+			IndexedDistances nodesImpliedRisks = new IndexedDistances();
 			
 			tgDef = classifySettings.getTargetGroupDefinition() ;
 			tgLabels = classifySettings.getTGlabels();
@@ -519,9 +526,11 @@ public class SomTargetResults {
 			if (somLattice.size()<=0){
 				return;
 			}
+			modelProps.ecrForAdjustment = classifySettings.getECR() ; 
+			
 			double _ppv = 0.0;
 			totalRecordCount = 0;
-			
+			nodeCases = 0;
 			// -> all nodes
 			for (int i=0;i<somLattice.size();i++){
 				
@@ -585,22 +594,80 @@ public class SomTargetResults {
 						nodeCases = nodeCases + nodeFN;
 
 						groupIdentifyingValue = frequencyList.majority.observedValue;
+						
+						double nodeVirtTP, nodeVirtFP;
+						// from the opposite perspective in case of putative inclusion of this node, FN turns into TP and TN turns into FP  
+						nodeVirtTP = (double)(int) Math.round((double) node.getExtensionality().getCount() * (1 - frequencyList.npv));
+						nodeVirtFP = (double)(int) Math.round((double) node.getExtensionality().getCount() * frequencyList.npv);
+						 
+						
+						if ((nodeVirtTP>0.0) && ((nodeVirtTP+nodeVirtFP)>0.0)){
+							double v = nodeVirtTP/(nodeVirtTP+nodeVirtFP);
+if (v>0.3){
+	k=0;
+}
+							nirsk = new IndexDistance( i, 0, v);
+							nirsk.setDataObject( new double[]{node.size(),nodeVirtTP,nodeVirtFP, } ) ;
+							nodesImpliedRisks.add(nirsk);
+						}
 					}
 				}
 				node.getExtensionality().setMajorityValueIdentifier( groupIdentifyingValue );
 
 				lcd.ccSum = lcd.ccSum + (frequencyList.ppv * node.getExtensionality().getCount() ) ;
 				
-				
 			} // -> all nodes
 			 
+			int aCases = nodeTP + nodeFN;
+			double _vsens,v;
+			double _sensitivity = (double)nodeTP/(double)(aCases);
+			double _prefSensitivity = classifySettings.getPreferredSensitivity() ;
+			
+			// we adapt the effective threshold for acceptance of nodes, this does NOT change the ECR !! 
+			if ((_sensitivity<_prefSensitivity*0.98) && (_prefSensitivity>0.00000001)){
+				
+				// change threshold such that we add further nodes, we have to go through the rest of the nodes
+				nodesImpliedRisks.sort(-1); // lowest risk first
+				int vTP = nodeTP;
+				int vFP = nodeFP;
+				int vFN = nodeFN;
+				double ppvVTotal = 0.0;
+				for (int i=0;i<nodesImpliedRisks.size();i++){
+					nirsk = nodesImpliedRisks.getItem(i) ;
+					double vppv = nirsk.getDistance() ;
+					int nvix = nirsk.getIndex();
+					vnode = somLattice.getNode(i) ;
+					double[] nodeVDData = (double[])(((ArrayList<Object>)nirsk.getDataObject()).get(0)) ;
+
+					vTP = (int) (vTP + nodeVDData[1]);
+					vFP = (int) (vFP + nodeVDData[2]);
+					_vsens = (double)vTP/(double)(aCases);
+					// v = (double)vTP/(double)(vFN);
+					if (_vsens>=_prefSensitivity){
+						vppv = nirsk.getDistance() ; // this gives the necessary threshold for ECR
+						nvix = nirsk.getIndex() ;
+						ecrForAdjustment = 1.0 - ((double)vTP/(double)(vTP+vFP)) ;
+						modelProps.ecrForAdjustment = ecrForAdjustment; 
+						
+						if ( classifySettings.isEcrAdaptationAllowed()){
+							nodeTP = vTP ;
+							nodeFP = vFP ;
+							nodeFN = aCases - vTP ;
+							nodeTN = (totalRecordCount-aCases)-vFP;
+						}
+						break ;
+					}
+				} // i->
+				
+			}
+			
 			somLattice.setDataSize( totalRecordCount );
 			
 			_ppv = _ppv+1-1;
 			// 
 			determineROCvalues(somLattice);
 			 
-			
+			 
 			idxs.sort(-1) ; // large values first
 			
 			// -> all nodes

@@ -45,6 +45,8 @@ public class ModelProperties implements Serializable,
 
 	public SomQualityData sqData;
 
+	public double ecrForAdjustment;
+
 
 	
 	
