@@ -1,8 +1,11 @@
 package org.NooLab.instance;
 
 
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import processing.core.*;
 
@@ -23,6 +26,10 @@ import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.properties.ValidationSettings;
 import org.NooLab.somfluid.util.PowerSetSpringSource;
+import org.NooLab.somtransform.algo.externals.AlgorithmPluginsLoader;
+import org.NooLab.utilities.datatypes.IndexDistance;
+import org.NooLab.utilities.datatypes.IndexDistanceIntf;
+import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.LogControl;
 
 
@@ -32,7 +39,7 @@ import org.NooLab.utilities.logging.LogControl;
 /**
  * 
  * Later: this applet should start the SomFluid as an application!!
- * Any communication sould be performed through Glue
+ * Any communication should be performed through Glue
  * 
  * 
  * note that the SomFluid instance always contains the full spectrum of tools, yet,
@@ -310,6 +317,7 @@ class SomModuleInstance implements 	Runnable,
 	private void explicitlySettingProperties(){
 		ClassificationSettings cs;
 		PersistenceSettings ps;
+		AlgorithmPluginsLoader lap ;
 		
 		SomFluid sf;
 
@@ -319,10 +327,33 @@ class SomModuleInstance implements 	Runnable,
 		/*
 		 * note that there are a lot more of parameters that could be set for the SOM in order to exert full control,
 		 * e.g. in the context of commercial predictions;
-		 * yet, there are reasonnable default values, and in the long run those parameters are 
+		 * yet, there are reasonable default values, and in the long run those parameters are 
 		 * adjusted autonomously anyway by the system itself  
 		 */
+
 		
+		// loading "builtinscatalog.xml" which is necessary for global indexing and activation of built-in algorithms
+		sfProperties.setAlgorithmsConfigPath("D:/dev/java/somfluid/plugins/"); 
+
+		// here we need an absolute path, the file is needed also for advanced auto assignments of built-in algorithms, 
+		// even if there are no custom algorithms
+		sfProperties.getPluginSettings().setBaseFilePath("D:/dev/java/somfluid/plugins/", "catalog.xml") ;
+		// the plugin jarfiles are expected to sit in a relative sub-dir "transforms/" to this base-dir...
+
+		sfProperties.setPluginsAllowed(false) ; // could be controlled form the outside in a dynamic manner
+
+		try {
+			if (sfProperties.isPluginsAllowed()){
+				lap = new AlgorithmPluginsLoader(sfProperties, true);
+				if (lap.isPluginsAvailable()) {
+					lap.load();
+				}
+			}
+			// feedback about how much plugins loaded ...
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		// sfProperties.importTransformationParameterDefaults("standards.ini");
 		
 		
 		sfProperties.setInstanceType( instanceType ) ;                     // the main role the module is exhibiting
@@ -345,8 +376,8 @@ class SomModuleInstance implements 	Runnable,
 		ps.setIncomingDataSupervisionDir("");
 		ps.setIncomingDataSupervisionActive(false);
 		
-		ps.setProjectName("bank2");
-		ps.setKeepPreparedData(true); // includes persistence of transformer model
+		ps.setProjectName("bank2"); 									   // will be used also for output files
+		ps.setKeepPreparedData(true); 									   // includes persistence of transformer model
 		ps.autoSaveSomFluidModels(true);
 		ps.autoPackagingOfCompleteModels(true);
 		
@@ -378,7 +409,7 @@ class SomModuleInstance implements 	Runnable,
 		//sfProperties.getModelingSettings().setTvLabelAuto("TV") ;        // the syllable(s) that will be used to identify the target variable as soon as data are available
 																	       // allows a series of such identifiers
 		sfProperties.getModelingSettings().setExpectedVariety("*TV",3) ;   // this is important for adjusting the max number of rows for scanning  
-																		   // in this case, 3 different values are exoect in the first variable which matches the wildcarded label (default: 2)
+																		   // in this case, 3 different values are expected in the first variable which matches the wildcarded label (default: 2)
         sfProperties.getModelingSettings().setInitialAutoVariableSelection(0); // default=0==no; 1=by PCA, 2=by KNN	
         sfProperties.getModelingSettings().setInitialVariableSelection( new String[]{"Stammkapital","Bonitaet","Bisher","Branchenscore"});
         
@@ -398,10 +429,13 @@ class SomModuleInstance implements 	Runnable,
 		cs.setTargetGroupDefinitionExclusions( new double[]{0.4} );		   // these values are NOT recognized as belonging to any of the target groups, == singular dot-like holes in the intervals
 		
 		
-		cs.setErrorCostRatioRiskPreference( 0.08 );                        // if the ECR is not met by the conditions of a node in a developed SOM, it will NOT be
-		 																   // regarded as a part of the model 	
+		cs.setErrorCostRatioRiskPreference( 0.18 );                        // if the ECR is not met by the conditions of a node in a developed SOM, it will NOT be
+		 																   // regarded as a part of the positive prediction, thus contributing all contained cases as "false negatives" 	
 		
-		
+		cs.setPreferredSensitivity( 0.15);                                 // the minimum fraction of cases that should be considered for calculations of cost
+																		   // if the model does not achieve this portion at ECR, the ECR gets overruled, since the calculation of
+																		   // of the quality of the data does not make much sense at TP<1%
+		cs.setEcrAdaptationAllowed(true) ;	
 		
 		cs.addExtendedResultRequest( ClassificationSettings._XREQ_MISCLASSIFICATIONS_FULL ) ;
 		cs.addExtendedResultRequest( ClassificationSettings._XREQ_ROC_FULL) ;
@@ -411,7 +445,7 @@ class SomModuleInstance implements 	Runnable,
 																		   // ParetoPopulationExplorer, SomModelDescription, Coarseness, MultiCrossValidation, MetricsStructure 
 		
 				    													   // whichever of these 4 stopping criteria for the optimizer is reached first...
-		sfProperties.getModelingSettings().getOptimizerSettings().setMaxStepsAbsolute( 12 );     // low only for testing, or initial exploration, typically 500+
+		sfProperties.getModelingSettings().getOptimizerSettings().setMaxStepsAbsolute( 6 );     // low only for testing, or initial exploration, typically 500+
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -       // note that this stepcount applies WITHIN a step on L2 as 
 																								 // controlled by "setMaxL2LoopCount" (see below, typically max=4)
 		
@@ -455,21 +489,31 @@ class SomModuleInstance implements 	Runnable,
 		sfProperties.setValidationActive( true );						   // whether the model should be validated, applies only if SomType = _SOMTYPE_MONO 
 																		   // for most validation styles, the validation sample will be drawn before bagging
 																		   // if optimizing && validation off, internal quality of SOM will be used for optimization
-		                       // TODO sample size does not work ...
+		                       
 		sfProperties.setValidationParameters( 20, 46.3 );			       // basic parameters for validation: p1:n repeats p2+=sample sizes to keep aside for validation
 																		   // also possible: style of validation
 		sfProperties.setValidationSampleSizeAutoAdjust(true) ;			   // will care for the sample such that enough "cases" are present in the samples   
 		
 		sfProperties.addSurrogatedSimulationData( 0.21, 0.3, 1 ) ; 		   // amount of records as in fraction, amount of noise as fraction of stdev per variable
 																		   // this results in a more robust model, since small differences are prevented from being overweighted
+		
 		sfProperties.surrogateAppMode( 0,1,0 ) ; 						   // global on/off, initial modeling on/off, optimizing on/off 
 
 		sfProperties.setShowSomProgress( SomFluidProperties._SOMDISPLAY_PROGRESS_BASIC ) ;
 		sfProperties.setShowSomProgress( SomFluidProperties._SOMDISPLAY_PROGRESS_STEPS ) ;
+		
+		
 		// results
 																		   // defining what should happen upon results
 																		   // saving, sending, displaying, nothing
 		
+		sfProperties.getOutputSettings().setResultfileOutputPath("") ;     // there is a default !
+		sfProperties.getOutputSettings().setResultFilenames( _prepareResultFilesMap() ); // there is a default
+		sfProperties.getOutputSettings().setAsXml(false);                  // default = false
+		sfProperties.getOutputSettings().createZipPackage(true);           // default = true
+		
+		
+		// general env
 
 		sfProperties.setMessagingActive(false) ;					       // if true, the SomFluidFactory will start the glueClient ;
 		   																   // the SomFluid is then accessible through messaging (see the SomController application)
@@ -522,8 +566,9 @@ class SomModuleInstance implements 	Runnable,
 													// param2: number of runs: (1,1) building a stable model, then stop 
 													//                         (2,500) including screening S1, S2, max 500 steps in S2
 													//                         (2,3,500) max 3 levels in S1
-													//      				   (2,0,500) no dependency screening, just eveo optimizing
-													//            
+													//      				   (2,0,500) no dependency screening, just evo-optimizing
+													//      
+		
 		sfTask.setStartMode(1) ;             		// default=1 == starting after producing the FluidSom
 										 			//        <1 == only preparing, incl. 1 elementary run to load the data, 
 		                                 			//              but not starting the modeling process (v switches in the middle between 3..100)
@@ -531,8 +576,8 @@ class SomModuleInstance implements 	Runnable,
 		
 		
 		
-		sfFactory.produce( sfTask );          		// this produces the SomFluid and the requested som-type accoding to
-													// SomFluidProperties._SOMTYPE_MONO, refering implicitly to sfTask; 
+		sfFactory.produce( sfTask );          		// this produces the SomFluid and the requested som-type according to
+													// SomFluidProperties._SOMTYPE_MONO, referring implicitly to sfTask; 
 													//
 		
 	
@@ -547,8 +592,29 @@ class SomModuleInstance implements 	Runnable,
 		// if we like to have graphical output, then start the applet for displaying it and 
 		// define shake hands by means of GlueClients...
 		
+		
+		/*
+		 
+		...some important API stuff for a running system
+		 
+		sfFactory.getSomTransformer().introduceTransformation( );
+		sfFactory.getSomTransformer().introduceTransformations( filename );
+		sfFactory.getSomData().addObservations( ... );
+		sfFactory.getSomTransformer().reFreshCalculation( ); // e.g. after adding data
+		
+		*/
 	}
 
+	private IndexedDistances _prepareResultFilesMap(){
+		
+		IndexDistance filmapItem ;
+		IndexedDistances rfMap = new IndexedDistances() ;
+		
+		
+		
+		return rfMap;
+	}
+	
 	
 	
 	public void importNewProperties( String xmlPropertiesSource){
