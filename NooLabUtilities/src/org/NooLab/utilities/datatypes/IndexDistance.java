@@ -127,6 +127,26 @@ public class IndexDistance implements Serializable, IndexDistanceIntf{
 			data.add(obj) ;
 		}
 	}
+
+
+	public int getSecindex() {
+		return secindex;
+	}
+
+
+	public void setSecindex(int secindex) {
+		this.secindex = secindex;
+	}
+
+
+	public ArrayList<Object> getData() {
+		return data;
+	}
+
+
+	public void setData(ArrayList<Object> data) {
+		this.data = data;
+	}
 	
 	
 }

@@ -64,18 +64,19 @@ public class IndexedDistances {
 	
 	@SuppressWarnings("unchecked")
 	public void sort(int direction){
-		if (direction<-1){
+		if (direction < -0.5){
 			direction=-1;
 		}else{
-			if (direction> 1){
+			if (direction>= 0.5){
 				direction= 1;
 			}else{
-				if (direction!=0)direction = 0;
+				if ((direction>-0.5) && (direction<0.5))direction = 0;
 			}
 		}
 		
 		Collections.sort(items, new ixdComparator(direction));
 	}
+	
 	public void sort(){
 		
 		// use: 
@@ -107,9 +108,31 @@ public class IndexedDistances {
 	
 	// ------------------------------------------------------------------------
 	
+	/**
+	 * criterion : 1=distance, 2=index, 3=secondary index, 4=string
+	 * 
+	 * not functional yet !!!!!!!!
+	 * 
+	 */
+	public void sort(int criterion, int j) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
 	public ArrayList<IndexDistance> getItems() {
 		return items;
 	}
+	
+	
+	public void put(int indexValue, String string, int secIndexValue) {
+		IndexDistance item;
+		
+		item = new IndexDistance(indexValue, secIndexValue, 0.0, string ) ;
+		items.add(item) ;
+	}
+
+
 	public void setItems(ArrayList<IndexDistance> items) {
 		this.items = items;
 	}
@@ -141,6 +164,28 @@ public class IndexedDistances {
 	}
 
 	
+	public void addAll( ArrayList<IndexDistanceIntf> ixdiList ) {
+		 
+		for (int i=0;i<ixdiList.size();i++){
+			items.add( (IndexDistance) ixdiList.get(i)) ;
+		}
+	}
+
+
+	public void addAll(IndexedDistances ixds) {
+		 
+		for (int i=0;i<ixds.size();i++){
+			items.add( (IndexDistance) ixds.getItem(i)) ;
+		}
+	}
+
+
+	public void addItems(IndexedDistances listOfPutativeTransforms) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
 	class ixdComparator implements Comparator{
 
 		int direction=0;
@@ -165,18 +210,18 @@ public class IndexedDistances {
 			
 			if (direction>=0){
 				if (v1>v2){
-					result = -1;
-				}else{
-					if (v1<v2){
-						result = 1 ;
-					}
-				}
-			}else{
-				if (v1>v2){
 					result = 1;
 				}else{
 					if (v1<v2){
 						result = -1 ;
+					}
+				}
+			}else{
+				if (v1>v2){
+					result = -1;
+				}else{
+					if (v1<v2){
+						result = 1 ;
 					}
 				}
 				
@@ -188,17 +233,9 @@ public class IndexedDistances {
 	}
 
 
-	public void addAll( ArrayList<IndexDistanceIntf> ixdiList ) {
-		 
-		for (int i=0;i<ixdiList.size();i++){
-			items.add( (IndexDistance) ixdiList.get(i)) ;
-		}
-	}
-
-
-	public void addItems(IndexedDistances listOfPutativeTransforms) {
+	public ArrayList<String> getAllFieldLabels() {
 		// TODO Auto-generated method stub
-		
+		return null;
 	}
 
  	 

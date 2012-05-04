@@ -132,7 +132,10 @@ public class ArrUtilities {
 		for ( int i = 0; i <  objints.length; i++) {
 			 return_value = return_value + " " + ((Integer)objints[i]).intValue(); 
 		 } 
-		  
+		
+		return_value = return_value.replace("  ", " ");
+		return_value = return_value.trim() ;
+		
 		return return_value ;
 	}
 	
