@@ -31,11 +31,14 @@ public class DataReceptor implements //
 	String loadedFile = "";
 	String preparedFile = "";
 	
-	RawFileData rawFileData;
+	String loadedProfileFile;
 	
-	DataTable dataTable;
+	RawFileData rawFileData, rawFileProfileData;
+	
+	DataTable dataTable, profilesTable;
 	
 	PrintLog out;
+	
 	
 	// ------------------------------------------------------------------------
 	public DataReceptor( SomFluidProperties sfProps, SomDataObject somdata) {
@@ -48,7 +51,18 @@ public class DataReceptor implements //
 	// ------------------------------------------------------------------------
 
 	
-
+	@Override
+	public void loadProfilesFromFile(String filename) throws Exception {
+		out = somData.getOut();
+		
+		loadedProfileFile = filename;
+		
+		rawFileProfileData = new RawFileData(  somData, out ) ;
+		
+		profilesTable = rawFileData.getDataTable(); 
+		
+		rawFileProfileData = null;
+	}
 
 	@Override
 	public void loadFromFile(String filename) throws Exception {

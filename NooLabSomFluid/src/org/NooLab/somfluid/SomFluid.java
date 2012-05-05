@@ -400,7 +400,32 @@ public class SomFluid
 
 	// ========================================================================
 	
+	public SomDataObject loadProfileSource( String srcName ) throws Exception{
+		SomDataObject somDataObject;
+		
+		
+		somDataObject = createSomDataObject() ;
 	
+		
+		SomTransformer transformer = new SomTransformer( somDataObject, sfProperties );
+		
+		somDataObject.setTransformer(transformer) ;
+		
+		DataReceptor dataReceptor = new DataReceptor( sfProperties, somDataObject );
+		
+		// establishes a "DataTable" from a physical source
+		dataReceptor.loadProfilesFromFile( srcName );
+	
+		// imports the DataTable into the SomDataObject, and uses a SomTransformer instance 
+		// in order to provide a basic numeric version of the data by calling SomTransformer.basicTransformToNumericalFormat()
+		somDataObject.importProfilesTable( dataReceptor, 1 ); 
+		
+		
+											out.print(4, "somDataObject instance @ loadSource : "+somDataObject.toString()) ;
+											
+		return somDataObject;
+	
+	}
 	
 	public SomDataObject loadSource( String srcname ) throws Exception{
 		
@@ -450,6 +475,8 @@ public class SomFluid
 		// as defined by the user
 		somDataObject.acquireInitialVariableSelection();
 		
+		// 
+		somDataObject.ensureTransformationsPersistence(0);
 											out.print(4, "somDataObject instance @ loadSource : "+somDataObject.toString()) ;
 											
 		return somDataObject;

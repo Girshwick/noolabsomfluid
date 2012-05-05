@@ -9,6 +9,8 @@ import java.util.TreeMap;
  
 import org.NooLab.somfluid.components.MissingValues;
 import org.NooLab.somfluid.components.SomDataObject;
+import org.NooLab.somfluid.storage.PersistentAgentIntf;
+import org.NooLab.somfluid.storage.PersistentAgentSerializableIntf;
 import org.NooLab.somfluid.util.Formula;
 import org.NooLab.somtransform.StackedTransformation;
 import org.NooLab.somtransform.TransformationStack;
@@ -41,7 +43,7 @@ import org.NooLab.utilities.strings.StringsUtil;
  * 
  * 
  */
-public class DataTable implements Serializable{
+public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 
 	private static final long serialVersionUID = 3655282650007767562L;
 
@@ -303,6 +305,12 @@ public class DataTable implements Serializable{
 	public void setSourceFileName(String filename) {
 		
 		sourceFilename = filename;
+	}
+
+	@Override
+	public void save() {
+		// 
+		
 	}
 
 	public void activateMissingValues( double mv_indicator){

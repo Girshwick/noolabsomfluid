@@ -185,6 +185,11 @@ public class SomFluidProperties implements 	//
 		return persistenceSettings;
 	}
 
+	public DataUseSettings getDataUseSettings() {
+		return dataUseSettings;
+	}
+
+
 	/**
 	 * @param persistenceSettings the persistenceSettings to set
 	 */
@@ -323,6 +328,16 @@ public class SomFluidProperties implements 	//
 
 	public void setDataSrcFilename(String dataSrcFilename) {
 		this.dataSrcFilename = dataSrcFilename;
+	}
+
+
+	public int getSourceType() {
+		return sourceType;
+	}
+
+
+	public void setSourceType(int sourceType) {
+		this.sourceType = sourceType;
 	}
 
 
@@ -600,6 +615,11 @@ public class SomFluidProperties implements 	//
 
 	public void setExtendingDataSourceEnabled(boolean flag) {
 		extendingDataSourceEnabled = flag;
+	}
+
+
+	public boolean isExtendingDataSourceEnabled() {
+		return extendingDataSourceEnabled;
 	}
 
 

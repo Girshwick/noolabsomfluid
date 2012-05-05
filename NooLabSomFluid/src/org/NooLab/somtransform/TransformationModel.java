@@ -10,6 +10,8 @@ import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
 import org.NooLab.utilities.strings.StringsUtil;
 
+import com.jamesmurty.utils.XMLBuilder;
+
 
 
 
@@ -20,16 +22,16 @@ public class TransformationModel implements Serializable{
 
 	String tmGuid = "" ;
 	
-	SomTransformer somTransformer;
-	SomDataObject  somData ;
+	transient SomTransformer somTransformer;
+	transient SomDataObject  somData ;
 	
-	/** any of the variables gets a transformation stack assigned as soon as an initializaiton is requested */
+	/** any of the variables gets a transformation stack assigned as soon as an initialization is requested */
 	ArrayList<TransformationStack> variableTransformations = new ArrayList<TransformationStack>();
 
 
-	
-	StringsUtil strgutil = new StringsUtil();
-	PrintLog out ;
+	transient SomTransformersXML xEngine = new SomTransformersXML();
+	transient StringsUtil strgutil = new StringsUtil();
+	transient PrintLog out ;
 	
 	// ========================================================================
 	public TransformationModel(SomTransformer transformer, SomDataObject somdata){
@@ -42,6 +44,52 @@ public class TransformationModel implements Serializable{
 	}
 	// ========================================================================	
 	
+	public String getXML() {
+		return getXML(null);
+	}
+		
+	public String getXML(XMLBuilder builder) {
+		 
+		boolean localXml;
+		String xmlstr="",xstr = "" ;
+		
+		TransformationStack tStack ;
+		
+
+		// opening
+		if (builder==null){
+			builder = xEngine.getXmlBuilder( "transformations" );
+			localXml = true;
+		}else{
+			builder = builder.e( "transformations" );
+			localXml = false;
+		}
+		
+		 
+		
+		for (int i=0;i<variableTransformations.size();i++){
+			
+			tStack = variableTransformations.get(i);
+			
+			xstr = tStack.getXML(builder,i, false);
+
+			// xmlstr = xmlstr + xstr+"\n";
+		}
+		
+		
+		builder = builder.up();
+		builder = builder.c("all transformations visited ... ");
+		
+		if ((localXml) ){
+			xmlstr = xEngine.getXmlStr(builder, true);
+		}else{
+			xmlstr="\n<!--  -->\n" ;
+		}
+		
+		
+		return xmlstr;
+	}
+
 	public int getIndexByOutputReferenceGuid(String tguid) {
 
 		TransformationStack ts;
@@ -173,6 +221,22 @@ public class TransformationModel implements Serializable{
 		}
 		
 		return index;
+	}
+
+	public String getTmGuid() {
+		return tmGuid;
+	}
+
+	public void setTmGuid(String tmGuid) {
+		this.tmGuid = tmGuid;
+	}
+
+	public ArrayList<TransformationStack> getVariableTransformations() {
+		return variableTransformations;
+	}
+
+	public void setVariableTransformations(ArrayList<TransformationStack> variableTransformations) {
+		this.variableTransformations = variableTransformations;
 	}
 
 	 

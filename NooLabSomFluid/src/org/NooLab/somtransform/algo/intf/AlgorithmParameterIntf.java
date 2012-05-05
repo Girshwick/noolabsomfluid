@@ -1,5 +1,8 @@
 package org.NooLab.somtransform.algo.intf;
 
-public interface AlgorithmParameterIntf {
+import java.io.Serializable;
+
+
+public interface AlgorithmParameterIntf extends Serializable{
 
 }

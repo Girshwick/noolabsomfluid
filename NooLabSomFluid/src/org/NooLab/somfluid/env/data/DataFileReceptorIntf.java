@@ -11,4 +11,6 @@ public interface DataFileReceptorIntf {
 	public RawFileData getRawFileData();
 	
 	public DataTable getDataTable() ;
+
+	void loadProfilesFromFile(String filename) throws Exception;
 }

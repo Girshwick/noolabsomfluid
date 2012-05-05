@@ -45,6 +45,7 @@ public class NomValEnum extends AlgoTransformationAbstract{
 		ArrayList<String> divItems = new ArrayList<String>();  
 		IndexDistance ixd;
 		IndexedDistances ixds = new IndexedDistances();
+		AlgorithmParameter algoparam;
 		
 		if (isStrData==false){
 			result = -7;
@@ -63,7 +64,7 @@ public class NomValEnum extends AlgoTransformationAbstract{
 				
 				if ((divItems.indexOf(str)<0) && (str.length()>0) && (str.toLowerCase().contentEquals("-m.v.")==false)){
 					divItems.add(str) ;
-					ixd = new IndexDistance(i,1.0,str) ;
+					ixd = new IndexDistance( ixds.size()+1, 1.0, str) ;
 					ixds.add(ixd) ;
 				}else{
 					ix = ixds.getIndexByStr(str) ;
@@ -73,11 +74,38 @@ public class NomValEnum extends AlgoTransformationAbstract{
 					}
 				}
 				
-				
 			}// -> all values
 			
 			ixds.sort(-1) ;
+			
+			String[] nveStrings = ixds.getStringItems();
+			// from that, calculate similarity matrix for the strings
+			
+			/*
+			 * we could apply 
+			 * - expressing similarity by string into enum distance
+			 * - optimal scaling       -> external by extra and dedicated algorithm
+			 * - relative risk weight  -> external by extra and dedicated algorithm
+			 * 
+			 * so, string similarity could be checked, and if there is a tendency, then we could use it
+			 */
+			
 			result=1;
+			
+			// now get the translation table from ixds
+			algoparam = new AlgorithmParameter();
+			
+			algoparam.setIntValues( ixds.getIndexItems() ) ;
+			algoparam.setStrValues( nveStrings ) ;
+			algoparam.setNumValues( ixds.getDistanceItems() ) ;
+			
+			
+			for (int i=0;i<ixds.size();i++){
+				ixd = ixds.getItem(i) ;
+				algoparam.putValuePair(ixd.getIndex(),ixd.getGuidStr() ) ;
+			}
+			algoparam.obj = new IndexedDistances(ixds.getItems());
+			parameters.add(algoparam) ;
 			
 			outvalues.clear() ;
 			

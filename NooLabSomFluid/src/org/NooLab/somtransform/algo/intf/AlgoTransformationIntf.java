@@ -13,6 +13,8 @@ public interface AlgoTransformationIntf  extends AlgorithmIntf{
 
 	public boolean hasParameters() ;
 	
+	public AlgorithmParameters getParameters() ;
+	
 	public String getDescription() ;
 
 	double handlingRangeProtection(double value);

@@ -93,6 +93,7 @@ public class SimpleSingleModel implements SomHostIntf{
 			e.printStackTrace();
 		}
 	}
+	
 	public void setDataObject( SomDataObject sdo){
 		somDataObj = sdo ;
 	}

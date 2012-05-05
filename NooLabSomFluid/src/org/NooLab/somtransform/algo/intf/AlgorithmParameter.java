@@ -1,16 +1,23 @@
 package org.NooLab.somtransform.algo.intf;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.NooLab.utilities.objects.StringedObjects;
+import org.apache.commons.collections.BidiMap;
+import org.apache.commons.collections.bidimap.DualHashBidiMap;
 
 public class AlgorithmParameter implements AlgorithmParameterIntf{
 
 	// TODO: should not be "naked" strings, but (pseudo-)maps with a descriptor,
-	String label = "";
+	String label = "";   
 	
 	String typeLabel = "" ; // as used in instanceOf, class().name
 	
-	double numValue ;
-	double strValue ;
+	double numValue = -1.0 ;
+	String strValue = "" ;
 
 	int[]    intValues = new int[0] ;
 	double[] numValues = new double[0] ;
@@ -18,7 +25,20 @@ public class AlgorithmParameter implements AlgorithmParameterIntf{
 	
 	ArrayList<Object> list = new ArrayList<Object>();
 
-	public Object obj; 
+	ArrayList<ValuePair> valuePairs = new ArrayList<ValuePair>() ;
+	
+	BidiMap map = new DualHashBidiMap();
+	/*
+	 MapIterator it = map.mapIterator();
+ 		while (it.hasNext()) {
+   			Object key = it.next();
+   			Object value = it.getValue();
+   			it.setValue("newValue");
+ 		}
+	*/
+	public Object obj=null; 
+	
+	transient StringedObjects strobj = new StringedObjects();
 	
 	// ========================================================================
 	public AlgorithmParameter(){
@@ -73,15 +93,15 @@ public class AlgorithmParameter implements AlgorithmParameterIntf{
 	/**
 	 * @return the strValue
 	 */
-	public double getStrValue() {
+	public String getStrValue() {
 		return strValue;
 	}
 
 	/**
 	 * @param strValue the strValue to set
 	 */
-	public void setStrValue(double strValue) {
-		this.strValue = strValue;
+	public void setStrValue(String strVal) {
+		strValue = strVal;
 	}
 
 
@@ -92,8 +112,10 @@ public class AlgorithmParameter implements AlgorithmParameterIntf{
 
 
 
-	public void setIntValues(int[] intValues) {
-		this.intValues = intValues;
+	public void setIntValues(int[] iValues) {
+		
+		intValues = new int[iValues.length] ;
+		System.arraycopy( iValues, 0, intValues, 0, intValues.length) ;
 	}
 
 
@@ -104,10 +126,10 @@ public class AlgorithmParameter implements AlgorithmParameterIntf{
 
 
 
-	public void setNumValues(double[] numValues) {
-		this.numValues = numValues;
+	public void setNumValues(double[] nValues) {
+		numValues = new double[nValues.length] ;
+		System.arraycopy( nValues, 0, numValues, 0, numValues.length) ;
 	}
-
 
 
 	public String[] getStrValues() {
@@ -116,8 +138,17 @@ public class AlgorithmParameter implements AlgorithmParameterIntf{
 
 
 
-	public void setStrValues(String[] strValues) {
-		this.strValues = strValues;
+	public void setStrValues(String[] sValues) {
+		 
+		strValues = new String[sValues.length] ;
+		System.arraycopy( sValues, 0, strValues, 0, strValues.length) ;
+
+	}
+
+
+
+	public ArrayList<ValuePair> getValuePairs() {
+		return valuePairs;
 	}
 
 
@@ -145,5 +176,88 @@ public class AlgorithmParameter implements AlgorithmParameterIntf{
 	}
 	
 	
+	public void putValuePair(int vi, String str) {
+		
+		int ix = valuePairs.size() ;
+		ValuePair vp = new ValuePair(ix,vi,str );
+		valuePairs.add(vp) ;
+	}
+
+
+	class ValuePair implements Serializable{
+		 
+		private static final long serialVersionUID = -4552648532679913901L;
+		
+		
+		int index ;
+		boolean visible=true;
+		
+		Object key;
+		Object value;
+		
+		// --------------------------------------------------------------------
+		public ValuePair( Object vkey, Object vval ){
+			put( vkey, vval);
+		}
+		
+		public ValuePair( int ix, Object vkey, Object vval ){
+			put( vkey, vval);
+			index = ix;
+		}
+		
+		public ValuePair( int ix){
+			index = ix;
+		}
+		public ValuePair(){
+		}
+		// --------------------------------------------------------------------
+
+		public void put( Object vkey, Object vval){
+			  
+			key = strobj.decode( strobj.encode(vkey));
+			value = strobj.decode( strobj.encode(vval));
+			
+			
+		}
+		
+		public int getIndex() {
+			return index;
+		}
+
+
+		public void setIndex(int index) {
+			this.index = index;
+		}
+
+
+		public boolean isVisible() {
+			return visible;
+		}
+
+
+		public void setVisible(boolean visible) {
+			this.visible = visible;
+		}
+
+
+		public Object getKey() {
+			return key;
+		}
+
+
+		public void setKey(Object key) {
+			this.key = key;
+		}
+
+
+		public Object getValue() {
+			return value;
+		}
+
+
+		public void setValue(Object value) {
+			this.value = value;
+		}
+	}
 	
 }

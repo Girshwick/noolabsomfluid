@@ -49,7 +49,7 @@ public class StackedTransformation  implements Serializable{
 	
 	/** Reflection is used to create an instance  */
 	String algorithmName = "";
-	Object algorithm ;
+	transient Object algorithm ;
 	
 	/** 
 	 * 0=passive, 1=value transform, 2=column writer, determines the interface and thus the handling of data
@@ -65,10 +65,10 @@ public class StackedTransformation  implements Serializable{
 	String 	 outputColumnId;
 	
 	int stackPosForInData = -1;  // -1 = last
-	ArrayList<ArrayList<?>> inData = new ArrayList<ArrayList<?>>();
+	transient ArrayList<ArrayList<?>> inData = new ArrayList<ArrayList<?>>();
 	
-	ArrayList<ArrayList<Double>> bufferedData;
-	ArrayList<Double> outData = new ArrayList<Double>();
+	transient ArrayList<ArrayList<Double>> bufferedData;
+	transient ArrayList<Double> outData = new ArrayList<Double>();
 
 	int inFormat  = -1 ;
 	int outFormat = -1 ;
@@ -79,8 +79,6 @@ public class StackedTransformation  implements Serializable{
 	DataDescription dataDescription = new DataDescription();
 
 	public boolean multiVarInput = false;
-
-	
 	
 	
 	// ========================================================================

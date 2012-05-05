@@ -1,5 +1,7 @@
 package org.NooLab.somtransform;
 
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import org.NooLab.somfluid.SomFluidProperties;
@@ -10,6 +12,9 @@ import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.data.NormValueRangesIntf;
+import org.NooLab.somfluid.properties.PersistenceSettings;
+import org.NooLab.somfluid.storage.ContainerStorageDevice;
+import org.NooLab.somfluid.storage.PersistentAgentIntf;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatistics;
 
@@ -21,8 +26,14 @@ import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
+import org.NooLab.utilities.datetime.DateTimeValue;
+import org.NooLab.utilities.datetime.hirondelle.DateTime;
+import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.objects.StringedObjects;
 import org.NooLab.utilities.strings.StringsUtil;
+
+import com.jamesmurty.utils.XMLBuilder;
 
 
 
@@ -49,12 +60,16 @@ import org.NooLab.utilities.strings.StringsUtil;
  * 
  * 
  */
-public class SomTransformer implements SomTransformerIntf{
+public class SomTransformer implements SomTransformerIntf,
+									   PersistentAgentIntf{
 
 	//SomFluidFactory sfFactory;
-	SomDataObject somData;
+	transient SomDataObject somData;
 	SomFluidProperties sfProperties;
 	
+	int derivationLevel = 0 ;
+	String version = "1.0";
+	int revision=1;
 	
 	/** data as it has been imported */
 	DataTable dataTableObj ;
@@ -62,7 +77,7 @@ public class SomTransformer implements SomTransformerIntf{
 	DataTable dataTableNormalized ;
 	
 	/** TODO: they are always and immediately saved to file  */
-	ArrayList<CandidateTransformation> candidateTransformations = new ArrayList<CandidateTransformation> ();
+	transient ArrayList<CandidateTransformation> candidateTransformations = new ArrayList<CandidateTransformation> ();
 	
 	ArrayList<Integer> addedVariablesByIndex = new ArrayList<Integer>();
 	
@@ -78,10 +93,12 @@ public class SomTransformer implements SomTransformerIntf{
 	boolean excludeBlacklisted = false ;
 	int realizedCount;
 	
+	transient SomTransformersXML xEngine = new SomTransformersXML();
 	
-	PrintLog out ;
-	private ArrUtilities arrutil = new ArrUtilities();
-	private StringsUtil strgutils = new StringsUtil ();
+	transient PrintLog out ;
+	transient StringedObjects strobj = new StringedObjects();
+	transient ArrUtilities arrutil = new ArrUtilities();
+	transient StringsUtil strgutils = new StringsUtil ();
 	
 	// ========================================================================
 	public SomTransformer( SomDataObject sdo, SomFluidProperties sfprops) {
@@ -126,7 +143,7 @@ public class SomTransformer implements SomTransformerIntf{
 			ix = this.transformationModel.findTransformationStackByVariable( variable ); // not the label, but the object !
 			
 			if (ix<0){
-				tstack = new TransformationStack( sfProperties.getPluginSettings() );
+				tstack = new TransformationStack( this, sfProperties.getPluginSettings() );
 			
 				// such the stack knows about the raw in-format (valueScaleNiveau), the label, basic min & max 
 				tstack.baseVariable = variable; 
@@ -154,6 +171,145 @@ public class SomTransformer implements SomTransformerIntf{
 		return getAlgorithmIndexValue(str) ;
 	}
 	
+	/**
+	 * we save it in as a serialized object here 
+	 * 
+	 */
+	public void save() {
+		
+		String filename="";
+		ContainerStorageDevice storageDevice ;
+		
+		
+		storageDevice = new ContainerStorageDevice();
+		
+		storageDevice.storeObject(this, filename);
+	}
+
+	public void extractTransformationsXML( ){
+		
+		
+		extractTransformationsXML( derivationLevel, version, revision);
+	}
+	/** 
+	 * here we extract the rules as XML, together with necessary informations about source etc.</br> 
+	 * 
+	 * this is needed for the application of the SOM model to new data, since this new data need to be 
+	 * transformed according to the same rules !
+	 * 
+	 * the transformations are all stored and accessible via 
+	 * transformationModel.variableTransformations.get(i)
+	 * 
+	 * 
+	 */
+	public void extractTransformationsXML( int derivationLevel, String version, int revision){
+		
+		XMLBuilder builder;
+		String xmlstr;
+		
+		this.derivationLevel = derivationLevel ;
+		this.version = version ;
+		this.revision = revision ;
+		
+		// create target directory = temporary by java  
+		try {
+			
+			DFutils.createTempDir( SomDataObject._TEMPDIR_PREFIX);
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		// save data to serialized object file (obj + ser = string !), we might transfer it through some wires...
+		
+		
+		builder = xEngine.getXmlBuilder( "somtransformer" );
+		
+		builder = builder.importXMLBuilder( getProjectDescriptionXml( derivationLevel, version, revision) );
+		
+		builder = builder.importXMLBuilder( getSourceDescriptionXml() );
+		// builder = builder.e("sources").up();
+		
+		
+		
+		// creating the XML String from transformations, add a chapter "transformations"
+		String xstr = transformationModel.getXML(builder);
+		
+		 
+		
+		// creating XML about the context
+		String cxstr = getTransformerContextAsXml();
+		
+		 
+		xmlstr = xEngine.getXmlStr(builder, true);
+		
+		xmlstr = strgutils.replaceAll(xmlstr, "<parameters/>", "");
+		
+		
+		out.print(2, xmlstr) ;
+	}
+	
+	private XMLBuilder getSourceDescriptionXml() {
+		
+		XMLBuilder builder = xEngine.getXmlBuilder( "sources" );
+		
+		PersistenceSettings ps = sfProperties.getPersistenceSettings();
+		
+		int varcount=0, reccount=0,bytecount=0;
+		
+		builder = builder
+						 .e("sourcetype").a("value", ""+sfProperties.getSourceType()).up()
+						 .e("identifier").a("name", sfProperties.getDataSrcFilename()).up()
+						 .e("size").a("variables", ""+varcount)
+						           .a("records",""+reccount)
+						           .a("bytes",""+bytecount)
+						 .up()
+						 ;
+				
+		builder = builder.up();
+		
+		return builder;
+	}
+
+
+	private XMLBuilder getProjectDescriptionXml( int derivationLevel, String version, int revision ) {
+		PersistenceSettings ps = sfProperties.getPersistenceSettings();
+		
+		 
+		
+		XMLBuilder builder = xEngine.getXmlBuilder( "project" );
+		String datestr= (new DateTimeValue(0, 0)).get("d/M/yyyy HH:mm:ss");
+		
+		builder = builder.e("name")
+								.a("label", ps.getProjectName())
+								.a("version", version)
+								.a("revision", ""+revision)
+								.a("date", datestr)
+								
+								 
+						 .e("derivationLevel").a("value", ""+derivationLevel)		
+						 .e("sourcetype").a("value", ""+sfProperties.getSourceType()).up()
+						 .e("identifier").a("name", sfProperties.getDataSrcFilename()).up()
+						 .e("systemrootdir").a("identifier", ps.getPathToSomFluidSystemRootDir()).up()
+						 .e("extendingsource").a("value",strgutils.booleanize(sfProperties.isExtendingDataSourceEnabled()))
+						 .e("simulation").a("mode", ""+sfProperties.getDataUseSettings().getSimumlationMode())
+						 				 .a("size",""+sfProperties.getDataUseSettings().getSimulationSize())
+						 ;
+				
+		builder = builder.up();
+		
+		return builder;
+	}
+
+ 
+
+
+	private String getTransformerContextAsXml(){
+		
+		return  "";
+	}
+	
+	
 
 	/**
 	 * this provides numeric versions of the data in the provided table.</br>
@@ -174,7 +330,7 @@ public class SomTransformer implements SomTransformerIntf{
 	public int basicTransformToNumericalFormat(){
 			
 			int result = -1;
-			int cn,n,n1,n2 ;
+			int cn,n,n1,n2 , recordCount=0;
 			boolean  copyIsMandatory;
 			int currentFormat;
 			String varLabel ;
@@ -197,16 +353,17 @@ public class SomTransformer implements SomTransformerIntf{
 			boolean isBlacklisted;  
 			
 			try{
-				
 				variables = this.somData.getVariables() ;
-				
-				
-				
-				// repeat until all stackpositions have a defined outgoing data format = num
+				if (somData.getDataTable().getColcount()<=0){
+					return -103;
+				}
+				recordCount = somData.getDataTable().getColumn(0).getRowcount() ;
+				// repeat until all stack positions have a defined outgoing data format = num
 				boolean numFormatsAvail=false;
 				
-				while (numFormatsAvail==false){
-					
+				if (recordCount<=3){ return -107;}
+				
+				while (numFormatsAvail==false){	
 					cn = transformationModel.variableTransformations.size() ;
 					
 					int i=-1;
@@ -215,13 +372,15 @@ public class SomTransformer implements SomTransformerIntf{
 					// transformationModel.variableTransformations size remains 0 for raw variables ???
 					while (i<cn-1){
 						i++;
-						
-						
+											if (provideProgress(i,cn,recordCount)){
+												
+											}
+											
 						varTStack = transformationModel.variableTransformations.get(i) ;
 						v = varTStack.baseVariable ;
 						
 						varLabel = v.getLabel() ;
-if (varLabel.contentEquals("KundenNr")){ 
+if (varLabel.toLowerCase().contains("recht")){ 
 	int zz;
 	zz=0;
 }						
@@ -246,7 +405,7 @@ if (varLabel.contentEquals("KundenNr")){
 						// some variables need to remain in raw state, such as ID or TV columns;
 						// for those we have to create a copy directly from the raw values
 						copyIsMandatory = false;
-						if ((v.isID()) || (v.isIndexcandidate() )){ // (v.isTV())
+						if (((v.isID()) || (v.isIndexcandidate() )) && (v.isDerived()==false)){ // copies are not "mandatory"(!) if variable is already a derived one 
 							copyIsMandatory = true;
 						}
 						if ((v.getRawFormat() >= DataTable.__FORMAT_ORDSTR ) || (v.getRawFormat() == DataTable.__FORMAT_DATE)){
@@ -495,9 +654,15 @@ if (varLabel.contentEquals("KundenNr")){
 		}
 
 
+	private boolean provideProgress(int i, int cn, int recordCount) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+
 	/**
 		 * use this to provide candidate transformations;
-		 * the "candidates" bject need to implement the interface "AnalyticFunctionTransformationsIntf"
+		 * the "candidates" object need to implement the interface "AnalyticFunctionTransformationsIntf"
 		 * 
 		 */
 		public void perceiveCandidateTransformations( AnalyticFunctionTransformationsIntf candidates, int intoFreshStack) {
@@ -1023,6 +1188,12 @@ if (varlabel.toLowerCase().contentEquals("stammkapital")){ // stammkapital is a 
 	}
 
 	
+	public void createDataDescriptions() {
+		// TODO Auto-generated method stub
+		
+	}
+
+
 	private String createAlgorithmIndicatorLabel(IndexDistance transformItem) {
 		String labelSnip="", str, xstr;
 		
@@ -1908,7 +2079,7 @@ if (varlabel.toLowerCase().contentEquals("stammkapital")){ // stammkapital is a 
 			_dataTable.getColumnHeaders().set(newIndex, newVarLabel);
 			
 			// else, we have to create a new TransformationStack that reflects the new variable
-			newTStack = new TransformationStack( sfProperties.getPluginSettings() );
+			newTStack = new TransformationStack( this,sfProperties.getPluginSettings() );
 			newTStack.baseVariable = newVariable ;
 			newTStack.varLabel = newVarLabel ;
 			newTStack.setLatestFormat(currentFormat) ;
@@ -1962,6 +2133,38 @@ if (varlabel.toLowerCase().contentEquals("stammkapital")){ // stammkapital is a 
 				rowCount = rowcnt ; 
 				colCount = colcnt ;
 			}
+		}
+
+		public boolean isDone() {
+			return done;
+		}
+
+		public void setDone(boolean done) {
+			this.done = done;
+		}
+
+		public int getRowCount() {
+			return rowCount;
+		}
+
+		public void setRowCount(int rowCount) {
+			this.rowCount = rowCount;
+		}
+
+		public int getColCount() {
+			return colCount;
+		}
+
+		public void setColCount(int colCount) {
+			this.colCount = colCount;
+		}
+
+		public long getTimeStamp() {
+			return timeStamp;
+		}
+
+		public void setTimeStamp(long timeStamp) {
+			this.timeStamp = timeStamp;
 		}
 	}
 }

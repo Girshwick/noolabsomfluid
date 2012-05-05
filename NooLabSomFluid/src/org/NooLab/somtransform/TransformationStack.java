@@ -13,7 +13,12 @@ import org.NooLab.somtransform.algo.intf.AlgoColumnWriterIntf;
 import org.NooLab.somtransform.algo.intf.AlgoMeasurementIntf;
 import org.NooLab.somtransform.algo.intf.AlgoTransformationIntf;
 import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
+import org.NooLab.somtransform.algo.intf.AlgorithmParameter;
+import org.NooLab.somtransform.algo.intf.AlgorithmParameters;
 import org.NooLab.utilities.net.GUID;
+import org.NooLab.utilities.strings.StringsUtil;
+
+import com.jamesmurty.utils.XMLBuilder;
 
 
 
@@ -47,6 +52,7 @@ public class TransformationStack implements Serializable {
 	public static final String _DERIVAR_PREFIX = "d[##]_" ;
 	
 	transient SomFluidPluginSettings pluginSettings;
+	transient SomTransformer somTransformer;
 	
 	// this is really globally unique
 	String transformGuid = ""; // The SomTransformer has to maintain a map 
@@ -81,10 +87,12 @@ public class TransformationStack implements Serializable {
 
 	private boolean criticalErrorsAreVisible = true ;
 
-	
+	transient SomTransformersXML xEngine = new SomTransformersXML();
 
 	// ========================================================================
-	public TransformationStack( SomFluidPluginSettings pluginsettings){
+	public TransformationStack( SomTransformer transformer, SomFluidPluginSettings pluginsettings ){
+		
+		somTransformer = transformer ;
 		
 		transformGuid = GUID.randomvalue(); 
 		pluginSettings = pluginsettings;
@@ -104,6 +112,278 @@ public class TransformationStack implements Serializable {
 	public int size() {
 		 
 		return items.size() ;
+	}
+
+	
+	private String numerize( double value, int digits){
+		String numstr="";
+	
+		numstr = String.format("%."+digits+"f", value);
+		
+		numstr = StringsUtil.trimTrailingZeroes(numstr);
+		
+		return numstr;
+	}
+	
+	private String booleanize( boolean flag){
+		String bstr="";
+		
+		if (flag){ bstr="true";}else{bstr="false";}
+		
+		return bstr;
+	}
+
+	public String getXML(  int zpos) {
+		return getXML( null, zpos, true) ;
+	}
+	
+	public String getXML( XMLBuilder builder , int zpos, boolean xStrRequested) {
+		
+		String xstr = "",xmlstr="",varLabel;
+		StackedTransformation stTransform;
+		AlgorithmParameters algoparams;
+		boolean localXml, isBlack=false, isAbsExcluded=false;
+		/*
+		ArrayList<String> inputVarLabels = new ArrayList<String>() ;
+		ArrayList<StackedTransformation> items = new ArrayList<StackedTransformation>();
+		ArrayList<String> outputColumnIds = new ArrayList<String>();
+		*/
+		
+		// preparations
+		
+		varLabel = baseVariable.getLabel();
+		isBlack  = somTransformer.somData.getVariables().getBlacklistLabels().indexOf(varLabel)>=0; 
+		isAbsExcluded = somTransformer.sfProperties.getAbsoluteFieldExclusions().indexOf(varLabel)>=0;
+		
+		
+		// opening
+		if (builder==null){
+			builder = xEngine.getXmlBuilder( "column" ).a( "label", varLabel ).a( "guid", transformGuid ).a("index", ""+zpos);
+			localXml = true;
+		}else{
+			builder = builder.e( "column" ).a( "label", varLabel ).a( "guid", transformGuid ).a("index", ""+zpos);
+			localXml = false;
+		}
+		
+if (varLabel.contains("Rechtsform")){
+	int k;
+	k=0;
+}
+		// properties: isID idcand tv tvcand isderived isexported
+		builder = builder.e("properties")
+							 
+		           		     .e("id").a("idcolumn",booleanize(baseVariable.isID())).up() 
+		           		     .e("tv").a("tvcolumn",booleanize(baseVariable.isTV())).up()
+		           		     .e("idcandidate").a("idccolumn",booleanize(baseVariable.isID())).up() 
+		           		     .e("tvcandidate").a("tvccolumn",booleanize(baseVariable.isTV())).up()
+		           		     .e("derived").a("isderived",booleanize(baseVariable.isDerived())).up()
+		           		     .e("format").a("value","").up()
+		           		 .up() ;
+
+		builder = builder.e("relations")
+						     .e("export").a("value", booleanize(isExported)).up()
+						     .e("isExcluded").a("value", booleanize(isAbsExcluded)).up()
+						     .e("outcolumn");
+						     	 // loop ...
+								if ((outputColumnIds!=null) && (outputColumnIds.size()>0)){
+									for (int i=0;i<outputColumnIds.size();i++){
+										builder = builder.e("item").a("id", outputColumnIds.get(0)).up() ;
+									}
+								}
+						         
+							  builder = builder.up()
+		           		  .up() ;
+		
+		
+		
+		builder = builder.e("algorithms").a("length", ""+items.size());
+	
+		for (int i=0;i<items.size();i++){
+			stTransform = items.get(i);
+			
+			// xstr = xEngine.transcodeStackedTransformation(i,stTransform) ;
+			
+			builder = builder.e("algoritem").a("index", ""+i).a("name", stTransform.algorithmName );
+			
+			if ((stTransform.dataDescription.max != -1) && (stTransform.dataDescription.max != stTransform.dataDescription.min)){ 
+				builder = builder.e("datadescription") 
+									.e("values")
+										.a("min", numerize(stTransform.dataDescription.min,7))
+										.a("max", numerize(stTransform.dataDescription.max,7))
+										.a("mean", numerize(stTransform.dataDescription.mean,7))
+										.a("median", numerize(stTransform.dataDescription.median,7))
+										.a("variance", numerize(stTransform.dataDescription.variance,7))
+
+									 .up()	
+				.up() ;
+			}
+			
+			// parameters
+			XMLBuilder pb, paramsbuilder;
+			
+			paramsbuilder = xEngine.getXmlBuilder( "parameters" );  
+			// builder = builder.e("parameters");
+			
+						// get parameters from algorithm, this checks the algotype
+			          
+			
+						algoparams = getAlgorithmsParameters( stTransform.algorithm ) ; 
+						if (algoparams!=null){
+							pb = serialxAlgoParams(algoparams);
+							paramsbuilder = paramsbuilder.importXMLBuilder( pb );
+						}
+						
+						if (stTransform.algorithmType == AlgorithmIntf._ALGOTYPE_WRITER){
+							paramsbuilder = paramsbuilder.e("outlabel").a("value", stTransform.outputColumnLabel).up();
+						}	
+						
+					 
+			paramsbuilder = paramsbuilder.up().up();
+			xmlstr = xEngine.getXmlStr(paramsbuilder, false);
+			
+			if (xmlstr.contains("<!-- -->")){
+				// paramsbuilder = xEngine.getXmlBuilder( "" ); 
+			}else{
+				builder = builder.importXMLBuilder( paramsbuilder ) ;	
+			}
+			
+			
+			builder = builder.up() ;
+		} // i->
+		
+		
+		builder = builder.c("algorithms");
+		
+		xEngine.digestList(inputVarLabels);
+		xEngine.digestList(outputColumnIds);
+
+		if ((localXml) || (xStrRequested)){
+			xmlstr = xEngine.getXmlStr(builder, false);
+		}else{
+			xmlstr="\n<!--  -->\n" ;
+		}
+		// builder.importXMLBuilder(builder)
+		return xmlstr ;
+	}
+
+	/**
+	 * 
+	 * everything that is  !null or size>0 will be transcribed
+	 * 
+	 * @param aps
+	 * @return
+	 */
+	private XMLBuilder serialxAlgoParams(AlgorithmParameters aps){
+		String xStr = "", str ;
+		XMLBuilder builder = null;
+		AlgorithmParameter ap;
+		int paramsfound = 0;
+		
+		
+		builder = xEngine.getXmlBuilder( "params" );
+		
+		for (int i=0;i<aps.getItems().size();i++){
+			ap = aps.getItems().get(i);
+			builder = builder.e("set").a("index", ""+i);
+				
+				if ((ap.getIntValues()!=null) && (ap.getIntValues().length>0)){
+					str = somTransformer.arrutil.arr2text( ap.getIntValues() ).trim() ;
+					str = somTransformer.strgutils.replaceAll(str, " ", ";");
+					builder = builder.e("intvalues").a("count", ""+ap.getIntValues().length).a("list", str).up();
+					paramsfound++;
+				}
+			
+				if ((ap.getNumValues()!=null) && (ap.getIntValues().length>0)){
+					str = somTransformer.arrutil.arr2text( ap.getNumValues() ).trim() ;
+					str = somTransformer.strgutils.replaceAll(str, " ", ";");
+					builder = builder.e("numvalues").a("count", ""+ap.getNumValues().length).a("list", str).up();
+					paramsfound++;
+				}
+				if ((ap.getStrValues()!=null) && (ap.getStrValues().length>0)){
+					str = somTransformer.arrutil.arr2text( ap.getStrValues() ).trim() ;
+					str = somTransformer.strgutils.replaceAll(str, " ", ";");
+					builder = builder.e("strvalues").a("count", ""+ap.getStrValues().length).a("list", str).up();
+					paramsfound++;
+				}
+				if ((ap.getList()!=null) && (ap.getList().size()>0)){
+					// ArrayList<Object> -> serialized
+					str="";
+					builder = builder.e("objects");
+					for (int k=0;k<ap.getList().size();k++){
+						Object obj = ap.getList().get(k) ;
+						str = somTransformer.strobj.encode( obj ) ;
+						builder = builder.e("item").a("encoding", str).up();
+					}
+					builder = builder.up() ;
+					paramsfound++;
+				}
+				if ((ap.getValuePairs()!=null) && (ap.getValuePairs().size()>0)){
+					Object obj = ap.getValuePairs();
+					str = somTransformer.strobj.encode( obj ) ;
+					builder = builder.e("valuepairs").a("encoding", str).up();
+					paramsfound++;
+				}
+				//
+				if (ap.getLabel().length()>0){
+					builder = builder.e("label").a("value", ap.getLabel());
+					paramsfound++;
+				}
+				if (ap.getNumValue()!=-1.0){
+					str = somTransformer.strgutils.numerize(ap.getNumValue(), 7).trim();
+					builder = builder.e("label").a("value", str).up();
+					paramsfound++;
+				}
+				if (ap.getObj()!=null){
+					// Object -> serialized
+					Object obj = ap.getObj();
+					str = somTransformer.strobj.encode( obj ) ;
+					builder = builder.e("object").a("encoding", str).up();
+					paramsfound++;
+				}
+				if (ap.getStrValue().length()>0 ){
+					builder = builder.e("string").a("value", ap.getStrValue()).up();
+					paramsfound++;
+				}
+				if (ap.getTypeLabel().length()>0 ){
+					builder = builder.e("string").a("value", ap.getTypeLabel()).up();
+					paramsfound++;
+				}
+				
+			builder = builder.up();
+		}// i->
+		
+		builder.up();
+		
+		if (paramsfound==0){
+			builder = builder.c(" ") ;
+		}
+		
+		return builder;
+	}
+
+	private AlgorithmParameters getAlgorithmsParameters(Object algorithm) {
+		AlgorithmIntf genAlgo;
+		AlgoTransformationIntf tAlgo ;
+		AlgoColumnWriterIntf wAlgo ;
+		AlgorithmParameters ap=null ;
+		int atyp;
+		
+		
+		genAlgo = (AlgorithmIntf)algorithm;
+		atyp = genAlgo.getType();
+		
+		if (atyp== AlgorithmIntf._ALGOTYPE_VALUE){
+			tAlgo = (AlgoTransformationIntf)algorithm ;
+			ap = tAlgo.getParameters() ;
+		}
+		if (atyp== AlgorithmIntf._ALGOTYPE_WRITER){
+			wAlgo = (AlgoColumnWriterIntf)algorithm ;
+			ap = wAlgo.getParameters() ;
+		}
+		
+		// contains : ArrayList<AlgorithmParameter> items
+		
+		return ap;
 	}
 
 
@@ -668,6 +948,133 @@ public class TransformationStack implements Serializable {
 		if (varLabel.length()>0){
 			inputVarLabels.add( varLabel );
 		}
+	}
+
+
+	// just for serializing ...
+	
+	public int getIndex() {
+		return index;
+	}
+
+
+
+	public void setIndex(int index) {
+		this.index = index;
+	}
+
+
+
+	public ArrayList<String> getOutputColumnIds() {
+		return outputColumnIds;
+	}
+
+
+
+	public void setOutputColumnIds(ArrayList<String> outputColumnIds) {
+		this.outputColumnIds = outputColumnIds;
+	}
+
+
+
+	public ArrayList<Integer> getDataDescriptionItems() {
+		return dataDescriptionItems;
+	}
+
+
+
+	public void setDataDescriptionItems(ArrayList<Integer> dataDescriptionItems) {
+		this.dataDescriptionItems = dataDescriptionItems;
+	}
+
+
+
+	public int getLatestDataDescriptionItem() {
+		return latestDataDescriptionItem;
+	}
+
+
+
+	public void setLatestDataDescriptionItem(int latestDataDescriptionItem) {
+		this.latestDataDescriptionItem = latestDataDescriptionItem;
+	}
+
+
+
+	public int getFirstFormat() {
+		return firstFormat;
+	}
+
+
+
+	public void setFirstFormat(int firstFormat) {
+		this.firstFormat = firstFormat;
+	}
+
+
+
+	public int getLastestFormat() {
+		return lastestFormat;
+	}
+
+
+
+	public void setLastestFormat(int lastestFormat) {
+		this.lastestFormat = lastestFormat;
+	}
+
+
+
+	public boolean isCriticalErrorsWillBreak() {
+		return criticalErrorsWillBreak;
+	}
+
+
+
+	public void setCriticalErrorsWillBreak(boolean criticalErrorsWillBreak) {
+		this.criticalErrorsWillBreak = criticalErrorsWillBreak;
+	}
+
+
+
+	public boolean isCriticalErrorsAreVisible() {
+		return criticalErrorsAreVisible;
+	}
+
+
+
+	public void setCriticalErrorsAreVisible(boolean criticalErrorsAreVisible) {
+		this.criticalErrorsAreVisible = criticalErrorsAreVisible;
+	}
+
+
+
+	public int getFirstItemForUpdate() {
+		return firstItemForUpdate;
+	}
+
+
+
+	public void setTransformGuid(String transformGuid) {
+		this.transformGuid = transformGuid;
+	}
+
+
+
+	public void setBaseVariable(Variable baseVariable) {
+		this.baseVariable = baseVariable;
+	}
+
+
+
+	public void setVarLabel(String varLabel) {
+		this.varLabel = varLabel;
+	}
+
+
+
+	public void setItems(ArrayList<StackedTransformation> items) {
+		this.items = items;
 	}
 	 
 	

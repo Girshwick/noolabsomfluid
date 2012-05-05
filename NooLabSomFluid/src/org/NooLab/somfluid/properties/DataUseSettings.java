@@ -27,6 +27,21 @@ public class DataUseSettings implements Serializable{
 	public void setSimulationSize(int simulationsize) {
 		simulationSize = simulationsize ;
 	}
+
+
+	public int getSimumlationMode() {
+		return simumlationMode;
+	}
+
+
+	public void setSimumlationMode(int simumlationMode) {
+		this.simumlationMode = simumlationMode;
+	}
+
+
+	public int getSimulationSize() {
+		return simulationSize;
+	}
 	
 	
 }
