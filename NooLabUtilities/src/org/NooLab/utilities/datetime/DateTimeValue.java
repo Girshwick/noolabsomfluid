@@ -17,6 +17,16 @@ import java.util.Date;
  * mode    : 0 = "dd/MM/yyyy" ; 1 = "yyyyMMdd" ;   <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
  *           mode=1 is better suited for sorting items  <br/>  <br/>
  * 
+import java.util.Calendar; 
+import java.text.SimpleDateFormat; 
+public static final String DATE_FORMAT_NOW = "yyyy-MM-dd HH:mm:ss"; 
+ 
+public static String now() { 
+Calendar cal = Calendar.getInstance(); 
+SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT_NOW); 
+return sdf.format(cal.getTime()); 
+} 
+
  */
 public class DateTimeValue {
 
@@ -43,18 +53,26 @@ public class DateTimeValue {
     }
     
     public String get(){
-    	SimpleDateFormat sdfTime;
-    	SimpleDateFormat sdfDate;
-    	
-    	String strTime="" , strDate="";
-    	
-    	
     	if (mode<=0){
     		dateformat = "dd/MM/yyyy" ;
     	}
     	if (mode==1){
     		dateformat = "yyyyMMdd" ;
     	}
+    	return get(dateformat) ;
+    }
+    
+	public String get(String formatStr) {
+		// TODO Auto-generated method stub
+	 
+    
+    	SimpleDateFormat sdfTime;
+    	SimpleDateFormat sdfDate;
+    	
+    	String strTime="" , strDate="";
+    	dateformat = formatStr;
+    	
+    	
     	
     	sdfDate = new SimpleDateFormat(dateformat);
 	    sdfTime = new SimpleDateFormat("HH:mm:ss");
@@ -190,6 +208,8 @@ public class DateTimeValue {
 	public Date getCurrentDateTime() {
 		return currentDateTime;
 	}
+
+
 	    
 }
 

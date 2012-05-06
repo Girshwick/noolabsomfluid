@@ -2548,8 +2548,10 @@ if (str.contains("1. 5")){
 	    }
 	
 	*/
-	
-	public String trimtrailingzeroes(String Str){
+	public String trimtrailingzeroes(String str){
+		return trimTrailingZeroes(str);
+	}
+	public static String trimTrailingZeroes(String Str){
 		String  return_value;
 		boolean done=false;
 		
@@ -2859,6 +2861,24 @@ if (str.contains("1. 5")){
 			
 		
 		return rb;
+	}
+	
+	public String numerize( double value, int digits){
+		String numstr="";
+	
+		numstr = String.format("%."+digits+"f", value);
+		
+		numstr = StringsUtil.trimTrailingZeroes(numstr);
+		
+		return numstr;
+	}
+	
+	public String booleanize( boolean flag){
+		String bstr="";
+		
+		if (flag){ bstr="true";}else{bstr="false";}
+		
+		return bstr;
 	}
 	
 	public Vector<String> extractNumsFromString(String str){

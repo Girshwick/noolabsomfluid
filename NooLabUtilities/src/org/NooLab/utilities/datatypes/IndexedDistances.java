@@ -1,13 +1,17 @@
 package org.NooLab.utilities.datatypes;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
 
 
-public class IndexedDistances {
-
+public class IndexedDistances implements Serializable{
+ 
+	private static final long serialVersionUID = 2535904175527972027L;
+	
+	
 	ArrayList<IndexDistance> items = new ArrayList<IndexDistance> ();
 	
 	// ========================================================================
@@ -22,6 +26,11 @@ public class IndexedDistances {
 	// ========================================================================
 
 	
+	public IndexedDistances(IndexedDistances ixds) {
+		items.addAll( ixds.getItems() ) ;
+	}
+
+
 	public void clear() {
 		 
 		items.clear();
@@ -158,6 +167,40 @@ public class IndexedDistances {
 		
 		return item;
 	}
+
+	public int[] getIndexItems() {
+
+		int[] vis = new int[items.size()] ;
+		
+		for (int i=0;i<items.size();i++){
+			vis[i] = items.get(i).index ;
+		}
+		return vis;
+	}
+
+
+	public double[] getDistanceItems() {
+		
+		double[] vis = new double[items.size()] ;
+		
+		for (int i=0;i<items.size();i++){
+			vis[i] = items.get(i).distance ;
+		}
+		return vis;
+	}
+
+
+	public String[] getStringItems() {
+
+		String[] vis = new String[items.size()] ;
+		
+		for (int i=0;i<items.size();i++){
+			vis[i] = items.get(i).guidStr ;
+		}
+		return vis;
+		
+	}
+
 
 	public void removeItem( int index){
 		items.remove(index);
