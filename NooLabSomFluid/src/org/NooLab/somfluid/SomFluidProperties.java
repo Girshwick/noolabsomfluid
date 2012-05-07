@@ -1,5 +1,6 @@
 package org.NooLab.somfluid;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -15,6 +16,8 @@ import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.properties.SettingsTransporter;
 import org.NooLab.somfluid.properties.SpriteSettings;
 import org.NooLab.somfluid.properties.ValidationSettings;
+import org.NooLab.somfluid.storage.ContainerStorageDevice;
+import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.utilities.files.DFutils;
 
 
@@ -22,9 +25,14 @@ import org.NooLab.utilities.files.DFutils;
 public class SomFluidProperties implements 	//  
 												DataHandlingPropertiesIntf,
 											// 
-												LatticePropertiesIntf{
+												LatticePropertiesIntf,
+												Serializable{
 
-	static SomFluidProperties sfp; 
+	
+	private static final long serialVersionUID = 62391334397417444L;
+
+	
+	transient static SomFluidProperties sfp; 
 	
 	public final static int _SOMTYPE_MONO = 1; 
 	public final static int _SOMTYPE_PROB = 2;
@@ -42,6 +50,10 @@ public class SomFluidProperties implements 	//
 	public static final int _SOMDISPLAY_PROGRESS_BASIC =  0 ;
 	public static final int _SOMDISPLAY_PROGRESS_STEPS =  1 ;
 	public static final int _SOMDISPLAY_PROGRESS_PERC  =  2 ;
+
+
+	public static final String _STORAGE_OBJ = "SomFluid.properties";
+	public static final String _STORAGE_XML = "SomFluid.properties.xml";
 	
 	
 	transient SomFluidFactory sfFactory ;
@@ -60,11 +72,12 @@ public class SomFluidProperties implements 	//
 	// that is for _SOMTYPE_MONO only ! 
 	ModelingSettings modelingSettings = new ModelingSettings() ;
 	DataUseSettings dataUseSettings = new DataUseSettings() ;
-	PersistenceSettings persistenceSettings = new PersistenceSettings();
 		
 	SomFluidPluginSettings pluginSettings = new SomFluidPluginSettings();
+
+	PersistenceSettings persistenceSettings  ;
 	
-	OutputSettings outputSettings = new OutputSettings();
+	OutputSettings outputSettings ;
 	
 	// lattice
 	int somType = -1; // mandatory 
@@ -90,8 +103,11 @@ public class SomFluidProperties implements 	//
 	
 
 	
-	static SettingsTransporter settingsTransporter;
+	transient static SettingsTransporter settingsTransporter;
 	
+	transient FileOrganizer fileOrganizer;
+
+	private String systemRootDir;
 	
 	// ========================================================================
 	protected SomFluidProperties(){
@@ -101,9 +117,8 @@ public class SomFluidProperties implements 	//
 	
 	
 	public static SomFluidProperties getInstance() {
-		
-		sfp = new SomFluidProperties(); 
-		return sfp;
+		 
+		return getInstance("");
 	}
 	/**   */
 	public static SomFluidProperties getInstance( String xmlSettingsStack ) {
@@ -114,12 +129,21 @@ public class SomFluidProperties implements 	//
 			settingsTransporter = new SettingsTransporter( sfp );
 			sfp = settingsTransporter.importProperties( xmlSettingsStack );
 		}
-		
+		 
 		return sfp;
 	}
 	
+	public FileOrganizer getFileOrganizer(){
+		return fileOrganizer;
+	}
+	public void setFileOrganizer( FileOrganizer  forg){
+		fileOrganizer = forg ;
+	}
+	 
+		 
+	 
+	
 	public void importSettings(){
-		
 		
 	}
 
@@ -132,6 +156,39 @@ public class SomFluidProperties implements 	//
 		
 		return xmlSettingsStr;
 	}
+
+	public void save() {
+		save(0); 
+	}
+	
+	public void save(int target) {
+		
+		String dir,  propertiesFileName;
+		
+		FileOrganizer fileorg = new FileOrganizer ();
+		fileorg.setPropertiesBase(this);
+		
+		DFutils fileutil = new DFutils();
+		
+		if (target>=1){
+			String xstr = exportSettings();
+			dir = fileutil.getUserDir();
+			propertiesFileName = DFutils.createPath( dir, SomFluidProperties._STORAGE_XML ) ;
+			fileutil.writeFileSimple(propertiesFileName,xstr);
+			
+		}else{
+			dir = fileorg.getObjectStoreDir();
+			propertiesFileName = DFutils.createPath( dir, SomFluidProperties._STORAGE_OBJ ) ;
+			
+			// now loading the desired properties into a new object;
+			ContainerStorageDevice storageDevice ;
+			storageDevice = new ContainerStorageDevice();
+			
+			storageDevice.storeObject( this,propertiesFileName) ;
+
+		}
+	}
+
 
 	/**
 	 * this creates an XML string with all parameters and their default values
@@ -521,9 +578,18 @@ public class SomFluidProperties implements 	//
 		modelingSettings.setValidationParameters(parameters);
 	}
 
-	public void setInstanceType(int instanceType) {
-		glueType = instanceType;
+	public void setInstanceType(int glueinstanceType) {
+		glueType = glueinstanceType;
+		
+		
+		fileOrganizer = new FileOrganizer() ;  
+		persistenceSettings = new PersistenceSettings(fileOrganizer);
+		outputSettings = new OutputSettings(persistenceSettings);
+		
+		fileOrganizer.setPropertiesBase(this);
+		
 	}
+	
 	public void setglueModuleMode(int glueModuleMode) {
 		
 	}
@@ -624,7 +690,7 @@ public class SomFluidProperties implements 	//
 
 
 	public void setShowSomProgress(int displayIntensity) {
-		// TODO Auto-generated method stub
+		//
 		showSomProgressMode = displayIntensity ;
 	}
  
@@ -654,10 +720,14 @@ public class SomFluidProperties implements 	//
 	 */
 	public void setAlgorithmsConfigPath(String pathstring) {
 		// 
+		
+		String ps ;
+		ps = DFutils.createPath( pathstring,"/");
+
 		if (pathstring.endsWith("/")==false){
 			pathstring = pathstring+"/" ; 
 		}
-		String ps = DFutils.createPath( "", pathstring);
+
 		algorithmsConfigPath = pathstring;
 	}
 
@@ -668,12 +738,61 @@ public class SomFluidProperties implements 	//
 
 
 	public OutputSettings getOutputSettings() {
-		// TODO Auto-generated method stub
+		//
 		return outputSettings;
 	}
 
 
+	public int getGlueType() {
+		return glueType;
+	}
 
+
+	public void setGlueType(int glueType) {
+		this.glueType = glueType;
+	}
+
+
+	public void setModelingSettings(ModelingSettings modelingSettings) {
+		this.modelingSettings = modelingSettings;
+	}
+
+
+	public void setDataUseSettings(DataUseSettings dataUseSettings) {
+		this.dataUseSettings = dataUseSettings;
+	}
+
+
+	public void setPluginSettings(SomFluidPluginSettings pluginSettings) {
+		this.pluginSettings = pluginSettings;
+	}
+
+
+	public void setOutputSettings(OutputSettings outputSettings) {
+		this.outputSettings = outputSettings;
+	}
+
+
+	public void setPathToSomFluidSystemRootDir(String dir) {
+		// 
+		systemRootDir = dir;
+		persistenceSettings.setPathToSomFluidSystemRootDir(dir);
+	}
+
+
+	public String getSystemRootDir() {
+		return systemRootDir;
+	}
+
+
+	public void setSystemRootDir(String systemRootDir) {
+		this.systemRootDir = systemRootDir;
+	}
+
+
+	
+
+  
 
 	
 	

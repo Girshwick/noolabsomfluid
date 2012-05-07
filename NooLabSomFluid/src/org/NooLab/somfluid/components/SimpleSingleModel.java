@@ -1,5 +1,6 @@
 package org.NooLab.somfluid.components;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -12,6 +13,10 @@ import org.NooLab.somfluid.core.engines.det.SomTargetedModeling;
 import org.NooLab.somfluid.core.engines.det.results.ModelProperties;
 import org.NooLab.somfluid.core.engines.det.results.SomTargetResults;
 import org.NooLab.somfluid.properties.ModelingSettings;
+import org.NooLab.somfluid.properties.PersistenceSettings;
+import org.NooLab.somfluid.storage.ContainerStorageDevice;
+import org.NooLab.somfluid.storage.FileOrganizer;
+import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
 
@@ -23,22 +28,26 @@ import org.NooLab.utilities.logging.SerialGuid;
  * 
  * 
  */
-public class SimpleSingleModel implements SomHostIntf{
+public class SimpleSingleModel implements SomHostIntf, Serializable{
 
-	SomFluid somFluid;
+	private static final long serialVersionUID = 2574222962733833955L;
+	
+	transient SomFluid somFluid;
 	SomFluidTask sfTask ;
-	SomFluidFactory sfFactory ;
+	transient SomFluidFactory sfFactory ;
 	
-	SomDataObject somDataObj ;
+	transient SomDataObject somDataObj ;
 	
-	SomFluidProperties sfProperties ;
+	transient SomFluidProperties sfProperties ;
 	ModelingSettings modelingSettings;
 	
-	SomProcessIntf somProcess;
+	transient SomProcessIntf somProcess;
 	
 	ModelProperties results;
 	
-	PrintLog out ;
+	boolean saveOnCompletion = false;
+	
+	transient PrintLog out ;
 	private ArrayList<Integer> usedVariables = new ArrayList<Integer>();
 	
 	// ========================================================================  
@@ -87,6 +96,9 @@ public class SimpleSingleModel implements SomHostIntf{
 		
 		try {
 		
+			if (sfTask.getResumeMode()>=1){
+				
+			}
 			somDataObj = somFluid.loadSource("");
 
 		} catch (Exception e) {
@@ -133,7 +145,65 @@ public class SimpleSingleModel implements SomHostIntf{
 		
 	}
   
-
+	public static SimpleSingleModel load( SomFluidProperties sfProperties ){
+		
+		SimpleSingleModel simo=null;
+		
+		String xstr="", filepath , vstr="", filename = "";
+		PersistenceSettings ps;
+		 
+		FileOrganizer fileorg = new FileOrganizer(); 
+		 
+		fileorg.setPropertiesBase( sfProperties );
+		
+		ps = fileorg.getPersistenceSettings() ;
+		DFutils fileutil = fileorg.getFileutil();
+		 
+		 
+		filename = ps.getProjectName()+"-somobj" + vstr + fileorg.getFileExtension( FileOrganizer._SOMMODELER ) ;
+		filepath = fileutil.createpath( fileorg.getSomStoreDir() , filename);
+		
+		ContainerStorageDevice storageDevice ;
+		storageDevice = new ContainerStorageDevice();
+		
+		fileorg.careForArchive( FileOrganizer._SOMMODELER, filepath );
+		
+		simo= (SimpleSingleModel)storageDevice.loadStoredObject( filepath) ;
+		
+		return simo;
+	}
+	
+	public int save() {
+	
+	
+		int result=-1;
+		String xstr="", filepath , vstr="", filename = "";
+		PersistenceSettings ps;
+		 
+		FileOrganizer fileorg = somDataObj.transformer.getFileorg() ;
+		
+		ps = fileorg.getPersistenceSettings() ;
+		DFutils fileutil = fileorg.getFileutil();
+		 
+		 
+		filename = ps.getProjectName()+"-somobj" + vstr + fileorg.getFileExtension( FileOrganizer._SOMMODELER ) ;
+		filepath = fileutil.createpath( fileorg.getSomStoreDir() , filename);
+		
+		ContainerStorageDevice storageDevice ;
+		storageDevice = new ContainerStorageDevice();
+		
+		fileorg.careForArchive( FileOrganizer._SOMMODELER, filepath );
+		
+		storageDevice.storeObject( this , filepath) ;
+		
+		if (fileutil.fileexists(filepath)==false){
+			result=-3;
+		}else{
+			result =0;
+		}
+		return result;
+		
+	}
 	@Override
 	public ModelProperties getSomResults() {
 		return results;
@@ -149,8 +219,11 @@ public class SimpleSingleModel implements SomHostIntf{
 			results = modpropsResults ;
 							out.print(3, "results received by main instance (<SimpleSingleModel>) for Som ("+results.dSomGuid+")\n");	
 			double tps = results.getTrainingSample().getTpSingularity();
-			// dealing with persostence of model and results
+			// dealing with persistence of model and results
 			
+			if (saveOnCompletion){
+				save();
+			}
 			results.task.setCompleted(true);
 			 
 	}
@@ -191,6 +264,30 @@ public class SimpleSingleModel implements SomHostIntf{
 	 */
 	public ModelProperties getResults() {
 		return results;
+	}
+
+	public boolean isSaveOnCompletion() {
+		return saveOnCompletion;
+	}
+
+	public void setSaveOnCompletion(boolean flag) {
+		saveOnCompletion = flag;
+	}
+
+	public void setSfTask(SomFluidTask sfTask) {
+		this.sfTask = sfTask;
+	}
+
+	public void setSfProperties(SomFluidProperties sfProperties) {
+		this.sfProperties = sfProperties;
+	}
+
+	public ArrayList<Integer> getUsedVariables() {
+		return usedVariables;
+	}
+
+	public void setUsedVariables(ArrayList<Integer> usedVariables) {
+		this.usedVariables = usedVariables;
 	}
  
 	

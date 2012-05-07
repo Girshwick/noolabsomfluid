@@ -33,25 +33,33 @@ public class Variables implements Serializable, VariablesIntf{
 	int tvColumnIndex = -1;
 	int idColumnIndex = -1;
 	
-	ArrayList<String> 	  initialUsedVariablesStr = new ArrayList<String>() ;
-	ArrayList<Double> 	  usageIndicationVector = new ArrayList<Double>() ;
+	ArrayList<String> 	  initialUsedVariablesStr   ;
+	ArrayList<Double> 	  usageIndicationVector   ;
 	
 	/** 
 	 * describes whether a variable is allowed to touch or not across arbitrary contexts;
 	 * it is sth like a super-blacklist   
 	 */
-	ArrayList<Integer> 	  absoluteAccessible = new ArrayList<Integer>();
+	ArrayList<Integer> 	  absoluteAccessible ;
 	
-	StringsUtil strgutil = new StringsUtil();
+	transient StringsUtil strgutil ;
 	
 	// ========================================================================
 	public Variables(){
 		
+		initialUsedVariablesStr = new ArrayList<String>() ;
+		usageIndicationVector = new ArrayList<Double>() ;
+		absoluteAccessible = new ArrayList<Integer>();
+		strgutil = new StringsUtil();
 	}
 	// ========================================================================
 
 	public Variables( Variables vars ) {
 		Variable item ;
+		
+		initialUsedVariablesStr = new ArrayList<String>() ;
+		usageIndicationVector = new ArrayList<Double>() ;
+		absoluteAccessible = new ArrayList<Integer>();
 		
 		for (int i=0;i<vars.size() ; i++){
 			item = new Variable( vars.getItem(i)) ;
@@ -72,6 +80,8 @@ public class Variables implements Serializable, VariablesIntf{
 		idVariables = new ArrayList<Variable>( vars.idVariables  ) ;
 		targetedVariables = new ArrayList<Variable>( vars.targetedVariables  ) ;
 		
+		strgutil = null;
+		strgutil = new StringsUtil();
 	}
 
 	public int size(){
@@ -527,16 +537,20 @@ public class Variables implements Serializable, VariablesIntf{
 		this.idVariables = idVariables;
 	}
 
-	public void addTargetedVariableByLabel(String tvarLabel) {
+	public void addTargetedVariableByLabel(String tvarLabel) throws Exception{
 		int tix;
 		
-		tix = this.getIndexByLabel(tvarLabel) ;
+		tix = getIndexByLabel(tvarLabel) ;
 		addTargetedVariable( items.get(tix)) ;
 		
 	}
+	
 	public void addTargetedVariable(Variable tvar) {
-		targetedVariables.add(tvar);
+		if (targetedVariables.indexOf(tvar)<0){
+			targetedVariables.add(tvar);
+		}
 	}
+	
 	public void setTargetedVariables(ArrayList<Variable> targetedVariables) {
 		this.targetedVariables = targetedVariables;
 	}
@@ -695,7 +709,7 @@ public class Variables implements Serializable, VariablesIntf{
 	
 	/**
 	 * 
-	 * todo: for large number of variables, we should set up a treemap... (assuming, that the set is not changing
+	 * TODO: for large number of variables, we should set up a treemap... (assuming, that the set is not changing
 	 * @param varLabel
 	 * @return
 	 */
@@ -704,13 +718,13 @@ public class Variables implements Serializable, VariablesIntf{
 		boolean hb;
 		// items ArrayList<Variable>
 		Variable item;
-		
+		String itemVLabel;
 		for (int i=0;i<items.size();i++){
-			item = items.get(i) ;
+			item = items.get(i) ;  itemVLabel = item.getLabel() ;
 			if ((item!=null) && (item.getLabel().contentEquals(varLabel))){
 				index=i;
 				break ;
-			}else{
+			}else{   
 				hb = strgutil.matchSimpleWildcard( varLabel, item.getLabel()) ;
 				if (hb){
 					index = i;
@@ -986,6 +1000,11 @@ public class Variables implements Serializable, VariablesIntf{
 		}
 		
 		return usedVarIndexes;
+	}
+
+	public void reestablishObjects() {
+	 
+		strgutil = new StringsUtil();
 	}
 
 	

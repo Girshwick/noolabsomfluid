@@ -193,12 +193,38 @@ public class SomScreening {
 		evoMetrices.registerResults( 0, modelProperties,  uv, 1) ; // TODO still empty
 	}
 
-
-	public void setInitialVariableSelection( ArrayList<String> vs) {
-	
-		currentVariableSelection = new ArrayList<String>();
-		currentVariableSelection.addAll(vs) ;
+	/**
+	 * 
+	 * @param reqestedVarLabels the labels that should be set as the initial selection
+	 * @param silentDrop adapts the request to the available variables
+	 * @throws Exception 
+	 */
+	public void setInitialVariableSelection( ArrayList<String> reqestedVarLabels, boolean silentDrop) throws Exception{
+		String varlabel ;
+		int ix;
+		Variables variables;
 		
+		variables = somData.getVariables() ;
+		
+		currentVariableSelection = new ArrayList<String>();
+		currentVariableSelection.addAll(reqestedVarLabels) ;
+		
+		ArrayList<String> normDataHeaders = somData.getNormalizedDataTable().getColumnHeaders();
+		
+		// check consistency..
+		int i=currentVariableSelection.size()-1;
+		while (i>=0){
+			varlabel = currentVariableSelection.get(i) ;
+			ix = variables.getIndexByLabel(varlabel) ;
+			
+			if (normDataHeaders.indexOf(varlabel)<0){
+				currentVariableSelection.remove(i) ;
+			}
+			i--;
+		}
+		if (currentVariableSelection.size()<=1){
+			throw(new Exception("none of the requested variables are contained in the currently avaailable set of variables!"));
+		}
 	}
 
 	public void setInitialRelevanciesOfVariables(EvoBasics evoBasics) {
@@ -295,6 +321,21 @@ public class SomScreening {
 	
 	
 
+	public void establishFromStorage() throws Exception {
+		// 
+		SimpleSingleModel simo ;
+		
+		simo = SimpleSingleModel.load( sfProperties );
+		
+		ArrayList<String> vars = simo.getResults().getVariableSelection() ;
+		
+		currentVariableSelection = new ArrayList<String>(vars) ;
+		setInitialVariableSelection( currentVariableSelection,true  ) ;
+		
+		ArrayList<Integer>  varindexes = simo.getUsedVariables() ;
+	}
+	
+	 
 	public void startScreening( int wait, int ithScreen) {
 		
 		
@@ -931,7 +972,7 @@ if ((specialInterestVariables!=null) &&
 				Collections.sort(proposedSelection) ;
 				
 											str = arrutil.arr2text(proposedSelection);
-											out.printErr(1, "proposed Selection (b): "+str+"\n") ;											
+											out.printErr(1, "proposed Selection: "+str+"\n") ;											
 				if (proposedSelection.size()==0){
 					return -3;
 				}
@@ -1359,6 +1400,14 @@ if (selection.size()<=1){
 		this.totalSelectionSize = totalSelectionSize;
 	}
 
+
+	public ArrayList<String> getCurrentVariableSelection() {
+		return currentVariableSelection;
+	}
+
+	public void setCurrentVariableSelection(ArrayList<String> currentVariableSelection) {
+		this.currentVariableSelection = currentVariableSelection;
+	}
 
 	/**
 	 * @return the evoMetrices

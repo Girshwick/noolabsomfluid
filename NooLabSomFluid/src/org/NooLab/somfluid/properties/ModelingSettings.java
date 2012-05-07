@@ -36,11 +36,6 @@ import org.NooLab.utilities.xml.XmlFileRead;
 
 
 
-
-
-
-
-
 public class ModelingSettings implements Serializable{
 
 	private static final long serialVersionUID = -464934381782562062L;
@@ -119,7 +114,7 @@ public class ModelingSettings implements Serializable{
 	
 	
 	// our central random object for creating random numbers
-	transient Random random;
+	Random random;
 	
 	
 	// main variables / properties ....
@@ -129,7 +124,7 @@ public class ModelingSettings implements Serializable{
 	String activeTvLabel="" ;
 	String tvTargetGroupLabelColumnHeader = "" ;
 	
-	/** idf true, then "ClassificationSettings" apply */
+	/** if true, then "ClassificationSettings" apply */
 	boolean targetedModeling = true ; 
 	
 	int distanceMethod = SimilarityIntf._SIMDIST_ADVSHAPE ;
@@ -223,7 +218,7 @@ public class ModelingSettings implements Serializable{
 	
 	// volatile variables .............
 	// only local , for speeding repeated request   .  .  .  .  .  .  .  .  .     
-	Vector<String> variableLabels = new Vector<String>() ;
+	ArrayList<String> variableLabels = new ArrayList<String>() ;
 	private int maxSomEpochCount = 4 ;
 	private boolean evolutionaryAssignateSelection = false ;
 	private boolean spriteAssignateDerivation = false ;
@@ -417,11 +412,21 @@ public class ModelingSettings implements Serializable{
 	}
 
 	public String getActiveTvLabel() {
+		if (activeTvLabel.length()==0){
+			
+			if (variables.getTvColumnIndex()>=0){
+				activeTvLabel = variables.getItem(variables.getTvColumnIndex()).getLabel() ;
+			}
+			if ((activeTvLabel.length()==0) && (variables!=null)){
+				int ix = variables.getIndexByLabel( activeTvLabel ) ;
+				activeTvLabel = variables.getItem(ix).getLabel() ;
+			}
+		}
 		return activeTvLabel;
 	}
 
-	public void setActiveTvLabel(String activeTvLabel) {
-		this.activeTvLabel = activeTvLabel;
+	public void setActiveTvLabel(String tvLabel) {
+		activeTvLabel = tvLabel;
 	}
 
 	public void setTvGroupLabels(String tvColLabel){
@@ -711,11 +716,11 @@ public class ModelingSettings implements Serializable{
 		this.threadPriorities = threadPriorities;
 	}
 
-	public Vector<String> getVariableLabels() {
+	public ArrayList<String> getVariableLabels() {
 		return variableLabels;
 	}
 
-	public void setVariableLabels(Vector<String> variableLabels) {
+	public void setVariableLabels(ArrayList<String> variableLabels) {
 		this.variableLabels = variableLabels;
 	}
 
@@ -974,7 +979,9 @@ public class ModelingSettings implements Serializable{
 }
 
 
-class Growth{
+class Growth implements Serializable{
+	
+	private static final long serialVersionUID = -2943135581423973293L;
 	
 	public int metatree = 0 ;    
 	public int metacrosslevellinking = 0 ;      
@@ -986,6 +993,66 @@ class Growth{
 	
 	public Growth(){
 		
+	}
+
+
+	public int getMetatree() {
+		return metatree;
+	}
+
+
+	public void setMetatree(int metatree) {
+		this.metatree = metatree;
+	}
+
+
+	public int getMetacrosslevellinking() {
+		return metacrosslevellinking;
+	}
+
+
+	public void setMetacrosslevellinking(int metacrosslevellinking) {
+		this.metacrosslevellinking = metacrosslevellinking;
+	}
+
+
+	public int getVertical() {
+		return vertical;
+	}
+
+
+	public void setVertical(int vertical) {
+		this.vertical = vertical;
+	}
+
+
+	public int getHorizontal() {
+		return horizontal;
+	}
+
+
+	public void setHorizontal(int horizontal) {
+		this.horizontal = horizontal;
+	}
+
+
+	public int getvLevels() {
+		return vLevels;
+	}
+
+
+	public void setvLevels(int vLevels) {
+		this.vLevels = vLevels;
+	}
+
+
+	public int gethMaxSize() {
+		return hMaxSize;
+	}
+
+
+	public void sethMaxSize(int hMaxSize) {
+		this.hMaxSize = hMaxSize;
 	}
 	
 }

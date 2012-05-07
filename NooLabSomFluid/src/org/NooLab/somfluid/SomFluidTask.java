@@ -18,6 +18,9 @@ public class SomFluidTask 	implements
 	public static final int _SOM_WORKMODE_FILE   = 1;
 	public static final int _SOM_WORKMODE_PIKETT = 2; // either by dir source or glue
 
+
+	public static final String _TRACEFILE = "SomFluidTask.trace";
+
 	public int workingMode = _SOM_WORKMODE_FILE;
 	
 	
@@ -49,6 +52,9 @@ public class SomFluidTask 	implements
 
 
 	private SomResultDigesterIntf somResultHandler;
+
+
+	private int resumeMode=0;
 	
 	
 	// ========================================================================
@@ -344,6 +350,20 @@ public class SomFluidTask 	implements
  
 	public void setSomResultHandler(SomResultDigesterIntf resultHandler) {
 		this.somResultHandler = resultHandler;
+	}
+
+
+
+	@Override
+	public void setResumeMode(int modeOnOff) {
+		
+		resumeMode = modeOnOff;
+	}
+
+
+
+	public int getResumeMode() {
+		return resumeMode;
 	}
 
 }

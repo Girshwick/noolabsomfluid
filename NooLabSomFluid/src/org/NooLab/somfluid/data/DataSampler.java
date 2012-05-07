@@ -56,7 +56,7 @@ public class DataSampler {
 	int globalLimit = -1;
 	
 	
-	transient Random _random;
+	Random _random;
 	
 
 	// ========================================================================

@@ -37,6 +37,14 @@ public class DistributionBins  implements Serializable{
 	public void setDistributionBins(ArrayList<DistributionBin> distributionBins) {
 		this.items = distributionBins;
 	}
+
+	public ArrayList<DistributionBin> getItems() {
+		return items;
+	}
+
+	public void setItems(ArrayList<DistributionBin> items) {
+		this.items = items;
+	}
 	
 	
 }

@@ -43,7 +43,7 @@ public class DescriptiveStatisticsValues implements Serializable {
 	
 	
 	// ..........................................
-	StringsUtil strgutil = new StringsUtil () ;
+	transient StringsUtil strgutil = new StringsUtil () ;
 
 
 	int[] sumOnSplit = new int[2];

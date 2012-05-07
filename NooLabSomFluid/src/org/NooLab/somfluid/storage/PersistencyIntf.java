@@ -2,5 +2,10 @@ package org.NooLab.somfluid.storage;
 
 public interface PersistencyIntf {
 
-	public void save();
+	public int save();
+	
+	public void saveXml() ;
+	
+	
+	
 }

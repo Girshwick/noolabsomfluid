@@ -19,7 +19,7 @@ public class BasicStatisticalDescription implements Serializable {
 
 	private static final long serialVersionUID = -6837594325966248821L;
 
-	BasicStatisticalDescription bsd;
+	transient BasicStatisticalDescription bsd;
 	
 	int needForRecalc = 0;
 	int removedValues = 0;
@@ -463,6 +463,74 @@ public class BasicStatisticalDescription implements Serializable {
 	public boolean isTimeSeries() {
 		 
 		return isTimeSeries;
+	}
+
+	public BasicStatisticalDescription getBsd() {
+		return bsd;
+	}
+
+	public void setBsd(BasicStatisticalDescription bsd) {
+		this.bsd = bsd;
+	}
+
+	public int getNeedForRecalc() {
+		return needForRecalc;
+	}
+
+	public void setNeedForRecalc(int needForRecalc) {
+		this.needForRecalc = needForRecalc;
+	}
+
+	public int getRemovedValues() {
+		return removedValues;
+	}
+
+	public void setRemovedValues(int removedValues) {
+		this.removedValues = removedValues;
+	}
+
+	public boolean isInitialized() {
+		return initialized;
+	}
+
+	public void setInitialized(boolean initialized) {
+		this.initialized = initialized;
+	}
+
+	public double getQqsum() {
+		return qqsum;
+	}
+
+	public void setQqsum(double qqsum) {
+		this.qqsum = qqsum;
+	}
+
+	public double getGeoMean() {
+		return geoMean;
+	}
+
+	public void setGeoMean(double geoMean) {
+		this.geoMean = geoMean;
+	}
+
+	public double getAdjMean() {
+		return adjMean;
+	}
+
+	public void setAdjMean(double adjMean) {
+		this.adjMean = adjMean;
+	}
+
+	public double getInvsum() {
+		return invsum;
+	}
+
+	public void setInvsum(double invsum) {
+		this.invsum = invsum;
+	}
+
+	public void setEmpiricDistribution(EmpiricDistribution empiricDistribution) {
+		this.empiricDistribution = empiricDistribution;
 	}
 	
 	

@@ -1,9 +1,14 @@
 package org.NooLab.somfluid.storage;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 
@@ -27,6 +32,11 @@ public class ContainerStorageDevice {
 	// ========================================================================	
 	
 	
+	public ContainerStorageDevice(PersistenceSettings ps, FileOrganizer fileorg, int tableobject) {
+		// TODO Auto-generated constructor stub
+	}
+
+
 	public int storeObject( Object dataObj, String filename) {
 		int result=-1;
 		
@@ -70,5 +80,56 @@ public class ContainerStorageDevice {
 		}
 		return result ;
 	}
+
+
+	public Object loadStoredObject(String filename) {
+		
+		Object dataObj=null;
+		
+		int result=-1;
+		 
+		ObjectInputStream objistream = null ;
+		FileInputStream fileIn = null ;
+		BufferedInputStream bins = null ;
+
+		try{
+			
+
+			if (fileutil.fileexists(filename)==false){
+				return null ;
+			}
+			
+			fileIn = new FileInputStream(filename);
+			bins = new BufferedInputStream(fileIn);
+			objistream = new ObjectInputStream(bins);
+
+			dataObj =   objistream.readObject();
+		 
+												out.print(5, " Closing all input streams...");
+			result = 0;
+			
+		}catch(Exception e){
+			result = -3;
+			dataObj=null;
+			// e.printStackTrace(); 
+			out.printErr(1, "Crashing File Read Error in loadStoredObject(), \n"+
+							"file "+filename+"\n"+
+							"message = "+e.getMessage()) ;
+		}finally{
+			try{
+
+				if (objistream!=null) objistream.close();
+				if (bins!=null) bins.close();
+				if (fileIn!=null) fileIn.close();
+		
+			}catch(Exception e){
+				dataObj=null;
+			}
+		}
+		return dataObj;
+	}
+
+
+	 
 
 }

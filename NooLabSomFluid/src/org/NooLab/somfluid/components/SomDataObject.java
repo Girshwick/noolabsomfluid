@@ -20,7 +20,9 @@ import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.data.DataFileReceptorIntf;
 import org.NooLab.somfluid.env.data.DataReceptor;
 import org.NooLab.somfluid.properties.ModelingSettings;
+import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
+import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.PersistentAgentIntf;
 import org.NooLab.somtransform.SomTransformer;
 
@@ -64,19 +66,19 @@ public class SomDataObject 	implements      Serializable,
 	
 	
 	// object references ..............
-	transient FileDataSource filesource;
+	FileDataSource filesource;
 	transient XmlFileRead xmlFile ;
 	
 	
 	// main variables / properties ....
 	transient SomFluidFactory sfFactory ;
 	
-	transient DataTable data=null ;
-	transient DataTable normalizedSomData=null ;
+	DataTable data=null ;
+	DataTable normalizedSomData=null ;
 	
 	transient DataFileReceptorIntf dataReceptor;
 	
-	transient DataTable profilesTable ;
+	DataTable profilesTable ;
 	
 	boolean openChanges=false;
 	
@@ -134,6 +136,17 @@ public class SomDataObject 	implements      Serializable,
 		
 		modelingSettings = sfFactory.getSfProperties().getModelingSettings() ;
 		classifySettings = modelingSettings.getClassifySettings() ; 
+	}
+
+	/**
+	 * creating utility objects on loading the SDO 
+	 */
+	public void reestablishObjects() {
+		
+		strgutil = new StringsUtil();
+		fileutil = new DFutils () ; 
+		utils = new ArrUtilities();
+		variables.reestablishObjects();
 	}
 
 
@@ -530,20 +543,110 @@ public class SomDataObject 	implements      Serializable,
 	
 	// ------------------------------------------------------------------------
 
-	public static SomDataObject loadSomData( DataHandlingPropertiesIntf datahandleProps ){
+	public static SomDataObject loadSomData( SomFluidProperties sfProperties ) throws Exception{
 		
-		SomDataObject sdo = new SomDataObject( datahandleProps );
+		DataHandlingPropertiesIntf datahandleProps = sfProperties;
+		// SomDataObject sdo = new SomDataObject( datahandleProps );
+		SomDataObject sdo=null;
+		
 		
 		// load parts...
+		int result=-1;
+		String xstr="", filepath , vstr="", filename = "";
+		PersistenceSettings ps;
+		 
+		FileOrganizer fileorg = new FileOrganizer(); 
+											fileorg.getOut().print(2, "") ;
+		fileorg.setPropertiesBase( sfProperties );
+		DFutils fileutil = fileorg.getFileutil();
+		 
+		ps = sfProperties.getPersistenceSettings() ;
+		 
+		filename = ps.getProjectName()+"-dataobj" + vstr + fileorg.getFileExtension( FileOrganizer._DATAOBJECT ) ;
+		filepath = fileutil.createpath( fileorg.getObjectStoreDir() , filename);
 		
+		ContainerStorageDevice storageDevice ;
+		storageDevice = new ContainerStorageDevice();
+		
+		Object obj = storageDevice.loadStoredObject( filepath) ;
+		
+		sdo = (SomDataObject)obj ;
+		sdo.data.setSomData(sdo);
+		sdo.normalizedSomData.setSomData(sdo) ;
+											fileorg.getOut().print(2, "") ;
+		
+		fileorg=null;
 		
 		return sdo;
 	}
 	
 	
+	public void ensureTransformationsPersistence( int enforceSaveWrite) {
+		
+		boolean hb;
+		// if not saved ...
+		
+		hb = enforceSaveWrite>=1;
+		
+		if (hb==false){
+			hb = openChanges ;
+		}
+		
+		try{
+			
+	
+			if (hb){
+				// transformer.save() ;
+				
+				transformer.saveXml();
+				
+				saveSomDataTables();
+				
+				openChanges = false;
+			}
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
+	}
+
+
 	@Override
-	public void save() {
-		// TODO Auto-generated method stub
+	public int save() {
+		
+		int result=-1;
+		String xstr="", filepath , vstr="", filename = "";
+		PersistenceSettings ps;
+		 
+		FileOrganizer fileorg = transformer.getFileorg() ;
+		
+		ps = fileorg.getPersistenceSettings() ;
+		DFutils fileutil = fileorg.getFileutil();
+		 
+		 
+		filename = ps.getProjectName()+"-dataobj" + vstr + fileorg.getFileExtension( FileOrganizer._DATAOBJECT ) ;
+		filepath = fileutil.createpath( fileorg.getObjectStoreDir() , filename);
+		
+		ContainerStorageDevice storageDevice ;
+		storageDevice = new ContainerStorageDevice();
+		
+		fileorg.careForArchive( FileOrganizer._DATAOBJECT, filepath );
+		
+		storageDevice.storeObject( this, filepath) ;
+		
+		if (fileutil.fileexists(filepath)==false){
+			result=-3;
+		}else{
+			result =0;
+		}
+		return result;
+	}
+
+
+	@Override
+	public void saveXml() {
+		//
 		
 	}
 
@@ -555,6 +658,25 @@ public class SomDataObject 	implements      Serializable,
 	}
 	
 	
+	public void saveSomDataTables() throws Exception{
+		
+		int r=-1,ms=0;
+		String[] str = new String[]{"completed","did NOT complete"};
+		
+		if (data != null){
+			r = data.save();  
+		}
+		if (normalizedSomData != null){
+			r = normalizedSomData.save();
+			
+		}
+		if (r==0)ms=0;
+		if (r<0)ms=1;
+		
+		out.print(2, "saving data tables "+str[ms]+" successfully");
+	}
+
+
 	public void loadSomTransformer(){
 		
 	}
@@ -591,20 +713,6 @@ public class SomDataObject 	implements      Serializable,
 		
 	}
 	
-	public void saveSomDataTables(){
-		
-		if (data !=null){
-			data.save();  
-		}
-		if (data !=null){
-			normalizedSomData.save();  
-		}
-
-	}
-	
-	 
-	// ------------------------------------------------------------------------
-	
 	public void acquireInitialVariableSelection() {
 
 		String bstr;
@@ -629,25 +737,6 @@ public class SomDataObject 	implements      Serializable,
 		
 	}
 
-
-	public void ensureTransformationsPersistence( int enforceSaveWrite) {
-		
-		boolean hb;
-		// if not saved ...
-		
-		hb = enforceSaveWrite>=1;
-		
-		if (hb==false){
-			hb = openChanges ;
-		}
-		
-		if (hb){
-			transformer.save() ;
-			transformer.extractTransformationsXML();
-			
-			openChanges = false;
-		}
-	}
 
 	public void prepareTransformationsXML(){
 		transformer.extractTransformationsXML();

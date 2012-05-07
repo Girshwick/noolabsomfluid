@@ -9,16 +9,16 @@ import java.util.TreeMap;
  
 import org.NooLab.somfluid.components.MissingValues;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.storage.PersistentAgentIntf;
+import org.NooLab.somfluid.properties.PersistenceSettings;
+import org.NooLab.somfluid.storage.ContainerStorageDevice;
+import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.PersistentAgentSerializableIntf;
 import org.NooLab.somfluid.util.Formula;
 import org.NooLab.somtransform.StackedTransformation;
 import org.NooLab.somtransform.TransformationStack;
-import org.NooLab.somtransform.algo.Binning;
 import org.NooLab.somtransform.algo.NomValEnum;
-import org.NooLab.somtransform.algo.NveMapping;
-import org.NooLab.somtransform.algo.NveMappings;
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.strings.StringsUtil;
 
@@ -79,7 +79,7 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 	
 	// object references ..............
 
-	transient SomDataObject somData;
+	SomDataObject somData;
 	
 	transient DataTable dt;
 
@@ -119,7 +119,7 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 	
 	// NVE : config: max number of groups
 	int maxNveGroupCount = 32 ; // the original is DataTransformationSettings
-	NveMappings nveMaps;
+	
 	ArrayList<Integer> derivedColumns = new ArrayList<Integer>();
 	
 	MissingValues missingValues;
@@ -170,8 +170,6 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 		somData = somdata;
 		missingValues = somData.getMissingValues() ;
 		
-		nveMaps = new NveMappings(this) ;
-		
 		
 	}
 	
@@ -185,6 +183,40 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 	
 	}
 	
+	@Override
+	public int save() {
+	
+		int result=-1;
+		String xstr="", filepath , vstr="", filename = "";
+		PersistenceSettings ps;
+		 
+		FileOrganizer fileorg = somData.getTransformer().getFileorg() ;
+		
+		ps = fileorg.getPersistenceSettings() ;
+		DFutils fileutil = fileorg.getFileutil();
+		 
+		if (tablename.toLowerCase().contains("norm")){
+			vstr="_n";
+		}
+		filename = ps.getProjectName()+"-datatable" + vstr + fileorg.getFileExtension( FileOrganizer._TABLEOBJECT ) ;
+		filepath = fileutil.createpath( fileorg.getDataDir(1, somData.getTransformer().getDerivationLevel()), filename);
+		 
+		
+		ContainerStorageDevice storageDevice ;
+		storageDevice = new ContainerStorageDevice();
+		
+		fileorg.careForArchive( FileOrganizer._TABLEOBJECT, filepath );
+		
+		storageDevice.storeObject( this, filepath) ;
+		
+		if (fileutil.fileexists(filepath)==false){
+			result=-3;
+		}else{
+			result =0;
+		}
+		return result;
+	}
+
 	public DataTable clone( ){
 		
 		DataTable table = new DataTable(somData, true);
@@ -236,7 +268,6 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 		outDaTa.isNumeric = inDatatable.isNumeric ;
 		outDaTa.maxScanRows = inDatatable.maxScanRows  ;
 		
-		outDaTa.nveMaps = new NveMappings( inDatatable.nveMaps );
 		
 		outDaTa.derivedColumns = new ArrayList<Integer>( inDatatable.derivedColumns );
 		
@@ -308,8 +339,8 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 	}
 
 	@Override
-	public void save() {
-		// 
+	public void saveXml() {
+		// TODO Auto-generated method stub
 		
 	}
 
@@ -1030,6 +1061,14 @@ if (ir==670){
 		
 	}
 
+	public SomDataObject getSomData() {
+		return somData;
+	}
+
+	public void setSomData(SomDataObject somData) {
+		this.somData = somData;
+	}
+
 	public ArrayList<DataTableCol> getDataTable() {
 		return dataTable;
 	}
@@ -1458,14 +1497,7 @@ if (ir==670){
 		this.mvCountperColumn = mvCountperColumn;
 	}
 
-	public NveMappings getNveMaps() {
-		return nveMaps;
-	}
-
-	public void setNveMaps(NveMappings nveMaps) {
-		this.nveMaps = nveMaps;
-	}
-
+	
 	public ArrayList<Integer> getDerivedColumns() {
 		return derivedColumns;
 	}

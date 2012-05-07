@@ -16,12 +16,16 @@ import org.NooLab.somfluid.env.communication.GlueBindings;
 import org.NooLab.somfluid.env.communication.LatticeProperties;
 import org.NooLab.somfluid.env.data.DataFileReceptorIntf;
 import org.NooLab.somfluid.env.data.DataReceptor;
+import org.NooLab.somfluid.properties.PersistenceSettings;
+import org.NooLab.somfluid.storage.ContainerStorageDevice;
+import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.SomPersistence;
 import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.somtransform.algo.externals.AlgorithmPluginsLoader;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
+import org.NooLab.utilities.objects.StringedObjects;
 
 /**
  * 
@@ -56,12 +60,13 @@ public class SomFluidFactory  implements 	//
 	SomFluidFactory factory;
 	int factoryMode;
 	SomFluid somFluidModule;
+	 
 	SomPersistence persistence;
 	
 	//
 	
 	DataFileReceptorIntf dataReceptor;
-	
+	SomProcessControl somProcessControl ;
 	
 	int instanceType   = -1;
 	int glueModuleMode = 0;
@@ -69,6 +74,7 @@ public class SomFluidFactory  implements 	//
 	GlueClientAdaptor glueClient ;
 	GlueBindings glueBindings;
 	
+	DFutils fileutil = new DFutils();
 	PrintLog out = new PrintLog(2, true);
 	private Random random;
 	
@@ -77,7 +83,7 @@ public class SomFluidFactory  implements 	//
 		 
 		// factorymode -> providing different interfaces active = producing, or passive
 		
-		// ************* iwll be solved differently
+		// ************* will be solved differently
 		// if (glueModuleMode == SomFluidFactory._GLUE_MODULE_ENV_CLIENT){ 
 		// setting up "wireless" = file-free connectivity by the Glue messaging system
 		// glueConnection = sfProperties.getGlueConnection( GlueConnection._GLUEX_DUAL ); 
@@ -108,6 +114,7 @@ public class SomFluidFactory  implements 	//
 		
 		persistence = new SomPersistence(sfProperties) ;
 		
+		somProcessControl = new SomProcessControl(this); 
 		
 		try {
 			(new AlgorithmDeclarationsLoader(sfProperties)).load() ;
@@ -181,7 +188,96 @@ public class SomFluidFactory  implements 	//
 	
 	 
 	// ------------------------------------------------------------------------
+
+	 
+	public static String loadStartupTrace(int instanceTypeSom) throws Exception{
+		
+		String userdir, cfgTraceFile,traceInfo="";
+		DFutils fileutil = new DFutils();
+		
+		try{
+
+			userdir = fileutil.getUserDir();
+			
+			cfgTraceFile = fileutil.createpath(userdir, "somfluid-"+instanceTypeSom+".startup") ;
+			
+			traceInfo = fileutil.readFile2String( cfgTraceFile ); 
+			
+			fileutil = null;
+			
+		}catch(Exception e){
+			
+		}
+		
+		return traceInfo;
+	}
+
+	public void saveStartupTrace(int instanceTypeSom, String traceInfo) {
+		
+		String userdir, cfgTraceFile;
+		
+		userdir = fileutil.getUserDir();
+		
+		cfgTraceFile = fileutil.createpath(userdir, "somfluid-"+instanceTypeSom+".startup") ;
+		
+		
+		fileutil.writeFileSimple(cfgTraceFile,traceInfo); 
+		
+	}
+
+	/**
+	 * 
+	 * @param projectname simply the name without path information
+	 */
+	public Object loadTaskTrace(String projectname) throws Exception{
+		// 
+		String dir="",fileName="";
+		int stype = sfProperties.getSomType();
+
+		FileOrganizer fileorg = new FileOrganizer ();
+		fileorg.setPropertiesBase(sfProperties);
+		dir = fileorg.getObjectStoreDir();
+
+		dir = DFutils.createPath( dir, "task/"+stype+"/");
+		fileName = DFutils.createPath( dir, SomFluidTask._TRACEFILE);
+		
+		
+		// now loading the desired properties into a new object;
+		ContainerStorageDevice storageDevice ;
+		storageDevice = new ContainerStorageDevice();
+		
+		Object taskObj = storageDevice.loadStoredObject( fileName) ;
+
+		return taskObj;
 	
+	}
+
+	/**
+	 * 
+	 * gets automatically called when a task is getting produced by the factory
+	 * @param sfTask
+	 */
+	public void saveTaskTrace(Object sfTask  ) {
+	
+		String dir="",fileName="";
+		int stype = sfProperties.getSomType();
+
+		FileOrganizer fileorg = new FileOrganizer ();
+		fileorg.setPropertiesBase(sfProperties);
+		dir = fileorg.getObjectStoreDir();
+
+		dir = DFutils.createPath( dir, "task/"+stype+"/");
+		fileName = DFutils.createPath( dir, SomFluidTask._TRACEFILE);
+		
+		
+		// now loading the desired properties into a new object;
+		ContainerStorageDevice storageDevice ;
+		storageDevice = new ContainerStorageDevice();
+		
+		storageDevice.storeObject( sfTask, fileName) ;
+		
+	}
+
 	public RepulsionFieldIntf createPhysicalField( RepulsionFieldEventsIntf eventSink, int initialNodeCount) { // 
 		RepulsionFieldIntf physicalField;
 		
@@ -230,6 +326,12 @@ public class SomFluidFactory  implements 	//
 	}
 
 	
+
+	public SomProcessControlIntf getSomProcessControl() {
+		return somProcessControl;
+	}
+	
+ 
 
 	/**
 	 * 
@@ -306,6 +408,8 @@ public class SomFluidFactory  implements 	//
 		 
 	}
 
+	
+	// ------------------------------------------------------------------------
 	public static boolean implementsInterface(Object object, Class interf){
 	    return interf.isInstance(object);
 	    // this does not support perspectives
@@ -321,8 +425,10 @@ public class SomFluidFactory  implements 	//
 	
 		SomFluidTask somFluidTask ;
 		
-		// First caring about the data, using the transformer module
 		
+		saveTaskTrace(sfTask);
+		
+		// First caring about the data, using the transformer module
 		
 		
 		// now heading towards the SomFluid
@@ -374,6 +480,10 @@ public class SomFluidFactory  implements 	//
 		
 	}
 
+	
+	public void interrupt(){
+		somFluidModule.setUserbreak(true);
+	}
 	
 	// ------------------------------------------------------------------------
 	

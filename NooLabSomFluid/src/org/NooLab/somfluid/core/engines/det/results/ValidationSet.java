@@ -304,4 +304,16 @@ public class ValidationSet  implements Serializable{
 		return ecrScQuCompliance;
 	}
 
+	public void setEcrCompliance(EcrCompliance ecrCompliance) {
+		this.ecrCompliance = ecrCompliance;
+	}
+
+	public void setEcrScFpCompliance(EcrCompliance ecrScFpCompliance) {
+		this.ecrScFpCompliance = ecrScFpCompliance;
+	}
+
+	public void setEcrScQuCompliance(EcrCompliance ecrScQuCompliance) {
+		this.ecrScQuCompliance = ecrScQuCompliance;
+	}
+
 }

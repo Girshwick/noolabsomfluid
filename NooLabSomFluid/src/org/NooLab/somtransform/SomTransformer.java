@@ -1,7 +1,6 @@
 package org.NooLab.somtransform;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import org.NooLab.somfluid.SomFluidProperties;
@@ -14,20 +13,18 @@ import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.data.NormValueRangesIntf;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
+import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.PersistentAgentIntf;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
-import org.NooLab.somfluid.util.BasicStatistics;
 
 import org.NooLab.somsprite.AnalyticFunctionSpriteImprovement;
 import org.NooLab.somsprite.AnalyticFunctionTransformationsIntf;
 import org.NooLab.somtransform.algo.distribution.EmpiricDistribution;
-import org.NooLab.somtransform.algo.intf.AlgoTransformationAbstract;
 import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.datetime.DateTimeValue;
-import org.NooLab.utilities.datetime.hirondelle.DateTime;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.objects.StringedObjects;
@@ -56,8 +53,18 @@ import com.jamesmurty.utils.XMLBuilder;
  * 
  * the very first position in the transformation stack receives raw, NON_NORMALIZED data !!!! </br></br>
  * 
- * TODO: analysis of residuals relative to outcome, also on the level of modeling </br></br>
- * 
+ * TODO: algorithms :
+ *         - analysis of residuals relative to outcome, also on the level of modeling </br></br>
+ *         - surrogates on various levels: 
+ *              - within variable by empiric distribution
+ *              - by bi-variate association
+ *              - by Cholesky
+ *              - by full scale group centroids <<<<<<<<<< this is actually the generalization of any multi-variate case 
+ *              
+ *     --- relative risk weight
+ *            for binaries
+ *            for ordinals = optimal scaling
+ *            for numerals = by clustering, 10 groups, operationalized as rewriting by distance to centroid         
  * 
  */
 public class SomTransformer implements SomTransformerIntf,
@@ -68,8 +75,8 @@ public class SomTransformer implements SomTransformerIntf,
 	SomFluidProperties sfProperties;
 	
 	int derivationLevel = 0 ;
-	String version = "1.0";
 	int revision=1;
+	String version = "1.0";
 	
 	/** data as it has been imported */
 	DataTable dataTableObj ;
@@ -93,12 +100,18 @@ public class SomTransformer implements SomTransformerIntf,
 	boolean excludeBlacklisted = false ;
 	int realizedCount;
 	
+	ArrayList<String> xmlImage = new ArrayList<String>() ;
+	
+	transient String lastErrorMsg="" ;
+	
 	transient SomTransformersXML xEngine = new SomTransformersXML();
 	
 	transient PrintLog out ;
 	transient StringedObjects strobj = new StringedObjects();
 	transient ArrUtilities arrutil = new ArrUtilities();
 	transient StringsUtil strgutils = new StringsUtil ();
+	transient FileOrganizer fileorg ;
+	transient DFutils fileutil;
 	
 	// ========================================================================
 	public SomTransformer( SomDataObject sdo, SomFluidProperties sfprops) {
@@ -112,6 +125,9 @@ public class SomTransformer implements SomTransformerIntf,
 		transformationModel = new TransformationModel(this, somData);
 		
 		initialization = new SomTransformerInitialization();
+		
+		fileorg = sfProperties.getFileOrganizer() ;
+		fileutil = fileorg.getFileutil();
 		
 		out = somData.getOut() ;
 	}
@@ -171,20 +187,55 @@ public class SomTransformer implements SomTransformerIntf,
 		return getAlgorithmIndexValue(str) ;
 	}
 	
+	
+	private String createRevisionDetailsString(){
+		/*
+		int derivationLevel = 0 ;
+		String version = "1.0";
+		int revision=1;
+		*/
+		
+		String str ="", vs;
+		vs = strgutils.replaceAll( version, ".", ""); 
+		str = "d"+derivationLevel+"_v"+vs+"_r"+revision ;
+		
+		return str;
+	}
+
 	/**
 	 * we save it in as a serialized object here 
 	 * 
 	 */
-	public void save() {
+	public int save() {
 		
-		String filename="";
-		ContainerStorageDevice storageDevice ;
-		
-		
-		storageDevice = new ContainerStorageDevice();
-		
-		storageDevice.storeObject(this, filename);
+	
+		return 0;
+		// storageDevice.storeObject(this, filepath);
 	}
+
+	public void saveXml() {
+		
+		String xstr="", filepath , vrstr, filename = "";
+		PersistenceSettings ps;
+		extractTransformationsXML();
+		
+		// xstr = xmlImage.toString(); not useful uses ", " to separate items
+		xstr = this.arrutil.arr2text( xmlImage, "\n");
+			
+		ps = sfProperties.getPersistenceSettings();
+		 
+		vrstr = createRevisionDetailsString() ;
+		 
+		filename = ps.getProjectName() + "_"+vrstr+ fileorg.getFileExtension( FileOrganizer._TRANSFORMER ) ;
+		filepath = fileutil.createpath( fileorg.getTransformerDir(), filename);
+		
+		
+		fileorg.careForArchive( FileOrganizer._TRANSFORMER, filepath );
+		
+		fileutil.writeFileSimple(filepath, xstr);
+		
+	} 
+
 
 	public void extractTransformationsXML( ){
 		
@@ -245,10 +296,17 @@ public class SomTransformer implements SomTransformerIntf,
 		
 		xmlstr = strgutils.replaceAll(xmlstr, "<parameters/>", "");
 		
+		String[] xmlstrs = xmlstr.split("\n");
+		xmlImage = new ArrayList<String>( strgutils.changeArrayStyle(xmlstrs) );
 		
-		out.print(2, xmlstr) ;
+		// out.print(2, xmlstr) ;
 	}
 	
+	public ArrayList<String> getXmlImage() {
+		return xmlImage;
+	}
+
+
 	private XMLBuilder getSourceDescriptionXml() {
 		
 		XMLBuilder builder = xEngine.getXmlBuilder( "sources" );
@@ -732,7 +790,7 @@ if (varLabel.toLowerCase().contains("recht")){
 	 */
 	public SomDataObject implementWaitingTransformations( int target ) {
 		
-		int nv,ra,tix=-1,n,vix,arexIndex ;
+		int nv,ra,tix=-1,n,vix,arexIndex ,r=0;
 		String str, newVarLabel="", cn;
 		boolean nameAdj = false;
 		CandidateTransformation ct;
@@ -749,6 +807,7 @@ if (varLabel.toLowerCase().contains("recht")){
 		
 		int sourcemode=1;
 		
+		lastErrorMsg = "starting: implementWaitingTransformations()";
 		// putting candidateTransformations to the transformation model, 
 		// creating new "Variable"s and extending the SomDataObject (saving the old version, 
 		// and by using a different name, also the new version
@@ -765,6 +824,7 @@ if (varLabel.toLowerCase().contains("recht")){
 		 */
 		variables = somData.getVariables() ; 
 		realizedCount=0;
+		
 		
 		for (int i=0; i<candidateTransformations.size(); i++){
 			nameAdj = false;
@@ -931,11 +991,17 @@ if (basevarLabel.contains("Bisher_c2")){
 					somData.getVariablesLabels().add( varLabel ) ;
 				}
 				
+				r=0;
 			} catch (Exception e) {
 				e.printStackTrace();
+				r=-7;
+				lastErrorMsg= e.getMessage()+"\n"+e.getStackTrace().toString() ;
 			}
 		}// i-> all waiting candidateTransformations
 		 
+		if (r==0){
+			lastErrorMsg="";
+		}
 		candidateTransformations.clear();
 		return somData;
 		// later we will adapt the latticeuseIndicators, which are from getSimilarityConcepts().getUsageIndicationVector() ;
@@ -2167,6 +2233,56 @@ if (varlabel.toLowerCase().contentEquals("stammkapital")){ // stammkapital is a 
 			this.timeStamp = timeStamp;
 		}
 	}
+
+
+	public FileOrganizer getFileorg() {
+		return fileorg;
+	}
+
+
+	public String getLastErrorMsg() {
+		return lastErrorMsg;
+	}
+
+	public void clearErrorMsg() {
+		lastErrorMsg = "";
+	}
+
+
+	public int getDerivationLevel() {
+		return derivationLevel;
+	}
+
+
+	public void setDerivationLevel(int dLevel) {
+		derivationLevel = dLevel;
+	}
+
+
+	public void incDerivationLevel() {
+		derivationLevel++;
+	}
+
+
+	public int getRevision() {
+		return revision;
+	}
+
+
+	public void setRevision(int revision) {
+		this.revision = revision;
+	}
+
+
+	public String getVersion() {
+		return version;
+	}
+
+
+	public void setVersion(String version) {
+		this.version = version;
+	}
+	 
 }
 
 

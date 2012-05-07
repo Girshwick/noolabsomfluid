@@ -10,11 +10,7 @@ import org.NooLab.utilities.strings.StringsUtil;
 import org.NooLab.somfluid.components.MissingValues;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatistics;
-import org.NooLab.somfluid.util.Formula;
-import org.NooLab.somtransform.algo.NomValEnum;
-import org.NooLab.somtransform.algo.NveMapping;
-
-
+ 
 
 
 public class DataTableCol implements Serializable,
@@ -40,14 +36,7 @@ public class DataTableCol implements Serializable,
 	ArrayList<String> cellValueStr = new ArrayList<String>() ;
 
 	int rowcount;
-	
-	// the object for nominal values enumeration, a reference from data table
-	NomValEnum nve = null ;
-	
-	/** 
-	 * any kind of formula other than NVE or basic date translation;
-	 * if null then "cellValues" id. outCellValues
-	 */
+	 
 	private ColumnDerivations derivations;
 	
 	BasicStatisticalDescription statisticalDescription ;
@@ -55,7 +44,7 @@ public class DataTableCol implements Serializable,
 	// only for columns that contain normalized data, i.e. which are member of a normalized table
 	BasicStatisticalDescription rawDataStatistics ; 
 	
-	MissingValues missingValues;
+	transient MissingValues missingValues;
 	
 	/**   */
 	int dataFormat = -1;
@@ -81,7 +70,6 @@ public class DataTableCol implements Serializable,
 	
 	// helper objects .................
 	transient StringsUtil strgutil = new StringsUtil();
-	 
 	transient PrintLog out  ;
 
 	
@@ -285,12 +273,7 @@ public class DataTableCol implements Serializable,
 		
 	}
 
-
-
-	public NomValEnum getNve() {
-		return nve;
-	}
-
+ 
 	public BasicStatisticalDescription getStatisticalDescription() {
 		return statisticalDescription;
 	}
@@ -821,10 +804,7 @@ public class DataTableCol implements Serializable,
 		}
 		
 	}
-
-	public void setNve(NomValEnum nve) {
-		this.nve = nve;
-	}
+ 
 
 	public void setDerivations(ColumnDerivations derivations) {
 		this.derivations = derivations;
@@ -863,6 +843,10 @@ public class DataTableCol implements Serializable,
 		// TODO Auto-generated method stub
 		
 		return false;
+	}
+
+	public void setNveInstances(int nveInstances) {
+		this.nveInstances = nveInstances;
 	}
 
 	

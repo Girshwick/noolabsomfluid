@@ -10,6 +10,9 @@ import java.util.Vector;
 
 public class Formula implements Serializable{
 
+ 
+	private static final long serialVersionUID = 2451594012952643803L;
+
 	
 	String formulaTerm;
 	
@@ -29,6 +32,76 @@ public class Formula implements Serializable{
 	
 	public Formula(){
 		 
+	}
+
+
+	public String getFormulaTerm() {
+		return formulaTerm;
+	}
+
+
+	public void setFormulaTerm(String formulaTerm) {
+		this.formulaTerm = formulaTerm;
+	}
+
+
+	public String getVariables() {
+		return variables;
+	}
+
+
+	public void setVariables(String variables) {
+		this.variables = variables;
+	}
+
+
+	public ArrayList<String> getTargetColumns() {
+		return targetColumns;
+	}
+
+
+	public void setTargetColumns(ArrayList<String> targetColumns) {
+		this.targetColumns = targetColumns;
+	}
+
+
+	public ArrayList<Point> getTargetCells() {
+		return targetCells;
+	}
+
+
+	public void setTargetCells(ArrayList<Point> targetCells) {
+		this.targetCells = targetCells;
+	}
+
+
+	public boolean isApplytoColumns() {
+		return applytoColumns;
+	}
+
+
+	public void setApplytoColumns(boolean applytoColumns) {
+		this.applytoColumns = applytoColumns;
+	}
+
+
+	public boolean isApplytoCells() {
+		return applytoCells;
+	}
+
+
+	public void setApplytoCells(boolean applytoCells) {
+		this.applytoCells = applytoCells;
+	}
+
+
+	public ArrayList<Formula> getNestedFormulas() {
+		return nestedFormulas;
+	}
+
+
+	public void setNestedFormulas(ArrayList<Formula> nestedFormulas) {
+		this.nestedFormulas = nestedFormulas;
 	}
 	
 	

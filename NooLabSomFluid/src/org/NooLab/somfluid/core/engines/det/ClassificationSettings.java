@@ -30,9 +30,9 @@ public class ClassificationSettings implements Serializable{
 	public static final int _TARGETMODE_MULTI  =  2;
 	
 	/** 
-	 * This repesents a dynamic and internal target; the assignment of values of this
+	 * This represents a dynamic and internal target; the assignment of values of this
 	 * target variable changes in the course of modeling as a  function of a particular
-	 * quantile, which a particular node satisfies; requires a parameter that descibes that quantile
+	 * quantile, which a particular node satisfies; requires a parameter that describes that quantile
 	 * as a proportion (e.g. 0.1 for the 10% quantile); can be used to find a model that maximizes
 	 * the ROC for a given risk attitude (as operationalized by the ECR)  
 	 */

@@ -132,6 +132,46 @@ public class OptimizerSettings  implements Serializable{
 	public void setShortenedFirstCycleAllowed(boolean flag) {
 		shortenedFirstCycleAllowed = flag;
 	}
+
+
+	public boolean isActiveTimeLimitation() {
+		return activeTimeLimitation;
+	}
+
+
+	public void setActiveTimeLimitation(boolean activeTimeLimitation) {
+		this.activeTimeLimitation = activeTimeLimitation;
+	}
+
+
+	public int getTimeLimitationPerStep() {
+		return timeLimitationPerStep;
+	}
+
+
+	public void setTimeLimitationPerStep(int timeLimitationPerStep) {
+		this.timeLimitationPerStep = timeLimitationPerStep;
+	}
+
+
+	public int getMinimalNumberOfCases() {
+		return minimalNumberOfCases;
+	}
+
+
+	public void setMinimalNumberOfCases(int minimalNumberOfCases) {
+		this.minimalNumberOfCases = minimalNumberOfCases;
+	}
+
+
+	public double getSamplesRatio() {
+		return samplesRatio;
+	}
+
+
+	public void setSamplesRatio(double samplesRatio) {
+		this.samplesRatio = samplesRatio;
+	}
 	
 	
 }

@@ -28,7 +28,8 @@ public class TransformationModel implements Serializable{
 	/** any of the variables gets a transformation stack assigned as soon as an initialization is requested */
 	ArrayList<TransformationStack> variableTransformations = new ArrayList<TransformationStack>();
 
-
+	ArrayList<String> xmlImage = new ArrayList<String>() ;
+	
 	transient SomTransformersXML xEngine = new SomTransformersXML();
 	transient StringsUtil strgutil = new StringsUtil();
 	transient PrintLog out ;
@@ -86,7 +87,9 @@ public class TransformationModel implements Serializable{
 			xmlstr="\n<!--  -->\n" ;
 		}
 		
-		
+		String[] xmlstrs = xmlstr.split("\n");
+		xmlImage = new ArrayList<String>( strgutil.changeArrayStyle(xmlstrs) );
+
 		return xmlstr;
 	}
 
@@ -237,6 +240,14 @@ public class TransformationModel implements Serializable{
 
 	public void setVariableTransformations(ArrayList<TransformationStack> variableTransformations) {
 		this.variableTransformations = variableTransformations;
+	}
+
+	public ArrayList<String> getXmlImage() {
+		return xmlImage;
+	}
+
+	public void setXmlImage(ArrayList<String> xmlImage) {
+		this.xmlImage = xmlImage;
 	}
 
 	 

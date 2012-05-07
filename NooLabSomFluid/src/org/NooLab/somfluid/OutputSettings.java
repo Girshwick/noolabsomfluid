@@ -1,10 +1,13 @@
 package org.NooLab.somfluid;
 
 
+import java.io.Serializable;
+
+import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 
 
-public class OutputSettings {
+public class OutputSettings implements Serializable{
 
 	public static final int _RESULTFILE_MHISTORY    = 1;
 	public static final int _RESULTFILE_MODELROC    = 3;
@@ -45,10 +48,12 @@ public class OutputSettings {
 	
 	
 	private boolean resultFileZipping = true;
-	
+	PersistenceSettings persistenceSettings;
 	
 	// ========================================================================
-	public OutputSettings(){
+	public OutputSettings(PersistenceSettings ps){
+		
+		persistenceSettings = ps ;
 		
 		setDefaults() ;
 	}
@@ -193,6 +198,38 @@ public class OutputSettings {
 
 	public void setResultFileZipping(boolean resultFileZipping) {
 		this.resultFileZipping = resultFileZipping;
+	}
+
+	public String getOutfileModelSomMap() {
+		return outfileModelSomMap;
+	}
+
+	public void setOutfileModelSomMap(String outfileModelSomMap) {
+		this.outfileModelSomMap = outfileModelSomMap;
+	}
+
+	public String getOutfileVarEncoding() {
+		return outfileVarEncoding;
+	}
+
+	public void setOutfileVarEncoding(String outfileVarEncoding) {
+		this.outfileVarEncoding = outfileVarEncoding;
+	}
+
+	public String getOutfileDataTransform() {
+		return outfileDataTransform;
+	}
+
+	public void setOutfileDataTransform(String outfileDataTransform) {
+		this.outfileDataTransform = outfileDataTransform;
+	}
+
+	public PersistenceSettings getPersistenceSettings() {
+		return persistenceSettings;
+	}
+
+	public void setPersistenceSettings(PersistenceSettings persistenceSettings) {
+		this.persistenceSettings = persistenceSettings;
 	}
 
 }

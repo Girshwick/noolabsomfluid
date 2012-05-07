@@ -5,6 +5,9 @@ import java.io.Serializable;
 public class SomBagSettings  implements Serializable{
 
 	
+	
+	private static final long serialVersionUID = 6913194020084874987L;
+	
 	int sombagRecordsPerNode ;
 	int sombagMaxNodeCount   ;
 	int sombagMaxRecordCount ; 

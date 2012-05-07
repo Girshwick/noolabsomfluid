@@ -5,10 +5,13 @@ import java.util.Collection;
 import java.util.Collections;
 
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.*;
 
 import org.NooLab.somfluid.*;
 import org.NooLab.somfluid.properties.* ;
+import org.NooLab.somfluid.storage.ContainerStorageDevice;
+import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.util.PowerSetSpringSource;
 
  
@@ -70,6 +73,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 	ArrayList<OptimizerProcess> processes ;
 	
 	ModelOptimizer modOpti;
+	int resumeMode;
 	
 	EvoBasics  evoBasics;
 	EvoMetrices evoMetrices ;
@@ -108,6 +112,8 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		sfTask.setSomHost(modOpti) ;
 		modOpti = this;
 		
+		resumeMode = sfTask.getResumeMode() ;
+		
 		spelaResults = new SpelaResults();
 		
 		xmlReport = new SomOptimizerXmlReport( this );
@@ -121,17 +127,42 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		
 		boolean transformerModelLoaded;
 		// somDataObj = somFluid.getSomDataObject(index) ;
+		
+		// if enforced then somDataObj.clear();
 		try {
 			
-			somDataObj = somFluid.loadSource("");
+			if (sfTask.getResumeMode()>=1){
+				// load the SomDataObject
+				sfTask.setResumeMode(0); // switch it OFF !! the "SimpleSingleModel" object also checks this var
+				
+				somDataObj = SomDataObject.loadSomData(sfProperties);
+				
+				somFluid.getSomDataObjects().clear() ;
+				somFluid.addSomDataObjects(somDataObj);
+				somDataObj = somFluid.getSomDataObject(0) ;
+				somDataObj.reestablishObjects();
+				
+				somDataObj.setOut(out) ;
+				somTransformer = new SomTransformer( somDataObj, sfProperties );
+				somDataObj.setTransformer(somTransformer) ;
+				somDataObj.setFactory(sfFactory) ;
+				
+				// Variables ???
+				
+			}else{
+				if (sfTask.getResumeMode() == 0) {
+					somDataObj = somFluid.loadSource(""); // somTransformer datatablenormalized ???
+					// source is also defined in properties
+				}
+			}
 			 
 			
 			processes = new ArrayList<OptimizerProcess>();
 			OptimizerProcess process;
 			int n = 1;
 
-			somDataObj = somFluid.getSomDataObject(0) ;
-			somTransformer = somFluid.getSomDataObject(0).getTransformer();
+			
+			somTransformer = somDataObj.getTransformer();
 			// StackeTransformations still empty....  different somDataObj ???
 
 			// if not initialized... first test whether it is available
@@ -172,6 +203,15 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 	}
 	
 	
+	private int saveSingleSom( SimpleSingleModel singleSom ) {
+		// 
+		
+		singleSom.save();
+		
+		return 0;
+	}
+	
+	
 	
 	class OptimizerProcess implements Runnable{
 		
@@ -186,6 +226,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		Thread moptiThrd;
 		ArrayList<Integer> variableSubsetIndexes ;
 		private ArrayList<String> currentVariableSelection = new ArrayList<String>() ;
+		
 		
 		// --------------------------------------------------------------------
 		public OptimizerProcess( ModelOptimizer mopti, VariableSubsets subsets, int index){
@@ -238,9 +279,35 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 											// out.print(2, "variables(a1) n = "+somDataObj.variables.size()	);
 					if ((modelingSettings.getEvolutionaryAssignateSelection() ) && (somFluid.getUserbreak()==false)){
 						
+						if ((loopcount==0) && (resumeMode>=1)){
+
+							// we load a simple som from archive and run it once
+							SomScreening somscreener = new SomScreening( moptiParent );
+							try {
+								
+								somscreener.establishFromStorage(); // TODO needs to be calculated and logged by evohistory 
+								currentVariableSelection = new ArrayList<String> (somscreener.getCurrentVariableSelection()) ; 
+								 
+								
+							} catch (Exception e) {
+								e.printStackTrace();
+								break;
+							}
+							resumeMode = 0;
+							
+						}
+						//else
+						{
 						// size of var vector ?
-						somScreening = new SomScreening( moptiParent );
- 						somScreening.setInitialVariableSelection( currentVariableSelection  ) ;
+							somScreening = new SomScreening( moptiParent );
+							try {
+								somScreening.setInitialVariableSelection( currentVariableSelection,true  ) ;
+								
+							} catch (Exception e) {
+								e.printStackTrace();
+								break;
+							}
+						}	
 						// ? is not properly delivered, and init of powerset hangs 
 						 
 						// will be done inside there: somScreening.acquireMapTable( somProcess.getSomLattice().exportSomMapTable() );
@@ -358,9 +425,23 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 							
 							somTransformer.implementWaitingTransformations(1);
 
+							
+							if (somTransformer.getLastErrorMsg().length()==0){
+								somTransformer.incDerivationLevel();
+								somDataObj.ensureTransformationsPersistence(1);
+								try {
+									somDataObj.saveSomDataTables();
+								} catch (Exception e) {
+									 
+									e.printStackTrace();
+								}
+							}
+							
 							// register in order to avoid repetitions AND avoid repetitions across loops !!
 							freshlyAddedVariables = (ArrayList<Integer>) CollectionUtils.disjunction(  freshlyAddedVariables, somTransformer.getAddedVariablesByIndex()) ;
 							allAddedVariables = somTransformer.getAddedVariablesByIndex() ;
+							
+							
 							
 							// are the vectors evo-weight, evo-count ok ? -> adjust their length
 							s2 = evoBasics.getEvolutionaryWeights().size() ;
@@ -389,6 +470,10 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 					}else{
 						// arrived at loopcount, or user-break 
 						done = true;
+						
+						// save SOM, such that a re-calculation will not be necessary if we want to export
+						
+						//
 						break;
 						
 					} // getSpriteAssignateDerivation() ?
@@ -413,8 +498,12 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			}// main loop -> done ?
 			// ................................................................
 			
+			// TODO: SomModelDescription, dedicatedVariableCheck(): -> not al variables get checked !!!
+			
+			// TODO: creating results
+			
 			// TODO capture results into: spelaResults ....
-			// on option: remove low-rated derived variables
+			// on option: remove low-rated derived variables from tables and lists in SomDataObject
 			evoMetrices.close() ;
 			
 			evoMetrices = _evoMetrices;
@@ -500,6 +589,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			//      creating the xml is delegated to the respective worker classes, it is just organized there
 			//      == a summarizing call
 			OutResults outresult= new OutResults( modOpti ,sfProperties);
+
 			outresult.createModelOptimizerReport();  
 			// according to OutputSettings, writes to files and creates a dir package
 			
@@ -514,8 +604,6 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		}
 	  
 
-		 
-		
 		
 		
 		private void performSingleRun(int index, boolean collectresults){
@@ -628,10 +716,18 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		
 		restoredResults.setVariableSelection( varSelection ) ;
 		
+		// save temporarily
 		
+		saveSingleSom(simo) ;
+		
+		//
 		return restoredResults;
 	
 	}
+
+	
+
+
 
 	class VariableSubsets{
 		
@@ -769,6 +865,18 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 	@Override
 	public SomFluid getSomFluid() {
 		return somFluid;
+	}
+
+
+
+	public int getResumeMode() {
+		return resumeMode;
+	}
+
+
+
+	public void setResumeMode(int resumeMode) {
+		this.resumeMode = resumeMode;
 	}
 
 

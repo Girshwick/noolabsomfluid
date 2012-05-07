@@ -98,7 +98,7 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 	ArrayList<Integer> salientBins = new ArrayList<Integer>();
 	EmpiricDistribution dis;
 	
-	ArrUtilities arrutil = new ArrUtilities() ;
+	transient ArrUtilities arrutil = new ArrUtilities() ;
 
 	private double negExpScore;
 	
@@ -829,8 +829,10 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
  * a description without approximated analytic function (polynomial etc)
  * 
  */
-class SimpleHistogramDescription{
+class SimpleHistogramDescription implements Serializable{
 	
+	private static final long serialVersionUID = 4774916760867885722L;
+
 	public int zeroCount;
 	public double[] nonzeroesRuns;
 	public double[] zeroesRuns;
@@ -839,8 +841,68 @@ class SimpleHistogramDescription{
 	public double variety;
 	public double histogramsVariety;
 
+	
+	// ------------------------------------------------------------------------
 	public SimpleHistogramDescription(){
 		
+	}
+	// ------------------------------------------------------------------------
+	
+	
+	public int getZeroCount() {
+		return zeroCount;
+	}
+
+	public void setZeroCount(int zeroCount) {
+		this.zeroCount = zeroCount;
+	}
+
+	public double[] getNonzeroesRuns() {
+		return nonzeroesRuns;
+	}
+
+	public void setNonzeroesRuns(double[] nonzeroesRuns) {
+		this.nonzeroesRuns = nonzeroesRuns;
+	}
+
+	public double[] getZeroesRuns() {
+		return zeroesRuns;
+	}
+
+	public void setZeroesRuns(double[] zeroesRuns) {
+		this.zeroesRuns = zeroesRuns;
+	}
+
+	public double getNonZeroes() {
+		return nonZeroes;
+	}
+
+	public void setNonZeroes(double nonZeroes) {
+		this.nonZeroes = nonZeroes;
+	}
+
+	public double getNegativesRatio() {
+		return negativesRatio;
+	}
+
+	public void setNegativesRatio(double negativesRatio) {
+		this.negativesRatio = negativesRatio;
+	}
+
+	public double getVariety() {
+		return variety;
+	}
+
+	public void setVariety(double variety) {
+		this.variety = variety;
+	}
+
+	public double getHistogramsVariety() {
+		return histogramsVariety;
+	}
+
+	public void setHistogramsVariety(double histogramsVariety) {
+		this.histogramsVariety = histogramsVariety;
 	}
 }
 

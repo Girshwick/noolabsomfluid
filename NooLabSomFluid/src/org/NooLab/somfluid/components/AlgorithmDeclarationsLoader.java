@@ -110,7 +110,7 @@ public class AlgorithmDeclarationsLoader {
 				  	  }
 
 				/*
-				 *  we also could accept all algos here and control activation through authentication...
+				 *  we also could accept all algorithms here and control activation through authentication...
 				 */
 				if (act>0){
 					xitem = new IndexDistance( i,ix,act,namedItem) ;	
@@ -123,7 +123,7 @@ public class AlgorithmDeclarationsLoader {
 			  
 		} // 
 		
-		 
+		ix=0;
 		
 	}
 

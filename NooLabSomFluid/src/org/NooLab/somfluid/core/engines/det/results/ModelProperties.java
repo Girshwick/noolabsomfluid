@@ -269,6 +269,38 @@ public class ModelProperties implements Serializable,
 		}
 		return _selection ;
 	}
+
+	public String getdSomGuid() {
+		return dSomGuid;
+	}
+
+	public void setdSomGuid(String dSomGuid) {
+		this.dSomGuid = dSomGuid;
+	}
+
+	public SomFluidTask getTask() {
+		return task;
+	}
+
+	public void setTask(SomFluidTask task) {
+		this.task = task;
+	}
+
+	public SomQualityData getSqData() {
+		return sqData;
+	}
+
+	public void setSqData(SomQualityData sqData) {
+		this.sqData = sqData;
+	}
+
+	public double getEcrForAdjustment() {
+		return ecrForAdjustment;
+	}
+
+	public void setEcrForAdjustment(double ecrForAdjustment) {
+		this.ecrForAdjustment = ecrForAdjustment;
+	}
 	
 	
 }

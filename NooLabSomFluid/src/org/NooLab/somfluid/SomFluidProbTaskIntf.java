@@ -1,6 +1,6 @@
 package org.NooLab.somfluid;
 
 
-public interface SomFluidProbTaskIntf {
+public interface SomFluidProbTaskIntf  extends SomFluidTaskIntf{
 
 }

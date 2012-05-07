@@ -1,11 +1,8 @@
 package org.NooLab.somfluid;
-
-import org.NooLab.somfluid.core.engines.det.ModelingSettingsIntf;
-
+ 
 
 
-public interface SomFluidMonoTaskIntf extends ModelingSettingsIntf,
-											  ModelingResultsIntf{
+public interface SomFluidMonoTaskIntf extends SomFluidTaskIntf{
 
 	// TODO create constants for those settings !
 	
@@ -17,6 +14,8 @@ public interface SomFluidMonoTaskIntf extends ModelingSettingsIntf,
 	public void setStartMode(int startingMode);
 	
 	public int getStartMode();
+
+	
 	
 	
 }

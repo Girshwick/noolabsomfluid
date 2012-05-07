@@ -2,6 +2,8 @@ package org.NooLab.somfluid.properties;
 
 import java.io.Serializable;
 
+import org.NooLab.somfluid.storage.FileOrganizer;
+
 
 
 public class PersistenceSettings implements Serializable{
@@ -10,14 +12,20 @@ public class PersistenceSettings implements Serializable{
 
 	String pathToSomFluidSystemRootDir = "";
 
-	private String projectName;
+	private String projectName = "";
+	
+	transient FileOrganizer fileOrganizer ; 
 	
 	// ========================================================================
-	public PersistenceSettings(){
-		
+	public PersistenceSettings(FileOrganizer fileOrg){
+		fileOrganizer = fileOrg;
 	}
+
 	// ========================================================================
 
+
+
+	
 	
 	/**
 	 * @return the pathToSomFluidSystemRootDir
@@ -32,12 +40,14 @@ public class PersistenceSettings implements Serializable{
 	 */
 	public void setPathToSomFluidSystemRootDir(String pathToSomFluidSystemRootDir) {
 		this.pathToSomFluidSystemRootDir = pathToSomFluidSystemRootDir;
+		fileOrganizer.update();
 	}
 
 
 	public void setProjectName(String string) {
 		 
 		projectName = string;
+		fileOrganizer.update();
 	}
 
 
@@ -55,25 +65,26 @@ public class PersistenceSettings implements Serializable{
 	}
 
 
-	public void autoSaveSomFluidModels(boolean b) {
+	public void autoSaveSomFluidModels(boolean flag) {
 		// TODO Auto-generated method stub
 		
 	}
 
 
-	public void autoPackagingOfCompleteModels(boolean b) {
+	public void autoPackagingOfCompleteModels(boolean flag) {
 		// TODO Auto-generated method stub
 		
 	}
 
 
-	public void setIncomingDataSupervisionDir(String string) {
+	public void setIncomingDataSupervisionDir(String dir) {
 		// TODO Auto-generated method stub
 		
+		fileOrganizer.update();
 	}
 
 	
-	public void setIncomingDataSupervisionActive(boolean b) {
+	public void setIncomingDataSupervisionActive(boolean flag) {
 		// TODO Auto-generated method stub
 		
 	}

@@ -80,7 +80,7 @@ public class RawFileData {
 
 		String cs, _id_rnum_str = "", hs1, hs2;
 		String[] celldata = null;
-
+		ArrayList<String> observedColumns = new ArrayList<String>(); 
 		
 		Variable var;
 
@@ -127,11 +127,26 @@ public class RawFileData {
 					cs = "col" + String.valueOf(j);
 				}
 
+				String csp = cs.substring(0,1);
+				if (strgutil.isNumericX(cs.substring(0,1))){
+					cs = "col_"+cs;
+				}
+				cs = strgutil.cleanLabelFromLocales(cs);
+				
+				int cz=1;
+				csp = cs;
+				while (observedColumns.indexOf(csp)>=0){
+					csp = cs+cz;
+					cz++;
+				}
+				cs=csp;
+				
+				celldata[j] = cs;
 				var = new Variable();
 				var.setLabel(cs);
 
 				variables.add(var);
-
+				observedColumns.add(cs);
 			}
 
 			linecount = 0;

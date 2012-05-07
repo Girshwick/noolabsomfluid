@@ -105,4 +105,25 @@ public class ColumnDerivations implements Serializable {
 		
 		formulaStack.add( f ) ;
 	}
+	public Map<Integer, String> getFormulaVariables() {
+		return formulaVariables;
+	}
+	public void setFormulaVariables(Map<Integer, String> formulaVariables) {
+		this.formulaVariables = formulaVariables;
+	}
+	public ArrayList<Double> getOutCellValues() {
+		return outCellValues;
+	}
+	public void setOutCellValues(ArrayList<Double> outCellValues) {
+		this.outCellValues = outCellValues;
+	}
+	public ArrayList<Formula> getFormulaStack() {
+		return formulaStack;
+	}
+	public void setInColumns(ArrayList<DataTableCol> inColumns) {
+		this.inColumns = inColumns;
+	}
+	public void setOutColumns(ArrayList<DataTableCol> outColumns) {
+		this.outColumns = outColumns;
+	}
 }

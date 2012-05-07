@@ -64,10 +64,8 @@ public class SomFluid
 
 	SomFluidProperties sfProperties;
 	SomFluidFactory sfFactory ;
+	SomProcessControlIntf somProcessControl ;
 	
-	
-	
-	// SomDataObject somDataObject;
 	ArrayList<SomDataObject> somDataObjects = new ArrayList<SomDataObject>();
 	
 	SomTasks somTasks;
@@ -96,6 +94,8 @@ public class SomFluid
 		
 		sfFactory = factory;
 		sfProperties = sfFactory.getSfProperties() ;
+		
+		somProcessControl = sfFactory.getSomProcessControl() ;
 		
 		sf = this;
 		
@@ -159,9 +159,13 @@ public class SomFluid
 		simo.prepareDataObject() ;
 		simo.setInitialVariableSelection( modset.getInitialVariableSelection() ) ;
 		
+		simo.setSaveOnCompletion(true) ;
+		
 		simo.perform();
 		// will return in "onTaskCompleted()"
 		// handling requests about persistence: saving/sending model, results
+		
+		
 	}
 	
 
@@ -184,7 +188,8 @@ public class SomFluid
 
 		optimizerResultHandler = new ModelOptimizerDigester( moz , sfFactory);
 		sfTask.setSomResultHandler( optimizerResultHandler ) ;
-
+ 
+		
 		moz.perform();
 		// will return in "onTaskCompleted()"
 		
@@ -244,6 +249,7 @@ public class SomFluid
 		 * 
 		 * it will use persistence settings
 		 */
+		
 		
 		sfTask.getSomResultHandler().handlingResults() ;
 		
@@ -328,11 +334,12 @@ public class SomFluid
 				// dependent on task we invoke different methods and worker classes
 				if (sfTask.somType == SomFluidProperties._SOMTYPE_MONO){
 					
-					// accessing the perssistent file,
+					// accessing the persistent file,
 					// it may be an external file containing raw data, or
 					// if sth exists an already prepared one
 					if (sfTask.workingMode == SomFluidTask._SOM_WORKMODE_FILE){ // ==default
 						// r = sfFactory.loadSource();
+						
 					}
 					
 					if (sfTask.workingMode == SomFluidTask._SOM_WORKMODE_PIKETT){ 
@@ -478,7 +485,9 @@ public class SomFluid
 		// 
 		somDataObject.ensureTransformationsPersistence(0);
 											out.print(4, "somDataObject instance @ loadSource : "+somDataObject.toString()) ;
-											
+								
+		somDataObject.save();
+		
 		return somDataObject;
 	
 	}
@@ -521,10 +530,11 @@ public class SomFluid
 	 * @return the somDataObjects
 	 */
 	public ArrayList<SomDataObject> getSomDataObjects() {
+		if (somDataObjects==null){
+			somDataObjects = new ArrayList<SomDataObject>() ;
+		}
 		return somDataObjects;
 	}
-
-
 
 
 	/**
@@ -532,6 +542,11 @@ public class SomFluid
 	 */
 	public void setSomDataObjects(ArrayList<SomDataObject> somDataObjects) {
 		this.somDataObjects = somDataObjects;
+	}
+
+	public void addSomDataObjects(SomDataObject somDataObj) {
+		// 
+		somDataObjects.add(somDataObj) ;
 	}
 
 
@@ -645,10 +660,14 @@ public class SomFluid
 	// ------------------------------------------------------------------------
 
 	public void setUserbreak(boolean flag) {
+		out.printErr(1, "A request for stopping all processes has been received, please wait...");
 		userBreak = flag;
 	}
 	public boolean getUserbreak() {
 		
+		if ( somProcessControl.getInterruptRequest()>0){
+			setUserbreak(true) ;
+		}
 		return userBreak;
 	}
  

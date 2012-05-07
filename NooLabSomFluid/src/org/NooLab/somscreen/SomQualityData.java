@@ -222,6 +222,22 @@ public class SomQualityData implements Serializable{
 		this.ecr = ecr;
 	}
 
+	public double getTpsqRisk() {
+		return tpsqRisk;
+	}
+
+	public void setTpsqRisk(double tpsqRisk) {
+		this.tpsqRisk = tpsqRisk;
+	}
+
+	public double getTpfpRisk() {
+		return tpfpRisk;
+	}
+
+	public void setTpfpRisk(double tpfpRisk) {
+		this.tpfpRisk = tpfpRisk;
+	}
+
 	 
 	
 }

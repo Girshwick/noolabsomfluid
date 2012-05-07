@@ -74,7 +74,7 @@ public class EvoMetrices implements Serializable{
 	
 	MetricsHistory  emHistory;
 	
-	transient Random jrandom;
+	Random jrandom;
 	transient PrintLog out; 
 	
 	SomFluidFactory sfFactory;
@@ -235,6 +235,7 @@ public class EvoMetrices implements Serializable{
 		SomQuality sq;
 		EvoMetrik evoResultItem;
 		
+		if (out==null)out = somData.getOut() ;
 		
 		evoResultItem = new EvoMetrik();
 		
@@ -259,7 +260,7 @@ public class EvoMetrices implements Serializable{
 			// compare sq to bestSomQuality
 			scoreDifference = sq.somQualityData.score - bestResult.sqData.score ;
 			improvement = scoreDifference<0;
-											out.printErr(2, "model score: "+String.format( "%.3f", sq.somQualityData.score)+", RoC-AuC: "+String.format( "%.3f", sq.somQualityData.rocAuC));
+											out.printErr(1, "model score: "+String.format( "%.3f", sq.somQualityData.score)+", RoC-AuC: "+String.format( "%.3f", sq.somQualityData.rocAuC));
 		     								
 			// updateEvoBasicsData( scoreDifference ,bestResult.usageVector , evoResultItem.usageVector,1.0); 
 			// THIS IS EMPTY
@@ -1114,6 +1115,9 @@ if (setItems.size()<=1){
 		
 		
 		try{
+											if(out==null){
+												out = somData.getOut() ;
+											}
 											out.print(3, "prepareLargeSelectionChange (1) ... ");
 			
 			

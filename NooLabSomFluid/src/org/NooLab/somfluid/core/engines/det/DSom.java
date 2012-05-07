@@ -124,8 +124,23 @@ public class DSom extends Observable implements DSomIntf{
 		if (activeTvLabel.length()>0){
 			
 			activeTvIndex = somData.getVariables().getIndexByLabel( activeTvLabel ) ;
-			somData.getVariables().setTvColumnIndex(activeTvIndex) ;
-			somData.getVariables().addTargetedVariableByLabel(activeTvLabel ) ;
+			if ((activeTvLabel.contains("*")) && (activeTvIndex>=0)){
+				activeTvLabel = somData.getVariables().getItem(activeTvIndex).getLabel() ;
+			}
+			if (activeTvIndex>=0){
+				somData.getVariables().setTvColumnIndex(activeTvIndex) ;
+			}else{
+				activeTvIndex = somData.getVariables().getTvColumnIndex() ;
+				activeTvLabel = somData.getVariables().getItem(activeTvIndex).getLabel() ; 
+			}
+			
+			try {
+				somData.getVariables().addTargetedVariableByLabel(activeTvLabel ) ;
+				
+			} catch (Exception e) {
+			
+				e.printStackTrace();
+			}
 		}
 		
 		
