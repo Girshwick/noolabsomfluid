@@ -1,8 +1,11 @@
 package org.NooLab.utilities.files;
 
 import java.io.File;
+import java.io.Serializable;
 
-public class FileDataSource {
+public class FileDataSource implements Serializable{
+
+	private static final long serialVersionUID = 4626300048807573170L;
 
 	// types of sources 
 	static public int SRC_LOCAL = 1;
@@ -30,12 +33,6 @@ public class FileDataSource {
 	boolean resourceExists ;
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-
-
-
-
-
-
 	public FileDataSource(){
 		
 	}
@@ -44,8 +41,6 @@ public class FileDataSource {
 		srcType = srctype;
 		resourceLocator = filepath;
 	}
-	
-	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 
 	
@@ -153,6 +148,26 @@ public class FileDataSource {
 		resourceExists = fil.exists() ;
 		
 		return resourceExists;
+	}
+
+	public int getSrcType() {
+		return srcType;
+	}
+
+	public void setSrcType(int srcType) {
+		this.srcType = srcType;
+	}
+
+	public boolean isResourceExists() {
+		return resourceExists;
+	}
+
+	public void setResourceExists(boolean resourceExists) {
+		this.resourceExists = resourceExists;
+	}
+
+	public void setResourceLocator(String resourceLocator) {
+		this.resourceLocator = resourceLocator;
 	}
 	
 }

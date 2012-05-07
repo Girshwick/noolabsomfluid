@@ -1,11 +1,14 @@
 package org.NooLab.utilities.datatypes;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 
 
 
-public class SerialMap {
+public class SerialMap implements Serializable{
+
+	private static final long serialVersionUID = -1579996560391619523L;
 
 	ArrayList<SerialMapItemIntf> items = new ArrayList<SerialMapItemIntf> (); 
 	
@@ -60,6 +63,16 @@ public class SerialMap {
 		}
 		
 		return ritem;
+	}
+
+
+	public ArrayList<SerialMapItemIntf> getItems() {
+		return items;
+	}
+
+
+	public void setItems(ArrayList<SerialMapItemIntf> items) {
+		this.items = items;
 	}
 	
 	

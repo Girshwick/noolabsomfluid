@@ -661,10 +661,11 @@ public class DFutils extends Thread{
 			
 			path = pathsnip1 + "/" + pathsnip2;
 			
-			path = path.replaceAll("//", "/") ;
-			path = path.replaceAll("\\\\", "/") ;
-			path = path.replaceAll("\\//", "/") ;
-			path = path.replaceAll("//", "/") ; 
+			// the java built-in "replaceALL" will NOT replace all occurrences...
+			path = path.replaceAll("//", "/") ;   path = StringsUtil.replaceall(path, "//", "/");
+			path = path.replaceAll("\\\\", "/") ; path = StringsUtil.replaceall(path, "\\\\", "/");
+			path = path.replaceAll("\\//", "/") ; path = StringsUtil.replaceall(path, "\\//", "/");
+			path = path.replaceAll("//", "/") ;   path = StringsUtil.replaceall(path, "//", "/");
 			path = StringsUtil.replaceall(path,"./", "/") ;
 			// path = prepareFilepath( path ) ;
 			

@@ -3,6 +3,7 @@ package org.NooLab.utilities.strings;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 
 import java.nio.*;
 import java.nio.charset.*;
@@ -86,7 +87,9 @@ Operations on String that are null safe.
 	removeTags -> str = strgutil.regexScanner(str, "<[^>]*>", " ", 99);
 */
 
-public class StringsUtil {
+public class StringsUtil{  //  implements Serializable
+
+	private static final long serialVersionUID = -8286948353171915322L;
 
 	int startpos=0;
 	
@@ -95,14 +98,14 @@ public class StringsUtil {
 	String effectiveSeparator ="";
 	
 	// result buffer
-	Vector<ItemResult> itemresults = new Vector<ItemResult>();
+	transient Vector<ItemResult> itemresults = new Vector<ItemResult>();
 	
 	 
-	StringComparison strgcomp =  new StringComparison();
+	transient StringComparison strgcomp =  new StringComparison();
 	
 
 	
-	localNumStuff nums = new localNumStuff();
+	transient localNumStuff nums = new localNumStuff();
   	
 	/**
 	 * 
@@ -1398,7 +1401,7 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		
 		if (compareThis.startsWith("*") ){
 			compareThis = compareThis.replace("*", "");
-			rB = toFullString.endsWith(compareThis) ;
+			rB = toFullString.endsWith(compareThisSnip) ;
 			return rB;
 		}
 		if (compareThis.endsWith("*")){
@@ -4190,8 +4193,70 @@ if (str.contains("1. 5")){
 		return separatedPart;
 	}
 
+	public String cleanLabelFromLocales(String instr) {
+		String str ;
+		str = instr;
+		
+		 
+		str = replaceAll(str,"ü","ue");
+		str = replaceAll(str,"ö","oe");
+		str = replaceAll(str,"ä","ae");
 
+		str = replaceAll(str,"Ü","Ue");
+		str = replaceAll(str,"Ö","Oe");
+		str = replaceAll(str,"Ä","Ae");
+		
+		str = StringUtils.stripAccents(str);
+		
+		// and finally hard-core int Uxxxx
+		str = native2Ascii(str);
+		
+		return str;
+	}
 
+	private String native2Ascii(String str) {
+		
+		StringBuffer sb = new StringBuffer(str.length());
+		sb.setLength(0);
+		for (int i = 0; i < str.length(); i++) {
+			char c = str.charAt(i);
+			
+			sb.append(native2Ascii(c));
+		}
+		return (new String(sb));
+	}
+
+	private static StringBuffer native2Ascii(char charater) {
+		StringBuffer sb = new StringBuffer();
+		if (charater > 255) {
+			sb.append("\\u");
+			int lowByte = (charater >>> 8);
+			sb.append(int2HexString(lowByte));
+			int highByte = (charater & 0xFF);
+			sb.append(int2HexString(highByte));
+		} else {
+			sb.append(charater);
+		}
+		return sb;
+	}
+
+	private static String int2HexString(int code) {
+		String hexString = Integer.toHexString(code);
+		if (hexString.length() == 1) hexString = "0" + hexString;
+		return hexString;
+	}
+
+	public String[] getNumbers() {
+		return numbers;
+	}
+
+	public void setNumbers(String[] numbers) {
+		this.numbers = numbers;
+	}
+
+	public void setEffectiveSeparator(String effectiveSeparator) {
+		this.effectiveSeparator = effectiveSeparator;
+	}
 
 
 	
