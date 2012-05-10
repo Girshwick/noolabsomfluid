@@ -3,6 +3,7 @@ package org.noolab.algoplug.timeseries;
 import java.util.ArrayList;
 
 import org.NooLab.somtransform.algo.intf.AlgoTransformationAbstract;
+import org.NooLab.somtransform.algo.intf.AlgorithmParameter;
 import org.NooLab.somtransform.algo.intf.AlgorithmParameters;
 
 
@@ -17,11 +18,16 @@ public class RunningMean extends AlgoTransformationAbstract {
 	
 	String versionStr = "1.00.01" ;
 	
+	// the parameters that are semantically specific for this algorithm
+	// the are introduced through the class AlgorithmParameters, which provides semantically neutral data slots.
+	int windowLength = 3 ;
+
 	
+	// ------------------------------------------------------------------------
 	public RunningMean(){
 		super();
 	}
-
+	// ------------------------------------------------------------------------
 	
 
 	@Override
@@ -39,7 +45,7 @@ public class RunningMean extends AlgoTransformationAbstract {
 	@Override
 	public int calculate() {
 		double v;
-		int windowLength = 1 ;
+		windowLength = 1 ;
 		// important !
 		outvalues.clear();
 		
@@ -49,19 +55,6 @@ public class RunningMean extends AlgoTransformationAbstract {
 		*/
 		// perform desired activity
 		try{
-			
-			// AlgorithmParameters parameters ;
-			// is a list of ArrayList<AlgorithmParameter> items, where "AlgorithmParameter" is a simple object that
-			// provides several typed slots for storing values, and a list for untyped (=object) values
-			// the meaning is given by the designer and the caller !
-			
-			if ((parameters!=null) && (parameters.getItems()!=null) && (parameters.getItems().size()>0) ){
-				windowLength = (int) parameters.getItems().get(0).getNumValue() ;
-			}else{
-				// on option: silent or exception
-				windowLength = 3;
-			}
-			
 			
 			if (windowLength>values.size()-10)windowLength=values.size();
 			if (windowLength<2)windowLength=2;
@@ -79,15 +72,17 @@ public class RunningMean extends AlgoTransformationAbstract {
 					windowedValues.add(v);
 					currentN++;
 				}
+				// dependent on option as provided by param : -1.0 or smooth intro with min of 3 values
+				outvalues.add(-1.0);
 			}
 			
-			for (int i=0;i<values.size(); i++){
+			for (int i=windowLength;i<values.size(); i++){
 				
 				v = (Double)values.get(i) ;
 				 
-				// applying range violation handling mode
-				// v = handlingRangeProtection(v);
-				
+				// applying range violation handling mode, provided by "AlgoTransformationAbstract"
+				// the options for that are set during loading, and contracted through SomFluidProperties
+				v = handlingRangeProtection(v);
 				
 					
 				if ( v!= -1.0 ){
@@ -105,7 +100,7 @@ public class RunningMean extends AlgoTransformationAbstract {
 						windowedValuesSum = windowedValuesSum - windowedValues.get(0) ;
 						currentMean = windowedValuesSum/currentN; 
 					} 
-					
+					windowedValues.remove(0);					
 					if (i>=windowLength){
 						if (i < outvalues.size()) {
 							outvalues.set(i, currentMean);
@@ -129,19 +124,36 @@ public class RunningMean extends AlgoTransformationAbstract {
 
 	@Override
 	public void setParameters(ArrayList<Object> params) throws Exception {
+		
+		ArrayList<AlgorithmParameter> algoParams ; 
+		
+		// AlgorithmParameters parameters ;
+		// is a list of ArrayList<AlgorithmParameter> items, where "AlgorithmParameter" is a simple object that
+		// provides several typed slots for storing values, and a list for untyped (=object) values
+		// the meaning is given by the designer and the caller !
+		
 		if ((params==null) || (params.size()==0)){
 			return;
 		}
 		
-		int n1=parameters.getItems().size() ;
+		int n1=0, n2=0;
+		
+		if (parameters!=null){
+			n1 = parameters.getItems().size() ;
+		}
 		
 		super.setParameters(params) ; 
+		algoParams = parameters.getItems();
 		
-		int n2=parameters.getItems().size() ;
+		n2= algoParams.size() ;
 		
 		if (n2<=n1){
 			// TODO: on option: silent or throwing exception...
 			throw(new Exception("assimilating parameters (n="+params.size()+") failed."));
+			// return;
+		}
+		if (algoParams.size()>0){
+			windowLength = (int) algoParams.get(0).getNumValue() ;
 		}
 	}
 
