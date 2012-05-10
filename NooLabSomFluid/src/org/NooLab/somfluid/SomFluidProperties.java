@@ -108,6 +108,9 @@ public class SomFluidProperties implements 	//
 	transient FileOrganizer fileOrganizer;
 
 	private String systemRootDir;
+
+
+	private int multiProcessingLevel = 0;
 	
 	// ========================================================================
 	protected SomFluidProperties(){
@@ -784,9 +787,16 @@ public class SomFluidProperties implements 	//
 		return systemRootDir;
 	}
 
-
 	public void setSystemRootDir(String systemRootDir) {
 		this.systemRootDir = systemRootDir;
+	}
+ 
+	
+	public int getMultiProcessingLevel() {
+		return multiProcessingLevel;
+	}
+	public void setMultiProcessingLevel(int mppLevel) {
+		multiProcessingLevel = mppLevel;
 	}
 
 

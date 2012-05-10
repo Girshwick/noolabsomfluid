@@ -20,7 +20,6 @@
             <fatjar.manifest/>
             <fatjar.filesource path="D:\dev\java\workspace\NooLabSomFluid\bin" relpath=""/>
             <fatjar.filesource path="D:\dev\java\workspace\NooLabChord\bin" relpath=""/>
-            <fatjar.filesource path="D:\dev\java\workspace\NooLabChord\bin" relpath=""/>
             <fatjar.filesource path="D:\dev\java\workspace\JMathTools\bin" relpath=""/>
             <fatjar.filesource path="D:\dev\java\workspace\NooLabCompare\bin" relpath=""/>
             <fatjar.filesource path="D:\dev\java\workspace\NooLabMathCommonsAdapt\bin" relpath=""/>

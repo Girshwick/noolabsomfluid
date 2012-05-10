@@ -18,7 +18,7 @@ public class EvoMetrik  implements Serializable{
 	private static final long serialVersionUID = -831642790269374541L;
 
 	// as long as the ECR is not changed don the fly, these two values are identical
-	double actualScore; // 
+	double actualScore = 999.09; // 
 	double mainScore;
 	
 	// could be quite expensive regarding space... will be stored only in EvoBasics, or the parent class
@@ -27,7 +27,7 @@ public class EvoMetrik  implements Serializable{
 
 	SomQualityData sqData;
 
-	ArrayList<Double> usageVector;
+	ArrayList<Double> usageVector ;
 
 	int index = -1;
 	int step = -1;

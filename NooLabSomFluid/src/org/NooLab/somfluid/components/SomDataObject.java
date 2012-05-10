@@ -9,6 +9,7 @@ import java.util.*;
 import org.NooLab.somfluid.SomDataDescriptor;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.components.variables.SomVariableHandling;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
 
@@ -223,6 +224,12 @@ public class SomDataObject 	implements      Serializable,
 		return rb;
 	}
 	
+
+	public void registerDataReceptor(DataFileReceptorIntf datareceptor) {
+		dataReceptor = datareceptor;
+		
+	}
+
 
 	public void readData( String filename ) {
 	 
@@ -574,6 +581,8 @@ public class SomDataObject 	implements      Serializable,
 		sdo.data.setSomData(sdo);
 		sdo.normalizedSomData.setSomData(sdo) ;
 											fileorg.getOut().print(2, "") ;
+		sdo.data.establishObjects(sdo, true);
+		sdo.normalizedSomData.establishObjects(sdo, true);
 		
 		fileorg=null;
 		
@@ -1194,9 +1203,43 @@ public class SomDataObject 	implements      Serializable,
 	}
 
 
-	public void registerDataReceptor(DataFileReceptorIntf datareceptor) {
-		dataReceptor = datareceptor;
-		
+	public DataTable getData() {
+		return data;
+	}
+
+
+	public void setData(DataTable data) {
+		this.data = data;
+	}
+
+
+	public DataTable getNormalizedSomData() {
+		return normalizedSomData;
+	}
+
+
+	public void setNormalizedSomData(DataTable normalizedSomData) {
+		this.normalizedSomData = normalizedSomData;
+	}
+
+
+	public DataTable getProfilesTable() {
+		return profilesTable;
+	}
+
+
+	public void setProfilesTable(DataTable profilesTable) {
+		this.profilesTable = profilesTable;
+	}
+
+
+	public boolean isOpenChanges() {
+		return openChanges;
+	}
+
+
+	public void setOpenChanges(boolean openChanges) {
+		this.openChanges = openChanges;
 	}
 
 

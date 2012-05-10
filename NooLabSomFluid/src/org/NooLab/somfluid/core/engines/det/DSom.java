@@ -68,6 +68,8 @@ public class DSom extends Observable implements DSomIntf{
 
 	SomFluidMonoTaskIntf somTask; // is of mono-flavor here
 	
+	MultiprocDispatcher multiprocDispatcher ;
+	
 	//SomTargetedModeling somTargetedModeling;  
 	
 	private DSomCore dSomCore;
@@ -117,6 +119,7 @@ public class DSom extends Observable implements DSomIntf{
 		random = sfFactory.getRandom();
 		random.setSeed(3579) ;
 		
+		multiprocDispatcher = new MultiprocDispatcher( this ) ;
 		
 		bmuBuffer = new BmuBuffer(this, somData.getRecordCount() ) ;
 		

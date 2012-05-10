@@ -82,6 +82,8 @@ public class EvoBasics implements Serializable{
 		ArrayList<Double> ews;
 		ArrayList<Integer> ecs; 
 		
+		
+		
 		if ((ems2.getBestResult()!=null) && (ems2.getBestResult().getSqData()!=null) ){
 			_score = ems2.getBestResult().getSqData().getScore();
 		}
@@ -96,10 +98,10 @@ public class EvoBasics implements Serializable{
 			ems2.getEvmItems().get(i).setStep( k + i + 1) ;
 		}
 		
-		if (ems1==null){
+		if ((ems1==null) ){
 			ems1 = new EvoMetrices(ems2, false); 
 			
-			ems1.setCurrentBaseMetrik( ems2.getCurrentBaseMetrik() );
+			ems1.setCurrentBaseEvoMetrik( ems2.getCurrentBaseMetric() );
 			ems1.addEvmItems( ems2.getEvmItems() );
 			
 			ems1.getProposedVariableIndexes().clear();
@@ -114,11 +116,18 @@ public class EvoBasics implements Serializable{
 	
 		// history of compressed results , may contain double entries from different runs, TODO need to be removed...
 		ems1.addEvmItems( ems2.getEvmItems() );
+		if (ems1.bestResult==null){
+			ems1.bestResult = new EvoMetrik(ems2.bestResult) ;
+		}
 		
 		// integrating evo weights and counts
 		eb1 = ems1.getEvoBasics() ;
 		eb2 = ems2.getEvoBasics() ;
 		
+		int evosz2 = eb2.getEvolutionaryCounts().size();
+		if (evosz2==0){
+			return ems1;
+		}
 		int ec,ec1, ec2;
 		double ew1,ew2, ew;
 		
@@ -148,12 +157,15 @@ public class EvoBasics implements Serializable{
 		eb1.setEvolutionaryCounts(ecs);
 		eb1.setEvolutionaryWeights(ews);
 		
-	
+		
 		// is the second one (last) better than the previous (first) one ? 
-		if ( ems2.getBestResult().getActualScore() < ems1.getBestResult().getActualScore()){
+		if ((ems1.getBestResult()==null) || ( ems2.getBestResult().getActualScore() < ems1.getBestResult().getActualScore())){
 			// creates a new instance by cloning 
+if ( ems2.getBestResult()==null){
+	k=0;
+}
 			ems1.setBestResult( ems2.getBestResult() ) ;
-			ems1.setCurrentBaseMetrik( ems2.getBestResult() );
+			ems1.setCurrentBaseEvoMetrik( ems2.getBestResult() );
 			ems1.getProposedVariableIndexes().clear();
 			ems1.getProposedVariableIndexes().addAll( ems2.getBestResult().getVarIndexes() );
 		}

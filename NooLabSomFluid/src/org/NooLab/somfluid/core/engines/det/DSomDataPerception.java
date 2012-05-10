@@ -33,7 +33,7 @@ public class DSomDataPerception
 												FrequencyListGeneratorIntf{
 
 	
-	boolean _DEBUG = true;
+	boolean _DEBUG = false;
 	
  
 
@@ -58,6 +58,7 @@ public class DSomDataPerception
 		 
 		sampleRecordIDs = new ArrayList<Integer>(sampleRecords);
 		volatileSample  = new ArrayList<Integer>(sampleRecords);
+		
 	}
 	// ========================================================================	
 
@@ -119,12 +120,27 @@ public class DSomDataPerception
 		
 		minFill = this.parentSom.modelingSettings.getMinimalSplitSize() ;
 		
-		 
+		/*
+		 	multi-threading SOM (parallel processing)
+		 	
+		 	the task that is parallelized is the search through the SOM for a Winner
+		 	first we will create an assignment of the nodes to particular
+		 *  
+		 *   
+		 */
+		
+		
+		int currentSomSize = 1 ;
 		
 		recordsConsidered=0;
 		
 		while ((recordsConsidered < sampleRecordIDs.size() ) && (parentSom.getUserbreak()==false) ) {
 			 
+			if (currentSomSize != somLattice.getNodes().size()){
+				currentSomSize = somLattice.getNodes().size();
+				// update nodes list for MPP
+			}
+			
 			loweredPriorityPause(recordsConsidered);
 			
 			// drawing the next record ID from the preselected set of IDs by random, NOT one after each other
@@ -167,8 +183,17 @@ public class DSomDataPerception
 						 					
 						 					continue;
 						 				}
-				 		 
-			winningNodeIndexes = getBestMatchingNodes( currentRecordIndex, testrecord, 5, boundingIndexList);
+			// getBestMatchingNodes() is in abstract super() class... ... in producing progress here !!!!!!!
+			ClassificationSettings cs = modelingSettings.getClassifySettings();
+				
+			// TODO: abc124  here we select the appropriate method for determining the Winner ...
+			// in case of non-target clustering mode, we will have a variance criterion
+			// for instance, learning a property of the SOM itself, like the distance of the record to the
+			// class that represents x% of the data. Here the assignment of what is "target" changes all the time
+			
+			int mppLevel = sfProperties.getMultiProcessingLevel() ;
+			// getBestMatchingNodes() should respect minimum fill, if the winner is already filled well 
+			winningNodeIndexes = getBestMatchingNodes( currentRecordIndex, testrecord, 5, boundingIndexList,mppLevel);
 			                            
 				         				if ((winningNodeIndexes==null) || (winningNodeIndexes.size()==0))continue;
 				         				out.print(4, "winning node index: "+ winningNodeIndexes.get(0).getIndex() );
@@ -177,7 +202,7 @@ public class DSomDataPerception
 
 		    // we update the winning node without further consideration ONLY in the last step
 		    if (((currentEpoch+1)>=somSteps) || (currentEpoch<=1) || (mode>0)){ //  
-		    	learningRate = 0.04 ;
+		    	if (recordsConsidered < sampleRecordIDs.size()/2){ learningRate = 0.04 ; }
 if ((currentEpoch+1)>=somSteps){
 	int nn;
 	nn=0;
@@ -238,7 +263,7 @@ if ((currentEpoch+1)>=somSteps){
 		    	/* in the epoch N-1 we check for splits, growth according to settings
 		    	 * especially, whether adjacent nodes are drastically different filled (<10, >100), (>1000, <30) (<3,>40)
 		    	 * but: variance-controlled
-		    	 * if a node has strange variance as compared to other nodes (global, local neighbourhood,), 
+		    	 * if a node has strange variance as compared to other nodes (global, local neighborhood,), 
 		    	 *   or in targeted modeling, if ppv << average ~~ ppv of node is in 10% quantil of all nodes
 		    	 */
 		    	if ((currentEpoch+2)==somSteps){
@@ -266,7 +291,7 @@ if ((currentEpoch+1)>=somSteps){
 			 
 			if ( (_DEBUG) &&((currentEpoch+1)<somSteps) && (recordsConsidered%100==0)){
 				//System.gc();
-				out.delay(10);
+				out.delay(1);
 				out.print(4, "  - - -  active_threads: "+tn);
 			}
 			if (_DEBUG)out.delay(5); // abc124 DEBUG ONLY
@@ -277,7 +302,7 @@ if ((currentEpoch+1)>=somSteps){
 		// we do it after phase 3 and after 50% of phase 4
 		if (currentEpoch+1==somSteps-1){
 			// in the pre-last step only...
-			// this we can use to adjust the size of the map, by splitting relatively large/heterogenous nodes,
+			// this we can use to adjust the size of the map, by splitting relatively large/heterogeneous nodes,
 			// or nodes with small beta (this would require calculating local results...)
 			if (mode<=5){
 				parentSom.somLattice.calculateInternals();
@@ -294,14 +319,16 @@ if ((currentEpoch+1)>=somSteps){
 			careForMinimalFill( parentSom.modelingSettings.getMinimalNodeSize() ) ;
 		}
 		 
-		if (_DEBUG)out.delay(130);
-	 
+		 
+		
+ 		if (_DEBUG)out.delay(130);
+		 
+		 
 	} // go()
 
 	private ArrayList<Double> detailedAssignmentCheck( int winnerIndex,int newWinnerIndex, ArrayList<Double> testrecord) {
 		// 
-		
-		
+		 
 		return testrecord;
 	}
 
@@ -402,7 +429,7 @@ if ((currentEpoch+1)>=somSteps){
 					
 					
 					// now the question is: would that cRecordVector match better to some other node ?
-					candidateNodes = getBestMatchingNodes( leastSimRecIndex, cRecordVector, 2, boundingIndexList);
+					candidateNodes = getBestMatchingNodes( leastSimRecIndex, cRecordVector, 2, boundingIndexList,0);
 					
 					
 					if ((candidateNodes.size()>0)){
@@ -1021,7 +1048,7 @@ if (extSizeInNeighbors.size()>0){
 			
 			profilevalues = somLattice.getNode(srcNodeIndex).getIntensionality().getProfileVector().getValues();
 			
-			bmuSearch = new ProfileVectorMatcher(out);
+			bmuSearch = new ProfileVectorMatcher( parentSom.sfProperties.getMultiProcessingLevel(),out);
 			bmuSearch.setNodeCollection( nodeCollection).setParameters(profilevalues, bmuCount, boundingIndexList);
 			
 			bmuSearch.createListOfMatchingUnits(1);
@@ -1036,7 +1063,7 @@ if (extSizeInNeighbors.size()>0){
 			bestMatchingNeighborIndex = sortedNeighbors.get(0).getIndex() ;
 			// ... thus we have to translate back...
 			ix = emptyNeighbors.get( bestMatchingNeighborIndex ) ;
-			// and to get the node through the translated indes
+			// and to get the node through the translated index
 			bmnNode = somLattice.getNode( ix ) ;
 			 
 			// next, remove some records from the source node into a local collection,

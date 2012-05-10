@@ -127,6 +127,8 @@ public class MetaNode   extends
 	boolean calculateAllVariables=false;
 	private ArrayList<Integer> sdoIndexValues = new ArrayList<Integer>();
 	
+	int mppLevel=0;
+	
 	/**   ??? */
 	ArrayList<IndexDistanceIntf> listOfQualifiedIndexes = new ArrayList<IndexDistanceIntf>();
 	
@@ -134,7 +136,7 @@ public class MetaNode   extends
 	// ------------------------------------------------------------------------
 	public MetaNode( VirtualLattice virtualLatticeNodes, DataSourceIntf somData ){
 		super(virtualLatticeNodes,  somData );
-		
+		mppLevel = virtualLatticeNodes.getMultiProcessingLevel();
 	}
 	
 	public MetaNode(VirtualLattice somlattice, DataSourceIntf somData, MetaNode templateNode) {
@@ -195,7 +197,7 @@ public class MetaNode   extends
 		ArrayList<Double> intensNodeProfile, recordVector;
 		ArrayList<Integer> recIndexes;
 		
-		ProfileVectorMatcher recordSorter = new ProfileVectorMatcher(out);
+		ProfileVectorMatcher recordSorter = new ProfileVectorMatcher(mppLevel,out);
 		ArrayList<Integer>  boundingindexlist = new ArrayList<Integer> ();
 		
 		ArrayList<IndexDistanceIntf> sortedRecords = new ArrayList<IndexDistanceIntf> ();
@@ -670,7 +672,7 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 				 
 				intensionality.getProfileVector().setValues(nodeProfile) ;
 			}
-			
+			recordcount = extensionality.getCount() ;
 		}catch(Exception e){
 			String str = ""+err ;
 			out.print(2, "problem in insertDataAndAdjust(), error code: "+str) ;
@@ -728,13 +730,13 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 	 *  the removal will adapt the basic statistics;
 	 *  
 	 *  @param countOfRecords the number of records to be transferred;
-	 *  @param quality   <0: the least similar records, >0: the most siilar records, 0: all
+	 *  @param quality   <0: the least similar records, >0: the most similar records, 0: all
 	 */
 	@Override
 	public ArrayList<Integer> exportDataFromNode( int countOfRecords, int quality, boolean removeExports) {
 		
 		ArrayList<Integer> exportedRecords = new ArrayList<Integer>(); 
-		ProfileVectorMatcher recordSorter = new ProfileVectorMatcher(out);
+		ProfileVectorMatcher recordSorter = new ProfileVectorMatcher( mppLevel,out );
 		ArrayList<Integer>  boundingindexlist = new ArrayList<Integer> ();
 		
 		ArrayList<Double> profilevalues, xDataVector = null ;

@@ -367,12 +367,12 @@ if (z%100==0){
 			zLimit = remainingConstrainedIndexes.size()/2 ; 
 		}
 											out.print(4,"PowerSetSpringSource, getNextSimilar, selecting ...");
-											
+		if (zLimit>500)zLimit=500; ;									
 		while ((found==false) && (z<zLimit)){
 			z++;
 			sItemList = getNextRandom();
 boolean hb = (CollectionUtils.intersection(sItemList , blacklistedLabels).size()>0);
-if ((hb) || (z>2500)){
+if ((hb) || (z>450)){
 	n=0;
 	sItemList = (ArrayList<String>) CollectionUtils.subtract( sItemList , blacklistedLabels );
 }
@@ -400,15 +400,21 @@ if (remainingConstrainedIndexes.size()%200==0){
 				found=true;
 				setAsList = sItemList;
 			}else{
-				int d,d1,d2;
-				d1 = c1.size() - minDeviations ;
-				d2 = c2.size() - posDeviations ;
+				int d,d1=0,d2=0;
+				if (c1.size()>0)d1 = c1.size() - minDeviations ;
+				if (c2.size()>0)d2 = c2.size() - posDeviations ;
 				d=d1+d2;
 				if (mind>d){
 					mind=d;
 					// TODO: don't remember if we have already seen it...
 					firstSetItemList = sItemList;
 					firstRPos = putativeRemovalPosition;
+				}
+				if (templateList.size()==0){
+					firstSetItemList = sItemList;
+					firstRPos = putativeRemovalPosition;
+					setAsList = sItemList;
+					found=true;
 				}
 			} //
 			

@@ -573,6 +573,15 @@ public class SomScreening {
 		return targetMod; 
 	}
 
+	public ArrayList<Integer> principalComponents( SomMapTable somMapTable){
+		
+		EvolutionarySearch evoSearch ;
+		evoSearch  = new EvolutionarySearch( 0 );
+		
+		return evoSearch.principalComponents(somMapTable);
+		
+	}
+	
 	protected ArrayList<Integer> checkProposedSelectionForBlockedVariables( ArrayList<Integer> selection ){
 		int ix , bix;
 		String vlabel;
@@ -614,48 +623,48 @@ public class SomScreening {
 	
 	/**
 	 * 
-	 * this class performs the following steps
+	 * this class performs the following steps </br></br>
 	 * 
-	 * 1. checking the quality of the initial model, e.g. refering to target variable and validation
-	 * 2. creating a few variations
-	 * 3. running modeling on it, by "cloning" somTargetedModeling
-	 *    yet, we need a new DSom instance !! -> just transferring settings
+	 * 1. checking the quality of the initial model, e.g. referring to target variable and validation </br>
+	 * 2. creating a few variations </br>
+	 * 3. running modeling on it, by "cloning" somTargetedModeling </br>
+	 *    yet, we need a new DSom instance !! -> just transferring settings </br>
+	 *  </br> </br>
 	 * 
 	 * 
-	 * 
-	 * Any variable has a "screener's score" based on a list of tasks to be fullfiled (->EvoTaskOfVariable);
+	 * Any variable has a "screener's score" based on a list of tasks to be fullfilled (->EvoTaskOfVariable); </br> </br>
 	 * 
 	 * The trick is to ask the variable which task it would like to accomplish, i.e. there is sth like a 
-	 * simple "inner state" 
-	 * This is conditional to the evolutionary weight / count, which is the primary factor for selection
+	 * simple "inner state" ; </br>
+	 * This is conditional to the evolutionary weight / count, which is the primary factor for selection </br> </br>
 	 * 
-	 * tasks are: 
-	 * - variable is the only one changed (add/removed)
-	 * - variable is part of large set of changes
-	 * - variable is changed together with another good one
-	 * - variable is changed together with a bad one
-	 * 
+	 * tasks are:  </br>
+	 * - variable is the only one changed (add/removed) </br>
+	 * - variable is part of large set of changes </br>
+	 * - variable is changed together with another good one </br>
+	 * - variable is changed together with a bad one </br>
+	 *  </br>
 	 * effect on evolutionary weights are different for each of the types of involvements
-	 * on small changes
+	 * on small changes </br> </br>
 	 * 
 	 * like there are tasks for each variable to be fulfilled, there are also tasks for
-	 * the overall screening process
+	 * the overall screening process </br>
 	 * The release of working on any of the possible tasks (for variables, or for global tasks) is 
-	 * based on external "pressures" and "readiness" 
+	 * based on external "pressures" and "readiness"  </br>
 	 * 
-	 * global tasks are
-	 * - large changes 
-	 *   > minimum distance [3..6] steps, dependent on size of history , # of variables 
-	 *   > maximum distance [10..20(50)] steps (history, # variables))
-	 *   length of period is dependent on history of changes, yet, with increasing duration of no-change happening,
-	 *   the pressure increases to release one 
+	 * global tasks are </br> </br>
+	 * - large changes  </br>
+	 *   > minimum distance [3..6] steps, dependent on size of history , # of variables  </br>
+	 *   > maximum distance [10..20(50)] steps (history, # variables)) </br>
+	 *   length of period is dependent on history of changes, yet, with increasing duration of no-change happening, 
+	 *   the pressure increases to release one  </br>
 	 *  
-	 * - small changes
+	 * - small changes </br>
 	 * 
-	 * - measuring contribution of variables
-	 *   there may be a setting, that restricts the number of "background variables"
+	 * - measuring contribution of variables </br>
+	 *   there may be a setting, that restricts the number of "background variables" </br>
 	 * 
-	 * - 
+	 * 
 	 *  
 	 *  
 	 * 
@@ -823,7 +832,7 @@ if ((specialInterestVariables!=null) &&
 					baseMetric = new ArrayList<String>(currentVariableSelection);
 						
 					previousUseVector = variables.getUseIndicationForLabelsList( baseMetric ) ;
-					evoMetrices.currentBaseMetrik = evoMetrices.bestResult;
+					evoMetrices.currentBaseMetric = evoMetrices.bestResult;
 
 					
 					int i=0;
@@ -1258,7 +1267,7 @@ if (selection.size()<=1){
 			// calculate statistical measures like EigenSom, SVD
 			selection1 = decomposition();
 			
-			selection2 = principalComponents() ;
+			selection2 = principalComponents(somMapTable) ;
 			
 			// create a union, each element is contained only once
 			
@@ -1287,7 +1296,7 @@ if (selection.size()<=1){
 		}	
 		
 			// ----------------------------------------------------
-		private ArrayList<Integer> principalComponents(){
+		public ArrayList<Integer> principalComponents( SomMapTable somMapTable){
 			int n;
 			ArrayList<Integer> selection = new ArrayList<Integer>();
 			
@@ -1302,7 +1311,7 @@ if (selection.size()<=1){
 					return selection;
 				}
 
-				pca = new PCA( somMapTable);
+				pca = new PCA( somMapTable );
 				pca.calculate();
 				pca.prepareResults() ;
 				
@@ -1314,7 +1323,6 @@ if (selection.size()<=1){
 				double info[] = pca.getVectorInformation();
 				// based on the info vector, we retrieve the indexes of the vector that are "promising"
 				int[] vix = pca.getFilteredVectorIndices(0.86,  somMapTable.tvIndex); 
-				
 				
 				
 				// only those with info value >0.9
@@ -1330,9 +1338,7 @@ if (selection.size()<=1){
 				n = pcaVector.length ;
 				n = pcaVectors.length ;
 				
-				// selection = arrutil.changeArrayStyle(vix) ;
-				
-				// cerating a list of IndexedDistances
+				// creating a list of IndexedDistances
 												out.print(3,"evaluating principal components done.");
 				if (selection.size()>0)selection.trimToSize() ;
 				

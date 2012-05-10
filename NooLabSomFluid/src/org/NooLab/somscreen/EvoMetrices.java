@@ -8,6 +8,7 @@ import org.apache.commons.collections.CollectionUtils;
 
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.StringsUtil;
 
 import org.NooLab.somfluid.*;
 import org.NooLab.somfluid.properties.*;
@@ -38,10 +39,14 @@ public class EvoMetrices implements Serializable{
 
 	// transient DSom dSom;
 	transient SomHostIntf somHost ;
-	
+
+	SomFluidFactory sfFactory;
+	SomDataObject somData  ;
+
 	ModelingSettings modelingSettings;
 	OptimizerSettings optimizerSettings;
 	
+	transient OutputSettings outsettings ; 
 	transient PowerSetSpringSource powerset;
 	
 	int tvIndex = -1;
@@ -53,8 +58,8 @@ public class EvoMetrices implements Serializable{
 	EvoMetrik bestResult;
 	
 	/** this is taken from an intermediate result following the large change  */
-	EvoMetrik currentBaseMetrik;
-	int currentBaseMetrikIndex = -1;
+	EvoMetrik currentBaseMetric;
+	int currentBaseMetricIndex = -1;
 	
 	// TODO  logging combinations that we already have seen, as a int[] for fast match
 	//       in order to avoid repetitions
@@ -76,9 +81,7 @@ public class EvoMetrices implements Serializable{
 	
 	Random jrandom;
 	transient PrintLog out; 
-	
-	SomFluidFactory sfFactory;
-	SomDataObject somData  ;
+	transient ArrUtilities arrutil = new ArrUtilities();
 	
 	// ==========================================================================
 	public EvoMetrices( SomHostIntf somhost , int largeperiod){
@@ -91,6 +94,7 @@ public class EvoMetrices implements Serializable{
 		modelingSettings = somHost.getSfProperties().getModelingSettings() ;
 		optimizerSettings = modelingSettings.getOptimizerSettings() ;
 		
+		outsettings = somHost.getSfProperties().getOutputSettings() ;
 		
 		evoBasics = new EvoBasics();
 		bestResult = new EvoMetrik() ;
@@ -108,6 +112,9 @@ public class EvoMetrices implements Serializable{
 		powerset.setBlacklistedVarLabels(somData.getVariables().getBlacklistLabels()) ;
 		
 		largePeriod = largeperiod;
+		
+		
+		
 		out = somData.getOut() ;
 	}
 	
@@ -130,10 +137,32 @@ public class EvoMetrices implements Serializable{
 		
 		
 		evoBasics = new EvoBasics( templEvoMetrices.evoBasics );
-		bestResult = new EvoMetrik( templEvoMetrices.bestResult) ;
-		
-		
-		 
+		if (templEvoMetrices.evmItems.size() > 0) {
+			
+			this.evmItems.addAll( templEvoMetrices.evmItems ) ;
+			if (templEvoMetrices.bestResult == null) {
+				// get it
+				bestResult = determineBestResult(templEvoMetrices);
+				if (bestResult == null) {
+					if (templEvoMetrices != null) {
+
+					}
+				}
+			} else {
+				if (templEvoMetrices.bestResult != null) {
+					if (templEvoMetrices.bestResult.usageVector == null) {
+						int k;
+						bestResult = determineBestResult(templEvoMetrices);
+					} else {
+						bestResult = new EvoMetrik(templEvoMetrices.bestResult);
+					}
+				}
+			}
+		} // anything in the list at all ?
+		else{
+			int k;
+			k=0;
+		}
 		if (inclObjects){
 			powerset = new PowerSetSpringSource( somData ) ; 
 			powerset.setBlacklistedVarLabels(somData.getVariables().getBlacklistLabels()) ;
@@ -151,6 +180,26 @@ public class EvoMetrices implements Serializable{
 	}
 
 	
+	public EvoMetrik determineBestResult(EvoMetrices metrices) {
+		EvoMetrik em,topResult = null;
+		double bestScore = 999.0; 
+		
+		
+		for (int i=0;i<metrices.evmItems.size();i++){
+			em = metrices.evmItems.get(i);
+			
+			if (bestScore > em.actualScore){
+				bestScore = em.actualScore;
+				topResult = em;
+			}
+		}
+		
+		if (topResult!=null){
+			topResult = new EvoMetrik(topResult) ;
+		}
+		return topResult;
+	}
+
 	// ==========================================================================
 
 
@@ -240,7 +289,7 @@ public class EvoMetrices implements Serializable{
 		evoResultItem = new EvoMetrik();
 		
 		// always the same ??? somHost.getSomProcess() 
-		sq = new SomQuality( somHost.getSomProcess(), modelProperties , usevector);
+		sq = new SomQuality( somHost.getSomProcess(), modelProperties , usevector); // here, sqdata is created and calculated
 		sq.acquireResultValues() ;
 		
 		evoResultItem.index = z;
@@ -276,8 +325,8 @@ public class EvoMetrices implements Serializable{
 			
 			// also changes to last
 		    if (selectionMode>=2){
-		    	if ((currentBaseMetrik!=null) && (currentBaseMetrik.sqData!=null)){
-		    		scoreDifference = sq.somQualityData.score -  currentBaseMetrik.sqData.score ;
+		    	if ((currentBaseMetric!=null) && (currentBaseMetric.sqData!=null)){
+		    		scoreDifference = sq.somQualityData.score -  currentBaseMetric.sqData.score ;
 		    		// updateEvoBasicsData( scoreDifference ,currentBaseMetrik.usageVector , evoResultItem.usageVector, 0.3);
 		    	}
 		    }
@@ -303,6 +352,10 @@ public class EvoMetrices implements Serializable{
 		
 		exploredMetrices.add(indexes);
 		
+		if (outsettings==null){
+			outsettings = somHost.getSfProperties().getOutputSettings() ;
+		}
+
 	}
 
 	
@@ -482,7 +535,13 @@ if (ec<0){
 		
 		EvoMetrik em ;
 		int k;
+		ArrayList<String> listedM = new ArrayList<String>();
 		
+		
+		if (outsettings==null){
+			outsettings = somHost.getSfProperties().getOutputSettings() ;
+		}
+
 		try{
 		
 			sort(EvoMetrices._SORT_SCORE, -1);
@@ -494,8 +553,14 @@ if (ec<0){
 				try{
 				
 					em = evmItems.get(i);
-					emHistory.addEvoMetrikAsItem(em) ;
-
+					
+					String str = ArrUtilities.arr2Text( em.getVarIndexes() ).trim();
+					str = StringsUtil.replaceall(str, " ", ""); 
+					
+					if (listedM.indexOf(str)<0){
+						listedM.add(str);	
+						emHistory.addEvoMetrikAsItem(em) ;
+					}
 				}catch(Exception e){
 				}
 			}// i->
@@ -504,9 +569,12 @@ if (ec<0){
 				// apply various filter modes, dependent on limits on count of metrices 
 				
 			}
+			
+			
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		listedM.clear();
 		k=0;
 	}
 	
@@ -567,7 +635,7 @@ if (ec<0){
 		ArrayList<ArrayList<String>> trows = emHistory.createTableRows( emHistory, headers ) ;
 		
 		// inserting header
-		trows.add(headers) ;
+		trows.add(0,headers) ;
 		
 		//
 		return trows;
@@ -576,27 +644,31 @@ if (ec<0){
 	
 	private void setOutputColumns( String[] listOfFieds, MetricsHistory emHistory){
 		
-		
+		if (outsettings==null){
+			outsettings = somHost.getSfProperties().getOutputSettings() ;
+		}
 		// just a lookup for the programmer
 		// ArrayList<String> _tmp_allfields = emHistory.getAllFieldLabels();    
 		
 		// TODO take this from the output properties
 		// Map<String,Integer> outdef = new HashMap<String,Integer>();
 		// emHistory.setOutputColumns( outdef ) ; not functional yet
-		emHistory.resetOutputDefinition();
+		outsettings.resetOutputDefinition();
 		
 		if ((listOfFieds==null) || (listOfFieds.length==0)){
-			emHistory.setOutputColumn("index", 1);
-			emHistory.setOutputColumn("step", 2);
-			emHistory.setOutputColumn("score", 3);
-			emHistory.setOutputColumn("tprate", 4);
-			emHistory.setOutputColumn("fprate", 5);
-			emHistory.setOutputColumn("ppv", 6);
-			emHistory.setOutputColumn("rocstp", 7);
-			emHistory.setOutputColumn("variableindexes", 8);
+			outsettings.setOutputColumn("index", 1);
+			outsettings.setOutputColumn("step", 2);
+			outsettings.setOutputColumn("score", 3);
+			outsettings.setOutputColumn("tprate", 4);
+			outsettings.setOutputColumn("fprate", 5);
+			outsettings.setOutputColumn("ppv", 6);
+			outsettings.setOutputColumn("rocauc", 7);
+			outsettings.setOutputColumn("rocstp", 8);
+			outsettings.setOutputColumn("variableindexes", 9);
+
 		}else{
 			for (int i=0;i<listOfFieds.length;i++){
-				emHistory.setOutputColumn(listOfFieds[i], i+1);
+				outsettings.setOutputColumn(listOfFieds[i], i+1);
 			}
 		}
 	}
@@ -680,18 +752,18 @@ if (ec<0){
 		while ((found==false) && (zz<pLimit)){
 			zz++ ;
 			
-			
+if (zz>1000){
+	zz=zz+1-1;
+}
 			if (mode==3){
 				prepareIndependentSelectionChange(z);
 			}
 			if (mode==1){
 				if (z>3){
 					// == the first large change after some small changes
-					currentBaseMetrik = bestResult;
+					currentBaseMetric = bestResult;
 				}
-if (z==10){
-	z=10;
-}
+ 
 				prepareLargeSelectionChange(z);
 				// results of this is not in global ArrayList<Integer> proposedVariableIndexes
 			
@@ -853,9 +925,9 @@ if (z==10){
 			Collections.sort( proposedVarIxes );
 			
 			uvec = deriveUseVector( proposedVarIxes ) ;
-			currentBaseMetrik = evmItems.get(evmItems.size()-1);
-			currentBaseMetrik.usageVector = uvec ; 
-			currentBaseMetrikIndex = evmItems.size()-1 ;
+			currentBaseMetric = evmItems.get(evmItems.size()-1);
+			currentBaseMetric.usageVector = uvec ; 
+			currentBaseMetricIndex = evmItems.size()-1 ;
 			
 		}catch(Exception e){
 			String str= "vlabel " + vlabel;
@@ -944,14 +1016,14 @@ if (z==10){
 
 			
 		// n = bestResult.usageVector.size() ;
-		if ((currentBaseMetrik==null) || (currentBaseMetrik.usageVector.size()<=2)){
-			currentBaseMetrik = bestResult; 
+		if ((currentBaseMetric==null) || (currentBaseMetric.usageVector.size()<=2)){
+			currentBaseMetric = bestResult; 
 		}
-		n = currentBaseMetrik.usageVector.size() ;
+		n = currentBaseMetric.usageVector.size() ;
 		
 		// translate it into index values
 		for (int i=0; i<n;i++ ){
-			uv = currentBaseMetrik.usageVector.get(i) ;
+			uv = currentBaseMetric.usageVector.get(i) ;
 			if (uv>0){
 				baseRVarIxes.add(i);
 			} ;
@@ -1080,9 +1152,9 @@ if (setItems.size()<=1){
 			Collections.sort(proposedVarIxes);
 
 			uvec = deriveUseVector(proposedVarIxes);
-			currentBaseMetrik = evmItems.get(evmItems.size() - 1);
-			currentBaseMetrik.usageVector = uvec;
-			currentBaseMetrikIndex = evmItems.size() - 1;
+			currentBaseMetric = evmItems.get(evmItems.size() - 1);
+			currentBaseMetric.usageVector = uvec;
+			currentBaseMetricIndex = evmItems.size() - 1;
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -1219,13 +1291,16 @@ if (setItems.size()<=1){
 				lo=5;
 				hi=2;
 			}
+if (setItems.size()==0){
+	z=z+1-1;
+}
 			// everything is the almost same until here for small changes 
-			setItems = powerset.getNextSimilar(setItems, lo,hi );
+			setItems = powerset.getNextSimilar(setItems, lo,hi ); //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 			
 			proposedVarIxes = (variables.getIndexesForLabelsList( setItems ));
 			proposedVarIxes.trimToSize() ;
 			// retrieving top weighted variables, this takes into account evocount, and will take
-			// next lower weighted vars  // TODO parametrize that...
+			// next lower weighted vars  // TODO parameterize that...
 			topIxes = getTopEvoWeightVarIxes(4);
 			if ((topIxes!=null) && ( topIxes.size()>2)){
 									// XXX change from 0
@@ -1258,9 +1333,9 @@ if (setItems.size()<=1){
 				Collections.sort( proposedVarIxes );
 			
 				uvec = deriveUseVector(proposedVarIxes);
-				currentBaseMetrik = evmItems.get(evmItems.size() - 1);
-				currentBaseMetrik.usageVector = uvec;
-				currentBaseMetrikIndex = evmItems.size() - 1;
+				currentBaseMetric = evmItems.get(evmItems.size() - 1);
+				currentBaseMetric.usageVector = uvec;
+				currentBaseMetricIndex = evmItems.size() - 1;
 			}
 			
 		}catch(Exception e){
@@ -1421,9 +1496,9 @@ if ((z%5==0) || (z==11)){
 			}
 			
 			uvec = deriveUseVector( proposedVarIxes ) ;
-			currentBaseMetrik = evmItems.get(evmItems.size()-1);
-			currentBaseMetrik.usageVector = uvec ; 
-			currentBaseMetrikIndex = evmItems.size()-1 ;
+			currentBaseMetric = evmItems.get(evmItems.size()-1);
+			currentBaseMetric.usageVector = uvec ; 
+			currentBaseMetricIndex = evmItems.size()-1 ;
 			
 		}catch(Exception e){
 			e.printStackTrace() ;
@@ -1720,16 +1795,42 @@ if ((z%5==0) || (z==11)){
 	
 	public void addEvmItems(ArrayList<EvoMetrik> evmitems) {
 	 
+		ArrayList<String> listedM = new ArrayList<String>();
+		
 		if ((evmitems==null) || (evmitems.size()==0)){
 			return;
 		}
 		
 		if (evmItems==null)evmItems = new ArrayList<EvoMetrik>();
 		
-		for (int i=0;i<evmitems.size();i++){
-			evmItems.add( new EvoMetrik( evmitems.get(i) ) );
-			evmItems.get( evmItems.size()-1).step = evmItems.size() ;
+		for (int i=0;i<evmItems.size();i++){
+
+			EvoMetrik em = evmItems.get(i);
+			
+			String str = ArrUtilities.arr2Text( em.getVarIndexes() ).trim();
+			str = StringsUtil.replaceall(str, " ", ""); 
+
+			if (listedM.indexOf(str)<0){
+				listedM.add(str);
+			}
+				
 		}
+		
+		for (int i=0;i<evmitems.size();i++){
+			
+			EvoMetrik em = evmitems.get(i);
+			
+			String str = ArrUtilities.arr2Text( em.getVarIndexes() ).trim();
+			str = StringsUtil.replaceall(str, " ", ""); 
+			
+			if (listedM.indexOf(str)<0){
+
+				listedM.add(str);
+				evmItems.add( new EvoMetrik( em ) );
+				evmItems.get( evmItems.size()-1).step = evmItems.size() ;
+			}
+		}
+		listedM.clear();
 	}
 
 	 
@@ -1807,15 +1908,15 @@ if ((z%5==0) || (z==11)){
 	/**
 	 * @return the currentBaseMetrik
 	 */
-	public EvoMetrik getCurrentBaseMetrik() {
-		return currentBaseMetrik;
+	public EvoMetrik getCurrentBaseMetric() {
+		return currentBaseMetric;
 	}
 
 	/**
 	 * @param currentBaseMetrik the currentBaseMetrik to set
 	 */
-	public void setCurrentBaseMetrik(EvoMetrik currentBaseMetrik) {
-		this.currentBaseMetrik = currentBaseMetrik;
+	public void setCurrentBaseEvoMetrik(EvoMetrik metric) {
+		this.currentBaseMetric = metric;
 	}
  
 
@@ -1851,14 +1952,14 @@ if ((z%5==0) || (z==11)){
 	 * @return the currentBaseMetrikIndex
 	 */
 	public int getCurrentBaseMetrikIndex() {
-		return currentBaseMetrikIndex;
+		return currentBaseMetricIndex;
 	}
 
 	/**
 	 * @param currentBaseMetrikIndex the currentBaseMetrikIndex to set
 	 */
-	public void setCurrentBaseMetrikIndex(int currentBaseMetrikIndex) {
-		this.currentBaseMetrikIndex = currentBaseMetrikIndex;
+	public void setCurrentBaseMetrikIndex(int metricIndex) {
+		this.currentBaseMetricIndex = metricIndex;
 	}
 
 	/**
@@ -1914,8 +2015,10 @@ if ((z%5==0) || (z==11)){
 	/**
 	 * @param bestResult the bestResult to set
 	 */
-	public void setBestResult(EvoMetrik bestResult) {
-		this.bestResult = new EvoMetrik(bestResult);
+	public void setBestResult(EvoMetrik resultmetrik) {
+		if (bestResult!=null){
+			this.bestResult = new EvoMetrik(resultmetrik);
+		}
 	}
 
 	/**

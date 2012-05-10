@@ -929,6 +929,10 @@ public class VirtualLattice implements LatticeIntf{
 	}
 
 
+	public int getMultiProcessingLevel() {		 
+		return somProcessParent.getSfProperties().getMultiProcessingLevel() ;
+	}
+
 	private MetaNode getBySerial(long nodeSerialID){
 		MetaNode node=null;
 		

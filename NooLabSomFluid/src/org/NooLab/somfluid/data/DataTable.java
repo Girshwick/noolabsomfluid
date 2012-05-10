@@ -153,10 +153,10 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 	
 	
 	// helper objects .................
-	transient StringsUtil strgutil = new StringsUtil();
-	transient ArrUtilities arrutil = new ArrUtilities ();
+	transient StringsUtil strgutil ;
+	transient ArrUtilities arrutil ;
 	
-	transient PrintLog out = new PrintLog(4,false) ;
+	transient PrintLog out ;
 
 	
 	
@@ -164,17 +164,30 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 	
 	public DataTable( SomDataObject somdata, boolean isnumeric ){
 		
+		establishObjects( somdata, isnumeric ) ;
+	}
+	
+	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 	
+
+	public void establishObjects( SomDataObject somdata, boolean isnumeric ){
+		
 		dt = this;
 		isNumeric = isnumeric ;
 		
 		somData = somdata;
 		missingValues = somData.getMissingValues() ;
 		
+		strgutil = new StringsUtil();
+		arrutil = new ArrUtilities ();
 		
+		out = somData.getOut() ;
+		if (out==null){
+			out = new PrintLog(4,false) ;
+		}
+		
+		dt = this;
 	}
 	
-	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 	
-
 	// creating a copy of the provided data table
 	public  DataTable( DataTable inDatatable ) {
 	
@@ -195,7 +208,7 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 		ps = fileorg.getPersistenceSettings() ;
 		DFutils fileutil = fileorg.getFileutil();
 		 
-		if (tablename.toLowerCase().contains("norm")){
+		if ((tablename!=null) && (tablename.length()>0) && (tablename.toLowerCase().contains("norm"))){
 			vstr="_n";
 		}
 		filename = ps.getProjectName()+"-datatable" + vstr + fileorg.getFileExtension( FileOrganizer._TABLEOBJECT ) ;

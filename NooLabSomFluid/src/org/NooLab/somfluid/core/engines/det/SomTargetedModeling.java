@@ -108,6 +108,10 @@ public class SomTargetedModeling    extends
 		// this should be a copy, in order to allow parallel processing on the same machine
 		// TODO: somLattice = new VirtualLattice(latticeNodes) ;
 		 
+		if (sfFactory.getOut()!=null){
+			out = null;
+			out = sfFactory.getOut() ; 
+		}
 		
 		sfTask = sftask  ;
 		callerStatus = sfTask.getCallerStatus() ;
@@ -467,7 +471,7 @@ public class SomTargetedModeling    extends
 		// initializeNodesWithData(); // nothing there so far, could be stuffed with top-4 of a linear/ized description 
 		// we would use a method primingNodesCollection() 
 		// to which we would stuff a small number of profiles, that are supposed to separate quite well
-		// e.g. based on PCA & kmeans
+		// e.g. based on PCA & K-Means, KNN principal
 		
 		activeTvLabel = sfProperties.getModelingSettings().getActiveTvLabel() ; // "TV"
 		// TargetVariable  targetVariable;
@@ -559,7 +563,7 @@ public class SomTargetedModeling    extends
 		
 		if (sfProperties.getModelingSettings().getSomBagSettings().getApplySomBags()){
 			
-			// we create bags according to parameters, eachbag will run a DSom then...
+			// we create bags according to parameters, each bag will run a DSom then...
 			// results will be collected by SomBag, and meta-results will be evaluated also there
 			somBags.createBags( dSom ); // will put the bags as samples into object "dataSampler{}"
 			
@@ -775,7 +779,7 @@ public class SomTargetedModeling    extends
 	
 		if (sfFactory.getPhysicalFieldStarted()==0){
 			out.print(2,"Calculations in particle field have been completed.");
-			
+			out.print(1,"... please wait ...");
 		}
 		sfFactory.setPhysicalFieldStarted(1);
 		

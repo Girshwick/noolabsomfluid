@@ -37,10 +37,12 @@ public class DSomPerception extends
 	
 	public void classifyRecord( int dataRowIndex, ArrayList<Double> profilevalues ){
 		if (bmus!=null)bmus.clear() ;
+		
+		int mppLevel = sfProperties.getMultiProcessingLevel() ;
 		bmus = getBestMatchingNodes( dataRowIndex,
 								     profilevalues, 
 								     bmuListSize, 
-									 boundingIndexList) ;
+									 boundingIndexList, mppLevel) ;
 		 
 	}
 

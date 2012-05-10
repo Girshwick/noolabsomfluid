@@ -3,10 +3,14 @@ package org.NooLab.somfluid.core.engines.det;
 import java.util.ArrayList;
 
  
+import org.NooLab.chord.IndexedItemsCallbackIntf;
+import org.NooLab.chord.MultiDigester;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
+import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
+import org.NooLab.somfluid.properties.ModelingSettings;
  
 import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 import org.NooLab.utilities.logging.PrintLog;
@@ -14,38 +18,147 @@ import org.NooLab.utilities.logging.PrintLog;
 
 
 
-public class DSomDataPerceptionAbstract {
-
-	
+public class DSomDataPerceptionAbstract {  
+ 
 	
 	protected DSom           parentSom;
+	protected SomProcessIntf somProcess ;
 	protected SomDataObject  somData;
 	protected VirtualLattice somLattice;
 	
 	protected SomFluidProperties sfProperties;
+	protected ModelingSettings modelingSettings ;
 	
-	
-	PrintLog out;
+	ArrayList<MetaNodeIntf> nodeCollection = new ArrayList<MetaNodeIntf>(); 
+	private ArrayList<Integer> nodeIndexCollection = new ArrayList<Integer>()  ;
+	private ProfileVectorMatcher bmuSearch;
+	NodeDigester nodeDigester;
+	transient PrintLog out;
 	
 	// ========================================================================
 	public DSomDataPerceptionAbstract( DSom dsom) {
 
 		parentSom = dsom ;
 		
+		somProcess = parentSom.getSomProcessParent() ;
+		
 		somData = dsom.somData ;
 		
 		somLattice = parentSom.somLattice;
 		
 		sfProperties = parentSom.sfProperties ;
-		
+		modelingSettings = sfProperties.getModelingSettings() ; 
 		out = dsom.out ;
 		
+		if (sfProperties.getMultiProcessingLevel()>0){
+			prepareNodeDigester();
+		}
 	}
 	// ========================================================================
 	
+	public void closeThreads(){
+	
+		if (nodeDigester!=null){
+			
+			nodeDigester.close() ;
+			out.delay(10) ;
+			nodeDigester = null;
+			System.gc();
+		}
+		
+	}
 	
 	
+	public void prepareNodeDigester(){
+		
+		int n;
+		int threadcount = 7 ;
+		
+		
+		createNodeIndexCollection();
+		
+		nodeDigester = new NodeDigester();
+		
+		n = nodeIndexCollection.size(); 
+			
+		nodeDigester.prepareTaskSplitting( nodeIndexCollection, threadcount) ;
+		 
+	}
+	
+	
+	class NodeDigester  implements IndexedItemsCallbackIntf{
+		 
+		MultiDigester digester ;
+		boolean hasCompleted;
+		int poisonPill=0;
+		
+		@Override
+		public int getClosedStatus(){
+			return poisonPill ;
+		}
+		
+		public void close(){
+			poisonPill = 1;
+		}
+		
+		@Override
+		public void perform( int processID, int nodeListId ) {
+			
+			// call to method that performs the semantic operation on the selected item, as identified by id  
+			bmuSearch.checkNode( nodeListId ) ;
+			
+		}
 
+		public void prepareTaskSplitting(ArrayList<Integer> nodeCollectionIndexes, int threadcount) {
+			 
+			// providing also right now the callback address (=this class)
+			// the interface contains just ONE routine: perform()
+			// if (digester==null)
+			digester = new MultiDigester(threadcount, (IndexedItemsCallbackIntf)this ) ;
+			  
+			// note, that the digester need not to know "anything" about our items, just the amount of items
+			// we would like to work on.
+			// the digester then creates simply an array of indices, which then point to the actual items,
+			// which are treated anyway here (below) !
+			digester.prepareItemSubSets( nodeCollectionIndexes.size(),0 );
+			
+		}
+
+		/**
+		 * this is called privately from ProfileVectorMatcher  
+		 * @param nodeCollectionIndexes
+		 * @param threadcount
+		 */
+		public void digestingNodes(ArrayList<Integer> nodeCollectionIndexes, int threadcount) {
+			hasCompleted = false;  
+			  
+			digester.execute() ;
+			
+			hasCompleted = true;
+		}
+		
+		public boolean hasCompleted(){
+			return hasCompleted;
+		}
+		
+	}
+	
+	
+	private void createNodeIndexCollection(){
+		
+		if (nodeIndexCollection==null){
+			nodeIndexCollection = new ArrayList<Integer>() ;
+		}else{
+			nodeIndexCollection.clear() ;
+		}
+		for (int n = 0; n < somLattice.size(); n++) {
+			// MetaNodeIntf node = somLattice.getNode(n);
+			// we should not allocate the whole node, since they are large...
+			// we just should add the indexes
+			// nodeCollection.add(node);
+			nodeIndexCollection.add(n); // should be global for the perception object, as it could be quite expensive for large maps
+		}
+	}
 	/**
 	 * 
 	 * Creates a sorted list of nodes that match a given vector of values best;
@@ -64,18 +177,23 @@ public class DSomDataPerceptionAbstract {
 	protected ArrayList<IndexDistanceIntf> getBestMatchingNodes(  int dataRowIndex,
 																  ArrayList<Double> recordprofilevalues, 
 																  int bmuCount, 
-																  ArrayList<Integer> boundingIndexList) {
+																  ArrayList<Integer> boundingIndexList,
+																  int mppLevel) {
 		
 		ArrayList<IndexDistanceIntf> bestMatchesCandidates = new ArrayList<IndexDistanceIntf> (); 
-		ArrayList<MetaNodeIntf> nodeCollection = new ArrayList<MetaNodeIntf>(); 
-		ArrayList<Integer> nodeIndexCollection = new ArrayList<Integer>()  ;
-		ProfileVectorMatcher bmuSearch;
 		
+		
+		 
 		
 			 
 		boolean bmuBufferAvailable;
 		// comparing the imported values[] against all nodes in lattice
 		//
+		
+			
+		if ((mppLevel>0) && (nodeDigester==null)){
+			prepareNodeDigester() ;
+		}
 		
 		try {
 			
@@ -101,21 +219,25 @@ public class DSomDataPerceptionAbstract {
 			}  // else: advanced pre-processing which we can use to determine a sub-area
 			if (bmuBufferAvailable == false) {
 				// no: we have to search through the whole map for the given record
-				for (int n = 0; n < somLattice.size(); n++) {
-					// MetaNodeIntf node = somLattice.getNode(n);
-					// we should not allocate the whole node, since they are large...
-					// we just should add the indexes
-					// nodeCollection.add(node);
-					nodeIndexCollection.add(n); // should be global for the perception object, as it could be quite expensive for large maps
-				}
 
+				if ((nodeIndexCollection==null) || (nodeIndexCollection.size()==0)){
+					createNodeIndexCollection();
+				}
 			}
 
 			
 			// here, nodeCollection is a sample from from somLattice, in this collection we search for 
-			// the best match for the profilevalues (format: ArrayList Double)
-			bmuSearch = new ProfileVectorMatcher(out);
+			// the best match for the profile values (format: ArrayList Double)
+			bmuSearch = new ProfileVectorMatcher( sfProperties.getMultiProcessingLevel(), out);
 			
+			if (nodeDigester==null){
+				mppLevel=0;
+			}
+			if (mppLevel >0){
+				// nodeDigester.digester.reset() ;
+				bmuSearch.setNodeDigester(nodeDigester) ; // simply setting the reference
+			}
+
 if (dataRowIndex>2){
 	bmuSearch.setOutMode(1);
 }
@@ -129,7 +251,7 @@ if (dataRowIndex>2){
 			bmuSearch.setParameters( recordprofilevalues, bmuCount, boundingIndexList);
 			
 			// this respects deactivated nodes
-			bmuSearch.createListOfMatchingUnits(1); // 1=nodes -> profiles
+			bmuSearch.createListOfMatchingUnits(1); // 1=nodes -> profiles ??? 
 			
 			bestMatchesCandidates = bmuSearch.getList( -1 ) ;
 			
@@ -155,11 +277,15 @@ if (dataRowIndex>2){
 			e.printStackTrace();
 		}
 		finally {
-			nodeCollection.clear();
-			nodeCollection = null;
-			nodeIndexCollection.clear();
-			nodeIndexCollection=null;
+			
 		}
 		return bestMatchesCandidates ;
+	}
+	
+	public void resetNodeCollectoinIndices(){
+		nodeCollection.clear();
+		nodeCollection = null;
+		nodeIndexCollection.clear();
+		nodeIndexCollection=null;
 	}
 }

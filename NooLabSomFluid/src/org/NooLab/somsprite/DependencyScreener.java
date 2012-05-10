@@ -768,7 +768,7 @@ if (vesti>1000){
 		
 			// TestUtils.pairedTTest(sample1, sample2, alpha)
 			int n = depVarValues[0].length;
-			n=n+1-1;
+			 
 			MannWhitneyUTest mwu = new MannWhitneyUTest();
 			// this creates the value for the U-statistic
 			// ms[0] = mwu.mannWhitneyU( depVarValues[0], depVarValues[2]) ;

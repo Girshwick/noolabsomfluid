@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidTask;
-import org.NooLab.somfluid.components.SomVariableHandling;
+import org.NooLab.somfluid.components.variables.SomVariableHandling;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceIntf;
@@ -488,6 +488,8 @@ out.print(4, ".                        (sim) : "+str2);
 				}
 			}	
 			
+			
+			
 											if (displayProgress(0))
 											out.print(1, "Som learning is starting on "+dataSampler.getTrainingSet().size()+" records from training sample.");
 			
@@ -528,12 +530,15 @@ if (currentEpoch>=3){
 				somDataPerception.setDynamicsParameters( learningRate, timeConstant , neighbourhoodRadius) ;
 										//  epoch 1 :       0.2           411             6.5
 				somDataPerception.go();
+				
+				somDataPerception.closeThreads(); 
+				
 				currentEpoch++;
 				
 				// consoleDisplay();
 			} // currentEpoch -> maxSomEpochCount 
 				
-											
+									
 			
 			result=0 ;
 			sampleRecordIDs.clear();

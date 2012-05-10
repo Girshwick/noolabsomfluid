@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.NooLab.somfluid.OutputSettings;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 import org.NooLab.utilities.ArrUtilities;
@@ -21,6 +22,7 @@ public class MetricsHistory implements Serializable{
 	transient EvoMetrices evoMetrices;
 	
 	transient SomDataObject somData;
+	OutputSettings outsettings ; 
 	
 	ArrayList<HistoryItem> items = new ArrayList<HistoryItem>(); 
 	
@@ -31,8 +33,7 @@ public class MetricsHistory implements Serializable{
 	/** label of all variables  */
 	ArrayList<String> varLabels;
 
-	/** for organizing the output */
-	transient IndexedDistances catalogFields;
+
 	
  	
 	// ========================================================================
@@ -40,11 +41,13 @@ public class MetricsHistory implements Serializable{
 		evoMetrices = ems;
 		somHost = somhost;
 		
+		outsettings = somHost.getSfProperties().getOutputSettings();
+		
 		somData = somHost.getSomDataObj();
 		varLabels = somData.getVariablesLabels() ;
 		tvVariableIndex = somData.getVariables().getTvColumnIndex() ;
 		
-		initializeCatalog();
+		outsettings.initializeCatalog();
 	}
 
 	public MetricsHistory(){
@@ -133,43 +136,6 @@ public class MetricsHistory implements Serializable{
 	
 	// ........................................................................
 	 
-	public void defineOutCatalogSelection( String[] outitems){
-		
-		
-	}
-	
-	public void addOutCatalogSelection( String outitem){
-		
-		
-	}
-
-	public void initializeCatalog(){
-	
-		IndexDistance cf ;
-		catalogFields = new IndexedDistances();
-		 
-		// the secondary index is used to indicate whether it should be used or not
-		// the score field is used to determine the column's position in the output 
-		cf = new IndexDistance(1,  0, 1,"index");         	catalogFields.add(cf) ;
-		cf = new IndexDistance(2,  0, 2,"step"); 			catalogFields.add(cf) ;
-		cf = new IndexDistance(3,  0, 3,"score"); 			catalogFields.add(cf) ;
-		cf = new IndexDistance(4,  0, 4,"variableindexes"); catalogFields.add(cf) ;
-		cf = new IndexDistance(5,  0, 5,"truepositives"); 	catalogFields.add(cf) ;
-		cf = new IndexDistance(6,  0, 6,"truenegatives"); 	catalogFields.add(cf) ;
-		cf = new IndexDistance(7,  0, 7,"falsepositives"); 	catalogFields.add(cf) ;
-		cf = new IndexDistance(8,  0, 8,"falsenegatives"); 	catalogFields.add(cf) ;
-		cf = new IndexDistance(9,  0, 9,"tprate"); 			catalogFields.add(cf) ;
-		cf = new IndexDistance(10, 0, 10,"tnrate"); 		catalogFields.add(cf) ;
-		cf = new IndexDistance(11, 0, 11,"fprate"); 		catalogFields.add(cf) ;
-		cf = new IndexDistance(12, 0, 12,"fnrate"); 		catalogFields.add(cf) ;
-		cf = new IndexDistance(13, 0, 13,"ppv"); 			catalogFields.add(cf) ;
-		cf = new IndexDistance(14, 0, 14,"npv"); 			catalogFields.add(cf) ;
-		cf = new IndexDistance(15, 0, 15,"sensitivity"); 	catalogFields.add(cf) ;
-		cf = new IndexDistance(16, 0, 16,"specificity"); 	catalogFields.add(cf) ;
-		cf = new IndexDistance(17, 0, 17,"rocauc"); 		catalogFields.add(cf) ;
-		cf = new IndexDistance(18, 0, 18,"rocstp"); 		catalogFields.add(cf) ;
-		cf = new IndexDistance(19, 0, 19,"risk"); 			catalogFields.add(cf) ;
-	}
 
 	public double getEcr() {
 		return ecr;
@@ -195,42 +161,14 @@ public class MetricsHistory implements Serializable{
 		this.varLabels = varLabels;
 	}
 
-	public IndexedDistances getCatalogFields() {
-		return catalogFields;
-	}
 
-	public ArrayList<String> getAllFieldLabels() {
-		return catalogFields.getAllFieldLabels() ;
-	}
-
-	public int setOutputColumn(String fieldLabel, int columnPosition) {
-		int result=-1;
-		int ix ;
-		ix = catalogFields.getIndexByStr(fieldLabel) ;
-		
-		if (ix>=0){
-			catalogFields.getItem(ix).setSecindex(1);
-			catalogFields.getItem(ix).setDistance(columnPosition);
-			result=0;
-		}
-		return result;
-	}
 
 	public void setOutputColumns(Map<String, Integer> outdef) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public void resetOutputDefinition() {
-		int mode = 1;
-		if (mode<0){
-			//catalogFields.clear();
-			//return;
-		}
-		for (int i=0;i<catalogFields.size();i++){
-			catalogFields.getItem(i).setSecindex(0) ;
-		}
-	}
+
 
 	public ArrayList<String> createHeaderRow() {
 		ArrayList<String> strlist = new ArrayList<String> ();
@@ -238,10 +176,10 @@ public class MetricsHistory implements Serializable{
 		IndexedDistances cfs = new IndexedDistances();
 		
 		// we need to store it into a temp list first, since the order cold be changed
-		for (int i=0;i<catalogFields.size();i++){
-			sxi = catalogFields.getItem(i).getSecindex();
+		for (int i=0;i<outsettings.getCatalogFields().size();i++){
+			sxi = outsettings.getCatalogFields().getItem(i).getSecindex();
 			if (sxi>0){
-				cfs.add( catalogFields.getItem(i) ) ;
+				cfs.add( outsettings.getCatalogFields().getItem(i) ) ;
 			}
 		}
 		
@@ -268,10 +206,10 @@ public class MetricsHistory implements Serializable{
 		IndexedDistances cfs = new IndexedDistances();
 		
 		// we need to store it into a temp list first, since the order cold be changed
-		for (int i=0;i<catalogFields.size();i++){
-			sxi = catalogFields.getItem(i).getSecindex();
+		for (int i=0;i<outsettings.getCatalogFields().size();i++){
+			sxi = outsettings.getCatalogFields().getItem(i).getSecindex();
 			if (sxi>0){
-				cfs.add( catalogFields.getItem(i) ) ;
+				cfs.add( outsettings.getCatalogFields().getItem(i) ) ;
 			}
 		}
 		// sorting

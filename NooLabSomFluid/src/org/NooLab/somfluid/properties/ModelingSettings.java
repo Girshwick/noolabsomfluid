@@ -13,12 +13,12 @@ import java.util.Random;
 import java.util.Vector;
 
 import org.NooLab.somfluid.SomFluidFactory;
-import org.NooLab.somfluid.components.Coarseness;
 import org.NooLab.somfluid.components.DataFilter;
 import org.NooLab.somfluid.components.MetricsStructure;
-import org.NooLab.somfluid.components.MultiCrossValidation;
-import org.NooLab.somfluid.components.ParetoPopulationExplorer;
 import org.NooLab.somfluid.components.SomModelDescription;
+import org.NooLab.somfluid.components.post.Coarseness;
+import org.NooLab.somfluid.components.post.MultiCrossValidation;
+import org.NooLab.somfluid.components.post.ParetoPopulationExplorer;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
 import org.NooLab.somfluid.core.engines.det.ClassesDictionary;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
@@ -250,6 +250,10 @@ public class ModelingSettings implements Serializable{
 	private boolean determineRobustModels = true;
 
 	private boolean checkingSamplingRobustness;
+
+	private boolean canonicalReduction;
+
+	private boolean performCanonicalExploration;
 		
 
 	
@@ -972,6 +976,30 @@ public class ModelingSettings implements Serializable{
 
 	public void setCheckingSamplingRobustness(boolean flag) {
 		this.checkingSamplingRobustness = flag;
+	}
+
+	
+	
+	public void setCanonicalReduction(boolean flag) {
+		
+		canonicalReduction = flag;
+	}
+
+	public boolean isCanonicalReduction() {
+		return canonicalReduction;
+	}
+
+	public boolean getPerformCanonicalExploration() {
+		return performCanonicalExploration;
+	}
+
+	public void setPerformCanonicalExploration(boolean performCanonicalExploration) {
+		this.performCanonicalExploration = performCanonicalExploration;
+	}
+
+	public boolean isSearchForLinearModels() {
+		//
+		return false;
 	}
 	
 	

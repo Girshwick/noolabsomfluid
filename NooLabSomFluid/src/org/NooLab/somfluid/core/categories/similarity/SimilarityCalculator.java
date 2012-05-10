@@ -64,8 +64,8 @@ public class SimilarityCalculator{
 
 	private double advancedDistance( ArrayList<Double> vector1,
 									 ArrayList<Double> vector2, ArrayList<Double> useIntensity) {
-
-		if (vector1.size() != vector2.size()) {
+		
+		if ( (vector1==null) || (vector2==null) || ((vector1.size() != vector2.size()))) {
 			System.out.println( "Error! vector1.length (" + vector1.size()+") "+
 								"<> vectorsize (" + vector2.size() + ")");
 			return -1;

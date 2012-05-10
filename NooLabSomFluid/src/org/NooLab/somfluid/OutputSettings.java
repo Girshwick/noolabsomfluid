@@ -2,8 +2,10 @@ package org.NooLab.somfluid;
 
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 import org.NooLab.somfluid.properties.PersistenceSettings;
+import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 
 
@@ -46,6 +48,8 @@ public class OutputSettings implements Serializable{
 	String outfileModelCoarseness = "model_coarseness_<PRJ>_<DATE>.dat" ;
 	String outfileDataTransform   = "data_transformlist_<PRJ>_<DATE>.dat" ;
 	
+	/** for organizing the output */
+	IndexedDistances catalogFields;
 	
 	private boolean resultFileZipping = true;
 	PersistenceSettings persistenceSettings;
@@ -80,6 +84,82 @@ public class OutputSettings implements Serializable{
 		
 		
 	}
+	
+	
+	
+	public void defineOutCatalogSelection( String[] outitems){
+		
+		
+	}
+	
+	public void addOutCatalogSelection( String outitem){
+		
+		
+	}
+
+	public void initializeCatalog(){
+	
+		IndexDistance cf ;
+		catalogFields = new IndexedDistances();
+		 
+		// the secondary index is used to indicate whether it should be used or not
+		// the score field is used to determine the column's position in the output 
+		cf = new IndexDistance(1,  0, 1,"index");         	catalogFields.add(cf) ;
+		cf = new IndexDistance(2,  0, 2,"step"); 			catalogFields.add(cf) ;
+		cf = new IndexDistance(3,  0, 3,"score"); 			catalogFields.add(cf) ;
+		cf = new IndexDistance(4,  0, 4,"variableindexes"); catalogFields.add(cf) ;
+		cf = new IndexDistance(5,  0, 5,"truepositives"); 	catalogFields.add(cf) ;
+		cf = new IndexDistance(6,  0, 6,"truenegatives"); 	catalogFields.add(cf) ;
+		cf = new IndexDistance(7,  0, 7,"falsepositives"); 	catalogFields.add(cf) ;
+		cf = new IndexDistance(8,  0, 8,"falsenegatives"); 	catalogFields.add(cf) ;
+		cf = new IndexDistance(9,  0, 9,"tprate"); 			catalogFields.add(cf) ;
+		cf = new IndexDistance(10, 0, 10,"tnrate"); 		catalogFields.add(cf) ;
+		cf = new IndexDistance(11, 0, 11,"fprate"); 		catalogFields.add(cf) ;
+		cf = new IndexDistance(12, 0, 12,"fnrate"); 		catalogFields.add(cf) ;
+		cf = new IndexDistance(13, 0, 13,"ppv"); 			catalogFields.add(cf) ;
+		cf = new IndexDistance(14, 0, 14,"npv"); 			catalogFields.add(cf) ;
+		cf = new IndexDistance(15, 0, 15,"sensitivity"); 	catalogFields.add(cf) ;
+		cf = new IndexDistance(16, 0, 16,"specificity"); 	catalogFields.add(cf) ;
+		cf = new IndexDistance(17, 0, 17,"rocauc"); 		catalogFields.add(cf) ;
+		cf = new IndexDistance(18, 0, 18,"rocstp"); 		catalogFields.add(cf) ;
+		cf = new IndexDistance(19, 0, 19,"risk"); 			catalogFields.add(cf) ;
+	}
+
+	public IndexedDistances getCatalogFields() {
+		return catalogFields;
+	}
+
+	public ArrayList<String> getAllFieldLabels() {
+		return catalogFields.getAllFieldLabels() ;
+	}
+
+	public int setOutputColumn(String fieldLabel, int columnPosition) {
+		int result=-1;
+		int ix ;
+		ix = catalogFields.getIndexByStr(fieldLabel) ;
+		
+		if (ix>=0){
+			catalogFields.getItem(ix).setSecindex(1);
+			catalogFields.getItem(ix).setDistance(columnPosition);
+			result=0;
+		}
+		return result;
+	}
+	
+	public void resetOutputDefinition() {
+		int mode = 1;
+		if (mode<0){
+			//catalogFields.clear();
+			//return;
+		}
+		for (int i=0;i<catalogFields.size();i++){
+			catalogFields.getItem(i).setSecindex(0) ;
+		}
+	}
+	
+	
+	
+	
 	
 	/**
 	 * 

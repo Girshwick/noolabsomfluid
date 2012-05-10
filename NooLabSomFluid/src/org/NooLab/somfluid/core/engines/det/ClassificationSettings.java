@@ -104,7 +104,7 @@ public class ClassificationSettings implements Serializable{
 	 * value for the accepted error-cost-ratio, which controls the acceptance of nodes as part of a predictive model;
 	 * requires a target variable
 	 */
-	double 			ecr = 0.2f;   // actually, this could be an array too, since for various
+	double 			ecr = 0.2 ;   // actually, this could be an array too, since for various
 							    // classes in an ordinally segmented TV, we could have different tolerances !!!
 	/**   */
 	double[] 		ECRs = null;  // optional for _TARGETMODE_MULTI 
@@ -112,8 +112,11 @@ public class ClassificationSettings implements Serializable{
 	/**   */
 	double preferredSensitivity = -1.0;
 
+	/** the maximum fraction of records that are allowed to get selected, overrules ecr and preferredSensitivity */
+	double capacityAsSelectedTotal = ecr/2.0 ; // approximate estimation
+	
 	/**   */
-	boolean isEcrAdaptationAllowed;
+	boolean isEcrAdaptationAllowed = false;
 
 	
 	/**   */
@@ -471,7 +474,19 @@ public class ClassificationSettings implements Serializable{
 	}
 
 
+	public void setCapacityAsSelectedTotal(double threshold) {
+		 
+		capacityAsSelectedTotal = threshold;
+	}
 	
+	public double getCapacityAsSelectedTotal() {
+		return capacityAsSelectedTotal;
+	}
+
+
+
+
+
 	public void setPreferredSensitivity(double value) {
 		preferredSensitivity = value ;
 	}
@@ -488,7 +503,8 @@ public class ClassificationSettings implements Serializable{
 	public boolean isEcrAdaptationAllowed() {
 		return isEcrAdaptationAllowed;
 	}
-	
+ 
+
 	
 	
 }

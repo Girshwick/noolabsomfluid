@@ -129,6 +129,32 @@ public class Variables implements Serializable, VariablesIntf{
 		return knownTransforms;
 	}
 
+	public boolean openForInspection( Variable v ) {
+		boolean hb;
+		
+		hb = blacklistLabels.indexOf( v.getLabel() )<0 ;
+		
+		
+		if (hb) hb = !v.isID(); 
+		if (hb) hb = !v.isTV(); 
+		if (hb) hb = !v.isIndexcandidate(); 
+		if (hb) hb = !v.isTVcandidate(); 
+			
+		for (int i=0;i<blacklistLabels.size();i++){
+			if (hb){
+				hb = (strgutil.matchSimpleWildcard( v.getLabel() , blacklistLabels.get(i)) ==false);
+				if (hb==false){
+					break;
+				}
+			}else{
+				break;
+			}
+		}
+		
+		return hb;
+	}
+
+	
 	public Variable getItem( int index ){
 		Variable v=null;
 		
@@ -203,6 +229,21 @@ public class Variables implements Serializable, VariablesIntf{
 		return labels;
 	}
 	
+
+	public ArrayList<String> getLabelsForVariablesList(Variables vars, boolean applyOpenFilter){
+		
+		ArrayList<String> labels = new ArrayList<String>();
+		Variable v;
+		
+		for (int i=0;i<vars.size();i++){
+			v=vars.getItem(i) ;
+			
+			if (openForInspection(v)){
+				labels.add( v.getLabel()) ;
+			}
+		}
+		return labels;
+	}
 	
 	public ArrayList<String> getLabelsForVariablesList(Variables vars){
 		ArrayList<String> labels = new ArrayList<String>();
@@ -576,19 +617,22 @@ public class Variables implements Serializable, VariablesIntf{
 		return tvColumnIndex;
 	}
 
-	public void setTvColumnIndex(int tvColumnIx) {
+	public void setTvColumnIndex(int columnIndex) {
 		int tix = tvColumnIndex;
 		
-		this.tvColumnIndex = tvColumnIx;
+		this.tvColumnIndex = columnIndex;
 		
 		if (targetVariable!=null){
 			targetVariable.setTV(false);
 		}
-		if ((targetVariable==null) || (tix!=tvColumnIx)){
-			if (tvColumnIx>=0){
-				targetVariable = getItem(tvColumnIx) ;
+		if ((targetVariable==null) || (tix!=tvColumnIndex)){
+			if (tvColumnIndex>=0){
+				targetVariable = getItem(tvColumnIndex) ;
 				targetVariable.setTV(true);
 			}
+		}
+		if (tvColumnIndex>=0){
+			items.get(tvColumnIndex).setTV(true) ;
 		}
 	}
 
@@ -685,6 +729,7 @@ public class Variables implements Serializable, VariablesIntf{
 	
 	
 	public Variable getItemByLabel(String varLabel) {
+		
 		Variable variable= null;
 		boolean hb;
 		// items ArrayList<Variable>
@@ -709,11 +754,12 @@ public class Variables implements Serializable, VariablesIntf{
 	
 	/**
 	 * 
-	 * TODO: for large number of variables, we should set up a treemap... (assuming, that the set is not changing
+	 * TODO: for large number of variables, we should set up a TreeMap... (assuming, that the set is not changing)
 	 * @param varLabel
 	 * @return
 	 */
 	public int getIndexByLabel(String varLabel) {
+		
 		int index=-1;
 		boolean hb;
 		// items ArrayList<Variable>
@@ -816,6 +862,7 @@ public class Variables implements Serializable, VariablesIntf{
 	 * translating index values indicating the position in the list into the list of strings ;
 	 * refers to the list of variables
 	 * 
+	 * mode : not used so far
 	 */
 	public ArrayList<String> deriveVariableSelection( ArrayList<Integer> proposedindexes, int mode ) {
 		
