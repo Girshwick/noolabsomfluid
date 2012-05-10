@@ -1,0 +1,14 @@
+#Fat Jar Configuration File
+#Thu May 10 23:39:34 CEST 2012
+onejar.license.required=true
+manifest.classpath=
+manifest.removesigners=true
+onejar.checkbox=false
+jarname=D\:\\dev\\java\\workspace\\JMathTools.jar
+manifest.mergeall=true
+manifest.mainclass=
+manifest.file=<createnew>
+jarname.isextern=true
+onejar.expand=
+excludes=<jar|Jama-1.0.2.jar>
+includes=
