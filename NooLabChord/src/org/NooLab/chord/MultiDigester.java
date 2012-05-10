@@ -54,6 +54,7 @@ public class MultiDigester   {
 	double maxMinutes = 2.5 ;
 	
 	int diagnosticPrintOut = 0;
+	int amorphousPill = 0;
 	
 	boolean autoStoponTaskDelay = false;
 	
@@ -116,8 +117,7 @@ public class MultiDigester   {
 		reset();
 		
 	}
-	
- 
+	 
 	
 	public void reset(){
 		
@@ -142,12 +142,23 @@ public class MultiDigester   {
 	 * 
 	 */
 	private void initializeThreads(){
-
+		int k;
+		
 		if (workerThreads!=null){
+			k=0;
 			for (int i = 0; i < workerThreads.length; i++) {
+				workerThreads[i].stop();
 				workerThreads[i] = null;
 			}
 			workerThreads = null;
+		}
+		
+		// System.gc() ; 
+
+		try {
+			//Thread.sleep(5) ;
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		
 		workerThreads = new ThreadedDigester[threadcount];
@@ -289,6 +300,9 @@ public class MultiDigester   {
 		// inside the thread, we call routine.perform( id ) ;
 
 		try {
+			
+			closedthreadSum = 0;
+			
 			// set all active
 			for (int i = 0; i < threadcount; i++) {
 				
@@ -299,9 +313,12 @@ public class MultiDigester   {
 				}
 				
 				if (itemsubset[i].items.size()>0){
-					workerThreads[i].active = true;
+
+					workerThreads[i].itemindex=0;
+					workerThreads[i].active = true; workerThreads[i].loopFinished=false;
+					
 				} else {
-					workerThreads[i].alive = false ;
+					workerThreads[i].alive = false ; workerThreads[i].active = false;
 				}
 			}
 
@@ -324,7 +341,7 @@ public class MultiDigester   {
 				
 				for (int i = 0; i < threadcount; i++) {
 
-					if (workerThreads[i].active == false) {
+					if ( (workerThreads[i].loopFinished) || (workerThreads[i].active == false) || ((workerThreads[i].alive == false))){
 						closedthreadSum++;
 					} else {
 						notFinished = notFinished + i + "("+workerThreads[i].selectedIndexValue+"), ";
@@ -436,15 +453,18 @@ public class MultiDigester   {
 		 
 		private Thread thrd;
 		
-		boolean alive,active = false;
+		String thrdName="";
+		boolean alive,active = false, loopFinished=false;
 		
 		
 		
 		// . . . . . . . . . . . . . . . . . . . . . . . . 
 		public ThreadedDigester(int ix){
 			index = ix;
+			thrdName = "mdthr-"+ix ;
+			thrd = new Thread(this,thrdName) ;
 			
-			thrd = new Thread(this) ;
+			thrdName = thrd.getName() ;
 			thrd.start() ;
 			
 		}
@@ -460,58 +480,81 @@ public class MultiDigester   {
 		}
 		
 		public void stop(){
-			thrd.interrupt();
+			
+			try{
+				alive=false;; active=false;
+				thrd.interrupt();
+				// Thread.sleep(5) ;
+			}catch(Exception e){
+			}
+			loopFinished=true;
 		}
 		
-		@SuppressWarnings("static-access")
+		 
 		public void run() {
 			
 			try {
 				
-			
+				loopFinished=false;
 				alive = true; 
 			
 				itemindex = 0;
 				selectedIndexValue = -1;
 			
 			 
-				while (alive) {
+				while ((alive) && (amorphousPill==0)) {
 
 					if ( active == false ){
 						// thrd.sleep(100);
-
-						if (diagnosticPrintOut >= 4){
-							Thread.currentThread().sleep(10);
-							System.out.println("thread ("+index+") is waiting...") ;
-						}
+						try{
+							amorphousPill = indexedItemsRoutine.getClosedStatus() ;
+							
+							if (diagnosticPrintOut >= 4){
+								Thread.currentThread().sleep(10);
+								System.out.println("thread ("+index+") is waiting...") ;
+							}else{
+								Thread.currentThread().sleep(2); // prevent processor activity 100%...
+							}
+							if (amorphousPill>0){
+								alive=false; active=false;
+								break;
+							}
+						}catch(Exception e){}
 					} 
 					
 					if (active){
 						
-						selectedIndexValue = itemsubset[index].items.get(itemindex) ;
-						
-						if (diagnosticPrintOut>=4){
-							Thread.currentThread().sleep(2);
-							System.out.println("thread ("+index+") is working on item : " + selectedIndexValue) ;
+						if (itemindex < itemsubset[index].items.size() ){
+							
+							selectedIndexValue = itemsubset[index].items.get(itemindex) ;
+							
+							if (diagnosticPrintOut>=4){
+								Thread.currentThread().sleep(2);
+								System.out.println("thread ("+index+") is working on item : " + selectedIndexValue) ;
+							}
+							
+							performWork( index, selectedIndexValue ) ;
 						}
 						
-						// itemsubset[index].currentIndex = itemindex ;
-						
-						performWork( index, selectedIndexValue ) ;
 					
 						itemindex++;
-						
-						if (itemindex >=  itemsubset[index].items.size()){
-							alive= false;
-							active = false ;
-						}
 					}
 
+					if (itemindex >=  itemsubset[index].items.size()){
+						active = false ;
+						loopFinished=true;
+						// on option: stop thread completely, or (=default) keep thread alive to avoid frequent re-creation
+					}
+					
 				} // waiting thread
 
 			} catch (InterruptedException e) {
 			 
 				e.printStackTrace();
+			}
+			loopFinished=true;
+			if (diagnosticPrintOut>=2){
+				System.out.println( "Thread <"+thrdName+"> has been stopped");
 			}
 		}
  

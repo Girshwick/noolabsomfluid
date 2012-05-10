@@ -5,6 +5,6 @@ public interface IndexedItemsCallbackIntf {
 	
 	public void perform( int processID, int id) ;
 
-   
+	public int getClosedStatus();
 	
 }
