@@ -553,7 +553,15 @@ public class DescriptiveStatistics implements StatisticalSummary, Serializable {
         this.meanImpl = meanImpl;
     }
 
-    /**
+    public ResizableDoubleArray geteDA() {
+		return eDA;
+	}
+
+	public void seteDA(ResizableDoubleArray eDA) {
+		this.eDA = eDA;
+	}
+
+	/**
      * Returns the currently configured geometric mean implementation.
      *
      * @return the UnivariateStatistic implementing the geometric mean

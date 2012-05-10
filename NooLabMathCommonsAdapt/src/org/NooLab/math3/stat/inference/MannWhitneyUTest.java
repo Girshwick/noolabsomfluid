@@ -31,6 +31,8 @@ public class MannWhitneyUTest {
     /** Ranking algorithm. */
     private NaturalRanking naturalRanking;
     
+    double mwUmax ;
+    
     MissingValueIntf missingValues = new MissingValue();
     
     // ========================================================================
@@ -96,17 +98,21 @@ public class MannWhitneyUTest {
 	    																		NoDataException,
 	    																		ConvergenceException, 
 	    																		Exception { // MaxCountExceededException
-	
+		// this also removes missing values !
 	    ensureDataConformance(x, y);
 	
-	    final double Umax = mannWhitneyU(x, y);
+	    mwUmax = mannWhitneyU(x, y);
 	
 	    /*
 	     * It can be shown that U1 + U2 = n1 * n2
 	     */
-	    final double Umin = x.length * y.length - Umax ;
+	    final double Umin = x.length * y.length - mwUmax ;
 	
-	    return calculateAsymptoticPValue(Umin, x.length, y.length);
+	    double pValue = calculateAsymptoticPValue(Umin, x.length, y.length);
+	    if (Double.isNaN(pValue)){
+	    	pValue=0.0;
+	    }
+	    return pValue;
 	}
 
 	// ========================================================================
@@ -237,6 +243,7 @@ public class MannWhitneyUTest {
      * @return concatenated array
      */
     private double[] concatenateSamples(final double[] x, final double[] y) {
+    	
         final double[] z = new double[x.length + y.length];
 
         System.arraycopy(x, 0, z, 0, x.length);
@@ -261,17 +268,36 @@ public class MannWhitneyUTest {
         													throws 	ConvergenceException, 
         													Exception { // MaxCountExceededException
 
-        final int n1n2prod = n1 * n2;
+		double n1n2prod, pValue = 0,z,EU,VarU;
+		try {
 
-        // http://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U#Normal_approximation
-        final double EU = (double) n1n2prod / 2.0;
-        final double VarU = (double) (n1n2prod * (n1 + n2 + 1)) / 12.0;
+			n1n2prod = (double) n1 * (double) n2;
+			pValue = 0.0;
 
-        final double z = (Umin - EU) / FastMath.sqrt(VarU);
+			// http://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U#Normal_approximation
 
-         NormalDistribution standardNormal = new NormalDistribution(0, 1);
+			EU = (double) n1n2prod / 2.0;
+			VarU = (double) (n1n2prod * (double) (n1 + n2 + 1.0)) / 12.0;
 
-        return 2 * standardNormal.cumulativeProbability(z);
+			double varu = Math.max(0,VarU);
+			if (varu==0){
+				z = 1000.0;
+			}else{
+				z = (Umin - EU) / FastMath.sqrt(VarU);
+			}
+
+			NormalDistribution standardNormal = new NormalDistribution(0, 1);
+
+			pValue = 2.0 * standardNormal.cumulativeProbability(z);
+
+			if (Double.isNaN(pValue)){
+				pValue = 0.0;
+			}
+		} catch (Exception e) {
+			pValue = -1.0;
+		}
+
+		return pValue;
     }
 
     // ------------------------------------------------------------------------
@@ -281,6 +307,10 @@ public class MannWhitneyUTest {
     public void importMissingValueDefinition(MissingValueIntf mv) {
 		missingValues = mv;
 		naturalRanking.importMissingValueDefinition( missingValues );
+	}
+
+	public double getMannWhitneyUvalue() {
+		return mwUmax;
 	}
 
 }
