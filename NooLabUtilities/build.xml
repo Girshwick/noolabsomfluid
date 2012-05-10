@@ -17,10 +17,9 @@
     <!-- uncomment the above lines to use ANT outside of Eclipse -->
     <target name="main">
         <fatjar.build output="NooLabUtilities.jar">
-            <fatjar.manifest mergemanifests="false"/>
+            <fatjar.manifest/>
             <fatjar.filesource path="D:\dev\java\workspace\NooLabUtilities\bin" relpath=""/>
             <fatjar.filesource path="D:\dev\java\workspace\NooLabChord\bin" relpath=""/>
-            <fatjar.filesource path="D:\dev\java\workspace\apache-httpclient\bin" relpath=""/>
         </fatjar.build>
     </target>
 </project>

@@ -6,7 +6,9 @@ import org.apache.commons.lang3.*;
 import java.util.Arrays;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Random;
 import java.util.TreeMap;
 import java.util.Vector;
 
@@ -17,11 +19,13 @@ import org.NooLab.utilities.strings.*;
 
 public class ArrUtilities {
 
-	
+	static Random random = new Random();
 	StringsUtil strgutil ;
 	
 	public ArrUtilities(){
+		
 		strgutil = new StringsUtil();
+		random.setSeed(91827364) ;
 	}
 
 
@@ -380,7 +384,23 @@ public class ArrUtilities {
 		return strarr ;
 	}
 	
- 
+	public ArrayList<String> changeArrayStyle( String[] strings ){
+		return changeArraystyle(strings);
+	}
+	public static ArrayList<String> changeArraystyle( String[] strings ){
+		
+		ArrayList<String> list = new ArrayList<String>();
+		 
+		if (strings.length > 0) {
+			for (int i = 0; i < strings.length; i++) {
+				if (list.indexOf( strings[i])<0){
+					list.add( strings[i] );
+				}
+			}
+		}
+
+		return list ;
+	}
 	
 	public double[] changeArrayStyle( Vector<Double> vvec, double i ){
 		double[] strval ;
@@ -1453,6 +1473,51 @@ public class ArrUtilities {
 		return newarr ;
 	}
 	
+	private Random getRandom(){
+		return random;
+	}
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static ArrayList pickRandomSelection( ArrayList list, int count) {
+		
+		ArrayList selection = new ArrayList(); 
+		ArrayList<Integer> availablePositions = new ArrayList<Integer>();
+		int ix;
+		
+		for (int i=0;i<list.size();i++){
+			availablePositions.add(i) ;
+		}
+		
+		if (count>list.size()){
+			count = list.size() ;
+		}
+		if (count == list.size() ){
+			return list;
+		}
+		
+		double v = random.nextDouble() ;
+		
+		int z=0;
+		while ((z< 10 + count*2) && (selection.size()<count)){
+			
+			try{
+				int p = (int)( random.nextDouble() * (availablePositions.size()));
+				ix = availablePositions.get(p) ;
+			}catch(Exception e){
+				ix=-1;
+			}
+			if (ix>=0){
+				selection.add(list.get(ix));
+			}
+			z++;
+		} // ->
+		selection.trimToSize() ;
+		Collections.sort( selection ) ;
+		
+		return selection;
+	}
+
+
 	public double[] clearArray(double[] arr){
 		int k;
 		

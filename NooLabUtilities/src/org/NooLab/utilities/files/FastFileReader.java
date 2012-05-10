@@ -195,7 +195,7 @@ public class FastFileReader {
 		
 		// . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 		
-		protected void digestingStrings(  Vector<String>  rowtext, int threadcount){ 
+		protected void digestingStrings( Vector<String> rowtext, int threadcount){ 
 			 
 			
 			// providing also right now the callback address (=this class)
@@ -236,6 +236,12 @@ public class FastFileReader {
 				
 			}
 			
+		}
+
+		@Override
+		public int getClosedStatus() {
+			// 
+			return 0;
 		}
  
 	} // inner class Digester
