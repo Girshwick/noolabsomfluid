@@ -1,11 +1,14 @@
 package org.NooLab.utilities.xml;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Properties;
 import java.util.Vector;
 
 import javax.xml.parsers.FactoryConfigurationError;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
+
 
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
@@ -1041,8 +1044,6 @@ public abstract class XMessageAbs {
 		return matchingStr;
 	}
 	
-	// ------------------------------------------
-	// ------------------------------------------
 	
     // simple check, not considering W3C pre-amble, xml comments, etc...
     public boolean isXML( String str ){
@@ -1061,6 +1062,400 @@ public abstract class XMessageAbs {
     	return rB;
     }
     
+    /**
+     * serializes a 1-dimensional ArrayList into a xml compatible string
+     * 
+     * @param list
+     * @return
+     */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+	public String serializeMonoList( ArrayList list){
+    	String xliststr="";
+    	Object obj;
+    	
+    	
+    	if ((list!=null) && (list.size()>0)){
+    		
+    		obj = list.get(0) ;
+    		
+    		String cn = obj.getClass().getSimpleName().toLowerCase();
+    		if (cn.startsWith("double")){
+    			return serializeListDouble(list) ;
+    		}
+    		if (cn.startsWith("float")){
+    			return serializeListFloat(list) ;
+    		}
+    		if (cn.startsWith("int")){
+    			return serializeListInt(list) ;
+    		}
+    		if (cn.startsWith("str")){
+    			return serializeListStr(list) ;
+    		}
+    	} // !null? >0 ?
+    	
+    	
+    	return xliststr;
+    }
+
+    private String serializeListStr(ArrayList<String> list) {
+		String str,xstr=""; 
+		
+    	for (int i=0;i<list.size();i++){
+    		str = list.get(i).trim();
+
+    		if (str.length()>0){
+    			xstr = xstr + str;
+        		if (i<list.size()-1){
+        			xstr = xstr + ";" ;
+        		}
+    		}
+		}
+    	return xstr;
+	}
+
+
+
+
+	private String serializeListInt(ArrayList<Integer> list) {
+		String xstr=""; 
+		
+    	for (int i=0;i<list.size();i++){
+    		
+    		if (list.get(i) != null){
+    			xstr = xstr + ""+list.get(i);
+        		if (i<list.size()-1){
+        			xstr = xstr + ";" ;
+        		}
+    		}
+		}
+    	return xstr;
+	}
+
+
+
+
+	private String serializeListFloat(ArrayList<Float> list) {
+		String xstr=""; 
+		
+    	for (int i=0;i<list.size();i++){
+    		
+    		if (list.get(i) != null){
+    			xstr = xstr + ""+ String.format("%.7f", list.get(i));
+        		if (i<list.size()-1){
+        			xstr = xstr + ";" ;
+        		}
+    		}
+		}
+    	return xstr;
+	}
+
+
+
+
+	private String serializeListDouble(ArrayList<Double> list) {
+		String xstr=""; 
+		
+    	for (int i=0;i<list.size();i++){
+    		
+    		if (list.get(i) != null){
+    			xstr = xstr + ""+ String.format("%.7f", list.get(i));
+        		if (i<list.size()-1){
+        			xstr = xstr + ";" ;
+        		}
+    		}
+		}
+    	return xstr;
+	}
+
+
+
+
+	public String serialize( String[] strarray){
+    	String xliststr="";
+    	
+    	
+    	
+    	return xliststr;
+    }
+    
+    public String serialize( int[] intarray){
+    	String xliststr="";
+    	
+    	
+    	
+    	return xliststr;
+    }
+    
+    public String serialize( double[] numarray){
+    	String xstr="";
+    	 
+    	if (numarray  != null){
+    		for (int i=0;i<numarray.length;i++){
+    		 
+    			xstr = xstr + ""+ String.format("%.7f", numarray[i] );
+        		if (i<numarray.length-1){
+        			xstr = xstr + ";" ;
+        		}
+    		 
+    		}
+    	} 
+    	
+    	return xstr;
+    }
+    
+    /**
+     * 
+     * creates a string which looks like
+     * 
+     *       <items index="0" "">;
+     * 
+     * @param num2Darray
+     * @return
+     */
+    public String serialize( double[][] num2Darray){
+    	String rowstr,xliststr="";
+    	
+    	XMLBuilder aBuilder ;
+		int n=0,m=0;
+		 
+		
+		aBuilder = getXmlBuilder( "array" );
+		
+    	if ((num2Darray!=null) && (num2Darray.length>0)){
+    		 
+    		aBuilder = aBuilder.a("count", ""+num2Darray.length) ;
+    		
+    		
+    		for (int i=0;i<num2Darray.length;i++){
+
+							n = num2Darray[i].length;
+							rowstr = serialize( num2Darray[i] );
+
+    			aBuilder = aBuilder.e("row")
+    									.a("count", ""+n)
+    									.a("items", rowstr).up();
+    		} // i->
+    		
+    		aBuilder = aBuilder.up();
+    	}
+    	
+    	aBuilder = aBuilder.up();
+    	
+    	xliststr = getXmlStr(aBuilder, false);
+    	
+    	return xliststr;
+    }
+
+     
+	
+    public String numerize( float value, int digits){
+		String numstr="";
+	
+		numstr = String.format("%."+digits+"f", value);
+		
+		numstr = StringsUtil.trimTrailingZeroes(numstr);
+		
+		return numstr;
+	}
+    
+    public String numerize( double value, int digits){
+		String numstr="";
+	
+		numstr = String.format("%."+digits+"f", value);
+		
+		numstr = StringsUtil.trimTrailingZeroes(numstr);
+		
+		return numstr;
+	}
+	
+    public String booleanize( boolean flag){
+		String bstr="";
+		
+		if (flag){ bstr="true";}else{bstr="false";}
+		
+		return bstr;
+	}
+
+    // ....................................................
+    
+    public Object getArray1D(String str) {
+    	Object obj = null;
+    	
+    	
+    	return obj;
+    }
+ 
+    public Object getArray2D(String str) {
+    	Object obj = null;
+    	
+    	
+    	return obj;
+    }
+    
+    @SuppressWarnings("rawtypes")
+	public ArrayList getListFromXmlStr(String str, Class clz) {
+    	ArrayList<?> gList=null;
+    	String cname = clz.getSimpleName() ;
+    	
+    	String[] stritems ;
+
+		if (cname.toLowerCase().startsWith("doub")){
+			gList = new ArrayList<Double>();
+		}
+		if (cname.toLowerCase().startsWith("int")){
+			gList = new ArrayList<Double>();
+		}
+		if (cname.toLowerCase().startsWith("str")){
+			gList = new ArrayList<Double>();
+		}
+
+		
+    	stritems = str.split(";");
+    	if (stritems.length>0){
+    		
+    	}else{
+    	}
+    	
+		return gList;
+	}
+
+    
+    
+    public boolean getBool(String str) {
+		boolean rB=false;
+		
+		
+		return rB;
+	}
+
+    public double getNum(String str, double defaultVal) {
+		double num=defaultVal;
+		
+		return num;
+	}
+
+    public int getInt(String str, int defaultVal) {
+		int vi=defaultVal;
+		
+		
+		return vi;
+	}
+	
+    
+
+	/**
+	 * this is generically/type-free usable for lists on primitives, as it 
+	 * detects the type of the collected primitive
+	 *
+	 * @param list
+	 */
+	public String digestList(ArrayList<?> list) {
+
+		return serializeMonoList(list) ;
+		/*
+		String xstr = "";
+		
+		if ((list==null) || (list.size()==0)){
+			return xstr;
+		}
+		
+		Object obj = list.get(0) ;
+		
+		String cn = obj.getClass().getSimpleName() ;
+		
+		
+		if ((cn.toLowerCase().startsWith("int")) && (cn.contains("[]"))){
+			
+			return xstr;
+		}
+		if ((cn.toLowerCase().startsWith("doub")) && (cn.contains("[]"))){
+			
+			return xstr;
+		}
+		if ((cn.toLowerCase().startsWith("str")) && (cn.contains("[]"))){
+
+			return xstr;
+		}
+		
+		if (cn.toLowerCase().startsWith("int")){
+			xstr = digestIntList(   (ArrayList<Integer>) list);
+			return xstr;
+		}
+		if (cn.toLowerCase().startsWith("doub")){
+			xstr = digestNumList( (ArrayList<Double>) list);
+			return xstr;
+		}
+		if (cn.toLowerCase().startsWith("str")){
+			xstr = digestStringList((ArrayList<String>) list);
+			return xstr;
+		}
+		
+		return xstr;
+		*/
+		
+	}
+	
+	public String digestStringList( ArrayList<String> strlist){
+		String str;
+		String xstr = "";
+		
+		if ((strlist==null) || (strlist.size()==0)){
+			return xstr;
+		} 
+		 
+		for (int i=0;i<strlist.size();i++){
+			str = strlist.get(i);
+			xstr = xstr+str;
+			if (i<strlist.size()-1){
+				xstr = xstr+";" ;
+			}
+		}
+		
+		return xstr;
+	}
+	
+	public String digestNumList( ArrayList<Double> numlist){
+		
+		String str,xstr = "";
+		if ((numlist==null) || (numlist.size()==0)){
+			return xstr;
+		} 
+		
+		
+		for (int i=0;i<numlist.size();i++){
+			double v = numlist.get(i);
+			str = String.format("%.7f", v);
+			xstr = xstr+str;
+			if (i<numlist.size()-1){
+				xstr = xstr+";" ;
+			}
+		}
+		
+		return xstr;
+	}
+	
+	public String digestIntList( ArrayList<Integer> ilist){
+		
+		String xstr = "";
+		if ((ilist==null) || (ilist.size()==0)){
+			return xstr;
+		} 
+		
+		
+		for (int i=0;i<ilist.size();i++){
+			int vi = ilist.get(i);
+			xstr = xstr+""+vi;
+			if (i<ilist.size()-1){
+				xstr = xstr+";" ;
+			}
+		}
+		
+		return xstr;
+	}
+	
+	// ------------------------------------------
+	// ------------------------------------------
+
 	protected String getXmlStr( XMLBuilder builder, boolean fullXML ){
 		String xmlstr="";
 		Properties outputProperties ;
@@ -1079,10 +1474,11 @@ public abstract class XMessageAbs {
 			}
 
 			xmlstr = builder.asString(outputProperties);
-
-			xmlstr = xmlstr.replace("encoding=\"UTF-8\"?>",
-					"encoding=\"UTF-8\"?>\n\n");
-
+			int p = xmlstr.indexOf("UTF-8");
+			if ((p>0) && (p<40)){
+				xmlstr = xmlstr.replace("encoding=\"UTF-8\"?>","encoding=\"UTF-8\"?>\n\n");
+			}
+			xmlstr = xmlstr.trim() ;
 		} catch (TransformerException e) {
 
 			e.printStackTrace();

@@ -168,7 +168,12 @@ public class ArrUtilities {
 	public String arr2text( ArrayList<String> vector,
             			    String separator){
 		
-		String return_value="";
+		return arr2Text( vector, separator) ;
+	}	
+	
+	public static String arr2Text( ArrayList<String> vector,
+		    						String separator){
+	    String return_value="";
 		int i;
 		
 		if (separator.length()==0){
