@@ -314,6 +314,7 @@ public class SomTargetedModeling    extends
 	}
 
 
+	@SuppressWarnings("unchecked")
 	public void prepare( ArrayList<Integer> usedVariables){
 		
 		int ix;
@@ -400,9 +401,9 @@ public class SomTargetedModeling    extends
 				}
 			}
 		}
-		  
+		ArrayList<Integer> useIndexes = (ArrayList<Integer>)variables.transcribeUseIndications(usageVector);  
 		
-		
+		variables.setInitialUsageVector( variables.deriveVariableSelection(useIndexes, 0) ) ;
 		
 		init(variables);
 		
@@ -422,7 +423,7 @@ public class SomTargetedModeling    extends
 		somLattice.getSimilarityConcepts().setIndexIdColumn( variables.getIdColumnIndex() ) ;
 		
 		somLattice.setSomData(somDataObject) ; 
-		somLattice.spreadVariableSettings();
+		somLattice.spreadVariableSettings(); // informs all nodes about the usevector
 		// somLattice.getSimilarityConcepts().setUsageIndicationVector(usageVector) ;
 		//  node.getSimilarity.usageIndicationVector is wrong, hence profile.getValues() is also wrong 
 	}
@@ -465,7 +466,7 @@ public class SomTargetedModeling    extends
 			//_vars;
 		}
 		
-		 
+		
 		initializeNodesWithRandomvalues( vars ); // adopting feature vectors, not yet the data of course
 		 
 		// initializeNodesWithData(); // nothing there so far, could be stuffed with top-4 of a linear/ized description 

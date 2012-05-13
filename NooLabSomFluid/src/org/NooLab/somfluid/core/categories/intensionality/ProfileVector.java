@@ -10,20 +10,20 @@ import org.NooLab.somfluid.util.BasicStatisticalDescription;
 /**
  * 
  * The weight vector of a SOM node usually contains for all mutable variables (non-ID/TV) 
- * the average of the values in the extensoinal list;
+ * the average of the values in the extensional list;
  * 
  * That is, the WeightVector itself does not know anything about TV or index variable...
  * which is solely the business of the Node 
  * 
  * In our case, however, the weight vector also may contain a further section, which is
- * referring to dnaic propertie sof the Node, or the data, e.g. the deviation of the
- * data in the node against a model functoin (such as a correlation)
+ * referring to dynamic properties of the Node, or the data, e.g. the deviation of the
+ * data in the node against a model function (such as a correlation)
  * such internal measurements can not be predefined, and they are also not stable input data
  * since they are constantly changing (due to the list of data in the node, the state of other
  * nodes etc.). 
  * 
  * The two sections are stored separately in the WeightVector object, 
- * they will be concatened just on get() (yet they are buffered.)
+ * they will be concatenated just on get() (yet they are buffered.)
  * 
  * 
  * 
@@ -84,6 +84,30 @@ class ProfileVector implements Serializable, ProfileVectorIntf {
 		}
 	}
 	
+	public ProfileVector(ProfileVectorIntf templateProfile) {
+
+		ArrayList<Integer> useIndexes ;
+		
+		
+		try{
+			
+			
+			
+			lastExtDataValueIndex = templateProfile.getLastExtDataValueIndex()  ;
+			if ( templateProfile.getVariablesStr() !=null) variablesStr.addAll( templateProfile.getVariablesStr() ) ;  
+			if (templateProfile.getVariables() !=null) variables.addAll( templateProfile.getVariables() ) ; 
+			if (templateProfile.getValues() !=null)values.addAll( templateProfile.getValues() ) ;
+			
+			if (templateProfile.getIntSomNodeProperties() !=null) intSomNodeProperties.addAll( templateProfile.getIntSomNodeProperties() ) ; 
+			if (templateProfile.getIntSomNodePropValues() !=null) intSomNodePropValues.addAll( templateProfile.getIntSomNodePropValues() ) ;
+			
+			if (templateProfile.getCompoundValues() !=null) compoundValues.addAll( templateProfile.getCompoundValues()) ;
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+
+	}
 	public void clear() {
 		variablesStr.clear();
 		variables.clear();

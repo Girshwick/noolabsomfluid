@@ -32,6 +32,8 @@ import org.NooLab.somfluid.properties.SpriteSettings;
 import org.NooLab.somfluid.properties.ValidationSettings;
 import org.NooLab.utilities.xml.XmlFileRead;
 
+import com.jamesmurty.utils.XMLBuilder;
+
 
 
 
@@ -108,13 +110,13 @@ public class ModelingSettings implements Serializable{
 	/** for idealization processes */
 	CrystalizationSettings crystalSettings;
 	
-	/** e.g. parameters about NVE */
+	/** e.g. parameters about controlling NVE */
 	DataTransformationSettings transformationSettings ;
 	
 	
 	
 	// our central random object for creating random numbers
-	Random random;
+	Random random; // TODO: re-init on loading the settings from xml! 
 	
 	
 	// main variables / properties ....
@@ -210,28 +212,6 @@ public class ModelingSettings implements Serializable{
 	// 1=usagevector is available and will be provided
 	int useVectorModegetDedicated = 0; 
 	 
-	
-	// values <=1 -> low priority
-	int[] threadPriorities = new int[10] ;
-	
-	 
-	
-	// volatile variables .............
-	// only local , for speeding repeated request   .  .  .  .  .  .  .  .  .     
-	ArrayList<String> variableLabels = new ArrayList<String>() ;
-	private int maxSomEpochCount = 4 ;
-	private boolean evolutionaryAssignateSelection = false ;
-	private boolean spriteAssignateDerivation = false ;
-	
-	/** 
-	 * the level 2 loop in modeling is concerned about the selection of features;
-	 * we may use evolutionary optimization together with the derivation of additional assignates 
-	 * 
-	 * SpriteAssignateDerivation() 
-	 * 
-	 * further description are to be found here: 
-	 * http://theputnamprogram.wordpress.com/2011/12/21/technical-aspects-of-modeling/      
-	 */
 	private int maxL2LoopCount = -1;
 	
 	private boolean contentSensitiveInfluence;
@@ -256,6 +236,29 @@ public class ModelingSettings implements Serializable{
 	private boolean performCanonicalExploration;
 		
 
+	
+	// values <=1 -> low priority
+	int[] threadPriorities = new int[10] ;
+	
+	 
+	
+	// volatile variables .............
+	// only local , for speeding repeated request   .  .  .  .  .  .  .  .  .     
+	ArrayList<String> variableLabels = new ArrayList<String>() ;
+	private int maxSomEpochCount = 4 ;
+	private boolean evolutionaryAssignateSelection = false ;
+	private boolean spriteAssignateDerivation = false ;
+	
+	/** 
+	 * the level 2 loop in modeling is concerned about the selection of features;
+	 * we may use evolutionary optimization together with the derivation of additional assignates 
+	 * 
+	 * SpriteAssignateDerivation() 
+	 * 
+	 * further description are to be found here: 
+	 * http://theputnamprogram.wordpress.com/2011/12/21/technical-aspects-of-modeling/      
+	 */
+	
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 	public ModelingSettings(){
@@ -1000,6 +1003,12 @@ public class ModelingSettings implements Serializable{
 	public boolean isSearchForLinearModels() {
 		//
 		return false;
+	}
+
+	
+	public XMLBuilder exportPropertiesAsXBuilder(SettingsTransporter settingsTransporter) {
+		
+		return settingsTransporter.exportPropertiesAsXBuilder(this) ;
 	}
 	
 	

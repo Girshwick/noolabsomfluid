@@ -56,4 +56,6 @@ public interface ExtensionalityDynamicsIntf {
 
 	public void setPPVrank(int rank);
 
+	public int getPpvRank();
+
 }

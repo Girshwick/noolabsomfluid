@@ -23,6 +23,7 @@ public class SomFluidTask 	implements
 
 	public int workingMode = _SOM_WORKMODE_FILE;
 	
+	long opentime=0, closetime=-1;
 	
 	String guidID="";
 	
@@ -63,6 +64,7 @@ public class SomFluidTask 	implements
 		guidID = guidId;
 		this.somType = somType;
 		
+		opentime = System.currentTimeMillis();
 	}
 	// ========================================================================
 
@@ -75,6 +77,8 @@ public class SomFluidTask 	implements
 		spelaLevel = inTask.spelaLevel ;
 		numberOfRuns = inTask.numberOfRuns ;
 		derivatesDepth = inTask.derivatesDepth ;
+		
+		opentime = System.currentTimeMillis();
 	}
 
 
@@ -84,8 +88,13 @@ public class SomFluidTask 	implements
 		return isCompleted;
 	}
 
-	public void setCompleted(boolean isCompleted) {
-		this.isCompleted = isCompleted;
+	public void setCompleted(boolean flag) {
+		
+		isCompleted = flag;
+		
+		if (isCompleted){
+			closetime = System.currentTimeMillis() ;
+		}
 	}
 
 
@@ -242,6 +251,9 @@ public class SomFluidTask 	implements
 
 
 
+ 
+
+
 	/**
 	 * @return the numberOfRuns
 	 */
@@ -265,6 +277,30 @@ public class SomFluidTask 	implements
 	 */
 	public void setGuidID(String guidID) {
 		this.guidID = guidID;
+	}
+
+
+
+	public long getOpentime() {
+		return opentime;
+	}
+
+
+
+	public void setOpentime(long opentime) {
+		this.opentime = opentime;
+	}
+
+
+
+	public long getClosetime() {
+		return closetime;
+	}
+
+
+
+	public void setClosetime(long closetime) {
+		this.closetime = closetime;
 	}
 
 

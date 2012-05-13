@@ -684,7 +684,7 @@ public class Variables implements Serializable, VariablesIntf{
 	public ArrayList<String> getInitialUsageVector() {
 		return initialUsedVariablesStr;
 	}
-
+	// public void setInitialUsageVector(ArrayList<String> initialUseVector) {
 	public void setInitialUsageVector(ArrayList<String> initialUseVector) {
 		int n;
 		if ((initialUseVector==null) || (initialUseVector.size()<=1)){

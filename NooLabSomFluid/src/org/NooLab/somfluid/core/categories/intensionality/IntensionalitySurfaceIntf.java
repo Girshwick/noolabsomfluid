@@ -36,5 +36,7 @@ public interface IntensionalitySurfaceIntf {
 	public void setTargetVariableIndex(int indexVal);
 	
 	public int getTargetVariableIndex();
+
+	public ProfileVectorIntf getAbridgedVersion(ArrayList<Integer> useIndexes);
 	
 }

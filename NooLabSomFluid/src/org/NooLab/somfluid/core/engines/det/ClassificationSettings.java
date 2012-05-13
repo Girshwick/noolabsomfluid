@@ -5,7 +5,10 @@ import java.util.ArrayList;
 
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.properties.ModelingSettings;
+import org.NooLab.somfluid.properties.SettingsTransporter;
 import org.NooLab.utilities.ArrUtilities;
+
+import com.jamesmurty.utils.XMLBuilder;
 
 
 
@@ -51,7 +54,7 @@ public class ClassificationSettings implements Serializable{
 	/** provides the full description of misclassifications per node and per target group */
 	public static final int _XREQ_MISCLASSIFICATIONS_FULL = 2 ;
 	
-	/** returns the measure Area-under-curve of a ROC courve, that describes a classificator  */
+	/** returns the measure Area-under-curve of a ROC curve, that describes a classificator  */
 	public static final int _XREQ_ROC_STD    = 5 ;
 	/** 
 	 * returns the series of paired values that describes the ROC curve; as all ROC stuff, this also
@@ -502,6 +505,15 @@ public class ClassificationSettings implements Serializable{
  
 	public boolean isEcrAdaptationAllowed() {
 		return isEcrAdaptationAllowed;
+	}
+
+
+
+
+
+	public XMLBuilder exportPropertiesAsXBuilder(SettingsTransporter settingsTransporter) {
+
+		return settingsTransporter.exportPropertiesAsXBuilder(this) ;
 	}
  
 

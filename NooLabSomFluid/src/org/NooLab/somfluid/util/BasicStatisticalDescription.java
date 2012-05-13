@@ -2,6 +2,7 @@ package org.NooLab.somfluid.util;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import org.NooLab.somtransform.algo.distribution.EmpiricDistribution;
 
@@ -32,7 +33,7 @@ public class BasicStatisticalDescription implements Serializable {
 	
 	int      count, mvCount, x_counter;
 
-	double   sum, qsum, qqsum, mean, median, geoMean, 
+	double   sum, qsum, qqsum, mean, genMeanP2, median, geoMean, 
 			 adjMean,  // adjusted mean : mean from (arithmet + harmonic)/2 
 			 cov, soval, // sum of values, needed for merging
 			 sovar, // sum of variances
@@ -52,6 +53,9 @@ public class BasicStatisticalDescription implements Serializable {
 	double[] histogramPolyfitCoefficients ;
 
 	private boolean isTimeSeries = false;
+	
+	ArrayList<Double> invalues = new ArrayList<Double>();
+
 	
 	// ========================================================================
 	public BasicStatisticalDescription(){
@@ -129,20 +133,30 @@ public class BasicStatisticalDescription implements Serializable {
 		for (int i=0;i<values.size();i++){
 			introduceValue(values.get(i));
 		}
+		
+		Collections.sort(invalues);
+		int midpos = (int) (invalues.size()/2.0);
+		if (invalues.size()>1){
+			median = invalues.get(midpos);
+		}
+		
 	}
 	/** 
 	 * instead of calling all the single methods one after another,
 	 * we introduce it here in a single step 
 	 */
 	public void introduceValue(double fieldValue) {
-	 
+		
 		if (fieldValue == -1.0){ // TODO: not perfectly correct for the general case, 
 								 // in this form, it expects normalized data ;
 								 // we should use a flag whether data a "raw", and a reference to an instance of an MV object
 			mvCount++;
 			return;
 		}
+		
 		count = count + 1;
+		invalues.add( fieldValue );
+		
 		sum = sum + fieldValue;
 		qsum = qsum + (double)(fieldValue * fieldValue);
 		
@@ -155,11 +169,13 @@ public class BasicStatisticalDescription implements Serializable {
 		mean = sum/count;
 
 		if (invsum>0){
-			geoMean = count/invsum;
+			geoMean = count/ invsum;  
 		}else{
 			geoMean = 0;
 		}
 		
+		genMeanP2 = Math.sqrt( qqsum/count) ;
+ 		
 		if (geoMean >0){
 			adjMean = (geoMean + mean)/2.0 ; 
 		}else{
@@ -184,6 +200,7 @@ public class BasicStatisticalDescription implements Serializable {
 		}else{
 			variance = -1;
 		}
+		
 		
 	}
 	
@@ -246,14 +263,14 @@ public class BasicStatisticalDescription implements Serializable {
 	
 	public void reset() {
 	
-	
+		adjMean = 0.0;
 		count = 0;
 		mvCount = 0 ;
-		
-	
+		geoMean = 0.0;
+		invsum = 0.0;
 		sum=0;
 		qsum=0;
-		
+		qqsum=0;
 		median=0;
 		mean=0;
 		cov=0;
@@ -277,6 +294,7 @@ public class BasicStatisticalDescription implements Serializable {
 		
 		empiricDistribution = new EmpiricDistribution(); 
 		
+		invalues.clear();
 	}
 
 	public void clear() {

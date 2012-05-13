@@ -83,7 +83,9 @@ public class EvoBasics implements Serializable{
 		ArrayList<Integer> ecs; 
 		
 		
-		
+		if ((ems2==null) || (ems2.getEvmItems().size()==0)){
+			return ems1;
+		}
 		if ((ems2.getBestResult()!=null) && (ems2.getBestResult().getSqData()!=null) ){
 			_score = ems2.getBestResult().getSqData().getScore();
 		}

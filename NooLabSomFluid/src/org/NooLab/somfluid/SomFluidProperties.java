@@ -53,7 +53,7 @@ public class SomFluidProperties implements 	//
 
 
 	public static final String _STORAGE_OBJ = "SomFluid.properties";
-	public static final String _STORAGE_XML = "SomFluid.properties.xml";
+	public static final String _STORAGE_XML = "SomFluid-properties.xml";
 	
 	
 	transient SomFluidFactory sfFactory ;
@@ -102,15 +102,18 @@ public class SomFluidProperties implements 	//
 
 	
 
+	private String systemRootDir;
 	
+	private int multiProcessingLevel = 0;
+
+
+	transient private String currentSettingsXml="";
+
 	transient static SettingsTransporter settingsTransporter;
 	
 	transient FileOrganizer fileOrganizer;
 
-	private String systemRootDir;
-
-
-	private int multiProcessingLevel = 0;
+	
 	
 	// ========================================================================
 	protected SomFluidProperties(){
@@ -155,14 +158,49 @@ public class SomFluidProperties implements 	//
 		String xmlSettingsStr = "";
 		
 		settingsTransporter = new SettingsTransporter( sfp );
-		xmlSettingsStr = settingsTransporter.exportProperties(0);
+		// target directory is given by sfp itself...
+		xmlSettingsStr = settingsTransporter.exportProperties(0); // 0
+		
+		currentSettingsXml = xmlSettingsStr;
 		
 		return xmlSettingsStr;
 	}
 
+	public void exportXml(){
+		 
+		save(1) ;
+		
+	}
+	
+	public void exportXml(String filename) throws Exception{
+		// saving properties to XML
+		// note that xml export is also called for included settings, which will be saved in dedicated files
+		
+		String propsFileName, dir, xstr ;
+		DFutils fileutil = new DFutils();
+		
+		save(1) ;
+		
+		// rename the file
+		xstr = exportSettings();
+		dir = fileutil.getUserDir();
+		propsFileName = DFutils.createPath( dir, SomFluidProperties._STORAGE_XML ) ;
+		fileutil.writeFileSimple(propsFileName,xstr);
+		
+		// new filename
+		fileutil.renameFile( propsFileName, filename) ;
+		
+		
+	}
+	
+	public String getExportedXml(){
+		return currentSettingsXml;
+	}
+	
 	public void save() {
 		save(0); 
 	}
+	
 	
 	public void save(int target) {
 		
@@ -174,9 +212,10 @@ public class SomFluidProperties implements 	//
 		DFutils fileutil = new DFutils();
 		
 		if (target>=1){
-			String xstr = exportSettings();
+			
 			dir = fileutil.getUserDir();
 			propertiesFileName = DFutils.createPath( dir, SomFluidProperties._STORAGE_XML ) ;
+			String xstr = exportSettings();
 			fileutil.writeFileSimple(propertiesFileName,xstr);
 			
 		}else{

@@ -67,6 +67,7 @@ public class SomFluidFactory  implements 	//
 	
 	DataFileReceptorIntf dataReceptor;
 	SomProcessControl somProcessControl ;
+	SomObjects somObjects;
 	
 	int instanceType   = -1;
 	int glueModuleMode = 0;
@@ -115,6 +116,8 @@ public class SomFluidFactory  implements 	//
 		persistence = new SomPersistence(sfProperties) ;
 		
 		somProcessControl = new SomProcessControl(this); 
+		
+		somObjects = new SomObjects(factory) ;
 		
 		try {
 			(new AlgorithmDeclarationsLoader(sfProperties)).load() ;
@@ -366,6 +369,10 @@ public class SomFluidFactory  implements 	//
 	}
 
 		
+	public SomObjects getSomObjects() {
+		return somObjects;
+	}
+
 	public void addModelingTargetByVariable(String tvLabel) {
 		
 		ArrayList<String> tvc = sfProperties.getModelingSettings().getTargetVariableCandidates();

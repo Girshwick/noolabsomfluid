@@ -4,6 +4,8 @@ import java.io.Serializable;
 
 import org.NooLab.somfluid.storage.FileOrganizer;
 
+import com.jamesmurty.utils.XMLBuilder;
+
 
 
 public class PersistenceSettings implements Serializable{
@@ -87,6 +89,11 @@ public class PersistenceSettings implements Serializable{
 	public void setIncomingDataSupervisionActive(boolean flag) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	public XMLBuilder exportPropertiesAsXBuilder(SettingsTransporter settingsTransporter) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 	

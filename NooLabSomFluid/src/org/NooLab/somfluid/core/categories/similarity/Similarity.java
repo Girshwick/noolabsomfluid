@@ -14,7 +14,7 @@ import java.util.Collection;
  * this is defined on the level of the VirtualLattice; </br>
  * from there, it is imported as reference into the nodes by  "similarity = importSimilarityConcepts()" </br> </br>
  * 
- * This means that the useage vector can be set upfront, quite early in the process, and
+ * This means that the usage vector can be set upfront, quite early in the process, and
  * the calculation of similarity always can assume aligned vectors. </br>
  * 
  * We also need an abstraction from the actual core concept in the similarity function

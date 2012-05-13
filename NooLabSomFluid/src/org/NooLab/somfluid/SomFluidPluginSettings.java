@@ -5,11 +5,14 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.NooLab.somfluid.properties.SettingsTransporter;
 import org.NooLab.somtransform.TransformationEnv;
 import org.NooLab.somtransform.TransformationEnvIntf;
 import org.NooLab.utilities.datatypes.SerialMap;
 import org.NooLab.utilities.datatypes.SerialMapItemIntf;
 import org.NooLab.utilities.files.DFutils;
+
+import com.jamesmurty.utils.XMLBuilder;
 
 
 
@@ -162,6 +165,11 @@ public class SomFluidPluginSettings implements 	Serializable,
 	@Override
 	public boolean isAlgorithmPluggedin(String algoname) {
 		return transformationOriginator.isAlgorithmPluggedin(algoname);
+	}
+
+	public XMLBuilder exportPropertiesAsXBuilder(SettingsTransporter settingsTransporter) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	

@@ -5,8 +5,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.properties.PersistenceSettings;
+import org.NooLab.somfluid.properties.SettingsTransporter;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
+
+import com.jamesmurty.utils.XMLBuilder;
 
 
 public class OutputSettings implements Serializable{
@@ -53,6 +56,7 @@ public class OutputSettings implements Serializable{
 	
 	private boolean resultFileZipping = true;
 	PersistenceSettings persistenceSettings;
+	private boolean exportApplicationModel;
 	
 	// ========================================================================
 	public OutputSettings(PersistenceSettings ps){
@@ -310,6 +314,23 @@ public class OutputSettings implements Serializable{
 
 	public void setPersistenceSettings(PersistenceSettings persistenceSettings) {
 		this.persistenceSettings = persistenceSettings;
+	}
+
+	public void exportApplicationModel(boolean flag) {
+		exportApplicationModel = flag;
+	}
+
+	public boolean isExportApplicationModel() {
+		return exportApplicationModel;
+	}
+
+	public void setExportApplicationModel(boolean exportApplicationModel) {
+		this.exportApplicationModel = exportApplicationModel;
+	}
+
+	public XMLBuilder exportPropertiesAsXBuilder(SettingsTransporter settingsTransporter) {
+		 
+		return null;
 	}
 
 }

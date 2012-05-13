@@ -88,7 +88,9 @@ public class SimpleSingleModel implements SomHostIntf, Serializable{
 			int ix = variables.getIndexByLabel(label);
 			usedVariables.add(ix) ;
 		}
-		Collections.sort(usedVariables); usedVariables.trimToSize();
+		Collections.sort(usedVariables); 
+		usedVariables.trimToSize();
+		
 	}
 
 
@@ -132,9 +134,16 @@ public class SimpleSingleModel implements SomHostIntf, Serializable{
 			targetedModeling.setSomDataObject(somDataObj);
 			 
 			targetedModeling.prepare( usedVariables );  // 
-			 
+
+// VirtualLattice _somLattice = this.somProcess.getSomLattice() ;
+// out.printErr(2, "lattice 5 "+_somLattice.toString());
+
 			String guid = targetedModeling.perform(0);
 			
+
+// _somLattice = this.somProcess.getSomLattice() ;
+// out.printErr(2, "lattice 6"+_somLattice.toString());
+
 			if (sfTask.isNoHostInforming()==false){
 				somFluid.onTaskCompleted( sfTask );
 			}

@@ -10,7 +10,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
-import org.NooLab.utilities.logging.LogControl;
+ 
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
 
@@ -410,7 +410,7 @@ public class SomScreening {
 	
 	// ========================================================================
 	
-	private ModelProperties performSingleRun(int index){
+	private ModelProperties performSingleRun(int index, boolean clearLattice){
 		SomProcessIntf somprocess ;
 		SimpleSingleModel simo ;
 		ModelProperties somResults;
@@ -418,11 +418,17 @@ public class SomScreening {
 		_task.setNoHostInforming(true);
 		
 		if (somProcess!=null){
-			// clear the extensionality of the lattics
+			// clear the extensionality of the lattice
 		}
 		
 		
-		
+if (clearLattice==false){
+	int k;
+	k=0;
+	
+	// VirtualLattice _somLattice = this.somProcess.getSomLattice() ;
+	// out.printErr(2, "lattice 3 "+_somLattice.toString());
+}
 		simo = new SimpleSingleModel(somFluid , _task, sfFactory );
 		 
 		simo.setDataObject(somData);
@@ -434,12 +440,23 @@ public class SomScreening {
 		while (_task.isCompleted()==false){
 			out.delay(10);
 		}
+		
+		
 		somProcess = simo.getSomProcess();
 		somResults = simo.getSomResults();
 		
-		somResults.setIndex(index);
+if (clearLattice==false){
+	int k;
+	k=0;
+	
+	// VirtualLattice _somLattice = this.somProcess.getSomLattice() ;
+	// out.printErr(2, "lattice 4 "+_somLattice.toString());
+}
 		
-		somProcess.clear();
+		somResults.setIndex(index);
+		if (clearLattice){
+			somProcess.clear();
+		}
 		
 		return somResults;
 	}
@@ -447,54 +464,97 @@ public class SomScreening {
 	
 	private SomTargetedModeling _singleRun(int z, ArrayList<Double> impUsagevector){
 		
-		SomTargetedModeling targetedModeling;
+		SomTargetedModeling targetedModeling = null;
 		Variables selectedVariables = null;
  
-		
-
 		if ((impUsagevector == null) || (impUsagevector.size() <= 1)) {
 			return null;
 		}
+		
+		try{
+			
 
-		long serialID = 0;
-		serialID = SerialGuid.numericalValue();
-		
-		
-		sfTask.setCallerStatus(0) ;
-		 
-		
-		targetedModeling = new SomTargetedModeling( somHost, sfFactory, sfProperties, sfTask, serialID);
-		
-		targetedModeling.setSource(0);
-		
-		// targetedModeling.prepare(usedVariables);
-		
-		selectedVariables =  targetedModeling.setUsedVariablesIndicatorVector(impUsagevector) ;
-		
-		targetedModeling.init( selectedVariables );
-		
-		// targetedModeling.prepare(usedVariables);
-		
-		
-		String guid = targetedModeling.perform(0);
-		 
-		somProcess = targetedModeling ;
-		 
-		 
-		out.print(2, "\nSom ("+z+") is running , identifier: "+guid) ; 
+			long serialID = 0;
+			serialID = SerialGuid.numericalValue();
+			
+			
+			sfTask.setCallerStatus(0) ;
+			 
+			
+			targetedModeling = new SomTargetedModeling( somHost, sfFactory, sfProperties, sfTask, serialID);
+			
+			targetedModeling.setSource(0);
+			
+			// targetedModeling.prepare(usedVariables);
+			
+			selectedVariables =  targetedModeling.setUsedVariablesIndicatorVector(impUsagevector) ;
+			
+			targetedModeling.init( selectedVariables );
+			
+			// targetedModeling.prepare(usedVariables);
+			
+			
+			String guid = targetedModeling.perform(0);
+			 
+			// transferring the lattice reference
+			somProcess = targetedModeling ;
+			 
+											out.print(2, "\nSom ("+z+") is running , identifier: "+guid) ; 
 
-		while (targetedModeling.isCompleted()==false){
-			out.delay(10);
+			while (targetedModeling.isCompleted()==false){
+				out.delay(10);
+			}
+			
+			return targetedModeling;
+		}catch(Exception e){ 
+			e.printStackTrace() ;
 		}
-		
 		return targetedModeling;
+		 
 	}
 	/**
 	 * in the basic variant "everything" remains the same, except the use vector
 	 * we also take a copy of the dsom, and of the initialized lattice
 	 * 
 	 */
-	public SomTargetedModeling calculateSpecifiedModel( ArrayList<Double> impUsagevector ){
+	@SuppressWarnings("unchecked")
+	public ModelProperties calculateSpecifiedModel( ArrayList<Double> impUsagevector, boolean newLattice ){
+ 
+		
+		SomTargetedModeling targetMod = null;
+		ArrayList<Integer> proposedSelection ;
+		ModelProperties results=null;
+		
+		
+		if ((impUsagevector==null) || (impUsagevector.size()<=1)){
+			return null;
+		}
+		// somProcess.somLattice  org.NooLab.somfluid.components.VirtualLattice@1c14b91
+		try{
+			// somProcess: org.NooLab.somfluid.core.engines.det.SomTargetedModeling@1ccbf94
+			// targetMod = _singleRun(0, impUsagevector) ;
+			proposedSelection = (ArrayList<Integer>) variables.transcribeUseIndications( impUsagevector ) ;
+			
+			currentVariableSelection = variables.deriveVariableSelection( proposedSelection ,0 ) ; 
+
+			// crashes, since not properly prepared here:  _singleRun(0,impUsagevector) ;
+			// 
+			results = performSingleRun(0,false); // false : do NOT clear the lattice nodes !
+			  
+			// VirtualLattice _somLattice = this.somProcess.getSomLattice() ;
+			// out.printErr(2, "lattice 7 "+_somLattice.toString());
+			
+			
+		}catch(Exception e){
+			e.printStackTrace() ;
+		}
+		
+
+		return results ; 
+	}
+	
+	@SuppressWarnings("unused")
+	private SomTargetedModeling __obs_calculateSpecifiedModel( ArrayList<Double> impUsagevector, boolean newLattice ){
 		
 		Variables selectedVariables = null;
 		
@@ -508,11 +568,11 @@ public class SomScreening {
 			return null;
 		}
 		
+		
 		try{
+
 			
-			// using singlesimplemodel ...
-			
-			targetMod = new SomTargetedModeling( null , false, 1); 
+			targetMod = new SomTargetedModeling( null , newLattice, 1); 
 												 // true: create a new lattice
 			somProcess = targetMod;
 			
@@ -851,11 +911,11 @@ if ((specialInterestVariables!=null) &&
 						
 						uv = variables.getUseIndicationForLabelsList(currentVariableSelection) ;
 						proposedSelection = (ArrayList<Integer>) variables.transcribeUseIndications( currentVariableSelection ) ;
-	 
+						 
 						av = variables.determineAddedVariables( previousUseVector, uv, false);
 						rv = variables.determineRemovedVariables( previousUseVector, uv,false);
 						
-						results = performSingleRun(z);  //  
+						results = performSingleRun(z, true);  //  
 											
 						// ..................................................
 													//out.print(2, "lattice address : "+targetMod.getdSom().getSomLattice().toString());
@@ -1010,7 +1070,7 @@ if ((specialInterestVariables!=null) &&
 				currentVariableSelection = variables.deriveVariableSelection( proposedSelection ,0 ) ; 
 				
 				// TODO this should use a copy of the original somlattice in order to make parallelization possible !!!
-				ModelProperties results = performSingleRun(z);
+				ModelProperties results = performSingleRun(z,true);
 				// ..................................................
 											//out.print(2, "lattice address : "+targetMod.getdSom().getSomLattice().toString());
 				// calculates "SomQuality2 and stores it in "evoResultItem" 
@@ -1396,6 +1456,10 @@ if (selection.size()<=1){
 		this.somQuality = somQuality;
 	}
 
+
+	public SomProcessIntf getSomProcess() {
+		return somProcess;
+	}
 
 	public int getTotalSelectionSize() {
 		return totalSelectionSize;

@@ -4,6 +4,8 @@ import java.io.Serializable;
 
 import org.NooLab.somfluid.SomFluidProperties;
 
+import com.jamesmurty.utils.XMLBuilder;
+
 
 public class DataUseSettings implements Serializable{
 
@@ -41,6 +43,12 @@ public class DataUseSettings implements Serializable{
 
 	public int getSimulationSize() {
 		return simulationSize;
+	}
+
+
+	public XMLBuilder exportPropertiesAsXBuilder(SettingsTransporter settingsTransporter) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 	

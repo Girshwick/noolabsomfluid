@@ -30,7 +30,7 @@ public class TransformationModel implements Serializable{
 
 	ArrayList<String> xmlImage = new ArrayList<String>() ;
 	
-	transient SomTransformersXML xEngine = new SomTransformersXML();
+	transient SomFluidXMLHelper xEngine = new SomFluidXMLHelper();
 	transient StringsUtil strgutil = new StringsUtil();
 	transient PrintLog out ;
 	

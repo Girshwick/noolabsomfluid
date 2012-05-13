@@ -1,20 +1,16 @@
 package org.NooLab.somfluid.components;
 
 import java.util.ArrayList;
-import java.util.Collection;
+ 
 import java.util.Collections;
 
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
-import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.*;
 
 import org.NooLab.somfluid.*;
 import org.NooLab.somfluid.properties.* ;
-import org.NooLab.somfluid.storage.ContainerStorageDevice;
-import org.NooLab.somfluid.storage.FileOrganizer;
-import org.NooLab.somfluid.util.PowerSetSpringSource;
 
  
 import org.NooLab.somfluid.data.*;
@@ -26,12 +22,13 @@ import org.NooLab.somfluid.components.post.RobustModelSelector;
 import org.NooLab.somfluid.components.post.SomOptimizerXmlReport;
 import org.NooLab.somfluid.components.post.SpelaResults;
 import org.NooLab.somfluid.core.SomProcessIntf;
+
 import org.NooLab.somfluid.core.engines.det.*;
 import org.NooLab.somfluid.core.engines.det.results.*;
 
 import org.NooLab.somscreen.*;
 import org.NooLab.somsprite.*;
-import org.NooLab.somtransform.CandidateTransformation;
+ 
 import org.NooLab.somtransform.SomTransformer;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -53,11 +50,19 @@ import org.apache.commons.collections.CollectionUtils;
  *         - create several samples (8) for each sample size
  *         - determine dependency of quality from sample size (various samples for each size)
  *         
+ *       - allow for nesting if 
+ *         - cases are very rare
+ *         - if requested
+ *         - if tp-singularity is near 0
+ *         
  *       - checking a model where sprite variables are replaced by their raw parents
  *         - one by one
  *         - all at once
  *         -> this provides the argument that the sprite contains more information that the mere difference (opposing Minsky's difference engine)
  *       - persistence storage of explored metrices for resume...   
+ *       
+ *       - measure concordance between models
+ *         := [0..1] portion of cases rated by both models equally
  */
 public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 
@@ -211,15 +216,15 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 
 
 	public void perform() {
-		int activatedPix;
+		 
 		
 		for (OptimizerProcess process: processes){
-			 
-			activatedPix = process.start() ;
+			// int activatedPix = 
+			process.start() ;
 		}
 		 	
 	}
-	
+	 
 	
 	private int saveSingleSom( SimpleSingleModel singleSom ) {
 		// 
@@ -251,7 +256,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			return;
 		}
 		
-		ArrayList<Double> tvColData = somDataObj.normalizedSomData.getColumn(tvindex).getCellValues() ;
+		//ArrayList<Double> tvColData = somDataObj.normalizedSomData.getColumn(tvindex).getCellValues() ;
 		
 		for (int i=0;i<variables.size();i++){
 			varColData.clear();
@@ -325,7 +330,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			
 			// variableSubsetIndexes
 			boolean done=false, candidatesOK;
-			int loopcount=0, n, vn;
+			int loopcount=0,  vn;
 			double _mScore1 = 9999.09, _mScore2=9999.09;
 			VirtualLattice somLattice ;
 			SomScreening somscreener ;
@@ -335,7 +340,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			// ArrayList<CandidateTransformation> lastDependencyProposals;
 			AnalyticFunctionTransformationsIntf lastDependencyProposals = null;
 			
-			PowerSetSpringSource pset;
+			//PowerSetSpringSource pset;
 			currentVariableSelection = modelingSettings.getInitialVariableSelection() ;
  
 			// ................................................................
@@ -348,7 +353,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			
 			performInitialGuessOfWeights();
 			
-			int z=0;
+			 
 			while ((done==false) && (somFluid.getUserbreak()==false)){
 				
 				
@@ -738,10 +743,13 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 				
 			} // ?
 			
+			// test if the current model in somProcess is the best one, if not recalculate
 			
+			actualizeByBestModel();
+			 
 			
-			
-
+			// test, if the lattice contains the stats 
+			this.moptiParent.somProcess.getSomLattice().establishProperNodeStatistics();
 			 
 			// according to OutputSettings, writes to files and creates a dir package
 			// effective columns are defined via "EvoMetrices.setOutputColumns()"
@@ -764,12 +772,60 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			somFluid.onTaskCompleted( sfTask );
 		}
 	  
-
+		
+		@SuppressWarnings("unchecked")
+		private SomProcessIntf actualizeByBestModel() {
+			
+			int tvix = -1,a=1; 
+			
+			EvoMetrik bestresult ,topmetric  ;
+			ArrayList<Integer> varindexes, mdiff  ;
+			
+			
+			evoMetrices.sort( EvoMetrices._SORT_SCORE, -1);
+			
+			bestresult = evoMetrices.getBestResult() ;
+			
+			// consistent ?
+			
+			
+			//
+			topmetric = evoMetrices.getItems().get(0) ;
+			varindexes = somProcess.getUsedVariablesIndices();
+			
+			topmetric.setVarIndexes( (ArrayList<Integer>)somDataObj.getVariables().transcribeUseIndications( topmetric.getUsageVector() ) );
+			
+			tvix = somDataObj.variables.getTvColumnIndex() ;
+			
+			if ((tvix>=0) && (varindexes.indexOf(tvix)<0)){
+				varindexes.add(tvix);
+			}
+			Collections.sort(varindexes) ;
+			
+			mdiff = (ArrayList<Integer>)CollectionUtils.disjunction( varindexes, topmetric.getVarIndexes());
+			
+			if ((mdiff.size()>0) || (a>0)){
+											out.print(2, "establishing best model into SOM (variable indices: "+ArrUtilities.arr2Text(topmetric.getVarIndexes())+")...");
+				// _mozResults = restoreModelFromHistory( somScreening, 0 ) ;
+				somScreening.calculateSpecifiedModel( topmetric.getUsageVector(), true );
+											out.print(2, "establishing best model has been completed.");
+/*
+VirtualLattice _somLattice = moptiParent.somProcess.getSomLattice() ;
+out.printErr(2, "lattice 0 "+_somLattice.toString());
+_somLattice = somScreening.getSomProcess().getSomLattice() ;
+out.printErr(2, "lattice 8 "+_somLattice.toString());
+*/
+		        moptiParent.somProcess = somScreening.getSomProcess() ;
+			}
+			return somProcess;
+		}
 		
 		
 		private void performCanonicalExploration() {
 			// 
-			CanonicalExploration canonicalExploration = new CanonicalExploration(moptiParent);
+			CanonicalExploration canonicalExploration ;
+			
+			canonicalExploration = new CanonicalExploration(moptiParent);
 		}
 
 		
@@ -1018,7 +1074,9 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		if (_bestHistoryIndex<0)_bestHistoryIndex= evoBasics.getBestModelHistoryIndex() ;
 		
 		histUsagevector = evoMetrices.getBestResult().getUsageVector() ; 
- 		
+if (bestHistoryIndex==0){
+	n=0;
+}
 		indexes = evoMetrices.determineActiveIndexes(histUsagevector);
 										str = arrutil.arr2text(indexes) ;
 										out.print(2,"restoring best model (history index :"+_bestHistoryIndex+"), variable indices : "+str);
@@ -1173,13 +1231,13 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		int z;
 		// here we could run them in parallel if we would have several lattices
 		for (int i = 0; i < 100; i++) {
-			out.printErr( 2, "------------ memory status change (step " + i + ") : "
-							+ Memory.observe() + "  still free : "
-							+ Memory.currentFreeMemory(1));
+			out.printErr(2, "------------ memory status change (step " + i + ") : " + 
+					        Memory.observe()+ "  still free : " + 
+					        Memory.currentFreeMemory(1));
 			singleRun(i);
-	if ((i > 20) || (i % 10 == 0)) {
-		z = 0;
-	}
+			if ((i > 20) || (i % 10 == 0)) {
+				z = 0;
+			}
 		}
 	}
 

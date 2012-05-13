@@ -31,15 +31,11 @@ public class OptimizerSettings  implements Serializable{
 
 
 
-	private int maxAvgVariableVisits = 51;
+	int maxAvgVariableVisits = 51;
 
+	double durationHours = 25.0;
 
-
-	private double durationHours = 25.0;
-
-
-
-	private boolean shortenedFirstCycleAllowed = true;
+	boolean shortenedFirstCycleAllowed = true;
 	
 	
 	// ========================================================================

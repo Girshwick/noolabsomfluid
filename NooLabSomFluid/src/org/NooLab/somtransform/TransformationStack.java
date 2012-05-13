@@ -87,7 +87,7 @@ public class TransformationStack implements Serializable {
 
 	private boolean criticalErrorsAreVisible = true ;
 
-	transient SomTransformersXML xEngine = new SomTransformersXML();
+	transient SomFluidXMLHelper xEngine = new SomFluidXMLHelper();
 
 	// ========================================================================
 	public TransformationStack( SomTransformer transformer, SomFluidPluginSettings pluginsettings ){
@@ -317,12 +317,14 @@ if (varLabel.contains("Rechtsform")){
 					builder = builder.up() ;
 					paramsfound++;
 				}
+				/*
 				if ((ap.getValuePairs()!=null) && (ap.getValuePairs().size()>0)){
 					Object obj = ap.getValuePairs();
 					str = somTransformer.strobj.encode( obj ) ;
 					builder = builder.e("valuepairs").a("encoding", str).up();
 					paramsfound++;
 				}
+				*/
 				//
 				if (ap.getLabel().length()>0){
 					builder = builder.e("label").a("value", ap.getLabel());
@@ -333,6 +335,7 @@ if (varLabel.contains("Rechtsform")){
 					builder = builder.e("label").a("value", str).up();
 					paramsfound++;
 				}
+				/*
 				if (ap.getObj()!=null){
 					// Object -> serialized
 					Object obj = ap.getObj();
@@ -340,6 +343,7 @@ if (varLabel.contains("Rechtsform")){
 					builder = builder.e("object").a("encoding", str).up();
 					paramsfound++;
 				}
+				*/
 				if (ap.getStrValue().length()>0 ){
 					builder = builder.e("string").a("value", ap.getStrValue()).up();
 					paramsfound++;

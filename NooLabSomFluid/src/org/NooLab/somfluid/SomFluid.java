@@ -2,6 +2,7 @@ package org.NooLab.somfluid;
 
 import java.util.ArrayList;
 
+import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
  
@@ -15,6 +16,7 @@ import org.NooLab.somfluid.properties.* ;
 import org.NooLab.somfluid.components.* ;
 
 import org.NooLab.somfluid.core.application.*;
+import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 import org.NooLab.somfluid.core.engines.det.results.ModelOptimizerDigester;
 import org.NooLab.somfluid.core.engines.det.results.SimpleSingleModelDigester;
 import org.NooLab.somfluid.core.engines.det.results.SomResultDigesterIntf;
@@ -84,6 +86,8 @@ public class SomFluid
 	private boolean processIsActivated=false;
 	private RepulsionFieldIntf particleField;
 	private boolean userBreak;
+	
+	transient DFutils fileutil = new DFutils();
 	
 	
 	// ------------------------------------------------------------------------
@@ -188,7 +192,6 @@ public class SomFluid
 
 		optimizerResultHandler = new ModelOptimizerDigester( moz , sfFactory);
 		sfTask.setSomResultHandler( optimizerResultHandler ) ;
- 
 		
 		moz.perform();
 		// will return in "onTaskCompleted()"
@@ -198,6 +201,7 @@ public class SomFluid
 		 * don't forget about SomBags as kind of ensemble learning !!!
 		 * 
 		 */
+		
 	}
 	
 	
@@ -216,7 +220,12 @@ public class SomFluid
 
 	private void performAssociativeStorage(SomFluidTask sfTask) {
 		 
-		
+		/*
+		 * modeling needs internal statistics, such that variance is controlled 
+		 * additionally, we use variance of variances as a target target variable for intermittent optimization
+		 * 
+		 * also, a second version will be made available for further processing, which is a "crystalization"
+		 */
 		new SomAssociativeStorage( this, sfFactory, sfProperties, createSomDataObject() ); 
 	}
 
@@ -252,6 +261,125 @@ public class SomFluid
 		
 		
 		sfTask.getSomResultHandler().handlingResults() ;
+		String cn = sfTask.somHost.getClass().getSimpleName() ;
+		if ((sfTask.isCompleted) && (cn.toLowerCase().contains("modeloptimizer"))){
+			
+		// put the model to the list
+		// provide an option ... 	
+		sfFactory.getSomObjects().addSom(sfTask.somHost, sfTask.guidID ) ;
+			
+			if (sfProperties.getOutputSettings().isExportApplicationModel()){
+				// call as task ?
+				try {
+				
+					exportModel(sfTask) ;
+
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+
+
+	public void exportModel( String taskGuid, String packageName)  throws Exception{
+		
+		// we need an available ModelOptimizer instance, or a simpleSom instance...
+		// everything is accessible through the tasks admin
+		SomFluidTask sfTask ;
+		
+		sfTask = somTasks.getItemByGuid(taskGuid);
+		
+		if (sfTask!=null){
+			SomHostIntf somhost = sfTask.getSomHost();
+			if (somhost!=null){
+				exportModel( somhost, packageName);
+			}
+		}
+		
+	}
+
+	private void exportModel(SomFluidTask sfTask)  throws Exception{
+		
+		if (sfTask!=null){
+			SomHostIntf somhost = sfTask.getSomHost();
+			if (somhost!=null){
+				exportModel( somhost, "");
+			}
+		}
+	}
+	
+	private void exportModel( SomHostIntf somHost, String packageName) throws Exception{
+		
+		int modelcount=0;
+		String xRootDir,prj,dir,tfilename, sfilename;
+		String pkgsubdir="0", somXstring = "", transformXstring = "";
+		
+		if (somHost==null){
+			throw(new Exception("The structure hosting the model was null."));
+		}
+		
+		// dir = D:\data\projects\bank2\export\packages\~version-1.100"
+		dir = sfProperties.getSystemRootDir();
+		prj = sfProperties.getPersistenceSettings().getProjectName(); // "bank2"
+		
+		dir = DFutils.createPath(dir, prj);
+		dir = DFutils.createPath(dir, "export/packages/"); // here we maintain a small meta file: latest export, date in days since,
+		int dc = fileutil.enumerateSubDir(dir,"") ;
+
+		if (packageName.trim().length()>0){
+			pkgsubdir = packageName ;
+		}else{
+			
+			String fname = DFutils.createPath(dir, "export/packages/"+dc);
+			while (DFutils.fileExists(fname)){
+				dc++;
+				fname = DFutils.createPath(dir, "export/packages/"+dc);
+			}
+			pkgsubdir = ""+dc;
+		}
+
+		xRootDir = DFutils.createPath(dir, pkgsubdir+"/"); // here we store all 
+		// we NOT need a temp dir like this ... : DFutils.createTempDir( SomDataObject._TEMPDIR_PREFIX);
+ 		
+		ModelOptimizer moz = (ModelOptimizer )somHost ; // ;
+		
+		// somTransformer: extractTransformationsXML()
+
+			moz.getSomDataObj().getTransformer().extractTransformationsXML();
+			ArrayList<String> txstrings = moz.getSomDataObj().getTransformer().getXmlImage() ;
+			
+			transformXstring = ArrUtilities.arr2Text(txstrings,"\n");
+					
+            tfilename = DFutils.createPath(xRootDir, "transform.xml");
+				
+		// also ensures sufficient statistical description;
+		// we may have several SOMs, in case of bags or ensembles !!
+		modelcount = sfFactory.getSomObjects().extractSomModel();
+		
+		ArrayList<String> sxstrings = sfFactory.getSomObjects().getXmlImage() ;
+		
+		if ((sxstrings.size()<=1) || (txstrings.size()<=1) || (modelcount==0)){
+			throw(new Exception("There are no models to export, or the translation of models into xml failed.")) ;
+		}
+		
+		// organizational conditions, such as time of auto-invalidation
+		// save this String to the export directory
+											out.print(2, "\n"+ArrUtilities.arr2Text(sxstrings,"\n") );
+		somXstring = ArrUtilities.arr2Text( sxstrings ,"\n") ;
+		sfilename = DFutils.createPath(xRootDir, "som.xml");
+		
+		fileutil.writeFileSimple(tfilename, transformXstring);
+		fileutil.writeFileSimple(sfilename, somXstring);
+		
+		/*
+		 *  there are only those two files, or if required 3 if the data should be included
+		 *  
+		 *  nested som models or bags/ensembles of models are all combined into a single xml
+		 *  
+		 */
+		
 		
 	}
 

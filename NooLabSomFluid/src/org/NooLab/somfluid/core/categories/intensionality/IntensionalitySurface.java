@@ -3,6 +3,7 @@ package org.NooLab.somfluid.core.categories.intensionality;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 
 
@@ -57,6 +58,54 @@ public class IntensionalitySurface implements 	Serializable ,
 
 	
 
+	public IntensionalitySurface(IntensionalitySurfaceIntf inIntensions) {
+		
+
+		usageIndicationVector = new ArrayList<Double>();
+		if (inIntensions.getUsageIndicationVector() !=null) usageIndicationVector.addAll( inIntensions.getUsageIndicationVector() ) ;
+		
+		
+		profileVector = new ProfileVector( inIntensions.getProfileVector() );
+		
+		isQualifiedTarget = inIntensions.isQualifiedTarget() ;
+		targetVariableIndex = inIntensions.getTargetVariableIndex() ;
+		
+		
+	}
+
+	@Override
+	public ProfileVectorIntf getAbridgedVersion( ArrayList<Integer> usedVarIndexes ) {
+											// sth like [6, 10, 17], without TV-index
+		ProfileVector pvi ;
+		int ix; 
+		pvi = new ProfileVector ();
+		
+		
+		pvi.values = new ArrayList<Double>(); 
+		pvi.variables = new ArrayList<Variable>();
+		pvi.variablesStr = new ArrayList<String>();
+		
+		for (int i=0;i<usedVarIndexes.size();i++){
+			ix = usedVarIndexes.get(i);
+			if ((ix>=0) && (ix<profileVector.values.size())){
+				pvi.values.add( profileVector.values.get(ix));
+				pvi.variables.add( profileVector.variables.get(ix) ); 
+				pvi.variablesStr.add( profileVector.variablesStr.get(ix) ); 
+			} // within boundaries of list ?
+		}
+		
+		return pvi;
+	}
+	
+	/*
+		 
+		for (int i=0;i<usageIndicationVector.size();i++){
+			double iv = usageIndicationVector.get(i);
+			if (iv>0){
+				usedVarIndexes.add(i) ;
+			}
+		}
+	 */
 	/**   the weight vector is NOT the use vector, the weight vector describes the weight of a variable IFF used  */
 	public void prepareWeightVector(){
 		useWeights.clear() ;

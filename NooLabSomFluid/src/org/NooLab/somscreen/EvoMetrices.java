@@ -294,11 +294,21 @@ public class EvoMetrices implements Serializable{
 		
 		evoResultItem.index = z;
 		evoResultItem.step  = evmItems.size()+1 ;
-		
+
 		evoResultItem.sqData = sq.somQualityData ;
 		evoResultItem.usageVector = new ArrayList<Double>(usevector) ;
 		// we should save it in compressed form also ...
 		evoResultItem.varIndexes = new ArrayList<Integer>(determineActiveIndexes(usevector) );
+		
+		// ensure that TV index is included
+		int tvix = this.somHost.getSomDataObj().getVariables().getTvColumnIndex() ;
+		if (tvix>=0){
+			if (evoResultItem.varIndexes.indexOf(tvix)<0){
+				evoResultItem.varIndexes.add(tvix);
+			}
+		}
+		Collections.sort(evoResultItem.varIndexes) ;
+		
 		evoResultItem.mainScore = sq.somQualityData.score ;
 		evoResultItem.actualScore = sq.somQualityData.score ;
 		

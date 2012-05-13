@@ -1,6 +1,6 @@
 package org.NooLab.somfluid.util;
 
-import org.NooLab.glue.msgframe.BasicMessageParams;
+ 
 import org.NooLab.utilities.xml.XMessageAbs;
 import org.NooLab.utilities.xml.XMessageIntf;
 
@@ -23,7 +23,7 @@ public class XmlStringHandling extends XMessageAbs implements XMessageIntf{
 	
 	
 	
-	public String template( BasicMessageParams basics,  String action){ 
+	public String template( String action){ 
 		 
 		String xmlstr = "" ;
 		XMLBuilder builder ;
@@ -32,7 +32,7 @@ public class XmlStringHandling extends XMessageAbs implements XMessageIntf{
 		try {
  
 			
-			builder = getXmlBuilder( "messageboard" ).a( "name", "spela").a("role", basics.roleOfSender ); 
+			builder = getXmlBuilder( "messageboard" ).a( "name", "spela").a("role", "" ); 
 			
 			builder.e("subscription")
 			

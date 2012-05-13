@@ -536,7 +536,7 @@ if ((expressionName.contains("logist2x")) ||
 					v2 = depVarValues[1][i];
 				
 					// we easily may have a further param, ... it is a dynamic param
-					// if chohortParamIsPresent -> includin v3
+					// if chohortParamIsPresent -> including v3
 					// else
 					fv = SpriteFuncIntf.__MISSING_VALUE;
 					

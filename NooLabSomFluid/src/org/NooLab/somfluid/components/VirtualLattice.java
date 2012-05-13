@@ -20,7 +20,7 @@ import org.NooLab.utilities.net.GUID;
  
 import org.NooLab.repulsive.components.data.SurroundResults;
  
-import org.NooLab.somfluid.SomFluid;
+ 
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivity;
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivityIntf;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamics;
@@ -41,6 +41,7 @@ import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.communication.LatticeFutureVisorIntf;
+import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.NumUtils;
  
 
@@ -188,7 +189,95 @@ public class VirtualLattice implements LatticeIntf{
 	}
 	
 	
+	/**  on option, we use node statistics for optimization, or decisions about growth    */
+	@SuppressWarnings("unchecked")
+	public void establishProperNodeStatistics() {
+		
+		int extRecCount, ix,fix,fc,rix ;
+		boolean reCalc;
+		MetaNode node;
+		Variables variables;
+		double v;
+		ArrayList<Double> fieldValues = new ArrayList<Double>();
+		ArrayList<Integer> recIndexes;
+		ArrayList<Integer> useIndexes ;
+		variables = somData.variables ;
+		
+		ArrayList<BasicStatisticalDescription> bsds;
+		BasicStatisticalDescription bsd ;
+		
+		reCalc = false;
+		// 
+		for (int i=0;i<nodes.size();i++){
+			node = nodes.get(i);
+			useIndexes = (ArrayList<Integer>) variables.transcribeUseIndications(node.getIntensionality().getUsageIndicationVector());
+			// like: [7, 8, 10] , without TV !
 
+			extRecCount = node.getExtensionality().getListOfRecords().size();
+			if (extRecCount > 0) {
+				// node.getSimilarity().getUseIndicatorArray();
+				bsds = node.getExtensionality().getStatistics().getFieldValues();
+				for (int f=0;f<useIndexes.size();f++){
+					ix = useIndexes.get(f);
+					fc = bsds.get(ix).getCount();
+					if (fc!=extRecCount){
+						reCalc = true;
+						break ;
+					}
+				} // f->
+				if (reCalc ){
+					break ;
+				}
+			}
+		}
+		
+		if (reCalc){
+			
+			for (int i=0;i<nodes.size();i++){
+				node = nodes.get(0);
+				useIndexes = (ArrayList<Integer>) variables.transcribeUseIndications(node.getIntensionality().getUsageIndicationVector());
+				// like: [7, 8, 10] , without TV !
+
+				extRecCount = node.getExtensionality().getListOfRecords().size();
+				bsds = node.getExtensionality().getStatistics().getFieldValues();
+				if (extRecCount > 0) {
+					
+					// all fields (variables)...
+					for (int f=0;f<useIndexes.size();f++){
+
+						fix = useIndexes.get(f);
+						bsd = bsds.get(fix);
+						bsd.reset() ;
+						 
+						
+						DataTableCol dcol = somData.normalizedSomData.getColumn(fix);
+						fieldValues.clear() ;
+						// re-calculate -> 1. collecting the values into a temp list
+						// for field f, and record indexes as in list of records from extensionality
+						recIndexes = node.getExtensionality().getListOfRecords() ;
+						for (int r=0;r<extRecCount;r++){
+							rix = recIndexes.get(r) ;
+							v = dcol.getCellValues().get(rix) ;
+							fieldValues.add(v) ;
+						} // r->
+						
+						// sending values to the stats container and calculating stats
+						bsd.introduceValues(fieldValues) ;
+						v = bsd.getMean() ;
+					} // f->
+					
+				}else{
+					
+				}
+			}
+			
+			
+		}// reCalc ?
+		ix=0;
+	}
+
+	
+	
 	/**
 	 * 
 	 * extracting the profiles from the SomLattice into a simple table.
@@ -226,19 +315,19 @@ public class VirtualLattice implements LatticeIntf{
 		ArrayList<Double> pValues;
 		Variables  variables;
 		Variable variable ;
-		ArrayList<Variable> varList ;
+		
 		
 		ArrayList<String>  nodeVarStr ;// = new ArrayList<String>();
 		ArrayList<String>  activeVarStr = new ArrayList<String>();
 		ArrayList<String>  compoundVarStr = new ArrayList<String>();
-		ArrayList<Double>  activeProfileValues = new ArrayList<Double>() ;
-		double activeProfileValue;
-		ArrayList<Double> useIndicators , latticeuseIndicators;
+		
+		
+		ArrayList<Double> useIndicators ;
 		
 		variables = somData.getVariables() ;
 		// not implemented: varList = variables.getActiveVariables();
 		
-		latticeuseIndicators = getSimilarityConcepts().getUsageIndicationVector() ;
+		//ArrayList<Double> latticeuseIndicators = getSimilarityConcepts().getUsageIndicationVector() ;
 		
 		/*
 		 * we need to (re)calculate the whole profile, non-used profile entries are 0.0 by default ! 
@@ -426,6 +515,7 @@ public class VirtualLattice implements LatticeIntf{
 	 * @param mode  0=only used; 1=all except black, 2=all all, incl. TV, blacklisted,</br> 
 	 *              10,11,12 = additionally only top 80% of most similar records, if record count>=10 </br></br>  
 	 */
+	@SuppressWarnings("unused")
 	public void updateIntensionalProfiles(int mode) {
 
 		boolean calcThis;
@@ -597,9 +687,11 @@ public class VirtualLattice implements LatticeIntf{
 			if (uv!=null){
 				n = uv.size();
 			}
+			n=n+1-1;
+			int tvix = somData.variables.getTvColumnIndex();
 			
 			node.getIntensionality().setUsageIndicationVector(usagevector);
-			 
+			node.getIntensionality().setTargetVariableIndex( tvix ) ; 
 			nodeVarStr = vlattProfile.getVariablesStr() ;
 			
 			if (vlattMasterAvailable){
@@ -608,12 +700,15 @@ public class VirtualLattice implements LatticeIntf{
 				node.setVariableLabels(nodeVarStr);    
 			}
 			 
-			int zz = node.getIntensionality().getProfileVector().getVariablesStr().size();
+			// int zz = node.getIntensionality().getProfileVector().getVariablesStr().size();
 			
 			// this will set the reference, no copy is created !
 			node.getSimilarity().setUsageIndicationVector(usagevector);
 			
 			ix = this.similarityConcepts.getIndexTargetVariable() ;
+			if (ix<0){
+				ix = tvix;
+			}
 			if (ix>=0){
 				node.getSimilarity().setIndexTargetVariable(ix);
 				//usagevector.set(ix, -2.0) ;
@@ -1024,8 +1119,8 @@ public class VirtualLattice implements LatticeIntf{
 	public void digestParticleSelection( SurroundResults results ) {
 		// SurroundResults contains particle indexes, distances to request center, and the request GUID !
 		
-		String str;
-		// str = arrutil.arr2text( results.getParticleIndexes() ) ;
+	 
+		// String str = arrutil.arr2text( results.getParticleIndexes() ) ;
 		// out.print(2,"results returned to virtual lattice, "+str);
 		
 		new ParticleSelectionDispatcher( results );
@@ -1192,7 +1287,7 @@ public class VirtualLattice implements LatticeIntf{
 
 	public SimilarityIntf distributeSimilarityConcept( long serialID ) {
 
-		IntensionalitySurfaceIntf intensionSurf = null ;
+		
 		int nodeIndex;
 		
 		nodeIndex = indexOfSerial( serialID );

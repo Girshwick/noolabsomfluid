@@ -104,7 +104,7 @@ public class SomTransformer implements SomTransformerIntf,
 	
 	transient String lastErrorMsg="" ;
 	
-	transient SomTransformersXML xEngine = new SomTransformersXML();
+	transient SomFluidXMLHelper xEngine = new SomFluidXMLHelper();
 	
 	transient PrintLog out ;
 	transient StringedObjects strobj = new StringedObjects();
@@ -120,7 +120,7 @@ public class SomTransformer implements SomTransformerIntf,
 		somData = sdo;
 		sfProperties = sfprops ;
 		
-		dataTableObj = somData.getDataTable() ; // this nows about its serialized filebuffer 
+		dataTableObj = somData.getDataTable() ; // this now about its serialized filebuffer 
 		
 		transformationModel = new TransformationModel(this, somData);
 		
@@ -136,7 +136,7 @@ public class SomTransformer implements SomTransformerIntf,
 	/**
 	 * creates the basic structures : 
 	 * for each of the variables a TransformationStack will be initialized;</br>
-	 * this stack remains empy though!
+	 * this stack remains empty though!
 	 * 
 	 */
 	public void initializeTransformationModel(){
@@ -273,7 +273,7 @@ public class SomTransformer implements SomTransformerIntf,
 		
 		// save data to serialized object file (obj + ser = string !), we might transfer it through some wires...
 		
-		
+											out.print(2,"exporting transformation model...");
 		builder = xEngine.getXmlBuilder( "somtransformer" );
 		
 		builder = builder.importXMLBuilder( getProjectDescriptionXml( derivationLevel, version, revision) );
@@ -282,10 +282,8 @@ public class SomTransformer implements SomTransformerIntf,
 		// builder = builder.e("sources").up();
 		
 		
-		
 		// creating the XML String from transformations, add a chapter "transformations"
 		String xstr = transformationModel.getXML(builder);
-		
 		 
 		
 		// creating XML about the context
@@ -298,11 +296,14 @@ public class SomTransformer implements SomTransformerIntf,
 		
 		String[] xmlstrs = xmlstr.split("\n");
 		xmlImage = new ArrayList<String>( strgutils.changeArrayStyle(xmlstrs) );
-		
+											out.print(2,"exporting transformation model finished.");
 		// out.print(2, xmlstr) ;
 	}
 	
 	public ArrayList<String> getXmlImage() {
+		if (xmlImage==null){
+			xmlImage = new ArrayList<String> ();
+		}
 		return xmlImage;
 	}
 
