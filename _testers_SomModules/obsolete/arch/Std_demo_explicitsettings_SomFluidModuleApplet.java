@@ -1,4 +1,4 @@
-package org.NooLab.demoiinstances;
+package arch;
 
 
 import java.net.MalformedURLException;
@@ -61,12 +61,12 @@ import org.NooLab.utilities.logging.LogControl;
 
 
 
-public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
+public class Std_demo_explicitsettings_SomFluidModuleApplet extends PApplet{
 
 	 
 	private static final long serialVersionUID = 8918471551051086099L;
 	
-	SomModuleInstanceM1 somInstance ;
+	SomModuleInstanceSD somInstance ;
 	String sourceForProperties = "";
 	
 	
@@ -238,7 +238,7 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 		println();
 		println("starting...");
 		
-		somInstance = new SomModuleInstanceM1( SomFluidFactory._INSTANCE_TYPE_SOM , 
+		somInstance = new SomModuleInstanceSD( SomFluidFactory._INSTANCE_TYPE_SOM , 
 			 									SomFluidFactory._GLUE_MODULE_ENV_NONE,
 			 									sourceForProperties ) ;
 		somInstance.startInstance() ;
@@ -246,7 +246,7 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 	
 	private void resume(){
 		
-		somInstance = new SomModuleInstanceM1( SomFluidFactory._INSTANCE_TYPE_SOM , 
+		somInstance = new SomModuleInstanceSD( SomFluidFactory._INSTANCE_TYPE_SOM , 
 												SomFluidFactory._GLUE_MODULE_ENV_NONE,
 												sourceForProperties ) ;
 		somInstance.setResumeMode(true);
@@ -269,7 +269,7 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
  * this object could be instantiated by the glue layer, if there is the correct information available
  * 
  */
-class SomModuleInstanceM1 implements 	Runnable,
+class SomModuleInstanceSD implements 	Runnable,
 
 										// for messages from the engine to the outer application layers like this module
 										SomApplicationEventIntf{
@@ -292,7 +292,7 @@ class SomModuleInstanceM1 implements 	Runnable,
 	@SuppressWarnings("unused")
 	private boolean resumeMode;
 	
-	public SomModuleInstanceM1(int instancetype, int glueMode, String propertiesSource ){
+	public SomModuleInstanceSD(int instancetype, int glueMode, String propertiesSource ){
 		
 		instanceType = instancetype;
 		

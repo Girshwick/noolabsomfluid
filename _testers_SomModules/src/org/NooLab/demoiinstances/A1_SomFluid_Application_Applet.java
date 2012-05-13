@@ -1,11 +1,9 @@
 package org.NooLab.demoiinstances;
 
-
-import java.net.MalformedURLException;
+ 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+ 
 
 import processing.core.*;
 
@@ -43,25 +41,23 @@ import org.NooLab.utilities.logging.LogControl;
 
 /**
  * 
- * Later: this applet should start the SomFluid as an application!!
- * Any communication should be performed through Glue
+ * This applet demonstrates the application of a SomFluid model to new data;
  * 
+ * here, the data source is just a file, of course, it could be a data base, 
+ * a stream or whatsoever
  * 
- * note that the SomFluid instance always contains the full spectrum of tools, yet,
- * it behaves as such or such (Som, Sprite, Optimizer, transformer), according to the request.
+ * the results are collected and indexed by a double key, a globally unique identifier
+ * and a local long serial numerical id (whose start value can be set);
  * 
- * 
- * nice examples here:  http://technojeeves.com/
- * 
- * 
- * 
- * TODO: missing value portion in extensions update ... 
+ *  indexing of results is on the level of individual records and 
+ *  on the level of source accesses.
+ *  
  * 
  */
 
 
 
-public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
+public class A1_SomFluid_Application_Applet extends PApplet{
 
 	 
 	private static final long serialVersionUID = 8918471551051086099L;
@@ -86,93 +82,7 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 		// testPowerSet();
 		
 	}
-	
-	@SuppressWarnings("unused")
-	private void testPowerSet(){
-	
-		PowerSetSpringSource powerset;
-		String[] itemsarr = new String[]{"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R"}; 
-		ArrayList<String> items = new ArrayList<String>(Arrays.asList(itemsarr)); 
-		// Id, Name, KundenNr, SalesOrg, Region, Land, intern_Rating, Bonitaet, Bisher, Kunde_seit, Stammkapital, Gründungsdatum, Anzahl_Mitarbeiter, Rechtsform, Branchenscore, Mahnung_TV]
-		// this array has to have the same dimension and the same order as the string array continaing 
-		// the items, if we want to set them all at once; yet, there is also the possibility to use
-		// powerset.setSelectionProbability("A", 0.12)
-		
-		double[] selectionProbs = new double[]{0.28,1.0,0.98,0.699,1.0,0.6,0.68,0.78,0.54,0.64,0.67,0.89,0.81,0.71,0.74,0.75,0.93,0.77}; 
-		
-		powerset = new PowerSetSpringSource(items);
-		
-		powerset.setPreferredSizeLimit(6) ;
-		
-		
-		powerset.setSelectionProbabilities( 0.52 ); // for all the same
-		powerset.setSelectionProbability( "A",0.62 ); // for one individually
-		powerset.setSelectionProbabilities(selectionProbs ); // for all individually at once
-		 
-		powerset.setMaxSelectionCounts(3) ;
-		
-		// this have to be changed to index positions
-		powerset.getConstraints().addExcludingItems(new String[]{"C","G","J"});
-		powerset.getConstraints().addMandatoryItems(new String[]{"B","E"});
-		powerset.getConstraints().setMaximumLength(14);
-		powerset.getConstraints().setMinimumLength(3) ;
-		
-		powerset.activateConstraints(1);
-		
-		// powerset.printAll() ;
-		
-		ArrayList<String> setItems = null;
-		int i=1;
-		boolean selectSimilar=false;
-		
-		System.out.println();
-		
-		while (true){
-			
-			if (selectSimilar){
-				setItems = powerset.getNextSimilar(setItems, 1,3 );
-				//
-			}else{
-				// setItems = powerset.getNextRandom();
-				int lo; 
-				int hi;
-				if ((setItems!=null) && (setItems.size()>0)){
-					lo = 4;
-					hi = 8;
-					if (i%3!=0){
-						setItems = powerset.getNextSimilar(setItems, lo,hi );
-					}else{
-						setItems = powerset.getNextByLength(4, 3,4);
-					}
-				}else{
-					setItems = powerset.getNextRandom();
-				}
-				
-			}
-			
-			if (setItems.size()>0){
-				String str = setItems.toString() ;
-				System.out.println(i+"  "+str);
-			}else{
-				if (i>2){
-					break;
-				}
-			}
-			
-			if ((setItems.size()>4) && (selectSimilar==false)){
-				selectSimilar=true;
-				
-			}else{
-				selectSimilar=false;
-			}
-			i++;
-			if (i>2000){
-				break;
-			}
-		}
-	}
-	
-	
+	 
 	public void draw(){
 		background( 208,188,188);
 	}
