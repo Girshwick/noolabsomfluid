@@ -1371,6 +1371,16 @@ if (bestHistoryIndex==0){
 
 
 
+	@Override
+	public String getOutResultsAsXml(boolean asHtmlTable) {
+		String xmlstr="";
+		  
+		xmlstr = this.outresult.createXmlResults(asHtmlTable);
+		
+		return xmlstr;
+	}
+
+
 	/**
 	 * @return the spelaResults
 	 */

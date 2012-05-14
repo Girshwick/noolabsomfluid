@@ -18,8 +18,13 @@ import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somscreen.EvoMetrices;
 import org.NooLab.somscreen.EvoMetrik;
 import org.NooLab.somscreen.SomQualityData;
+import org.NooLab.somtransform.SomFluidXMLHelper;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.StringsUtil;
+import org.apache.commons.lang3.StringUtils;
+
+import com.jamesmurty.utils.XMLBuilder;
 
 public class OutResults implements Serializable{
 
@@ -35,10 +40,22 @@ public class OutResults implements Serializable{
 	VariableContrasts variableContrasts ;
 	VariableContributions variableContributions ;
 	EvoMetrik bestMetric;
+
 	
+	private String historyTableAsString="",contributionTableAsString="", contrastTableAsString="";
+	
+	
+	/** the combined xml string for all results across all available tables */
+	ArrayList<String> xmlImage = new ArrayList<String>();
+	
+	/** contains tables as xml string lists  */
+	ArrayList<ArrayList<String>> xmlImages = new ArrayList<ArrayList<String>>(); 
+	
+	transient SomFluidXMLHelper xEngine = new SomFluidXMLHelper();
+	transient StringsUtil strgutil = new StringsUtil();
 	transient ArrUtilities arrutil = new ArrUtilities ();
 	transient private PrintLog out;
-	private String historyTableAsString;
+	
 	
 	// ========================================================================
 	public OutResults(ModelOptimizer modOpti, SomFluidProperties sfprops) {
@@ -174,8 +191,6 @@ public class OutResults implements Serializable{
 		
 		str = "reference: best model" ; vrow.add(str) ;
 		str = " --- " ; vrow.add(str) ;
-		
-		
 		str = String.format("%.4f", bsq.getRocAuC() ) ; vrow.add(str) ;
 		str = ""+bsq.getTp() ; vrow.add(str) ;
 		str = ""+bsq.getFp() ; vrow.add(str) ;
@@ -260,7 +275,7 @@ public class OutResults implements Serializable{
 		tableStr = createStringTable(vrows);
 		vcs.setResultStringTable(tableStr);
 		// create XML string
-		
+		contributionTableAsString = tableStr;
 		
 	} // createContributionsReport()
 	
@@ -370,8 +385,8 @@ public class OutResults implements Serializable{
 		tableStr = createStringTable(vrows);
 		vcs.setResultStringTable(tableStr);
 		
-		// create XML string
-		
+		// create XML string on request from table
+		contrastTableAsString = tableStr;
 		
 		
 	} // createContrastsReport()
@@ -411,6 +426,120 @@ public class OutResults implements Serializable{
 	}
 	
 	
+	public String createXmlResults( boolean asHtmlTable) {
+		
+		String tstr,xstr="",xostr="",xustr="",xhstr="" ;
+		XMLBuilder builder ;
+		
+		/* we just translate the existing tabulator separated tables into generic xml
+		
+		the combined xml string for all results across all available tables 
+		ArrayList<String> xmlImage = new ArrayList<String>();
+		
+		contains tables as xml string lists  
+		ArrayList<ArrayList<String>> xmlImages = new ArrayList<ArrayList<String>>(); 
+		
+		*/
+		builder = xEngine.getXmlBuilder( "somresults" );
+		                      
+							 // <html><body></body></html>
+		builder = builder.e("aspects").a("count", "##$count$##");
+		
+		int c=0;
+		
+		if (historyTableAsString.length()>20){
+			builder = builder.e("history").t("##$history$##");
+			xhstr = "         "+simpleTranslationTab2Xml(historyTableAsString,"history",asHtmlTable);
+			xhstr = strgutil.replaceAll(xhstr , "\n", "\n         ");
+			builder = builder.up() ;
+			c++;
+		}
+		// xmlImage.addAll(xmlImages.get(i));
+		if (contributionTableAsString.length()>20){ 
+			builder = builder.e("contribution").t("##$contribution$##");
+			xustr = "         "+simpleTranslationTab2Xml(contributionTableAsString,"contribution of variables",asHtmlTable);
+			xustr = strgutil.replaceAll(xustr , "\n", "\n         ");
+			builder = builder.up() ;
+			c++;
+		}
+		
+		if (contrastTableAsString.length()>20){ 
+			builder = builder.e("contrast").t("##$contrast$##");
+			xostr = "         "+simpleTranslationTab2Xml(contrastTableAsString,"contrast in variables",asHtmlTable);
+			xostr = strgutil.replaceAll(xostr , "\n", "\n         ");
+			builder = builder.up() ;
+			c++;
+		}
+		
+		builder = builder.up().up();
+		xstr = xEngine.getXmlStr(builder, true);
+		
+		xstr = xstr.replace("##$count$##", ""+c);
+		xstr = xstr.replace("##$history$##", "\n"+xhstr+"\n");
+		xstr = xstr.replace("##$contribution$##", "\n"+xustr+"\n");
+		xstr = xstr.replace("##$contrast$##", "\n"+xostr+"\n");
+		xstr = strgutil.replaceAll(xstr, "<text>", "");
+		xstr = strgutil.replaceAll(xstr, "</text>", "");
+		// xmlImage
+		
+		return xstr;
+	}
+	
+	private String simpleTranslationTab2Xml(String tableStr, String label, boolean asHtmlCompatible) {
+		
+		String tstr="", instr , str;
+		int p;
+		if ((tableStr.length()<5) && ((tableStr.indexOf("\n")<0) || (tableStr.indexOf("\t")<0))){
+			return tstr;
+		}
+		// get header and describe it
+		tableStr = tableStr.trim() ;
+		p = tableStr.indexOf("\n") ;
+		String firstRow ;
+		firstRow = strgutil.getFirstRowOfTable(tableStr,"") ;
+		String[] headerstrs = firstRow.split("\t") ;  
+		// we have to keep empty columns
+		str = strgutil.arr2text( headerstrs, "", ";") ;
+		str = "<tableheader>\n<list items=\""+str +"\" />\n</tableheader>";
+		
+		// 
+		if (firstRow.length()>0){
+			p = tableStr.indexOf(firstRow);
+			if (p > 0) {
+				tableStr = tableStr.substring(p, tableStr.length());
+			}
+		}
+		// get table and produce it
+		instr = tableStr.trim();
+		
+		if (asHtmlCompatible){
+			
+
+			instr = strgutil.replaceAll( instr, "\n", "</td></tr><tr><td>");
+			instr = strgutil.replaceAll( instr, "</tr><tr>","</tr>\n<tr>");
+			instr = strgutil.replaceAll( instr, "\t", "</td><td>");
+			instr = "<table name=\""+label+"\">\n<tr>" + instr;
+			
+			p = instr.trim().lastIndexOf("<tr/><tr>");
+
+			if (p> instr.length()-11){
+				instr = StringUtils.removeEndIgnoreCase(instr,"<tr/><tr>" );
+				instr = instr + "<tr/>";
+			}
+			instr = instr+ "</td></tr>\n</table>" ;
+			
+		} // asHtmlCompatible ?
+		else{
+			instr = strgutil.replaceAll( instr, "\n", "</row><row>");
+			instr = strgutil.replaceAll( instr, "</row><row>","</row>\n<row>");
+			instr = strgutil.replaceAll( instr, "\t", ";");
+			instr = "<table name=\""+label+"\">\n<tr>" + instr;
+			instr = instr+ "</row>\n</table>" ;
+		}
+		tstr = str + "\n"+ instr ;
+		
+		return tstr;
+	}
 	// ------------------------------------------------------------------------
 	
 	public OutputSettings getOutputSettings() {
@@ -458,6 +587,30 @@ public class OutResults implements Serializable{
 	}
 	public void setHistoryTableAsString(String historyTableAsString) {
 		this.historyTableAsString = historyTableAsString;
+	}
+
+	public EvoMetrik getBestMetric() {
+		return bestMetric;
+	}
+
+	public void setBestMetric(EvoMetrik bestMetric) {
+		this.bestMetric = bestMetric;
+	}
+
+	public ArrayList<String> getXmlImage() {
+		return xmlImage;
+	}
+
+	public void setXmlImage(ArrayList<String> xmlImage) {
+		this.xmlImage = xmlImage;
+	}
+
+	public ArrayList<ArrayList<String>> getXmlImages() {
+		return xmlImages;
+	}
+
+	public void setXmlImages(ArrayList<ArrayList<String>> xmlImages) {
+		this.xmlImages = xmlImages;
 	}
 
 }

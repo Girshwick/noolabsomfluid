@@ -234,7 +234,7 @@ public class VirtualLattice implements LatticeIntf{
 		if (reCalc){
 			
 			for (int i=0;i<nodes.size();i++){
-				node = nodes.get(0);
+				node = nodes.get(i);
 				useIndexes = (ArrayList<Integer>) variables.transcribeUseIndications(node.getIntensionality().getUsageIndicationVector());
 				// like: [7, 8, 10] , without TV !
 

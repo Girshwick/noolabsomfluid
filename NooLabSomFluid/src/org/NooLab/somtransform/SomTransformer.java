@@ -713,6 +713,253 @@ if (varLabel.toLowerCase().contains("recht")){
 		}
 
 
+	public void applyAdvNumericalTransforms(  ) {
+		applyAdvNumericalTransforms( null) ;
+	}
+
+
+	/**
+		 * at this stage we have only standard transforms
+		 * this method checks for "non-normality" in the widest sense, but also only by simple means.</br></br>
+		 * basically, it checks the distribution of values for the following properties:</br>
+		 *  - strong left or right shift (skewness) </br>
+		 *  - presence of multi-modes (2+ maxima in the distribution of non-ordinal values, =kurtosis) </br>
+		 *  - presence of negative values </br></br>
+		 *     
+		 * the method organizes the respective more specialized "workers" (which act as classes);</br>
+		 * such they could also be called one-by-one; the "workers" calculate the histogram by their own;</br></br>
+		 * 
+		 * else, the package of the transformations that are understood as "basic adjustments" can be changed easily.</br></br>  
+		 * 
+		 */
+		public void applyAdvNumericalTransforms( IndexedDistances listOfPutativeTransforms ) {
+			
+			int n,k,r, advAprioriTransformsCount=0;
+			String tvLabel, varlabel ;
+			boolean hb,targetDefined=false ;
+			TransformationStack varTStack, newVarTStack ;
+			Variable variable;
+			
+			advAutoTransformations = new IndexedDistances(); // will be overwritten most likely... 
+			IndexDistance advAutoTransformation ;
+			
+			NumPropertiesChecker npc ; 
+			ArrayList<Double> values,tvalues=null;
+			DataTable dataTable ;
+			BasicStatisticalDescription statisticalDescription=null ;
+			 
+			
+			if ((listOfPutativeTransforms==null) || (listOfPutativeTransforms.size()==0)){
+				
+				advAutoTransformations = createDefaultListOfAdvancedTransforms();
+				 
+			}else{
+				
+				advAutoTransformations.addItems( listOfPutativeTransforms );
+			}
+			
+			boolean a=false;
+			try{
+				
+				dataTable = dataTableNormalized ;
+				int cn = transformationModel.variableTransformations.size() ;
+		
+				// here we treat ONLY NUMERICAL COLUMNS !!!
+				for (int i=0;i<cn; i++){
+					
+					varTStack = transformationModel.variableTransformations.get(i) ;
+					variable = varTStack.baseVariable ;
+					
+					npc = new NumPropertiesChecker(this, dataTable, i) ;
+					// check numerical characteristics: log shift? deciling? semantic zero?
+					// where is the description of the histogram ?
+						
+					if ( (varTStack.items.size()>0) && (variable.getRawFormat() > DataTable.__FORMAT_ID) && 
+						 (variable.getRawFormat() <= DataTable.__FORMAT_INT)){
+	
+						// check whether this column has already been identified as "ordinal"
+						if (varTStack.outputColumnIds.size()>0){
+							int fid = variable.getRawFormat(); // // e.g. __FORMAT_INT = 2;  __FORMAT_ORD = 3
+						}
+						
+						// get the out-data of the last transformation in the stack
+						values = varTStack.getOutData(0);
+	
+						if ((values == null) || (values.size() == 0)) {
+							varTStack.setExported(false);
+							continue;
+						}
+						
+						varlabel = variable.getLabel() ;
+						 
+						npc = new NumPropertiesChecker(this, values);
+						npc.setColumnHeaderLabel(variable.getLabel());
+	
+						tvLabel = sfProperties.getModelingSettings().getActiveTvLabel();
+						targetDefined = (sfProperties.getModelingSettings().getTargetedModeling() && (tvLabel.length()>0));
+						
+						// no correlation or residual methods in this case
+						if (targetDefined) {
+							int tmode = sfProperties.getModelingSettings().getClassifySettings().getTargetMode();
+							if ((tmode == 0) || (tmode == 5)) {
+								targetDefined = false; // ???
+							}
+						}
+						 
+						int tix = somData.getVariables().getIndexByLabel(tvLabel) ;
+						if (somData.getVariables().getTvColumnIndex()<0)somData.getVariables().setTvColumnIndex(tix);
+						
+						tvalues = null;
+						if (tix<0)targetDefined=false;
+						if (targetDefined) {
+							
+							hb=true;
+							tvalues = dataTableNormalized.getColumn(tix).getCellValues();
+							if (tvalues.size()==0){hb=false;}
+							if (hb){
+								npc.setTargetValues(tvalues);
+							}
+						}
+	if (varlabel.toLowerCase().contentEquals("stammkapital")){ // stammkapital is a strong candidate for logshift!!!
+		k=0;
+	}
+												out.print(3, "analyzing variable for transformation : "+varlabel );
+						
+						try{
+							
+							// contains the class "statistics package" as methods and results, which  
+							// can be transferred to the algorithm if required
+							npc.prepareStatisticalDescription();
+							
+							EmpiricDistribution ed = npc.statisticalDescription.getEmpiricDistribution();
+							if (ed.isVariableIsNominal()){
+								// stop processing of this var, just make an entry to the variables data format
+								int vix = somData.getVariables().getIndexByLabel(varlabel) ;
+								
+								variable.setRawFormat( DataTable.__FORMAT_ORD ) ;
+								variable.setValueScaleNiveau(Variable._VARIABLE_SCALE_NOMINAL);
+								dataTableNormalized.getColumn(tix).setFormat( DataTable.__FORMAT_ORD ) ;
+								
+								continue;
+							}
+							 
+						}catch(Exception e){
+							 
+						}
+						
+						 
+						statisticalDescription = npc.getStatisticalDescription() ;
+						
+						
+						// ...........................
+						// if (a) 
+						for (int t=0;t<advAutoTransformations.size();t++){
+							
+							advAutoTransformation = advAutoTransformations.getItem(t);
+							
+							ArrayList<Object> params = new ArrayList<Object>();
+							                                         
+							// this refers to "builtinscatalog.xml", while the "advAutoTransformations" are declared in "catalog.xml"
+							int ix = sfProperties.getAlgoDeclarations().getIndications().getIndexByStr("ResidualsByCorrelation");
+							// better check for group label, which is "residuals" ...
+							
+							if ((ix>=0) && (advAutoTransformations.getItem(t).getIndex2() >= ix)){
+								if (targetDefined == false) {
+									continue;
+								}
+							} // ?
+							
+							try{
+								hb = npc.checkFor( advAutoTransformations.getItem(t).getIndex2());
+								 
+							} catch (Exception e) {
+								// in this case, the test ID is unknown by the NumPropertiesChecker
+								hb = false;
+								out.print(2, "numerical properties for variable  <"+varlabel+"> could not be determined." );
+							}
+	
+							 
+							if (hb){
+								advAprioriTransformsCount++;
+								// the column header in DataTable remains <label>_c !!!
+								
+								// dependent on the result we introduce first a new column for the new transformation
+								// we define a particular name for it
+								// TODO get defined abbreviation
+								String str = varTStack.varLabel+"_" + createAlgorithmIndicatorLabel( advAutoTransformation );
+						 
+								newVarTStack = createAddVariableByCopy(1, varTStack, str); // 1= table of normalized data
+							
+								newVarTStack.introduceAlgorithmizedStackPosition("MissingValues") ;
+								newVarTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
+								
+								// ------------------------------
+								// TODO make this dynamic ... needs a map from task to name of algo
+								// ...then the requested stack to the new variable / branch 
+								// varTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
+								
+								String algoLabel = advAutoTransformation.getGuidStr() ; 
+								       // e.g. "AdaptiveLogShift"
+								StackedTransformation stnew = newVarTStack.introduceAlgorithmizedStackPosition( algoLabel ) ;
+								
+								params = npc.determineAdaptedParameters( advAutoTransformation.getIndex2(), values);
+								
+								if ((params!=null) && (params.size()>0)){
+									 
+									// last position in list => 
+									//    1= produce normalized data, 
+									//    0= leave it raw : default, (column will contain values <0, >1 !)
+									// params.add(1.0) ;
+									
+									// is declared in the top-most interface "AlgorithmIntf" !!!						
+									AlgorithmIntf algo = ((AlgorithmIntf)stnew.algorithm) ;
+									algo.setParameters(params);
+									
+									
+								}
+								// ------------------------------
+															
+								newVarTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
+								newVarTStack.update() ;
+								
+								newVarTStack.introduceAlgorithmizedStackPosition("LinearNormalization") ;
+								 
+								// ensuring the in-data for the first transformation
+								String basevarLabel = varTStack.baseVariable.getLabel() ;
+								ensureInDataForFirstTransformation( this.somData.getNormalizedDataTable(),  newVarTStack , basevarLabel, 1 );
+							 	
+								// in DataTable, -1 are replaced by 0 !!! see also writing the table...
+								r = newVarTStack.update() ;
+								k = newVarTStack.getOutData(0).size();
+								if ((r<0) || (k==0)){
+									throw(new Exception("introducing advanced transformation (<"+algoLabel+">) failed."));
+								}
+							}
+							
+							
+						} // t-> all suggested transformations 
+						
+						
+						if (statisticalDescription!=null){
+							statisticalDescription.clear() ;
+						}
+						statisticalDescription=null;
+					} // num col ?
+					
+					
+					
+				} // i-> all variables == all positions in transformation model = list of tstacks
+				
+				if (advAprioriTransformsCount>0){
+					out.print(2, ""+advAprioriTransformsCount+" advanced transformations have been applied.");
+				}
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+			k=0; // in DataTable, -1 are replaced by 0 !!! see also writing the table...
+		}
+
+
 	private boolean provideProgress(int i, int cn, int recordCount) {
 		// TODO Auto-generated method stub
 		return false;
@@ -1009,252 +1256,6 @@ if (basevarLabel.contains("Bisher_c2")){
 		// 
 	}
 
-	public void applyAdvNumericalTransforms(  ) {
-		applyAdvNumericalTransforms( null) ;
-	}
-	
-	/**
-	 * at this stage we have only standard transforms
-	 * this method checks for "non-normality" in the widest sense, but also only by simple means.</br></br>
-	 * basically, it checks the distribution of values for the following properties:</br>
-	 *  - strong left or right shift (skewness) </br>
-	 *  - presence of multi-modes (2+ maxima in the distribution of non-ordinal values, =kurtosis) </br>
-	 *  - presence of negative values </br></br>
-	 *     
-	 * the method organizes the respective more specialized "workers" (which act as classes);</br>
-	 * such they could also be called one-by-one; the "workers" calculate the histogram by their own;</br></br>
-	 * 
-	 * else, the package of the transformations that are understood as "basic adjustments" can be changed easily.</br></br>  
-	 * 
-	 */
-	public void applyAdvNumericalTransforms( IndexedDistances listOfPutativeTransforms ) {
-		
-		int n,k,r, advAprioriTransformsCount=0;
-		String tvLabel, varlabel ;
-		boolean hb,targetDefined=false ;
-		TransformationStack varTStack, newVarTStack ;
-		Variable variable;
-		
-		advAutoTransformations = new IndexedDistances(); // will be overwritten most likely... 
-		IndexDistance advAutoTransformation ;
-		
-		NumPropertiesChecker npc ; 
-		ArrayList<Double> values,tvalues=null;
-		DataTable dataTable ;
-		BasicStatisticalDescription statisticalDescription=null ;
-		 
-		
-		if ((listOfPutativeTransforms==null) || (listOfPutativeTransforms.size()==0)){
-			
-			advAutoTransformations = createDefaultListOfAdvancedTransforms();
-			 
-		}else{
-			
-			advAutoTransformations.addItems( listOfPutativeTransforms );
-		}
-		
-		boolean a=false;
-		try{
-			
-			dataTable = dataTableNormalized ;
-			int cn = transformationModel.variableTransformations.size() ;
-	
-			// here we treat ONLY NUMERICAL COLUMNS !!!
-			for (int i=0;i<cn; i++){
-				
-				varTStack = transformationModel.variableTransformations.get(i) ;
-				variable = varTStack.baseVariable ;
-				
-				npc = new NumPropertiesChecker(this, dataTable, i) ;
-				// check numerical characteristics: log shift? deciling? semantic zero?
-				// where is the description of the histogram ?
-					
-				if ( (varTStack.items.size()>0) && (variable.getRawFormat() > DataTable.__FORMAT_ID) && 
-					 (variable.getRawFormat() <= DataTable.__FORMAT_INT)){
-
-					// check whether this column has already been identified as "ordinal"
-					if (varTStack.outputColumnIds.size()>0){
-						int fid = variable.getRawFormat(); // // e.g. __FORMAT_INT = 2;  __FORMAT_ORD = 3
-					}
-					
-					// get the out-data of the last transformation in the stack
-					values = varTStack.getOutData(0);
-
-					if ((values == null) || (values.size() == 0)) {
-						varTStack.setExported(false);
-						continue;
-					}
-					
-					varlabel = variable.getLabel() ;
-					 
-					npc = new NumPropertiesChecker(this, values);
-					npc.setColumnHeaderLabel(variable.getLabel());
-
-					tvLabel = sfProperties.getModelingSettings().getActiveTvLabel();
-					targetDefined = (sfProperties.getModelingSettings().getTargetedModeling() && (tvLabel.length()>0));
-					
-					// no correlation or residual methods in this case
-					if (targetDefined) {
-						int tmode = sfProperties.getModelingSettings().getClassifySettings().getTargetMode();
-						if ((tmode == 0) || (tmode == 5)) {
-							targetDefined = false; // ???
-						}
-					}
-					 
-					int tix = somData.getVariables().getIndexByLabel(tvLabel) ;
-					if (somData.getVariables().getTvColumnIndex()<0)somData.getVariables().setTvColumnIndex(tix);
-					
-					tvalues = null;
-					if (tix<0)targetDefined=false;
-					if (targetDefined) {
-						
-						hb=true;
-						tvalues = dataTableNormalized.getColumn(tix).getCellValues();
-						if (tvalues.size()==0){hb=false;}
-						if (hb){
-							npc.setTargetValues(tvalues);
-						}
-					}
-if (varlabel.toLowerCase().contentEquals("stammkapital")){ // stammkapital is a strong candidate for logshift!!!
-	k=0;
-}
-											out.print(3, "analyzing variable for transformation : "+varlabel );
-					
-					try{
-						
-						// contains the class "statistics package" as methods and results, which  
-						// can be transferred to the algorithm if required
-						npc.prepareStatisticalDescription();
-						
-						EmpiricDistribution ed = npc.statisticalDescription.getEmpiricDistribution();
-						if (ed.isVariableIsNominal()){
-							// stop processing of this var, just make an entry to the variables data format
-							int vix = somData.getVariables().getIndexByLabel(varlabel) ;
-							
-							variable.setRawFormat( DataTable.__FORMAT_ORD ) ;
-							variable.setValueScaleNiveau(Variable._VARIABLE_SCALE_NOMINAL);
-							dataTableNormalized.getColumn(tix).setFormat( DataTable.__FORMAT_ORD ) ;
-							
-							continue;
-						}
-						 
-					}catch(Exception e){
-						 
-					}
-					
-					 
-					statisticalDescription = npc.getStatisticalDescription() ;
-					
-					
-					// ...........................
-					// if (a) 
-					for (int t=0;t<advAutoTransformations.size();t++){
-						
-						advAutoTransformation = advAutoTransformations.getItem(t);
-						
-						ArrayList<Object> params = new ArrayList<Object>();
-						                                         
-						// this refers to "builtinscatalog.xml", while the "advAutoTransformations" are declared in "catalog.xml"
-						int ix = sfProperties.getAlgoDeclarations().getIndications().getIndexByStr("ResidualsByCorrelation");
-						// better check for group label, which is "residuals" ...
-						
-						if ((ix>=0) && (advAutoTransformations.getItem(t).getIndex2() >= ix)){
-							if (targetDefined == false) {
-								continue;
-							}
-						} // ?
-						
-						try{
-							hb = npc.checkFor( advAutoTransformations.getItem(t).getIndex2());
-							 
-						} catch (Exception e) {
-							// in this case, the test ID is unknown by the NumPropertiesChecker
-							hb = false;
-							out.print(2, "numerical properties for variable  <"+varlabel+"> could not be determined." );
-						}
-
-						 
-						if (hb){
-							advAprioriTransformsCount++;
-							// the column header in DataTable remains <label>_c !!!
-							
-							// dependent on the result we introduce first a new column for the new transformation
-							// we define a particular name for it
-							// TODO get defined abbreviation
-							String str = varTStack.varLabel+"_" + createAlgorithmIndicatorLabel( advAutoTransformation );
-					 
-							newVarTStack = createAddVariableByCopy(1, varTStack, str); // 1= table of normalized data
-						
-							newVarTStack.introduceAlgorithmizedStackPosition("MissingValues") ;
-							newVarTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
-							
-							// ------------------------------
-							// TODO make this dynamic ... needs a map from task to name of algo
-							// ...then the requested stack to the new variable / branch 
-							// varTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
-							
-							String algoLabel = advAutoTransformation.getGuidStr() ; 
-							       // e.g. "AdaptiveLogShift"
-							StackedTransformation stnew = newVarTStack.introduceAlgorithmizedStackPosition( algoLabel ) ;
-							
-							params = npc.determineAdaptedParameters( advAutoTransformation.getIndex2(), values);
-							
-							if ((params!=null) && (params.size()>0)){
-								 
-								// last position in list => 
-								//    1= produce normalized data, 
-								//    0= leave it raw : default, (column will contain values <0, >1 !)
-								// params.add(1.0) ;
-								
-								// is declared in the top-most interface "AlgorithmIntf" !!!						
-								AlgorithmIntf algo = ((AlgorithmIntf)stnew.algorithm) ;
-								algo.setParameters(params);
-								
-								
-							}
-							// ------------------------------
-														
-							newVarTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
-							newVarTStack.update() ;
-							
-							newVarTStack.introduceAlgorithmizedStackPosition("LinearNormalization") ;
-							 
-							// ensuring the in-data for the first transformation
-							String basevarLabel = varTStack.baseVariable.getLabel() ;
-							ensureInDataForFirstTransformation( this.somData.getNormalizedDataTable(),  newVarTStack , basevarLabel, 1 );
-						 	
-							// in DataTable, -1 are replaced by 0 !!! see also writing the table...
-							r = newVarTStack.update() ;
-							k = newVarTStack.getOutData(0).size();
-							if ((r<0) || (k==0)){
-								throw(new Exception("introducing advanced transformation (<"+algoLabel+">) failed."));
-							}
-						}
-						
-						
-					} // t-> all suggested transformations 
-					
-					
-					if (statisticalDescription!=null){
-						statisticalDescription.clear() ;
-					}
-					statisticalDescription=null;
-				} // num col ?
-				
-				
-				
-			} // i-> all variables == all positions in transformation model = list of tstacks
-			
-			if (advAprioriTransformsCount>0){
-				out.print(2, ""+advAprioriTransformsCount+" advanced transformations have been applied.");
-			}
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-		k=0; // in DataTable, -1 are replaced by 0 !!! see also writing the table...
-	}
-
-	
 	public void createDataDescriptions() {
 		// TODO Auto-generated method stub
 		
@@ -1510,11 +1511,17 @@ if (varlabel.toLowerCase().contentEquals("stammkapital")){ // stammkapital is a 
 					
 					
 												errmsg = "variable: "+v.getLabel()+" , row : "+i ;
-					if ((variables.getAbsoluteAccessible().get(i)>=1) | (v.isDerived())){
+					if ((variables.getAbsoluteAccessible().get(i)>=1) || (v.isDerived()) || (v.getRawFormat() == DataTable.__FORMAT_ID)){
 						
 						if (v.getRawFormat() == DataTable.__FORMAT_ID){
 							if (v.isDerived()==false){
-								normvalues = dataTableObj.getColumn( varLabel ).getCellValues(); 
+								normvalues = dataTableObj.getColumn( varLabel ).getCellValues();
+								double _max = arrutil.arrayMax(normvalues, -1.0) ;
+								if (_max>1){
+									// just be sure to exclude it absolutely
+									variables.getAbsoluteAccessible().set(i,0);
+									variables.addBlacklistLabel(varLabel);
+								}
 							}else{
 								normvalues = varTStack.getLatestColumnValues(1);
 							}
@@ -1531,7 +1538,7 @@ if (varlabel.toLowerCase().contentEquals("stammkapital")){ // stammkapital is a 
 					
 						
 					}else{
-						// rawList = true;
+						//  rawList = true;
 					}
 					
 					emptyList = (normvalues==null) || (normvalues.size()<=1) ;

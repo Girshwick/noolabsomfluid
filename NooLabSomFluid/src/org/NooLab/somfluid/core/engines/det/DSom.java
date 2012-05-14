@@ -12,10 +12,10 @@ import org.NooLab.somfluid.SomFluidMonoTaskIntf;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidTask;
 
+import org.NooLab.somfluid.app.SomValidation;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.*;
-import org.NooLab.somfluid.core.application.SomValidation;
 import org.NooLab.somfluid.core.engines.det.results.ModelProperties;
 import org.NooLab.somfluid.core.engines.det.results.SomTargetResults;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;

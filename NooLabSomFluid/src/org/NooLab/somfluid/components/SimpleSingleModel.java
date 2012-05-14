@@ -268,6 +268,15 @@ public class SimpleSingleModel implements SomHostIntf, Serializable{
 		return somProcess;
 	}
 
+	 
+
+	@Override
+	public String getOutResultsAsXml(boolean asHtmlTable) {
+		String xmlstr="";
+		
+		return xmlstr;
+	}
+
 	/**
 	 * @return the results
 	 */

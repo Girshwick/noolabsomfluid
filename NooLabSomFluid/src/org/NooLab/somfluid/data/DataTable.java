@@ -155,7 +155,7 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 	// helper objects .................
 	transient StringsUtil strgutil ;
 	transient ArrUtilities arrutil ;
-	
+	transient DFutils  fileutil = new DFutils();
 	transient PrintLog out ;
 
 	
@@ -354,6 +354,40 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 	@Override
 	public void saveXml() {
 		// TODO Auto-generated method stub
+		
+	}
+
+	public void saveTableToFile(String filename) {
+		 String srcfile="", str, tablestr="";
+		 
+		// dataTable.
+		// ArrayList< ArrayList<Double> > dataTableRows = new ArrayList< ArrayList<Double>>() ;
+		// ArrayList<String> columnHeaders = new ArrayList<String>() ; 
+		 
+		if ((dataTableRows!=null) && (dataTableRows.size()>2) && (tablename.contains("norm"))){
+			 
+			tablestr = arrutil.arr2text( columnHeaders, "\t") +"\n";
+			
+			for (int i=0;i<dataTableRows.size();i++){
+				
+				ArrayList<Double> datarow = dataTableRows.get(i) ;
+				str = ArrUtilities.arr2Text(datarow, 5,"\t") ;
+				str = strgutil.replaceAll(str, ".00000", "") ; 
+				str = strgutil.replaceAll(str, "000\t", "\t") ;
+				
+				tablestr = tablestr + str;
+				
+				if (i<dataTableRows.size()-1){
+					 tablestr = tablestr +"\n" ;
+				}
+			} // i-> all rows
+			fileutil.writeFileSimple( filename, tablestr) ;
+			
+		}else {
+			srcfile = somData.getDataReceptor().getLoadedFileName();
+			fileutil.copyFile(srcfile, filename) ;
+		}
+		
 		
 	}
 

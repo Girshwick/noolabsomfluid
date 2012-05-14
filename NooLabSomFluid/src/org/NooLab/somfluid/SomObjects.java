@@ -79,7 +79,10 @@ public class SomObjects {
 
 	public int extractSomModels( ){
 		
-		int somxCount=0;
+		int somxCount=0,z=0;
+		String taskguid;
+		SomFluidTask _task ;
+		
 		XMLBuilder builder, smbuilder;
 		ArrayList<String> xmlimage = new ArrayList<String>() ;
 		
@@ -91,17 +94,30 @@ public class SomObjects {
 		
 		builder = xEngine.getXmlBuilder( "somobjects" );
 		
-		for (int i=0;i<items.size();i++){
-			// there we collect everything ...
-			smbuilder = extractSomModel( i, items.get(i).taskGuid );
+		for (int i=0;i<items.size();i++){  // items(i) == SomContainer 
 			
-			builder.importXMLBuilder(smbuilder) ;
+			try{
 			
+
+				taskguid = items.get(i).taskGuid;
+				_task = sfFactory.somFluidModule.somTasks.getItemByGuid(taskguid);
+				
+				if ((_task!=null) && (_task.isCompleted) && (_task.isExported()==false)){
+					
+					// there we collect everything about the SOM created by this task...
+					smbuilder = extractSomModel( i, items.get(i).taskGuid );
+					
+					builder.importXMLBuilder(smbuilder) ;
+					
+					z++;
+				}
+				
+			}catch(Exception e){
+				// logging the failures
+			}
 			
-			
-			// 
 			 
-		}
+		} // -> all som objects as they are identified by the task guid
 		
 		builder=builder.up() ;
 		
@@ -110,8 +126,9 @@ public class SomObjects {
 		
 		xmlImages.add(xmlimage);
 		xmlImage = xmlimage;
+		somxCount = z;
 											String hs1 = ""; if (items.size()>1)hs1="s" ;
-											out.print(2,"exporting transformation model"+hs1+" finished.");
+											out.print(2,"exporting som model"+hs1+" finished.");
 		return somxCount ;
 	}
 
@@ -175,7 +192,7 @@ public class SomObjects {
 	 */
 	public XMLBuilder extractSomModel(  int index, String taskGuid){
 	
-		XMLBuilder builder;
+		XMLBuilder builder, sb;
 	  
 		// ................................................
 		
@@ -188,15 +205,17 @@ public class SomObjects {
 		
 		// ................................................
 		
-											out.print(2,"exporting transformation model...");
+											out.print(2,"exporting som model ("+(index+1)+")...");
 											
 		builder = xEngine.getXmlBuilder( "som" ).a("index", ""+index);
 
-			XMLBuilder sb = item.getSomDescriptionXml(xEngine);
-			String xstr = xEngine.getXmlStr(sb, false);
+			sb = item.getSomProjectDescriptionXml(xEngine);
+			if (sb!=null) builder = builder.importXMLBuilder( sb );
 			
-			builder = builder.importXMLBuilder( sb );
- 
+			sb = item.getSomLatticeDescriptionXml(xEngine);
+			if (sb!=null) builder = builder.importXMLBuilder( sb );
+			// String xstr = xEngine.getXmlStr(sb, false);
+			 
 		 
 		builder = builder.up();
 		

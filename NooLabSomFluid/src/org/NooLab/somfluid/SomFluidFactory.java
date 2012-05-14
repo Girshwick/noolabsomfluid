@@ -7,25 +7,21 @@ import java.util.Random;
  
 import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
+import org.NooLab.somfluid.app.SomAppProperties;
+import org.NooLab.somfluid.app.SomAppUsageIntf;
+import org.NooLab.somfluid.app.SomAppValidationIntf;
+ 
+ 
 import org.NooLab.somfluid.components.*;
-import org.NooLab.somfluid.core.application.SomAppUsageIntf;
-import org.NooLab.somfluid.core.application.SomAppValidationIntf;
  
 import org.NooLab.somfluid.env.communication.GlueClientAdaptor;
 import org.NooLab.somfluid.env.communication.GlueBindings;
-import org.NooLab.somfluid.env.communication.LatticeProperties;
 import org.NooLab.somfluid.env.data.DataFileReceptorIntf;
-import org.NooLab.somfluid.env.data.DataReceptor;
-import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.SomPersistence;
-import org.NooLab.somtransform.SomTransformer;
-import org.NooLab.somtransform.algo.externals.AlgorithmPluginsLoader;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
-import org.NooLab.utilities.logging.SerialGuid;
-import org.NooLab.utilities.objects.StringedObjects;
 
 /**
  * 
@@ -35,19 +31,19 @@ import org.NooLab.utilities.objects.StringedObjects;
  * 
  */
 public class SomFluidFactory  implements 	// 
-											SomFluidFactoryClientIntf{
-
+											SomFluidFactoryClientIntf,
+											SomAppFactoryClientIntf{
 	
-	public static final int _INSTANCE_TYPE_SOM       = 1;
-	public static final int _INSTANCE_TYPE_SPRITE    = 2;
-	public static final int _INSTANCE_TYPE_OPTIMIZER = 3;
-	public static final int _INSTANCE_TYPE_TRANSFORM = 4;
+	public static final int _INSTANCE_TYPE_SOM        = 1;
+	public static final int _INSTANCE_TYPE_SPRITE     = 2;
+	public static final int _INSTANCE_TYPE_OPTIMIZER  = 3;
+	public static final int _INSTANCE_TYPE_TRANSFORM  = 4;
+	public static final int _INSTANCE_TYPE_CLASSIFIER = 7;
 	
-	public static final int _GLUE_MODULE_ENV_NONE    = 0;
-	public static final int _GLUE_MODULE_ENV_CLIENT  = 1;
+	public static final int _GLUE_MODULE_ENV_NONE     = 0;
+	public static final int _GLUE_MODULE_ENV_CLIENT   = 1;
 	
 	
-	private RepulsionFieldIntf physicalField ;
 	private PhysicalFieldFactory fieldFactory;  
 	RepulsionFieldEventsIntf somEventSink =null ;
 	
@@ -80,6 +76,7 @@ public class SomFluidFactory  implements 	//
 	private Random random;
 	
 	// ------------------------------------------------------------------------
+	
 	private SomFluidFactory(SomFluidProperties props, int factorymode){
 		 
 		// factorymode -> providing different interfaces active = producing, or passive
@@ -138,13 +135,51 @@ public class SomFluidFactory  implements 	//
 		out.setPrefix("[SomFluid-factory]");
 	}
 	
+	 
+
+	public SomFluidFactory(SomAppProperties appProperties) {
+	 
+		// glue stuff ...
+		
+		try {
+			(new AlgorithmDeclarationsLoader(sfProperties)).load() ;
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-7);
+		}
+		
+		
+		random = new Random();
+		random.setSeed(192837465) ;
+		
+		out.setPrefix("[SomFluid-appfactory]");
+	}
+
+
+
 	public static SomFluidFactory get(SomFluidProperties props){
-		
-		
 		
 		return new SomFluidFactory( props,1 );
 	}
 	 
+	// ------------------------------------------------------------------------
+	/**
+	 * using a particular properties class dedicated to the application of models, this
+	 * method delivers a suitable flavor of the factory
+	 * 
+	 * @param clappProperties
+	 * @return
+	 */
+	public static SomAppFactoryClientIntf get(SomAppProperties clappProperties) {
+		 
+		return (new SomFluidFactory(clappProperties));
+	}
+
+
+
+	// ------------------------------------------------------------------------
+
 	public static SomFluidFactoryClientIntf get(){
 		// we return a restricted interface ... which offers just the construction of some objects,
 		// BUT NOT of the SomFluid !!!
@@ -157,14 +192,6 @@ public class SomFluidFactory  implements 	//
 	 * returns a factory that can be used to access a SOM for classifying data, but NOT to run modeling 
 	 * @return
 	 */
-	public static SomFluidFactoryClassifierIntf getSomClassService(){
-
-		SomFluidProperties sfprops = new SomFluidProperties ();
-		return  (SomFluidFactoryClassifierIntf)(new SomFluidFactory( sfprops,5 ));
-
-	}
-	
-	
 	public SomAppUsageIntf getSomApplication() {
 		
 		return somFluidModule.getSomUsageInstance();
@@ -174,6 +201,13 @@ public class SomFluidFactory  implements 	//
 		return somFluidModule.getSomValidationInstance();
 	}
 
+	
+	
+	public SomApplicationIntf createSomApplication( SomAppProperties properties){
+		
+		return (new SomApplication( this, properties)) ;
+	}
+	
 	protected SomFluidIntf getSomFluid( ){
 		
 		
@@ -398,8 +432,9 @@ public class SomFluidFactory  implements 	//
 	}
 	
 	// optionally, we give it a name
-	@SuppressWarnings("unchecked")
+
 	public <T> Object  createTask( String guidId) {
+		
 		SomFluidMonoTaskIntf mono;
 		SomFluidProbTaskIntf prob;
 		
@@ -417,7 +452,7 @@ public class SomFluidFactory  implements 	//
 
 	
 	// ------------------------------------------------------------------------
-	public static boolean implementsInterface(Object object, Class interf){
+	public static boolean implementsInterface(Object object, Class<?> interf){
 	    return interf.isInstance(object);
 	    // this does not support perspectives
 	}
@@ -428,6 +463,7 @@ public class SomFluidFactory  implements 	//
 	 * it also will start the process
 	 * @return 
 	 */
+	@SuppressWarnings("unused")
 	public  void produce( Object sfTask ) {
 	
 		SomFluidTask somFluidTask ;
@@ -547,8 +583,10 @@ public class SomFluidFactory  implements 	//
 		// 
 		
 	}
-
-
+ 
+	public SomAppValidationIntf createSomApplicationForValidation() {
+		return  (SomAppValidationIntf)(new SomApplicationDsom());
+	}
 	
 	
 	

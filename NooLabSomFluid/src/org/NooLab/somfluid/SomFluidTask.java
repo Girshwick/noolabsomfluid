@@ -48,15 +48,14 @@ public class SomFluidTask 	implements
 
 	SomHostIntf somHost=null;
 
-
 	private boolean noHostInforming = false;
-
 
 	private SomResultDigesterIntf somResultHandler;
 
-
 	private int resumeMode=0;
-	
+
+	boolean isExported;
+	long exportTime = 0; 
 	
 	// ========================================================================
 	protected SomFluidTask(String guidId, int somType){
@@ -392,14 +391,34 @@ public class SomFluidTask 	implements
 
 	@Override
 	public void setResumeMode(int modeOnOff) {
-		
 		resumeMode = modeOnOff;
 	}
-
-
-
+ 
 	public int getResumeMode() {
 		return resumeMode;
 	}
 
+
+
+	public boolean isExported() {
+		return isExported;
+	}
+
+	public void setExported(boolean flag) {
+		isExported = flag;
+		exportTime = System.currentTimeMillis();
+	}
+
+
+
+	public long getExportTime() {
+		return exportTime;
+	}
+
+	public void setExportTime(long timestamp) {
+		exportTime = timestamp;
+	}
+
+	
+	
 }

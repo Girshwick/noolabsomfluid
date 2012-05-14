@@ -9,14 +9,14 @@ import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
 
+
 import org.NooLab.somfluid.SomApplicationResults;
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.app.SomAppValidationIntf;
+import org.NooLab.somfluid.app.SomValidation;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
-import org.NooLab.somfluid.core.application.SomAppValidationIntf;
-import org.NooLab.somfluid.core.application.SomApplication;
-import org.NooLab.somfluid.core.application.SomValidation;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceIntf;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
@@ -949,7 +949,10 @@ if (v>0.3){
 		public SampleValidator( ArrayList<Integer> recordIndices){
 			
 			recordIDs = recordIndices;
-			somValidation = (SomAppValidationIntf)(new SomApplication());
+			
+			somValidation = dSom.getSfFactory().createSomApplicationForValidation();
+			
+			// somValidation = (SomAppValidationIntf)(new SomApplication());
 			// somValidation = somFluidParent.getSomValidationInstance() ;
 			
 			latticeProperties = dSom.getSomProcessParent().getLatticeProperties() ;

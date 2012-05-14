@@ -98,6 +98,14 @@ public class SomTasks implements Serializable{
 	public ArrayList<SomFluidTask> getTaskitems() {
 		return taskitems;
 	}
+
+	public SomFluidFactory getSfFactory() {
+		return sfFactory;
+	}
+
+	public void setSfFactory(SomFluidFactory sfFactory) {
+		this.sfFactory = sfFactory;
+	}
 	
 	
 }

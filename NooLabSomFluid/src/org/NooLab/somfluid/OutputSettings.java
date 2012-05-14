@@ -54,6 +54,12 @@ public class OutputSettings implements Serializable{
 	/** for organizing the output */
 	IndexedDistances catalogFields;
 	
+	
+	boolean isIncludeResultsToExportedPackages;
+	boolean isIncludeDataToExportedPackages;
+
+
+	
 	private boolean resultFileZipping = true;
 	PersistenceSettings persistenceSettings;
 	private boolean exportApplicationModel;
@@ -331,6 +337,25 @@ public class OutputSettings implements Serializable{
 	public XMLBuilder exportPropertiesAsXBuilder(SettingsTransporter settingsTransporter) {
 		 
 		return null;
+	}
+
+	public boolean isIncludeResultsToExportedPackages() {
+		 
+		return isIncludeResultsToExportedPackages;
+	}
+
+	public void setIncludeResultsToExportedPackages(boolean flag) {
+		isIncludeResultsToExportedPackages = flag;
+	}
+	
+	
+
+	public boolean isIncludeDataToExportedPackages() {
+		return isIncludeDataToExportedPackages;
+	}
+
+	public void setIncludeDataToExportedPackages(boolean flag) {
+		isIncludeDataToExportedPackages = flag;
 	}
 
 }

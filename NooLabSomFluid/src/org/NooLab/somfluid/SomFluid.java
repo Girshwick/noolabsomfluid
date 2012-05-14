@@ -13,14 +13,14 @@ import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
 
 import org.NooLab.somfluid.properties.* ;
+import org.NooLab.somfluid.app.SomAppUsageIntf;
+import org.NooLab.somfluid.app.SomAppValidationIntf;
 import org.NooLab.somfluid.components.* ;
-
-import org.NooLab.somfluid.core.application.*;
+  
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 import org.NooLab.somfluid.core.engines.det.results.ModelOptimizerDigester;
 import org.NooLab.somfluid.core.engines.det.results.SimpleSingleModelDigester;
-import org.NooLab.somfluid.core.engines.det.results.SomResultDigesterIntf;
- 
+  
 import org.NooLab.somfluid.env.data.*;
 import org.NooLab.somtransform.SomTransformer;
 
@@ -75,7 +75,7 @@ public class SomFluid
 	
 	SomFluid sf ;
  	
-	SomApplication somApplication;
+	SomApplicationDsom somApplication;
 	
 	boolean isActivated=false, isInitialized=false;
 	boolean processIsRunning=false;
@@ -235,9 +235,9 @@ public class SomFluid
 		somFluidTask.guidID = GUID.randomvalue() ;
 		somTasks.add(somFluidTask);
 		
+		somTasks.setSfFactory(sfFactory) ;
 		
-		out.print(2, "...now there are "+somTasks.size()+" tasks in the SomFluid-queue...") ;
-		out.delay(100) ;
+		out.print(2, "...now there are "+somTasks.size()+" tasks in the SomFluid-queue...") ; out.delay(100) ;
 		
 		isActivated = true;
 		
@@ -273,10 +273,12 @@ public class SomFluid
 				try {
 				
 					exportModel(sfTask) ;
-
+					
+					
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
+				sfTask.setExported(true);
 			}
 		}
 	}
@@ -295,6 +297,7 @@ public class SomFluid
 			SomHostIntf somhost = sfTask.getSomHost();
 			if (somhost!=null){
 				exportModel( somhost, packageName);
+				sfTask.setExported(true);
 			}
 		}
 		
@@ -306,6 +309,7 @@ public class SomFluid
 			SomHostIntf somhost = sfTask.getSomHost();
 			if (somhost!=null){
 				exportModel( somhost, "");
+				sfTask.setExported(true);
 			}
 		}
 	}
@@ -313,11 +317,18 @@ public class SomFluid
 	private void exportModel( SomHostIntf somHost, String packageName) throws Exception{
 		
 		int modelcount=0;
-		String xRootDir,prj,dir,tfilename, sfilename;
-		String pkgsubdir="0", somXstring = "", transformXstring = "";
+		String xRootDir,prj,dir,tfilename, sfilename,filename;
+		String pkgsubdir="0", somXstring = "", transformXstring = "",srXstring = "";
+		SomObjects somObjects;
+		
+		boolean enforceExport=false;
+		
 		
 		if (somHost==null){
 			throw(new Exception("The structure hosting the model was null."));
+		}
+		if ((somHost.getSfTask().isExported()) && (enforceExport==false)){
+			throw(new Exception("The model has already been exported (enforcing the export is disabled)."));
 		}
 		
 		// dir = D:\data\projects\bank2\export\packages\~version-1.100"
@@ -345,6 +356,8 @@ public class SomFluid
  		
 		ModelOptimizer moz = (ModelOptimizer )somHost ; // ;
 		
+		
+		somObjects = sfFactory.getSomObjects();
 		// somTransformer: extractTransformationsXML()
 
 			moz.getSomDataObj().getTransformer().extractTransformationsXML();
@@ -356,30 +369,53 @@ public class SomFluid
 				
 		// also ensures sufficient statistical description;
 		// we may have several SOMs, in case of bags or ensembles !!
-		modelcount = sfFactory.getSomObjects().extractSomModel();
+		modelcount = sfFactory.getSomObjects().extractSomModels();
 		
-		ArrayList<String> sxstrings = sfFactory.getSomObjects().getXmlImage() ;
 		
-		if ((sxstrings.size()<=1) || (txstrings.size()<=1) || (modelcount==0)){
+		
+		ArrayList<String> sxstrings = somObjects.getXmlImage() ;
+		
+		if ((sxstrings.size()<=1) || (txstrings.size()<=1) ){ // || (modelcount==0)
 			throw(new Exception("There are no models to export, or the translation of models into xml failed.")) ;
 		}
 		
 		// organizational conditions, such as time of auto-invalidation
 		// save this String to the export directory
-											out.print(2, "\n"+ArrUtilities.arr2Text(sxstrings,"\n") );
+											
+											
 		somXstring = ArrUtilities.arr2Text( sxstrings ,"\n") ;
+											// int p = somXstring.indexOf( "<node index")+500;
+											// out.print(2, "\n"+ somXstring.substring(0,p) );
 		sfilename = DFutils.createPath(xRootDir, "som.xml");
 		
 		fileutil.writeFileSimple(tfilename, transformXstring);
 		fileutil.writeFileSimple(sfilename, somXstring);
 		
 		/*
-		 *  there are only those two files, or if required 3 if the data should be included
+		 *  there are essentially those two files, transform.xml, and som.xml
+		 *   ::  +2  if it is required that the data should be included (original and transformed will be written)
+		 *   ::  +1  if the results package should be included
 		 *  
 		 *  nested som models or bags/ensembles of models are all combined into a single xml
-		 *  
 		 */
 		
+		if (sfProperties.getOutputSettings().isIncludeResultsToExportedPackages()){
+			boolean asHtmlTable=false ; // TODO: on option
+			
+			srXstring = somHost.getOutResultsAsXml(asHtmlTable);
+			
+			filename = DFutils.createPath(xRootDir, "somresults.xml");
+			fileutil.writeFileSimple(filename, srXstring);	
+		}
+		
+		if (sfProperties.getOutputSettings().isIncludeDataToExportedPackages()){
+			
+			filename = DFutils.createPath(xRootDir, sfProperties.getPersistenceSettings().getProjectName().trim()+ ".txt");
+			somHost.getSomDataObj().getData().saveTableToFile( filename );
+			
+			filename = DFutils.createPath(xRootDir, sfProperties.getPersistenceSettings().getProjectName().trim()+ "_norm.txt");
+			somHost.getSomDataObj().getNormalizedDataTable().saveTableToFile( filename );
+		}
 		
 	}
 
@@ -420,13 +456,20 @@ public class SomFluid
 										    out.print(5,"...tdp (3)") ;
 						sfTask = somTasks.getItem(0) ;
 						
-						out.print(2,"\nworking on task, id = "+sfTask.guidID);
-						TaskDispatcher td = new TaskDispatcher(sfTask);
-											out.print(5,"...tdp (4)") ;
-						if (td.isWorking==false){
-											out.print(5,"...tdp (91)") ;
-							isWorking=false;
+						if ((sfTask.isCompleted==false) && (sfTask.isExported==false)){
+							out.print(2,"\nworking on task, id = "+sfTask.guidID);
+							
+							TaskDispatcher td = new TaskDispatcher(sfTask);
+							
+							if (td.isWorking==false){
+								out.print(5,"...tdp (91)") ;
+								isWorking=false;
+							}
+
+						}else{
+							isWorking=false;	
 						}
+											out.print(5,"...tdp (4)") ;
 					}else{
 						isWorking=false;
 					}
@@ -458,6 +501,8 @@ public class SomFluid
 			 
 			
 			try{
+				
+				somTasks.add(sfTask) ;
 				
 				// dependent on task we invoke different methods and worker classes
 				if (sfTask.somType == SomFluidProperties._SOMTYPE_MONO){
@@ -689,13 +734,14 @@ public class SomFluid
 	// and the factory provides only the usage interface
 	public SomAppValidationIntf getSomValidationInstance(){
 		if (somApplication==null){
-			somApplication = new SomApplication();
+			somApplication = new SomApplicationDsom();
 		}
 		return (SomAppValidationIntf)somApplication ;
 	}
+	
 	public SomAppUsageIntf getSomUsageInstance(){
 		if (somApplication==null){
-			somApplication = new SomApplication();
+			somApplication = new SomApplicationDsom();
 		}
 		return (SomAppUsageIntf)somApplication ;
 	}

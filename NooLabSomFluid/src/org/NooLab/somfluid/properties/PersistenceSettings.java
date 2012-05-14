@@ -16,7 +16,19 @@ public class PersistenceSettings implements Serializable{
 
 	private String projectName = "";
 	
-	transient FileOrganizer fileOrganizer ; 
+	transient FileOrganizer fileOrganizer ;
+
+	private boolean incomingDataClassifyFirst;
+
+	private String incomingDataSupervisionDir;
+
+	private boolean incomingDataSupervisionActive;
+
+	private boolean autoPackagingOfCompleteModels;
+
+	private boolean autoSaveSomFluidModels;
+
+	private boolean keepPreparedData; 
 	
 	// ========================================================================
 	public PersistenceSettings(FileOrganizer fileOrg){
@@ -61,40 +73,43 @@ public class PersistenceSettings implements Serializable{
 	}
 
 
-	public void setKeepPreparedData(boolean b) {
-		// TODO Auto-generated method stub
-		
+	public void setKeepPreparedData(boolean flag ) {
+		keepPreparedData = flag ;
 	}
 
 
 	public void autoSaveSomFluidModels(boolean flag) {
-		// TODO Auto-generated method stub
-		
+		autoSaveSomFluidModels = flag ;
 	}
 
 
 	public void autoPackagingOfCompleteModels(boolean flag) {
-		// TODO Auto-generated method stub
-		
+		autoPackagingOfCompleteModels = flag ;
 	}
 
 
 	public void setIncomingDataSupervisionDir(String dir) {
-		// TODO Auto-generated method stub
-		
+		incomingDataSupervisionDir = dir;
 		fileOrganizer.update();
 	}
 
 	
 	public void setIncomingDataSupervisionActive(boolean flag) {
-		// TODO Auto-generated method stub
-		
+		incomingDataSupervisionActive = flag ;
 	}
-
+	
+	public void setIncomingDataClassifyFirst(boolean flag) {
+		incomingDataClassifyFirst = flag;
+	}
+	
+	
+	
 	public XMLBuilder exportPropertiesAsXBuilder(SettingsTransporter settingsTransporter) {
-		// TODO Auto-generated method stub
+		// 
 		return null;
 	}
+
+
 	
 	
 	
