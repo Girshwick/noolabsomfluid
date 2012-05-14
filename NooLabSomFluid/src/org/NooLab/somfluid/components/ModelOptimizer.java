@@ -1370,7 +1370,6 @@ if (bestHistoryIndex==0){
 	}
 
 
-
 	@Override
 	public String getOutResultsAsXml(boolean asHtmlTable) {
 		String xmlstr="";
@@ -1388,5 +1387,6 @@ if (bestHistoryIndex==0){
 		return spelaResults;
 	}
 
+	
 	
 }
