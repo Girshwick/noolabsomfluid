@@ -48,6 +48,7 @@ public class DateTimeValue {
     }
     
     public String get(int _mode){
+    	
     	mode = _mode ;
     	return get() ;
     }
@@ -193,16 +194,18 @@ public class DateTimeValue {
 		return replacementChar;
 	}
 
-	public void setReplacementChar(String replacementChar) {
-		this.replacementChar = replacementChar;
+	public DateTimeValue setReplacementChar(String replacement) {
+		replacementChar = replacement;
+		return this ;
 	}
 
 	public int getStripSeparators() {
 		return stripSeparators;
 	}
 
-	public void setStripSeparators(int stripSeparators) {
-		this.stripSeparators = stripSeparators;
+	public DateTimeValue setStripSeparators(int stripseparators) {
+		stripSeparators = stripseparators;
+		return this;
 	}
 
 	public Date getCurrentDateTime() {

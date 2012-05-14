@@ -4258,6 +4258,57 @@ if (str.contains("1. 5")){
 		this.effectiveSeparator = effectiveSeparator;
 	}
 
+	/**
+	 * extracts the first row of a table, that is contained in a longer string;
+	 * it measures the number of tabs (sep) in the rows, and uses it as the criterion to decide
+	 * 
+	 * @param tableStr
+	 * @return
+	 */
+	public String getFirstRowOfTable(String tableStr, String separator) {
+		String rowstr="";
+		String[] rows ;
+		int[] sepFreqs ;
+		if (separator.length()==0)separator="\t" ;
+		
+		rows = tableStr.split("\n");
+		sepFreqs = new int[rows.length];
+		
+		for (int i=0;i<rows.length;i++){
+			int c = this.frequencyOfStr( rows[i], separator );
+			sepFreqs[i] = c;
+		}
+		int[] frq = new int[sepFreqs.length] ; System.arraycopy(sepFreqs , 0, frq, 0, frq.length) ;
+		Arrays.sort(frq) ; 
+		double sfm = ArrUtilities.arraysum(sepFreqs)/sepFreqs.length;
+		
+		for (int i=0;i<rows.length;i++){
+			 if (sepFreqs[i]<sfm)sepFreqs[i]=0;
+		}
+
+		int tr= -1;
+		int p = ArrUtilities.arrayMaxpos(sepFreqs) ;
+
+		// is either the value before or after equal to that at p?
+		// now: the first row with that value is our target
+		
+		if (p<rows.length-1){
+			for (int i = 0; i < rows.length; i++) {
+				if (sepFreqs[i]>= sfm){
+					tr=i;
+					break;
+				}
+			}
+		}
+
+		// get it
+		if (tr>=0){
+			rowstr = rows[tr] ; 
+		}
+		
+		return rowstr;
+	}
+
 
 	
 }

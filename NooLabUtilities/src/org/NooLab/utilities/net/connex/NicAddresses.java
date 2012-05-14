@@ -16,7 +16,7 @@ public class NicAddresses {
 		
 	}
 	
-	public static Vector<String> getNicRecords(){
+	private static Vector<String> getNicRecords(){
 		// returns bags/records containing name, ip-addresses, and hardware mac
 		
 		

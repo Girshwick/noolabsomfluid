@@ -83,6 +83,9 @@ public class ArrUtilities {
 		return arr2Text(vector, fracdigits);
 	}
 	public static String arr2Text(ArrayList<Double> vector, int fracdigits) {
+		return arr2Text( vector, fracdigits, "  ") ;
+	}
+	public static String arr2Text(ArrayList<Double> vector, int fracdigits, String separator) {
 		String return_value = "";
 		int i;
 
@@ -90,7 +93,7 @@ public class ArrUtilities {
 			return "";
 		}
 		for (i = 0; i < vector.size(); i++) {
-			return_value = return_value + "  " + String.format("%." + fracdigits + "f", vector.get(i));
+			return_value = return_value + separator + String.format("%." + fracdigits + "f", vector.get(i));
 		}
 		return return_value.trim().replace(",", ".");
 	}
@@ -1070,17 +1073,23 @@ public class ArrUtilities {
 		
 		return pos ;
 	}
-	public int arraySum( int[] int_arr){
+	
+	public static int arraysum(int[] values){
 		int return_value=0;
 		int i;
 		
 		i=0;
-		for ( i = 0; i < int_arr.length; i++) {
-			 return_value = return_value + int_arr[i];
+		for ( i = 0; i < values.length; i++) {
+			 return_value = return_value + values[i];
 		}
 		return return_value;		
 	}
 
+	public int arraySum(int[] values){
+		return arraysum(values) ;
+	}
+	
+	 
 	
 	public int arraySum(int[] values, double posLoP, double posHiP) {
 		
@@ -1098,6 +1107,8 @@ public class ArrUtilities {
 		return arraySum(xvalues);
 	}
 
+	
+	
 
 	public double arraySum( double[] d_arr){
 		return arraysum(d_arr);
@@ -1127,6 +1138,7 @@ public class ArrUtilities {
 		}
 		return return_value;		
 	}
+	
 	public int arraySum( Vector<Integer> int_arr){
 		int return_value=0;
 		int i;
