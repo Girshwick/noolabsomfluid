@@ -20,8 +20,8 @@ import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidResultsIntf;
 import org.NooLab.somfluid.SomFluidStateDescriptionIntf;
 import org.NooLab.somfluid.SomProcessControlIntf;
-import org.NooLab.somfluid.core.application.SomAppUsageIntf;
-import org.NooLab.somfluid.core.application.SomApplicationEventIntf;
+import org.NooLab.somfluid.app.SomAppUsageIntf;
+import org.NooLab.somfluid.app.SomApplicationEventIntf;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.core.engines.det.results.ValidationSet;
 import org.NooLab.somfluid.properties.ModelingSettings;
@@ -289,7 +289,7 @@ class SomModuleInstanceM1 implements 	Runnable,
 	
 	
 	Thread smiThrd;
-	@SuppressWarnings("unused")
+	
 	private boolean resumeMode;
 	
 	public SomModuleInstanceM1(int instancetype, int glueMode, String propertiesSource ){
@@ -309,20 +309,6 @@ class SomModuleInstanceM1 implements 	Runnable,
 		resumeMode = flag;
 	}
 
-	public void classifyDataApplyModel() {
-		SomAppUsageIntf somApp ;
-		double[] data = new double[5] ;
-		String idStr;
-		SomApplicationResults somResult;
-		
-		somApp = sfFactory.getSomApplication();
-		somApp.waitForResults(true) ; // no decoupling, direct return of results
-		
-		// if wait, provide the callback:  idStr = somApp.classify((SomApplicationEventIntf)this,)
-		somResult = somApp.classify(  null, data ); // double[], ArrayList<Double>
-		
-		// put this idStr to a map, but let the SomApp do that
-	}
 
 	public void resume() {
 		// 
@@ -461,6 +447,7 @@ class SomModuleInstanceM1 implements 	Runnable,
 		ps = sfProperties.getPersistenceSettings();
 		ps.setIncomingDataSupervisionDir("");
 		ps.setIncomingDataSupervisionActive(false);
+		ps.setIncomingDataClassifyFirst(false);
 		
 		ps.setProjectName("bank2"); 									   // will be used also for output files
 		ps.setKeepPreparedData(true); 									   // includes persistence of transformer model
@@ -633,9 +620,13 @@ class SomModuleInstanceM1 implements 	Runnable,
 		sfProperties.getOutputSettings().createZipPackage(true);           // default = true
 		sfProperties.getOutputSettings().exportApplicationModel(true);     // exports the file package that is necessary for applying the data to new data
 		
+		sfProperties.getOutputSettings().setIncludeDataToExportedPackages(true);
+		sfProperties.getOutputSettings().setIncludeResultsToExportedPackages(true);
+		
 		// TODO:  
 		// sfProperties.checkDerivationsOnRawData(true) ;
 		// sfProperties.setExportExtendedResultDataTable(true) ; 		   // writes a data table which contains the original variables + the MLE estimated derived variables
+		
 		
 		// general env
 
