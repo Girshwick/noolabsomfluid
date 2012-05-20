@@ -4309,6 +4309,15 @@ if (str.contains("1. 5")){
 		return rowstr;
 	}
 
+	public static String notNullString(String str) {
+		 
+		if (str==null){
+			str = new String();
+			str="";
+		}
+		return str;
+	}
+
 
 	
 }

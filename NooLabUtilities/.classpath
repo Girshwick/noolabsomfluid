@@ -25,5 +25,6 @@
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/javax/javax.servlet.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/nets/nat/jNAT-PMPlib.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/NooLabChord"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/processing/core.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

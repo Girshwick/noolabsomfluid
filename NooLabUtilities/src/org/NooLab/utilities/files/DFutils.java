@@ -615,7 +615,31 @@ public class DFutils extends Thread{
 		return return_value; 
 	}
 	
-	public void listOfSubDirectories(){
+	public ArrayList<String> listOfSubDirectories( String basePath , String nameFilter, boolean fullPath){
+		
+		ArrayList<String> folderList= new ArrayList<String> ();
+		String fstr ;
+		
+		File[] files = dirutil.getSubDirectories(nameFilter, basePath);
+		
+		for (int i=0;i<files.length;i++){
+		
+			if (fullPath){
+				fstr = files[i].getAbsolutePath() ;
+			}else{
+				fstr = files[i].getPath();
+				fstr = files[i].getName();
+			}
+			if (fstr.length()>0){
+				folderList.add(fstr);
+			}
+		}
+		
+		
+		return folderList;
+	}
+	
+	private void _listOfSubDirectories(){
 		
 		File dir = new File("directoryName");
 
@@ -1710,7 +1734,7 @@ public class DFutils extends Thread{
 		
 		try {
 
-			dir = new File (".");
+			// dir = new File (".");
 		    // currentDir =  dir.getCanonicalPath();
 			
 		    dir = new File(pathstr);
@@ -1764,26 +1788,81 @@ public class DFutils extends Thread{
 
 		return rootPathNames;
 	}
-	public static boolean fileExists(String filename){
-		 File file=new File(filename);
-		    
-		    boolean exists = file.exists();
-		    if (!exists) {
-		      // It returns false if File or directory does not exist
-		    	return false;
-		    }else{
-		      // It returns true if File or directory exists
-		    	return true;
-		    }
-	}
 	/**
 	 *  provides simpler access to this routine
 	 * 
 	 */ 
 	public boolean fileexists(String filename){
-	   return fileExists(filename);
+		boolean rB = false;
+		File file = new File(filename);
+	
+		if (file.isDirectory()) {
+			rB = false;
+		} else {
+			rB = fileExists(filename);
+		}
+		return rB;
 	}
 
+
+	public static boolean fileExists(String filename){
+		boolean rB=false;
+		
+		if ((filename==null) || (filename.length()==0)){
+			return rB;
+		}
+		
+		java.io.File file = new java.io.File(filename);
+
+		if (file.isDirectory()) {
+			rB = false;
+		} else {
+
+			boolean exists = file.exists();
+			if (!exists) {
+				// It returns false if File or directory does not exist
+				rB = false;
+			} else {
+				// It returns true if File or directory exists
+				rB = true;
+			}
+		} 
+		    
+		 
+		 return rB;
+	}
+	
+	public boolean direxists(String filename){
+		boolean rB=false;
+		
+		if ((filename==null) || (filename.length()==0)){
+			return rB;
+		}
+		
+		File file = new File(filename);
+		
+		if (file.isDirectory()==false){
+			return false;
+		}
+		try {
+
+			// dir = new File (".");
+		    // currentDir =  dir.getCanonicalPath();
+			
+			File dir = new File(filename);
+		    
+		    File[] fils = dir.listFiles();
+		    
+		    rB = fils!=null;
+		    
+		} catch (Exception e) {
+			rB = false;
+		}
+		
+		return rB;
+	}
+	
+	
 	public boolean filenameIsUsable(String dataFieldFilename) {
 		boolean rB=false;
 		String parentDir;

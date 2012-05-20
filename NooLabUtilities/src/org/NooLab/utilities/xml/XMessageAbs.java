@@ -1,6 +1,7 @@
 package org.NooLab.utilities.xml;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.Vector;
@@ -45,6 +46,9 @@ public abstract class XMessageAbs {
 	protected DFutils fileutil = new DFutils() ;
 	protected StringsUtil strgutil = new StringsUtil() ;
 
+	String xqueryBasicCondition="";
+	String lastErrorState = "";
+
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 	public XMessageAbs(){
 		
@@ -56,6 +60,19 @@ public abstract class XMessageAbs {
 
 	// ======================================================================================================
 	
+	public String getLastErrorState() {
+		return lastErrorState;
+	}
+
+	public void clear(){
+		xpathQuery.clear() ;
+		xqueryBasicCondition = "" ;
+	}
+	public void reset(){
+		clear();
+	}
+
+
 	public String getContentRoot() {
 		return contentRoot;
 	}
@@ -431,6 +448,36 @@ public abstract class XMessageAbs {
 	}
 	
 	
+	public Vector<Object> getNodeList( String rawXmlMsg, String domainSpecs, String itemSpecs){
+		
+		Vector<Object> list;
+		String xQuery = "";
+		
+		String root;
+    	
+    	// Object getMatchingXmlNode( String xmlpath, String nodeName, String attrName  )
+    	
+    	root = this.contentRoot ;
+    	
+    	domainSpecs = domainSpecs.trim();
+    	itemSpecs = itemSpecs.trim();
+    	
+    	if ((domainSpecs.endsWith("/")==false) && (itemSpecs.startsWith("/")==false) && (itemSpecs.length()>0)){
+    		itemSpecs = "/"+itemSpecs;
+    	}
+    	domainSpecs = domainSpecs + itemSpecs;
+    	
+    	if (xpathQuery.domDoc==null){
+    		xpathQuery.setXml( rawXmlMsg ) ;
+    	}
+    	
+		list = xpathQuery.getMatchingXmlNodes( domainSpecs );
+		
+		return list;
+		 
+	}
+	  
+
 	   
     /**
      * 
@@ -716,7 +763,7 @@ public abstract class XMessageAbs {
     		
 			xpathQuery.setXml( rawXmlMsg ) ;
     		
-			node = (Node) xpathQuery.geXmlNodeByName( domainSpecs );
+			node = (Node) xpathQuery.getXmlNodeByName( domainSpecs );
 			
 			if(node!=null ){
 				str = node.getNodeName() ;
@@ -752,6 +799,71 @@ public abstract class XMessageAbs {
 		return nodelist;
 	}
  
+	public Vector<Object> getSubtagFromNode( Node node, String elementLabel, String attrSpecs , String attrValue){
+		
+		Vector<Object> nodelist = new Vector<Object>() ;
+		
+		Vector<Object> completelist;
+		
+		completelist = xpathQuery.getNodesByName( node, elementLabel) ;
+		
+		if (attrSpecs.length()>0){
+			// further selection
+			
+			// ....
+			
+		}else{
+			nodelist = completelist;
+		}
+		
+		return nodelist;
+	}
+	
+	public void setConditionalXPath(String xpath) {
+		 
+		 xpathQuery.setQueryPrefix(xpath) ;
+		xqueryBasicCondition = xpath ;
+		
+	}
+	
+	public String getConditionalXPath() {
+		
+		// TODO Auto-generated method stub
+		String xstr = xpathQuery.getQueryPrefix() ;
+		String str = xqueryBasicCondition ;
+		return xstr;
+	}
+	
+	public String getNodeInfo(Object xmlNodeObj, String domainSpecs, String attrSpecs){
+		
+		String resultInfo="";
+		String  rootpath="";
+    	
+		String  root,secondpart="" ;
+		int p;
+		
+		if (xmlNodeObj==null){
+			return resultInfo;
+		}
+		 
+		 
+		try{
+			 
+			 
+			resultInfo = xpathQuery.readNode( xmlNodeObj, attrSpecs ) ;
+			
+		if ((resultInfo.length()==0) || (resultInfo.contentEquals("-1"))){
+			p=0;
+		}
+			
+		}catch(Exception ex){
+			out.printErr(2, "ERROR while accessing node \n\r") ;
+			ex.printStackTrace();
+		}
+		
+		
+		return resultInfo;
+	}
 	
 	public String getSpecifiedItemInfo( Object xmlNodeObj, String attrLabel){
 		String resultStr="";
@@ -764,6 +876,132 @@ public abstract class XMessageAbs {
 		
 		return resultStr;
 	}
+
+ 
+ 
+	public Vector<Object> getSpecifiedConditionalNode(	String rawXmlMsg, 
+															String domainSpecs, 
+															String condAttrSpecs,
+															String condition, 
+															String dataTagSpecs ) {
+		
+		
+		return null;
+	}
+	/**
+	 * this creates queries like  
+	 * 		"locations/vendor/location[@id = 'store102']//street"  
+	 * where the "street" is a tag inside the conditionally tag = selected on condition fulfilled by an attribute
+	 * 
+	 * 
+	 */
+	public String getSpecifiedConditionalInfo(	String rawXmlMsg, 
+												String domainSpecs, 
+												String condAttrSpecs,
+												String condition, 
+												String dataTagSpecs,
+												String dataAttrSpecs ) {
+		String resultInfo = "";
+		Node pkgNode;
+		
+		// similar to 
+		// pkgNode = (Node)selectSpecifiedItem(rawXmlMsg, "//sompackages/packages", "package", "name", condition);
+		
+		
+		Object xmlNodeObj = null;
+    	
+    	String xquery , startmarker = "//";
+    	// xquery = "//*[@pet='cat']";
+    	
+    	
+    	try{
+    		domainSpecs = domainSpecs.trim();
+    		
+    		if (domainSpecs.startsWith("//")){
+    			startmarker="" ;
+    		}
+        	if (domainSpecs.length()==0){
+        		domainSpecs="*";
+        	}
+        	
+        	xquery = startmarker + domainSpecs+"[@"+condAttrSpecs+"='"+condition+"']/"+dataTagSpecs;
+        		 //   //property[@id='1'] 
+        	
+        	xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
+    		 
+    			lastErrorState = "";
+    			xmlNodeObj = xpathQuery.getMatchingXmlNode( xquery ) ;
+        		resultInfo = xpathQuery.readNode( xmlNodeObj,dataAttrSpecs ) ;
+    		
+    		
+    	}catch(Exception e){
+    		
+    	}
+		return resultInfo;
+	}
+	
+	public void clearBasicConditionLocation(){
+		xpathQuery.setQueryPrefix("") ;
+		xqueryBasicCondition = "";
+	}
+	 
+	public int setBasicConditionLocation( String rawXmlMsg, 
+										     String domainSpecs, 
+										     String condAttrSpecs,
+										     String condition,
+										     String dataTagSpecs
+										      ) {
+		
+		String resultInfo = "";
+		Node pkgNode;
+		int result=-1;
+		 	
+		
+		Object xmlNodeObj = null;
+    	
+    	String xquery , startmarker = "//";
+    	// xquery = "//*[@pet='cat']";
+    	
+    	
+    	try{
+    		domainSpecs = domainSpecs.trim();
+    		
+    		if (domainSpecs.startsWith("//")){
+    			startmarker="" ;
+    		}
+        	if (domainSpecs.length()==0){
+        		domainSpecs="*";
+        	}
+        	
+        	xquery = startmarker + domainSpecs+"[@"+condAttrSpecs+"='"+condition+"']";
+        	if (dataTagSpecs.length()>0){
+        		xquery = xquery + "/" + dataTagSpecs;
+        	}
+        		 //   //property[@id='1'] 
+        	
+        	  
+    		xpathQuery.setXml( rawXmlMsg ) ;
+    		
+        	xmlNodeObj = xpathQuery.getMatchingXmlNode( xquery ) ;
+        	
+        	if (xmlNodeObj!=null){
+        		
+        		xpathQuery.setQueryPrefix(xquery) ;
+        		xqueryBasicCondition = xquery;
+        		result =0;
+        	}else{
+        		result=-3;
+        	}
+        	
+        	
+        	
+    	}catch(Exception e){
+    		
+    	}
+		
+		return result;
+	}
+	
 	
 	/**
 	 * 
@@ -864,12 +1102,12 @@ public abstract class XMessageAbs {
 		
     	return infoStr;
 	}
-	
+	 
 	
     public String getSpecifiedInfo( String rawXmlMsg, String domainSpecs,String attrSpecs) { // "type") ;
     	String infoStr="",rootpath="";
     	
-		String  root,secondpart="" ;
+		String  root,secondpart="", zpath= domainSpecs;
 		int p;
 		
 		try{
@@ -878,7 +1116,7 @@ public abstract class XMessageAbs {
 			if ((domainSpecs.length()==0) || (attrSpecs.length()==0)){
 				return infoStr;
 			}
-			xpathQuery.setXml( rawXmlMsg ) ;
+			xpathQuery.ensureXmlDoc( rawXmlMsg ) ; // this does not delete the domdoc !
 			
 			if (domainSpecs.startsWith("//")){
 				domainSpecs = domainSpecs.replace("//", "");
@@ -905,6 +1143,10 @@ public abstract class XMessageAbs {
 					rootpath = "//"+contentRoot;
 				}
 			}
+			
+			 
+			
+			
 			if (domainSpecs.startsWith("/")==false){
 				domainSpecs = "/"+domainSpecs;
 			}
@@ -914,8 +1156,41 @@ public abstract class XMessageAbs {
 			}else{
 				root = rootpath ;
 			}
+			if (xqueryBasicCondition.length()>0){
+				String freeaccessMark ="";
+				if (domainSpecs.indexOf("//")==0){
+					freeaccessMark ="//";
+				}
+				domainSpecs = strgutil.trimm(domainSpecs, "//");
+				domainSpecs = strgutil.trimm(domainSpecs, "/");
+				String xpathAddon = ""; 
+				p = domainSpecs.lastIndexOf("/");
+				if (p>1){
+					xpathAddon =  domainSpecs.substring(0,p);
+					xpathAddon = strgutil.trimm(xpathAddon, "/");
+					zpath = domainSpecs.substring(p+1,domainSpecs.length());
+					xpathAddon = "/"+xpathAddon;
+				}
+				
+				String xRoot = xqueryBasicCondition + xpathAddon + "/"+zpath;
+				infoStr = xpathQuery.getConditionalAttributesValue( xRoot , zpath, attrSpecs );
+			}else{
+				domainSpecs = strgutil.trimm(domainSpecs, "//");
+				domainSpecs = strgutil.trimm(domainSpecs, "/");
+				p = domainSpecs.lastIndexOf("/") ;
+				if (p>1){
+					String xpathAddon =  domainSpecs.substring(0,p);
+					xpathAddon = strgutil.trimm(xpathAddon, "/");
+					zpath = domainSpecs.substring(p+1,domainSpecs.length());
+					xpathAddon = "/"+xpathAddon;
+					if (root.indexOf(xpathAddon)<0){
+						root = root + xpathAddon;
+					}
+					domainSpecs = zpath;
+				}
+				infoStr = xpathQuery.getAttributesValue( root , domainSpecs, attrSpecs );
+			}
 			
-			infoStr = xpathQuery.getAttributesValue( root , domainSpecs, attrSpecs );
 		if ((infoStr.length()==0) || (infoStr.contentEquals("-1"))){
 			p=0;
 		}
@@ -1292,30 +1567,53 @@ public abstract class XMessageAbs {
     	return obj;
     }
     
-    @SuppressWarnings("rawtypes")
-	public ArrayList getListFromXmlStr(String str, Class clz) {
-    	ArrayList<?> gList=null;
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+	public ArrayList getListFromXmlStr( String str, Class clz) {
+    	ArrayList gList=null;
     	String cname = clz.getSimpleName() ;
-    	
+    	String listr;
+    	int vi;
+    	double v;
     	String[] stritems ;
 
-		if (cname.toLowerCase().startsWith("doub")){
-			gList = new ArrayList<Double>();
-		}
-		if (cname.toLowerCase().startsWith("int")){
-			gList = new ArrayList<Double>();
-		}
-		if (cname.toLowerCase().startsWith("str")){
-			gList = new ArrayList<Double>();
-		}
-
-		
-    	stritems = str.split(";");
-    	if (stritems.length>0){
-    		
+    	str = str.trim() ;
+    	if (str.length()==0){
+    		stritems = new String[0];
     	}else{
+    		stritems = str.split(";");
     	}
     	
+		if (cname.toLowerCase().startsWith("doub")){
+			gList = new ArrayList<Double>();
+			if (stritems.length>0){
+				for (int i=0;i<stritems.length;i++){
+					listr = stritems[i];
+					if (strgutil.isNumericX(listr)){
+						v = Double.parseDouble(listr);
+						gList.add(((Double)v));
+					}
+				}
+			}
+		}
+		if (cname.toLowerCase().startsWith("int")){
+			gList = new ArrayList<Integer>();
+			if (stritems.length>0){
+				for (int i=0;i<stritems.length;i++){
+					listr = stritems[i];
+					if (strgutil.isNumericX(listr)){
+						vi = Integer.parseInt(listr);
+						gList.add(((Integer)vi));
+					}
+				}
+			}
+		}
+		if (cname.toLowerCase().startsWith("str")){
+			gList = new ArrayList<String>();
+			if (stritems.length>0){
+				gList = new ArrayList<String>(Arrays.asList(stritems));
+			}
+		}
+ 
 		return gList;
 	}
 
@@ -1323,7 +1621,17 @@ public abstract class XMessageAbs {
     
     public boolean getBool(String str) {
 		boolean rB=false;
+
+		str = str.toLowerCase();
 		
+		if ((str.length()==0) || (str.startsWith("n")) || (str.startsWith("0")) || (str.startsWith("f"))){
+			rB=false;
+		}
+		if ((str.length()>0) && (str.length()<=4) && 
+				( (str.startsWith("j")) || (str.startsWith("y")) || (str.startsWith("d")) || (str.startsWith("w")) ||
+				  (str.startsWith("s")) || (str.startsWith("o")) || (str.startsWith("1")) || (str.startsWith("t"))) ){
+			rB=true;
+		}
 		
 		return rB;
 	}
@@ -1331,12 +1639,18 @@ public abstract class XMessageAbs {
     public double getNum(String str, double defaultVal) {
 		double num=defaultVal;
 		
+		if (strgutil.isNumericX(str)){
+			num = Double.parseDouble(str);
+		}
 		return num;
 	}
 
     public int getInt(String str, int defaultVal) {
 		int vi=defaultVal;
 		
+		if (strgutil.isNumericX(str)){
+			vi = Integer.parseInt(str);
+		}
 		
 		return vi;
 	}

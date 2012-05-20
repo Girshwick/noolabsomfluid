@@ -4,9 +4,20 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+
+import java.io.FileInputStream;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
+
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -20,8 +31,8 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-
  
+
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.strings.StringsUtil;
 import org.jdom.Document;
@@ -33,11 +44,12 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 
 import org.jdom.input.SAXBuilder;
 
 import com.jamesmurty.utils.XMLBuilder;
-
+ 
  
 
 
@@ -120,14 +132,18 @@ public class XpathQuery {
 	
 	String uuidStr="$" ;
 	
+	String queryPrefix="" ;
+	
 	DFutils fileutil = new DFutils() ;
 	StringsUtil strgutil = new StringsUtil() ;
 	
+	// ========================================================================
 	public XpathQuery(){
 		
 		xpath = XPathFactory.newInstance().newXPath();
 		
 	}
+	// ========================================================================
 	
 
 	public String getReplacementSecret( ){
@@ -146,6 +162,21 @@ public class XpathQuery {
 			System.out.println("parseXml:\n"+xmlStr) ;
 			e.printStackTrace() ;
 		}
+	}
+	
+	public void clear(){
+		xmlStr = "";
+		domDoc = null;
+		queryPrefix="" ;
+	}
+	
+	public void ensureXmlDoc( String xmlstr){
+		
+		if (domDoc==null){
+			
+			setXml(xmlstr);
+		}
+		
 	}
 	
 	public void setXml( String xmlstr){
@@ -612,6 +643,43 @@ public class XpathQuery {
 		return resultStr;
 	}
 	
+	
+	public Vector<Object> getNodesByName( Node node, String nodeName){
+		
+		Vector<Object> listItems = new Vector<Object>(); 
+		
+		NodeList nodes;
+		int k,ntyp;
+		String str;
+		
+		if (node==null){
+			return listItems;
+		}
+		nodes = node.getChildNodes();
+		
+		k = nodes.getLength();
+		if (nodes.getLength() > 0) {
+	
+			for (int nk = 0; nk < k; nk++) {
+	
+				node = nodes.item(nk);
+				
+				ntyp = node.getNodeType(); // 3=#text 1=element
+				str = node.getNodeName();
+	
+				if ((ntyp==1) && (str.contentEquals(nodeName))) { // e.g. "name"
+	
+					listItems.add(node) ;
+				} // == requested nodeName ?
+			} // nk->
+	
+		} // xml path "//register//name" exists
+	
+		
+		return listItems;
+	}
+
+
 	public Object getMatchingXmlNode( String xpathQuery ){
 		
 		Object xresult = null;
@@ -631,6 +699,15 @@ public class XpathQuery {
 			if (domDoc == null) {
 				return null;
 			}
+			
+			
+			if (queryPrefix.length()>0){ 
+				while (xpathQuery.startsWith("/")){ 
+					xpathQuery = xpathQuery.substring(1, xpathQuery.length());
+				}
+				xpathQuery = queryPrefix+"//"+xpathQuery;
+			}
+
 			
 			
 			expr = xpath.compile( xpathQuery );
@@ -661,7 +738,7 @@ public class XpathQuery {
 	}
 	
 	
-	public Object geXmlNodeByName( String fullxmlpath){
+	public Object getXmlNodeByName( String fullxmlpath){
 		Node node=null , resultnode=null;
 		String nodeName, str ;
 		int p,nn;
@@ -1009,40 +1086,6 @@ public class XpathQuery {
 		
 	}
 	
-	public Vector<Object> getNodesByName( Node node, String nodeName){
-		
-		Vector<Object> listItems = new Vector<Object>(); 
-		
-		NodeList nodes;
-		int k,ntyp;
-		String str;
-		
-		if (node==null){
-			return listItems;
-		}
-		nodes = node.getChildNodes();
-		
-		k = nodes.getLength();
-		if (nodes.getLength() > 0) {
-
-			for (int nk = 0; nk < k; nk++) {
-
-				node = nodes.item(nk);
-				
-				ntyp = node.getNodeType(); // 3=#text 1=element
-				str = node.getNodeName();
-
-				if ((ntyp==1) && (str.contentEquals(nodeName))) { // e.g. "name"
-
-					listItems.add(node) ;
-				} // == requested nodeName ?
-			} // nk->
-
-		} // xml path "//register//name" exists
-
-		
-		return listItems;
-	}
 	/**
 	 * 
 	 * if we did not provide an attribute to look for (its value), we will return the whole node !!
@@ -1087,11 +1130,18 @@ public class XpathQuery {
 			}
 			nodeName = nodeName.replace("//", "") ; nodeName = nodeName.replace("/", "") ;
 
+			if (queryPrefix.length()>0){ 
+				if (xmlpath.startsWith("//")){ 
+					xmlpath = xmlpath.substring(2, xmlpath.length());
+				}
+				xmlpath = queryPrefix+"//"+xmlpath;
+			}
 			// expr = xpath.compile("//register//name");
 			expr = xpath.compile( xmlpath );
 
 			xresult = expr.evaluate(domDoc, XPathConstants.NODESET);
 			nodes = (NodeList) xresult;
+			
 			k = nodes.getLength();
 			if (nodes.getLength() > 0) {
 
@@ -1155,7 +1205,7 @@ public class XpathQuery {
 	public Vector<Object> getMatchingXmlNodes( String xpathQuery ){
 		
 	
-		Vector<Object> xresult = null;
+		Vector<Object> xresult = null ;
 		int nk;
 		
 		XPathExpression expr;
@@ -1174,11 +1224,23 @@ public class XpathQuery {
 			}
 			
 			
+			if (queryPrefix.length()>0){ 
+				while (xpathQuery.startsWith("/")){ 
+					xpathQuery = xpathQuery.substring(1, xpathQuery.length());
+				}
+				xpathQuery = queryPrefix+"//"+xpathQuery;
+			}
+			
+			
 			expr = xpath.compile( xpathQuery );
 			
 			evobj = expr.evaluate(domDoc, XPathConstants.NODESET);
 			nodes = (NodeList) evobj;
 	
+			if (nodes.getLength() > 0) {
+				xresult = new Vector<Object> (); 
+			}
+			
 			if (nodes.getLength() > 0) {
 				nk = nodes.getLength() ;
 				
@@ -1197,6 +1259,70 @@ public class XpathQuery {
 		return xresult;
 	}
 
+	public String getConditionalAttributesValue( String xmlpath, String nodeName, String attrName  ){
+		
+
+		String str="", xvalue="";
+		int n,i;
+
+		
+
+		XPathExpression expr;
+		Object xresult;
+		NodeList nodes, nodelist;
+		Node node, anode, childnode;
+		NamedNodeMap nodeAttr;
+
+		try {
+			 
+			if (domDoc == null) {
+				domDoc = parseXmlStr();
+			}
+
+			if (domDoc == null) {
+				return "";
+			}
+			  
+			// expr = xpath.compile("//register//name");
+			expr = xpath.compile( xmlpath );
+
+			xresult = expr.evaluate(domDoc, XPathConstants.NODESET);
+			nodes = (NodeList) xresult;
+
+			int nn = nodes.getLength();
+			
+			if (nn > 0) {
+
+			  node = nodes.item(0);
+			  str = node.getNodeName();
+			  for (i=0;i<nn;i++){
+					
+				  node = nodes.item(i);
+				  
+				if (str.contentEquals( nodeName)) { // e.g. "name" 
+					nodeAttr = node.getAttributes(); // attributes are tags !!!
+
+					if (nodeAttr != null) {
+						for (int ac = 0; ac < nodeAttr.getLength(); ac++) {
+							anode = nodeAttr.getNamedItem(attrName); // e.g. "value" 
+
+							if (anode != null) {
+								str = anode.getNodeName(); // "value"
+								xvalue = anode.getNodeValue(); // the value of the
+															// tag [name]
+							}
+						}
+					} // nodeAttr ?
+				} // nodeName ?
+			  }// i->
+			} // xml path "//register//name" exists
+			
+		} catch (XPathExpressionException e) {
+			System.out.println("Exception in XpathQuery : node:"+nodeName+", attribute"+attrName+"\r\n"+xmlStr) ;
+			e.printStackTrace();
+		}
+		return xvalue;
+	}
 	public String getAttributesValue( String xmlpath, String nodeName, String attrName  ){
 		
 		String str="", xvalue="";
@@ -1227,7 +1353,16 @@ public class XpathQuery {
 				int p = str.lastIndexOf("/");
 				nodeName = str.substring(p+1,str.length()) ;
 			}
-			nodeName = nodeName.replace("//", "") ; nodeName = nodeName.replace("/", "") ;
+			 
+			int p1=nodeName.indexOf("[");
+			int p2=nodeName.indexOf("]");
+			
+			if ((p1>1) && (p2>p1)){
+				nodeName = nodeName.substring(0, p1) ;
+			}
+			
+			nodeName = strgutil.trimm(nodeName, "//");
+			nodeName = strgutil.trimm(nodeName, "/");
 
 			// expr = xpath.compile("//register//name");
 			expr = xpath.compile( xmlpath );
@@ -1363,7 +1498,7 @@ public class XpathQuery {
 			}
 			// addChildTagElement( "//transaction", "relay" ) ;
 			
-			node = (Node) geXmlNodeByName( completeXPath );
+			node = (Node) getXmlNodeByName( completeXPath );
 			
 			hb = (node!=null );
 			
@@ -1383,5 +1518,100 @@ public class XpathQuery {
 		}
 		return outStr;
 	}
+
+
+	public String getQueryPrefix() {
+	 
+		return queryPrefix;
+	}
 	
+	public void setQueryPrefix(String xquery) {
+
+		queryPrefix = xquery;
+	}
+	
+	
+	private static void buildEntryList( List<String> entries, String parentXPath, Element parent ) {
+		
+	    NamedNodeMap attrs = parent.getAttributes();
+	    
+	    for( int i = 0; i < attrs.getLength(); i++ ) {
+	        Attr attr = (Attr)attrs.item( i );
+	        //TODO: escape attr value
+	        entries.add( parentXPath+"[@"+attr.getName()+"='"+attr.getValue()+"']"); 
+	    }
+	    HashMap<String, Integer> nameMap = new HashMap<String, Integer>();
+	    NodeList children = parent.getChildNodes();
+	    
+	    for( int i = 0; i < children.getLength(); i++ ) {
+	        Node child = children.item( i );
+	        if( child instanceof Text ) {
+	            //TODO: escape child value
+	            entries.add( parentXPath+"='"+((Text)child).getData()+"'" );
+	        } else if( child instanceof Element ) {
+	            String childName = child.getNodeName();
+	            Integer nameCount = nameMap.get( childName );
+	            nameCount = nameCount == null ? 1 : nameCount + 1;
+	            nameMap.put( child.getNodeName(), nameCount );
+	            buildEntryList( entries, parentXPath+"/"+childName+"["+nameCount+"]", (Element)child);
+	        }
+	    }
+	}
+
+	public static List<String> getEntryList( Document doc ) {
+		
+	    ArrayList<String> entries = new ArrayList<String>();
+	    Element root = (Element) doc.getRootElement();
+	    buildEntryList(entries, "/"+root.getNodeName()+"[1]", root );
+	    return entries;
+	}
+
+	
+	public void getAbsolutePathsForXmlStr(String xStr){ // 
+	
+		try{
+		 
+			InputStream is = new ByteArrayInputStream(xStr.getBytes());
+			InputSource src = new InputSource(is);
+			
+			
+			SAXParserFactory spf = SAXParserFactory.newInstance();
+	        SAXParser sp = spf.newSAXParser();
+	        XMLReader xr = sp.getXMLReader();
+
+	        xr.setContentHandler(new FragmentContentHandler(xr));
+	        xr.parse( src);
+	        
+		}catch(Exception e){
+			
+		}
+		
+	}
+	
+	public void getAbsolutePathsForFile(String xFile){ // "input.xml"
+		// http://stackoverflow.com/questions/4746299/generate-get-xpath-from-xml-node-java
+		
+	
+		try{
+			
+			FileInputStream filstream = new FileInputStream( xFile) ;
+			InputSource src = new InputSource(filstream);
+			
+			
+			SAXParserFactory spf = SAXParserFactory.newInstance();
+	        SAXParser sp = spf.newSAXParser();
+	        XMLReader xr = sp.getXMLReader();
+
+	        xr.setContentHandler(new FragmentContentHandler(xr));
+	        xr.parse( src);
+	        
+		}catch(Exception e){
+			
+		}
+		
+		
+	}
+
+
+
 }
