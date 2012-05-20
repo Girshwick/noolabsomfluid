@@ -10,6 +10,8 @@ import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 public class ModelOptimizerDigester  extends SomResultHandlerAbs {
 
 
+	private static final long serialVersionUID = 5119210046583693686L;
+
 	ModelOptimizer moz;
 	
 	

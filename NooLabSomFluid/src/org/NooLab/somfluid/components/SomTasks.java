@@ -16,6 +16,9 @@ public class SomTasks implements Serializable{
 	ArrayList<SomFluidTask> taskitems = new ArrayList<SomFluidTask>(); 
 	
 	transient SomFluidFactory sfFactory;
+
+
+	boolean stopped = false;
 	
 
 	// ------------------------------------------------------------------------
@@ -82,17 +85,29 @@ public class SomTasks implements Serializable{
 	
 	public void add(SomFluidTask sfTask) {
 		 
-		taskitems.add(sfTask);
+		SomFluidTask sft = getItemByGuid(sfTask.getGuidID());
+		if (sft==null){
+			taskitems.add(sfTask);
+		}
 	}
 
 	public void clear(){
 		taskitems.clear();
 	}
 	public SomFluidTask getItem( int index){
-		return taskitems.get(index);
+		SomFluidTask sft=null;
+		
+		if ((index>=0) && (index<taskitems.size())){
+			sft = taskitems.get(index);
+		}
+		
+		return sft;
 	}
 	public void remove( int index ){
-		 taskitems.remove(index) ;
+		
+		if ((index>=0) && (index<taskitems.size())){
+			 taskitems.remove(index) ;
+		}
 	}
 
 	public ArrayList<SomFluidTask> getTaskitems() {
@@ -105,6 +120,18 @@ public class SomTasks implements Serializable{
 
 	public void setSfFactory(SomFluidFactory sfFactory) {
 		this.sfFactory = sfFactory;
+	}
+
+	public boolean isStopped() {
+		return stopped;
+	}
+
+	public void setStopped(boolean stopped) {
+		this.stopped = stopped;
+	}
+
+	public void setTaskitems(ArrayList<SomFluidTask> taskitems) {
+		this.taskitems = taskitems;
 	}
 	
 	

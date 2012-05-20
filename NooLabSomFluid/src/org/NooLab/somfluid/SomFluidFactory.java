@@ -67,14 +67,16 @@ public class SomFluidFactory  implements 	//
 	
 	int instanceType   = -1;
 	int glueModuleMode = 0;
-	
+	int preparePhysicalParticlesField;
+
 	GlueClientAdaptor glueClient ;
 	GlueBindings glueBindings;
 	
 	DFutils fileutil = new DFutils();
 	PrintLog out = new PrintLog(2, true);
 	private Random random;
-	
+	private SomAppProperties somAppProperties;
+		
 	// ------------------------------------------------------------------------
 	
 	private SomFluidFactory(SomFluidProperties props, int factorymode){
@@ -123,8 +125,12 @@ public class SomFluidFactory  implements 	//
 			e.printStackTrace();
 			System.exit(-7);
 		}
-				
 		
+		if ((factorymode==SomFluidFactory._INSTANCE_TYPE_OPTIMIZER) ||
+			(factorymode==SomFluidFactory._INSTANCE_TYPE_SOM)){
+			
+			preparePhysicalParticlesField = 1;
+		}
 		// we need to create the SomFluid object in a rudimentary form right now,
 		// because we need it as a event sink for the "PhysicalFieldFactory()"
 		somFluidModule = new SomFluid( this );
@@ -140,8 +146,22 @@ public class SomFluidFactory  implements 	//
 	public SomFluidFactory(SomAppProperties appProperties) {
 	 
 		// glue stuff ...
-		
+		int k;
+		k=0;
 		try {
+			
+			 
+			factoryMode = SomFluidFactory._INSTANCE_TYPE_CLASSIFIER ;
+			sfProperties = appProperties.getPropertiesConnection() ;
+ 			somAppProperties = appProperties;
+ 			
+			factory = this;
+			sfProperties.setFactoryParent( this );
+			appProperties.setFactoryParent( this );
+			 
+			
+			
+			// needed: a common interface for this aspect
 			(new AlgorithmDeclarationsLoader(sfProperties)).load() ;
 			
 		} catch (Exception e) {
@@ -156,7 +176,9 @@ public class SomFluidFactory  implements 	//
 		out.setPrefix("[SomFluid-appfactory]");
 	}
 
-
+	public static SomFluidFactory get(SomFluidProperties props, int factoryForInstance){
+		return new SomFluidFactory( props,factoryForInstance );
+	}
 
 	public static SomFluidFactory get(SomFluidProperties props){
 		
@@ -204,11 +226,19 @@ public class SomFluidFactory  implements 	//
 	
 	
 	public SomApplicationIntf createSomApplication( SomAppProperties properties){
-		
+		 
 		return (new SomApplication( this, properties)) ;
 	}
 	
-	protected SomFluidIntf getSomFluid( ){
+	@Override
+	public String runSomApplication() {
+		 
+		return null;
+	}
+
+
+
+	protected SomFluidIntf getSomFluid( int preparePhysicalParticlesField ){
 		
 		
 		if (somFluidModule==null){
@@ -358,6 +388,12 @@ public class SomFluidFactory  implements 	//
 		return sfProperties;
 	}
 
+	public SomAppProperties getSomAppProperties() {
+		return somAppProperties;
+	}
+
+
+
 	public DataFileReceptorIntf getDataReceptor() {
 		return dataReceptor;
 	}
@@ -451,6 +487,29 @@ public class SomFluidFactory  implements 	//
 	}
 
 	
+	public <T> Object createTask(int instancetype) {
+		 
+		return createTask(  instancetype, "");
+	}
+	
+	public <T> Object createTask(int instancetype, String guidId) {
+		 
+		SomFluidClassTaskIntf somclass=null;
+		
+		if (instancetype == SomFluidFactory._INSTANCE_TYPE_CLASSIFIER ){
+			
+			somclass = (SomFluidClassTaskIntf) (new SomFluidTask( guidId, SomFluidTask._TASK_CLASSIFICATION ));
+			
+		}
+		if (instancetype == SomFluidFactory._INSTANCE_TYPE_OPTIMIZER ){
+			
+			somclass = (SomFluidClassTaskIntf) (new SomFluidTask( guidId, SomFluidTask._TASK_MODELING ));
+			
+		}
+		return somclass;
+	}
+
+
 	// ------------------------------------------------------------------------
 	public static boolean implementsInterface(Object object, Class<?> interf){
 	    return interf.isInstance(object);
@@ -476,12 +535,18 @@ public class SomFluidFactory  implements 	//
 		
 		// now heading towards the SomFluid
 		somFluidTask = (SomFluidTask)sfTask;
-		getSomFluid();
+		 
+		preparePhysicalParticlesField = 1;
+		if (somFluidTask.taskType.toLowerCase().startsWith("c")){
+			preparePhysicalParticlesField = 0;
+		}
+		getSomFluid(preparePhysicalParticlesField);
+		 
 		
 		if (somFluidTask.getStartMode() == 1){
 			
 			// somFluidModule.start();   // nothing happens without providing a task
-			somFluidModule.addTask(  somFluidTask );
+			somFluidModule.addTask( somFluidTask );
 			
 		}else{
 			if (somFluidTask.getStartMode() >=100){
@@ -510,6 +575,7 @@ public class SomFluidFactory  implements 	//
 		public void run() {
 			 
 			out.delay(_delay) ;
+			
 			somFluidModule.start();   // nothing happens without providing a task
 			somFluidModule.addTask( somFluidTask );
 		}
@@ -563,7 +629,6 @@ public class SomFluidFactory  implements 	//
 
 	public void openSource() {
 		// just prepares access, includes connection to dir, db
-		// TODO Auto-generated method stub
 		
 	}
 
@@ -586,6 +651,43 @@ public class SomFluidFactory  implements 	//
  
 	public SomAppValidationIntf createSomApplicationForValidation() {
 		return  (SomAppValidationIntf)(new SomApplicationDsom());
+	}
+
+
+
+	public void setSomApplication(SomApplication soapp) {
+	 
+		
+	}
+
+
+
+	public static boolean createProjectSpace(String psLabel) {
+		boolean projectSpaceOk = false;
+		
+		try{
+		
+			// create directories, catalog files from resources 
+			// dir structure is also from resources
+			
+			// ... and ask for a data file to copy into the project space
+			
+			
+			
+		}catch(Exception e){
+			
+		}
+		
+		
+		
+		return projectSpaceOk;
+	}
+
+
+
+	public static void duplicateProject() {
+		//  SomFluidStartup && IniProperties provide the folder and prjLabel
+		
 	}
 	
 	

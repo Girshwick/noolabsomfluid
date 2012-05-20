@@ -28,7 +28,9 @@ public class PersistenceSettings implements Serializable{
 
 	private boolean autoSaveSomFluidModels;
 
-	private boolean keepPreparedData; 
+	private boolean keepPreparedData;
+
+	private boolean exportTransformModelAsEmbeddedObj = true; 
 	
 	// ========================================================================
 	public PersistenceSettings(FileOrganizer fileOrg){
@@ -78,6 +80,10 @@ public class PersistenceSettings implements Serializable{
 	}
 
 
+	public boolean isKeepPreparedData() {
+		return keepPreparedData;
+	}
+
 	public void autoSaveSomFluidModels(boolean flag) {
 		autoSaveSomFluidModels = flag ;
 	}
@@ -94,6 +100,14 @@ public class PersistenceSettings implements Serializable{
 	}
 
 	
+	public String getIncomingDataSupervisionDir() {
+		return incomingDataSupervisionDir;
+	}
+
+	public boolean isIncomingDataSupervisionActive() {
+		return incomingDataSupervisionActive;
+	}
+
 	public void setIncomingDataSupervisionActive(boolean flag) {
 		incomingDataSupervisionActive = flag ;
 	}
@@ -104,9 +118,37 @@ public class PersistenceSettings implements Serializable{
 	
 	
 	
+	public boolean isIncomingDataClassifyFirst() {
+		return incomingDataClassifyFirst;
+	}
+
 	public XMLBuilder exportPropertiesAsXBuilder(SettingsTransporter settingsTransporter) {
 		// 
 		return null;
+	}
+
+	public boolean isExportTransformModelAsEmbeddedObj() {
+		return exportTransformModelAsEmbeddedObj;
+	}
+
+	public void setExportTransformModelAsEmbeddedObj(boolean flag) {
+		exportTransformModelAsEmbeddedObj = flag;
+	}
+
+	public boolean isAutoPackagingOfCompleteModels() {
+		return autoPackagingOfCompleteModels;
+	}
+
+	public void setAutoPackagingOfCompleteModels(boolean autoPackagingOfCompleteModels) {
+		this.autoPackagingOfCompleteModels = autoPackagingOfCompleteModels;
+	}
+
+	public boolean isAutoSaveSomFluidModels() {
+		return autoSaveSomFluidModels;
+	}
+
+	public void setAutoSaveSomFluidModels(boolean autoSaveSomFluidModels) {
+		this.autoSaveSomFluidModels = autoSaveSomFluidModels;
 	}
 
 

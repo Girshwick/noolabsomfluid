@@ -78,6 +78,8 @@ public class SomTransformer implements SomTransformerIntf,
 	int revision=1;
 	String version = "1.0";
 	
+ 
+	
 	/** data as it has been imported */
 	DataTable dataTableObj ;
 	/** transformed data, as defined by the transformation model */
@@ -217,7 +219,9 @@ public class SomTransformer implements SomTransformerIntf,
 		
 		String xstr="", filepath , vrstr, filename = "";
 		PersistenceSettings ps;
-		extractTransformationsXML();
+		
+		// boolean embeddedObject = sfProperties.getPersistenceSettings().isExportTransformModelAsEmbeddedObj() ;
+		extractTransformationsXML( false );
 		
 		// xstr = xmlImage.toString(); not useful uses ", " to separate items
 		xstr = this.arrutil.arr2text( xmlImage, "\n");
@@ -237,10 +241,10 @@ public class SomTransformer implements SomTransformerIntf,
 	} 
 
 
-	public void extractTransformationsXML( ){
+	public void extractTransformationsXML(boolean embeddedObject ){
 		
 		
-		extractTransformationsXML( derivationLevel, version, revision);
+		extractTransformationsXML( derivationLevel, version, revision, embeddedObject);
 	}
 	/** 
 	 * here we extract the rules as XML, together with necessary informations about source etc.</br> 
@@ -253,10 +257,10 @@ public class SomTransformer implements SomTransformerIntf,
 	 * 
 	 * 
 	 */
-	public void extractTransformationsXML( int derivationLevel, String version, int revision){
+	public void extractTransformationsXML( int derivationLevel, String version, int revision, boolean embeddedObject){
 		
 		XMLBuilder builder;
-		String xmlstr;
+		String xmlstr,tmpdir, xstr ;
 		
 		this.derivationLevel = derivationLevel ;
 		this.version = version ;
@@ -265,7 +269,7 @@ public class SomTransformer implements SomTransformerIntf,
 		// create target directory = temporary by java  
 		try {
 			
-			DFutils.createTempDir( SomDataObject._TEMPDIR_PREFIX);
+			tmpdir = DFutils.createTempDir( SomDataObject._TEMPDIR_PREFIX).getAbsolutePath();
 			
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -278,13 +282,31 @@ public class SomTransformer implements SomTransformerIntf,
 		
 		builder = builder.importXMLBuilder( getProjectDescriptionXml( derivationLevel, version, revision) );
 		
+		// this needs correction ... !!!
+		
 		builder = builder.importXMLBuilder( getSourceDescriptionXml() );
 		// builder = builder.e("sources").up();
 		
 		
-		// creating the XML String from transformations, add a chapter "transformations"
-		String xstr = transformationModel.getXML(builder);
+		
 		 
+		if (embeddedObject){
+			// ... transformationModel as serialized object
+			String serTModelObjStr = strobj.encode( transformationModel ) ;
+			// create xml embedding, put format info
+			
+			builder = builder.e("transformations")
+			                      .e("storage")
+			                          .e("format").a("embedded", ""+xEngine.booleanize(embeddedObject)).up()
+			                      .up()
+			                      .e("objectdata").t(serTModelObjStr).up()
+			                 .up();
+			// "//transformations/storage/format", "type") ;
+			xstr = "";
+		}else{
+			// creating the XML String from transformations, add a chapter "transformations"
+			xstr = transformationModel.getXML(builder);
+		}
 		
 		// creating XML about the context
 		String cxstr = getTransformerContextAsXml();
@@ -340,19 +362,20 @@ public class SomTransformer implements SomTransformerIntf,
 		String datestr= (new DateTimeValue(0, 0)).get("d/M/yyyy HH:mm:ss");
 		
 		builder = builder.e("name")
-								.a("label", ps.getProjectName())
-								.a("version", version)
-								.a("revision", ""+revision)
-								.a("date", datestr)
+								.a("label", ps.getProjectName()).up()
+						  .e("version")
+						        .a("version", version)
+								.a("revision", ""+revision).up()
+						  .e("date").a("value", datestr).a("expiry", "").up()
 								
 								 
-						 .e("derivationLevel").a("value", ""+derivationLevel)		
-						 .e("sourcetype").a("value", ""+sfProperties.getSourceType()).up()
+						 .e("derivationLevel").a("value", ""+derivationLevel).up()		
+						 // .e("sourcetype").a("value", ""+sfProperties.getSourceType()).up()
 						 .e("identifier").a("name", sfProperties.getDataSrcFilename()).up()
 						 .e("systemrootdir").a("identifier", ps.getPathToSomFluidSystemRootDir()).up()
-						 .e("extendingsource").a("value",strgutils.booleanize(sfProperties.isExtendingDataSourceEnabled()))
+						 .e("extendingsource").a("value",strgutils.booleanize(sfProperties.isExtendingDataSourceEnabled())).up()
 						 .e("simulation").a("mode", ""+sfProperties.getDataUseSettings().getSimumlationMode())
-						 				 .a("size",""+sfProperties.getDataUseSettings().getSimulationSize())
+						 				 .a("size",""+sfProperties.getDataUseSettings().getSimulationSize()).up()
 						 ;
 				
 		builder = builder.up();

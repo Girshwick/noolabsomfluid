@@ -22,7 +22,7 @@ public class TransformationModel implements Serializable{
 
 	String tmGuid = "" ;
 	
-	transient SomTransformer somTransformer;
+	transient SomTransformerIntf somTransformer;
 	transient SomDataObject  somData ;
 	
 	/** any of the variables gets a transformation stack assigned as soon as an initialization is requested */
@@ -35,7 +35,7 @@ public class TransformationModel implements Serializable{
 	transient PrintLog out ;
 	
 	// ========================================================================
-	public TransformationModel(SomTransformer transformer, SomDataObject somdata){
+	public TransformationModel(SomTransformerIntf transformer, SomDataObject somdata){
 		
 		tmGuid = GUID.randomvalue() ;
 		somTransformer = transformer;
@@ -66,7 +66,9 @@ public class TransformationModel implements Serializable{
 			localXml = false;
 		}
 		
-		 
+		builder = builder.e("storage")
+        			.e("format").a("embedded", "0").up()
+        		  .up();
 		
 		for (int i=0;i<variableTransformations.size();i++){
 			

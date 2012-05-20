@@ -1,6 +1,7 @@
 package org.NooLab.somfluid.storage;
 
 import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.app.SomAppProperties;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
@@ -54,6 +55,14 @@ public class FileOrganizer {
 		
 	}
 	
+	public void setPropertiesBase(SomAppProperties properties) {
+		
+		sfProperties = properties.getPropertiesConnection();
+		persistenceSettings = properties.getPersistenceSettings();
+		update();
+		
+	}
+
 	public void update(){
 		
 		rootDir = persistenceSettings.getPathToSomFluidSystemRootDir(); // "D:/data/projects/"

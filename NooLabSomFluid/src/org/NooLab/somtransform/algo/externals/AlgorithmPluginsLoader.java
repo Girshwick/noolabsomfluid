@@ -7,6 +7,7 @@ import java.util.Vector;
 
 import org.NooLab.somfluid.SomFluidPluginSettingsIntf;
 import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.app.SomAppProperties;
 import org.NooLab.somfluid.util.XmlStringHandling;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.files.DirectoryContent;
@@ -53,6 +54,11 @@ public class AlgorithmPluginsLoader implements PluginLoaderIntf{
 	public AlgorithmPluginsLoader(SomFluidProperties properties, boolean loadCatalog) {
 		 
 		init( properties, loadCatalog);
+	}
+
+	public AlgorithmPluginsLoader(SomAppProperties clappProperties, boolean loadCatalog) {
+		
+		init( clappProperties.getPropertiesConnection(), loadCatalog);
 	}
 
 	private void init( SomFluidProperties properties, boolean loadCatalog){

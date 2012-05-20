@@ -45,6 +45,20 @@ import org.apache.commons.collections.CollectionUtils;
  * 
  * 
  * 
+ * 
+ * TODO : add entries in exported xml package
+ *       - expiry  
+ *          - timestamp (long) where this model invalidates
+ *          - %change of data 
+ *          - remodeling 1/0 auto-update of model : an external instance may check this section and start remodeling
+ * 
+ * 
+ * 		<som index="0">
+    		<project>
+      			<general>
+        			<name label="bank2" />
+ *       
+ *      basic description of variables: linearity score, contribution 
  *       
  * TODO: - checking the top metrices against different samples (CV) and selecting the most robust one
  *         - create several samples (8) for each sample size

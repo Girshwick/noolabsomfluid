@@ -40,6 +40,8 @@ public class SomFluidPluginSettings implements 	Serializable,
 	ArrayList<String> loadedPluginClasses = new ArrayList<String>();
 	
 	TransformationEnv transformationOriginator = new TransformationEnv();
+ 
+	
 	
 	// ========================================================================
 	public SomFluidPluginSettings(){
@@ -171,6 +173,8 @@ public class SomFluidPluginSettings implements 	Serializable,
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+
 
 	
 	

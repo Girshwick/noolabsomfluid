@@ -187,19 +187,25 @@ public class SomTargetedModeling    extends
 			somLattice.addNode(mnode) ;
 			
 											out.print(4,"Node <"+i+">, serial = "+mnode.getSerialID());
-			 
-			registerNodeinNodesInformer( mnode );
-			 
-			ArrayList<Variable> vari = somDataObject.getVariableItems();
-			ProfileVectorIntf pv = mnode.getIntensionality().getProfileVector();
-			pv.setVariables( vari ) ;
-	
-			mnode.getExtensionality().getStatistics().setVariables(somDataObject.getVariableItems());
+			try{
+				
+
+				registerNodeinNodesInformer( mnode );
+				 
+				ArrayList<Variable> vari = somDataObject.getVariableItems();
+				ProfileVectorIntf pv = mnode.getIntensionality().getProfileVector();
+				pv.setVariables( vari ) ;
+		
+				mnode.getExtensionality().getStatistics().setVariables(somDataObject.getVariableItems());
+				
+				
+				particle = particleField.getParticles().get(i);
+				particle.setIndexOfDataObject( mnode.getSerialID() );
+				
+			}catch(Exception e){
+				e.printStackTrace() ;
+			}
 			
-			 
-			
-			particle = particleField.getParticles().get(i);
-			particle.setIndexOfDataObject( mnode.getSerialID() );
 			
 			
 		}

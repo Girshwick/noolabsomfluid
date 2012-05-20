@@ -15,7 +15,7 @@ public interface SomFluidMonoTaskIntf extends SomFluidTaskIntf{
 	
 	public int getStartMode();
 
-	
+	public String getGuid();
 	
 	
 }

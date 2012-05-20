@@ -36,7 +36,7 @@ public class AlgorithmDeclarationsLoader {
 		
 		pluginSettings = sfProperties.getPluginSettings() ;
 		
-		builtinAlgoConfigFile = sfProperties.getAlgorithmsConfigPath();
+		builtinAlgoConfigFile = sfProperties.getAlgorithmsConfigPath(); // sth like D:/dev/java/somfluid/plugins/
 		builtinAlgoConfigFile = DFutils.createPath(builtinAlgoConfigFile, "builtinscatalog.xml");
 
 		sfProperties.setAlgoDeclarations(this);
@@ -57,7 +57,7 @@ public class AlgorithmDeclarationsLoader {
 		 
 		try {
 			
-			if (fileutil.fileexists(builtinAlgoConfigFile)){
+			if (fileutil.fileexists(builtinAlgoConfigFile)){  // sth like : D:/dev/java/somfluid/plugins/builtinscatalog.xml
 				rawXmlStr = fileutil.readFile2String(builtinAlgoConfigFile) ;
 			}
 			

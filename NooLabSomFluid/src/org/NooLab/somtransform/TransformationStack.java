@@ -202,8 +202,8 @@ if (varLabel.contains("Rechtsform")){
 			stTransform = items.get(i);
 			
 			// xstr = xEngine.transcodeStackedTransformation(i,stTransform) ;
-			
-			builder = builder.e("algoritem").a("index", ""+i).a("name", stTransform.algorithmName );
+			 
+			builder = builder.e("algoritem").a("index", ""+i).a("name", stTransform.algorithmName ).a("type", ""+ stTransform.algorithmType);
 			
 			if ((stTransform.dataDescription.max != -1) && (stTransform.dataDescription.max != stTransform.dataDescription.min)){ 
 				builder = builder.e("datadescription") 

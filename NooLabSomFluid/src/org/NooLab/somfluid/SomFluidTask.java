@@ -5,14 +5,20 @@ import java.io.Serializable;
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 import org.NooLab.somfluid.core.engines.det.results.ModelOptimizerDigester;
 import org.NooLab.somfluid.core.engines.det.results.SomResultDigesterIntf;
+import org.NooLab.utilities.net.GUID;
 
 
 public class SomFluidTask 	implements 
 										Serializable,
 										SomFluidMonoTaskIntf,
-										SomFluidProbTaskIntf{
+										SomFluidProbTaskIntf,
+										SomFluidClassTaskIntf{
 
 	private static final long serialVersionUID = -532876083346213662L;
+
+	public static final String _TASK_CLASSIFICATION  = "C";
+	public static final String _TASK_MODELING        = "M";
+	public static final String _TASK_SOMSTORAGEFIELD = "S";
 
 
 	public static final int _SOM_WORKMODE_FILE   = 1;
@@ -20,6 +26,8 @@ public class SomFluidTask 	implements
 
 
 	public static final String _TRACEFILE = "SomFluidTask.trace";
+
+
 
 	public int workingMode = _SOM_WORKMODE_FILE;
 	
@@ -32,13 +40,12 @@ public class SomFluidTask 	implements
 	int startingMode = -1;
 	
 	int callerStatus = 0;
+	 
 	
-	boolean isCompleted=false;
 	int somType;
+	String taskType;
 
-
-	public boolean isStandbyActive =false;
-
+	
 
 	private int spelaLevel;
 
@@ -55,14 +62,23 @@ public class SomFluidTask 	implements
 	private int resumeMode=0;
 
 	boolean isExported;
-	long exportTime = 0; 
+	long exportTime = 0;
+	boolean isCompleted=false;
+	int taskDispatched=0;
+	boolean isStandbyActive =false;
+ 
+	 
 	
 	// ========================================================================
 	protected SomFluidTask(String guidId, int somType){
 		
 		guidID = guidId;
-		this.somType = somType;
+		if (guidID.length()==0){
+			guidID = GUID.randomvalue();
+		}
 		
+		this.somType = somType;
+		taskType = "M";  
 		opentime = System.currentTimeMillis();
 	}
 	// ========================================================================
@@ -76,8 +92,19 @@ public class SomFluidTask 	implements
 		spelaLevel = inTask.spelaLevel ;
 		numberOfRuns = inTask.numberOfRuns ;
 		derivatesDepth = inTask.derivatesDepth ;
-		
+		taskType = inTask.taskType;
 		opentime = System.currentTimeMillis();
+	}
+
+
+
+	public SomFluidTask(String guid , String scid) {
+		 
+		if (scid.toLowerCase().startsWith("c")){
+			opentime = System.currentTimeMillis();
+			guidID = guid;
+			taskType = scid; // there is "C"=classifier "S"=associative storage and "M"=modeling ;
+		}
 	}
 
 
@@ -146,18 +173,21 @@ public class SomFluidTask 	implements
 		
 	}
 
+	
+	@Override
+	public String getGuid() {
+		return guidID;
+	}
 
-
+	
 	public int getCallerStatus() {
 		return callerStatus;
 	}
 
 
-
 	public void setCallerStatus(int callerStatus) {
 		this.callerStatus = callerStatus;
 	}
-
 
 
 	/**
@@ -166,7 +196,6 @@ public class SomFluidTask 	implements
 	public int getWorkingMode() {
 		return workingMode;
 	}
-
 
 
 	/**
@@ -304,6 +333,18 @@ public class SomFluidTask 	implements
 
 
 
+	public String getTaskType() {
+		return taskType;
+	}
+
+
+
+	public void setTaskType(String taskType) {
+		this.taskType = taskType;
+	}
+
+
+
 	/**
 	 * @return the derivatesDepth
 	 */
@@ -419,6 +460,14 @@ public class SomFluidTask 	implements
 		exportTime = timestamp;
 	}
 
-	
-	
+	public static boolean taskIsClassification(String typeid){
+		return typeid.toLowerCase().contentEquals( _TASK_CLASSIFICATION.toLowerCase()) ;
+	}
+	public static boolean taskIsModeling(String typeid){
+		return typeid.toLowerCase().contentEquals( _TASK_MODELING.toLowerCase()) ;
+	}
+	public static boolean taskIsSomStorageFields(String typeid){
+		return typeid.toLowerCase().contentEquals( _TASK_SOMSTORAGEFIELD.toLowerCase()) ;
+	}
+	 
 }

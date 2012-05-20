@@ -13,6 +13,7 @@ import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
 
 import org.NooLab.somfluid.properties.* ;
+import org.NooLab.somfluid.app.SomAppProperties;
 import org.NooLab.somfluid.app.SomAppUsageIntf;
 import org.NooLab.somfluid.app.SomAppValidationIntf;
 import org.NooLab.somfluid.components.* ;
@@ -88,6 +89,7 @@ public class SomFluid
 	private boolean userBreak;
 	
 	transient DFutils fileutil = new DFutils();
+	private SomAppProperties soappProperties;
 	
 	
 	// ------------------------------------------------------------------------
@@ -103,7 +105,11 @@ public class SomFluid
 		
 		sf = this;
 		
-		prepareParticlesField( (RepulsionFieldEventsIntf)this);
+	 
+		if (sfFactory.preparePhysicalParticlesField>0){
+			prepareParticlesField( (RepulsionFieldEventsIntf)this);	
+		}
+		
 	}
 	
 	 
@@ -224,10 +230,33 @@ public class SomFluid
 		 * modeling needs internal statistics, such that variance is controlled 
 		 * additionally, we use variance of variances as a target target variable for intermittent optimization
 		 * 
-		 * also, a second version will be made available for further processing, which is a "crystalization"
+		 * also, a second version will be made available for further processing, which is a "crystallization"
 		 */
+		
+		sfFactory.openSource(); // just prepares access, includes connection to dir, db
+		
 		new SomAssociativeStorage( this, sfFactory, sfProperties, createSomDataObject() ); 
 	}
+
+	
+	private void performClassificationApp(SomFluidTask sfTask) {
+		
+		SomApplication soapp;
+		// result handler ?
+		
+		soapp = new SomApplication(this , sfTask, sfFactory) ;
+		
+		sfFactory.setSomApplication(soapp) ;
+		somDataObjects.clear();
+		
+		sfTask.setDescription("SomApplication()") ;
+		sfTask.setSomHost(null) ;
+		 
+		soapp.loadModel() ;
+		
+		soapp.perform();
+	}
+
 
 	// ========================================================================
 	public String addTask(SomFluidTask somFluidTask) {
@@ -262,11 +291,17 @@ public class SomFluid
 		
 		sfTask.getSomResultHandler().handlingResults() ;
 		String cn = sfTask.somHost.getClass().getSimpleName() ;
+		
 		if ((sfTask.isCompleted) && (cn.toLowerCase().contains("modeloptimizer"))){
 			
-		// put the model to the list
-		// provide an option ... 	
-		sfFactory.getSomObjects().addSom(sfTask.somHost, sfTask.guidID ) ;
+			SomFluidTask _task = sfFactory.somFluidModule.somTasks.getItemByGuid( sfTask.guidID);
+			if (_task==null){
+				somTasks.add(sfTask);
+			}
+			
+			// put the model to the list
+			// provide an option ... 	
+			sfFactory.getSomObjects().addSom(sfTask.somHost, sfTask.guidID ) ;
 			
 			if (sfProperties.getOutputSettings().isExportApplicationModel()){
 				// call as task ?
@@ -279,6 +314,9 @@ public class SomFluid
 					e.printStackTrace();
 				}
 				sfTask.setExported(true);
+				out.printErr(2,"\nThe following task has been finished, exported and closed: "+sfTask.guidID+"\n");
+			}else{
+				out.printErr(2,"\nThe following task has been finished and closed: "+sfTask.guidID+"\n");
 			}
 		}
 	}
@@ -317,7 +355,7 @@ public class SomFluid
 	private void exportModel( SomHostIntf somHost, String packageName) throws Exception{
 		
 		int modelcount=0;
-		String xRootDir,prj,dir,tfilename, sfilename,filename;
+		String xRootDir = "",prj,dir,tfilename, sfilename,filename;
 		String pkgsubdir="0", somXstring = "", transformXstring = "",srXstring = "";
 		SomObjects somObjects;
 		
@@ -338,29 +376,47 @@ public class SomFluid
 		dir = DFutils.createPath(dir, prj);
 		dir = DFutils.createPath(dir, "export/packages/"); // here we maintain a small meta file: latest export, date in days since,
 		int dc = fileutil.enumerateSubDir(dir,"") ;
+		boolean dirOk=false;
 
-		if (packageName.trim().length()>0){
-			pkgsubdir = packageName ;
-		}else{
+		while (dirOk == false) {
 			
-			String fname = DFutils.createPath(dir, "export/packages/"+dc);
-			while (DFutils.fileExists(fname)){
-				dc++;
-				fname = DFutils.createPath(dir, "export/packages/"+dc);
-			}
-			pkgsubdir = ""+dc;
-		}
+			if (packageName.trim().length() > 0) {
+				pkgsubdir = packageName;
+			} else {
 
-		xRootDir = DFutils.createPath(dir, pkgsubdir+"/"); // here we store all 
-		// we NOT need a temp dir like this ... : DFutils.createTempDir( SomDataObject._TEMPDIR_PREFIX);
- 		
+				String fname = DFutils.createPath(dir, "" + dc);
+				while (fileutil.direxists(fname)) {
+					dc++;
+					fname = DFutils.createPath(dir, "" + dc);
+				}
+				pkgsubdir = "" + dc;
+
+			}
+
+			xRootDir = DFutils.createPath(dir, pkgsubdir + "/");
+			// here we store all , ending with slash enforces physical creation of dir
+			// we do NOT need a temp dir like this ... : DFutils.createTempDir( SomDataObject._TEMPDIR_PREFIX);
+
+			if (fileutil.direxists(xRootDir) == false) {
+				dirOk = false;
+				dc++;
+				packageName= packageName+dc;
+				 
+			} else {
+				dirOk = true;
+			}
+		}
+		
 		ModelOptimizer moz = (ModelOptimizer )somHost ; // ;
 		
 		
 		somObjects = sfFactory.getSomObjects();
 		// somTransformer: extractTransformationsXML()
 
-			moz.getSomDataObj().getTransformer().extractTransformationsXML();
+			boolean embed = sfProperties.persistenceSettings.isExportTransformModelAsEmbeddedObj() ;
+			// creating an xml image
+			moz.getSomDataObj().getTransformer().extractTransformationsXML(embed);
+			
 			ArrayList<String> txstrings = moz.getSomDataObj().getTransformer().getXmlImage() ;
 			
 			transformXstring = ArrUtilities.arr2Text(txstrings,"\n");
@@ -454,12 +510,16 @@ public class SomFluid
 											out.print(5,"...tdp (2)") ;
 					if ((somTasks!=null) && (somTasks.size()>0)){
 										    out.print(5,"...tdp (3)") ;
+					    // take the first in queue
 						sfTask = somTasks.getItem(0) ;
+						// actually, we need a selection loop??? to get the FIRST non-treated one?
 						
-						if ((sfTask.isCompleted==false) && (sfTask.isExported==false)){
+						if ((sfTask!=null) && (sfTask.taskDispatched==0) && (sfTask.isCompleted==false) && (sfTask.isExported==false)){
 							out.print(2,"\nworking on task, id = "+sfTask.guidID);
 							
+							sfTask.taskDispatched=1;
 							TaskDispatcher td = new TaskDispatcher(sfTask);
+							 
 							
 							if (td.isWorking==false){
 								out.print(5,"...tdp (91)") ;
@@ -479,8 +539,8 @@ public class SomFluid
 				
 				if ((isWorking) && (somTasks.size()>0) && (somTasks.getItem(0).isCompleted())){
 											out.print(5,"...tdp (6)") ;
-					out.print(2,"task ("+somTasks.getItem(0).guidID+") has been completed.\n");
-					somTasks.remove(0);
+					out.print(2,"task ("+somTasks.getItem(0).guidID+") has been completed.\n"); // yet, the completion flag is set by the process itself !
+					somTasks.setStopped(true) ; // remove(0);
 					isWorking=false;
 				}
 				out.delay(500);
@@ -499,46 +559,59 @@ public class SomFluid
 
 		public TaskDispatcher(SomFluidTask sfTask) {
 			 
+			String _typeId = sfTask.getTaskType().toLowerCase();
 			
 			try{
 				
 				somTasks.add(sfTask) ;
 				
+				
 				// dependent on task we invoke different methods and worker classes
-				if (sfTask.somType == SomFluidProperties._SOMTYPE_MONO){
+				
+				if ( SomFluidTask.taskIsModeling( _typeId ) ){ // replace by a proc + constant : modeling
 					
-					// accessing the persistent file,
-					// it may be an external file containing raw data, or
-					// if sth exists an already prepared one
-					if (sfTask.workingMode == SomFluidTask._SOM_WORKMODE_FILE){ // ==default
-						// r = sfFactory.loadSource();
+					if (sfTask.somType == SomFluidProperties._SOMTYPE_MONO){
 						
+						// accessing the persistent file,
+						// it may be an external file containing raw data, or
+						// if sth exists an already prepared one
+						if (sfTask.workingMode == SomFluidTask._SOM_WORKMODE_FILE){ // ==default
+							// r = sfFactory.loadSource();
+							
+						}
+						
+						if (sfTask.workingMode == SomFluidTask._SOM_WORKMODE_PIKETT){ 
+							// goto standby mode for this task
+							sfTask.isStandbyActive = true;
+						}
+						
+						if (sfTask.getSpelaLevel()<=1){
+						// preparing the data, at least transforming and normalizing it
+						// is embedded into the SomDataObject, where it is called by
+						// importDataTable()
+						// (of course, it can be called separately too,
+						
+							performTargetedModeling( sfTask );
+							this.isWorking=true;
+						}
+						if (sfTask.getSpelaLevel()==2){
+							performModelOptimizcreener(sfTask) ;
+							this.isWorking=true;
+						}
+					}else{
+						// multi class learning
 					}
+				}
+				if ( SomFluidTask.taskIsSomStorageFields( _typeId )  ){ //  associative storage
 					
-					if (sfTask.workingMode == SomFluidTask._SOM_WORKMODE_PIKETT){ 
-						// goto standby mode for this task
-						sfTask.isStandbyActive = true;
-					}
-					
-					if (sfTask.getSpelaLevel()<=1){
-					// preparing the data, at least transforming and normalizing it
-					// is embedded into the SomDataObject, where it is called by
-					// importDataTable()
-					// (of course, it can be called separately too,
-					
-						performTargetedModeling( sfTask );
-						this.isWorking=true;
-					}
-					if (sfTask.getSpelaLevel()==2){
-						performModelOptimizcreener(sfTask) ;
-						this.isWorking=true;
-					}
-				}else{
-					sfFactory.openSource(); // just prepares access, includes connection to dir, db
 					performAssociativeStorage( sfTask );
 					this.isWorking=true;
 				}
+				if ( SomFluidTask.taskIsClassification( _typeId ) ){ //  classifying data using an existent model
+					performClassificationApp( sfTask );
+				}
 				
+				  
 				
 			}catch(Exception e){
 				e.printStackTrace();

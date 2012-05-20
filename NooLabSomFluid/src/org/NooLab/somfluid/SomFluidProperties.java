@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.NooLab.somfluid.app.SomAppProperties;
 import org.NooLab.somfluid.components.AlgorithmDeclarationsLoader;
 import org.NooLab.somfluid.components.DataFilter;
 import org.NooLab.somfluid.core.engines.det.ResultRequests;
@@ -75,9 +76,11 @@ public class SomFluidProperties implements 	//
 		
 	SomFluidPluginSettings pluginSettings = new SomFluidPluginSettings();
 
+	/** concerns persistence of objects, including the models exported for "offline" use */
 	PersistenceSettings persistenceSettings  ;
 	
-	OutputSettings outputSettings ;
+	/** concerns results */
+	OutputSettings outputSettings ; 
 	
 	// lattice
 	int somType = -1; // mandatory 
@@ -123,6 +126,16 @@ public class SomFluidProperties implements 	//
 	// ========================================================================
 	
 	
+	public SomFluidProperties(SomAppProperties appProperties) {
+	  
+		sfp = this;
+		
+		
+		
+		
+	}
+
+
 	public static SomFluidProperties getInstance() {
 		 
 		return getInstance("");

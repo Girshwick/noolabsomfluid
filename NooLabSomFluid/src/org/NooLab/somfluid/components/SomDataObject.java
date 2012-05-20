@@ -114,7 +114,7 @@ public class SomDataObject 	implements      Serializable,
 	transient DFutils fileutil = new DFutils () ; 
 	transient ArrUtilities utils = new ArrUtilities();
 	
-	transient PrintLog out  ;
+	transient PrintLog out = new PrintLog(2,true) ;
 		
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 	 
@@ -747,8 +747,9 @@ public class SomDataObject 	implements      Serializable,
 	}
 
 
-	public void prepareTransformationsXML(){
-		transformer.extractTransformationsXML();
+	public void prepareTransformationsXML(boolean embed){
+		
+		transformer.extractTransformationsXML(embed);
 	}
 
 	
