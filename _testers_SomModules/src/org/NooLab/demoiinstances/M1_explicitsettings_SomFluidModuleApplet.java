@@ -1,15 +1,11 @@
 package org.NooLab.demoiinstances;
 
 
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import processing.core.*;
 
-import org.NooLab.somfluid.SomApplicationResults;
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidIntf;
@@ -17,30 +13,24 @@ import org.NooLab.somfluid.SomFluidMonoResultsIntf;
 import org.NooLab.somfluid.SomFluidMonoTaskIntf;
 import org.NooLab.somfluid.SomFluidProbTaskIntf;
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.SomFluidResultsIntf;
-import org.NooLab.somfluid.SomFluidStateDescriptionIntf;
+import org.NooLab.somfluid.SomFluidStartup;
 import org.NooLab.somfluid.SomProcessControlIntf;
-import org.NooLab.somfluid.app.SomAppUsageIntf;
+import org.NooLab.somfluid.app.IniProperties;
 import org.NooLab.somfluid.app.SomApplicationEventIntf;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
-import org.NooLab.somfluid.core.engines.det.results.ValidationSet;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
-import org.NooLab.somfluid.properties.ValidationSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.util.PowerSetSpringSource;
 import org.NooLab.somtransform.algo.externals.AlgorithmPluginsLoader;
 import org.NooLab.utilities.datatypes.IndexDistance;
-import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 import org.NooLab.utilities.datatypes.IndexedDistances;
+import org.NooLab.utilities.dialog.FileFolderChooser;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.LogControl;
 
-
-
-
-
+   
 /**
  * 
  * Later: this applet should start the SomFluid as an application!!
@@ -67,22 +57,27 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 	private static final long serialVersionUID = 8918471551051086099L;
 	
 	SomModuleInstanceM1 somInstance ;
-	String sourceForProperties = "";
-	
+	String sourceForProperties = "" ;
+	PApplet applet;
 	
 	public void setup(){
 		 
+		applet = this;
+		background( 208,188,188);
+		 
+		SomFluidStartup.setApplicationID("");
+		  
 		showKeyCommands();
 		
-		background( 208,188,188);
+		
+		draw();
+		
 		// start this in its own thread...
 		
 		// use LogControl to control output of log messages
 		LogControl.globeScope = 2; // 1=local definitions  default = 2
 		LogControl.Level = 2 ;     // the larger the more detailed logging... (could be really verbose!)
- 
-
-		
+  
 		// testPowerSet();
 		
 	}
@@ -180,20 +175,46 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 
 	public void keyPressed() {
 
-		if (key=='c'){
-			// somInstance.classifyData();
-		}
+		
 		
 		if (key=='m'){
-			startEngines() ;
+			
+			boolean rB=false ; 
+			looping = false;
+			this.noLoop();
+			
+			if (IniProperties.lastProjectName.length()==0){
+				try {
+					SomFluidStartup.selectActiveProject();
+					rB=true;
+				} catch (Exception e) {
+					rB=false;
+				}
+			}else{
+				rB=true;
+			}
+			
+			
+			if ((rB) && ( IniProperties.dataSource.length()==0)){
+				
+				key=0;
+				rB = SomFluidStartup.introduceDataSet().length() > 0 ;
+			}
+			looping = true;
+			this.loop() ;
+			
+			if (rB){
+				startEngines(1 ) ; // 1= optimizer, 0=simple som (not recommended for most tasks)
+			}
 		}
 		
 		if (key=='r'){
-			resume() ;
+			resume(1) ;
 		}
 		
 		if (key=='t'){
-			
+			// start the transformer, read data and export everything
+			System.err.println("not implemented yet.") ;
 		}
 		
 		if (key=='z'){
@@ -203,11 +224,91 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 		
 		if (key=='x'){
 			// somInstance. ...
+			IniProperties.saveIniProperties();
 			System.exit(0);
 		}
+		
+		if (key=='c'){ // duplicate project, just strip results, and exports
+			SomFluidFactory.duplicateProject();
+		}
+
+		if (key=='C'){ // duplicate project, to bare bones
+			System.err.println("not implemented yet.") ;
+		}
+		
+		if (key=='d'){
+			// open data source
+			key=0;
+			boolean rB=false ; 
+			looping = false;
+
+			String datasrc = SomFluidStartup.introduceDataSet() ;
+			System.err.println("File selected as source : "+datasrc);
+			
+			looping = true;
+			this.loop() ;
+		}
+		
+		if (key=='o'){
+			// open project
+			openProject();
+		}
+		
+		if (key=='p'){ //select  a different base folder for projects
+			boolean rB=false ; 
+			looping = false;
+			
+			String selectedFolder = SomFluidStartup.selectProjectHome();
+			System.err.println("Folder selected as project space : "+selectedFolder);
+			
+			looping = true;
+			this.loop() ;
+		}
+		
+		if (key=='P'){
+			// create project space...
+			
+			looping = false;
+			this.noLoop();
+			
+			try {
+			
+				String psLabel = SomFluidStartup.getProjectSpaceLabel();
+				if (SomFluidFactory.createProjectSpace( psLabel )){
+					IniProperties.lastProjectName = psLabel;
+				}
+				
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+			looping = true;
+			this.loop() ;
+			
+		}
+
 	}
 	
 	 
+
+	private void openProject(){
+		
+		looping = false;
+		this.noLoop(); // that's mandatory, otherwise, the dialog won't be drawn
+		
+		try {
+		
+			SomFluidStartup.selectActiveProject();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		 
+		looping = true;
+		this.loop() ;
+		// http://code.google.com/p/processing/source/checkout
+	}
+
 	private void showKeyCommands(){
 
 		println();
@@ -219,13 +320,16 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 		
 		println("   t  ->  apply just and only the transformation model and export the transformed data ");
 		println();
-		println("   c  ->  apply a previously exported model to new data = perform the classification task ");
 		println("   i  ->  activate the file listener, which digests new data from a directory ");
 		println();
-		println("   d  ->  duplicate project except exports and results ");
-		println("   D  ->  duplicate project, but remove everything except the data file and the transformation rules ");
+		println("   c  ->  copy project except exports and results ");
+		println("   C  ->  copy project, but remove everything except the data file and the transformation rules ");
 		println();
-		println("   p  ->  create a new project in the project space, the data file must exist somewhere to copy from! ");
+		println("   d  ->  open another data set ");
+		println("   o  ->  open another project ");
+		println("   p  ->  select a different base folder (=project space) for all projects ");
+		println("   P  ->  create a new project in the project space, the data file must exist somewhere to copy from! ");
+		println();
 		println("   z  ->  interrupt the current process, export current results and write persistent models ");
 		
 		println("   x  ->  exit");
@@ -234,19 +338,38 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 		
 	}
 	
-	private void startEngines(){
+	/**
+	 * 
+	 * @param somtype 0=default: simple, single run; 1=som optimizer
+	 * @param lastProjectName2 
+	 */
+	private void startEngines( int somtype ){
 		println();
-		println("starting...");
+		println("starting project <"+ IniProperties.lastProjectName+"> ...");
 		
-		somInstance = new SomModuleInstanceM1( SomFluidFactory._INSTANCE_TYPE_SOM , 
+		if (somtype>=1){ 
+			somtype = SomFluidFactory._INSTANCE_TYPE_OPTIMIZER ;
+		}
+		if (somtype<=0){ 
+			somtype = SomFluidFactory._INSTANCE_TYPE_SOM ;
+		}
+		
+		somInstance = new SomModuleInstanceM1( 	somtype , 
 			 									SomFluidFactory._GLUE_MODULE_ENV_NONE,
 			 									sourceForProperties ) ;
 		somInstance.startInstance() ;
 	}
 	
-	private void resume(){
+	private void resume(int somtype){
 		
-		somInstance = new SomModuleInstanceM1( SomFluidFactory._INSTANCE_TYPE_SOM , 
+		if (somtype>=1){ 
+			somtype = SomFluidFactory._INSTANCE_TYPE_OPTIMIZER ;
+		}
+		if (somtype>=1){ 
+			somtype = SomFluidFactory._INSTANCE_TYPE_SOM ;
+		}
+		
+		somInstance = new SomModuleInstanceM1( 	somtype , 
 												SomFluidFactory._GLUE_MODULE_ENV_NONE,
 												sourceForProperties ) ;
 		somInstance.setResumeMode(true);
@@ -284,6 +407,8 @@ class SomModuleInstanceM1 implements 	Runnable,
 	int glueModuleMode = 0;
 	String sourceForProperties = "";
 	
+	String lastProjectName="" ;
+	
 	// initial number of nodes in the SOM lattice
 	int nodeCount = 47;
 	
@@ -317,7 +442,8 @@ class SomModuleInstanceM1 implements 	Runnable,
 		smiThrd.start();
 	}
 
-	public void startInstance(){
+	public void startInstance( ){
+		lastProjectName = IniProperties.lastProjectName ;
 		smiThrd.start();
 	}
 	
@@ -377,12 +503,7 @@ class SomModuleInstanceM1 implements 	Runnable,
 		
 	}
 
-	private void prepareSomOptimizer() {
-		// loads an existing targeted SOM and starts/continues/repeats the optimizing according to the settings 
-		// results are saved or provided to the Glue, then the Som-layer stops / application exits
-	
-	}
-	
+	 
 	private void explicitlySettingProperties(){
 		
 		ClassificationSettings cs;
@@ -440,28 +561,38 @@ class SomModuleInstanceM1 implements 	Runnable,
 																		   // number of particles (resolution), dependent on the data 
 		
 		// data
-		int srctype = SomFluidProperties._SRC_TYPE_FILE;
-		 
-		sfProperties.setPathToSomFluidSystemRootDir("D:/data/projects/");
+		int srctype = SomFluidProperties._SRC_TYPE_FILE;				   // _SRC_TYPE_XML would expect a stream through the configured TCP port
 		
+						String rootFolder = IniProperties.fluidSomProjectBasePath ;
+						rootFolder = DFutils.createPath(rootFolder, "/") ;
+ 		sfProperties.setPathToSomFluidSystemRootDir(rootFolder);           // within this dir all project base directories are located
+		            // sth like "D:/data/projects/"
+ 		
 		ps = sfProperties.getPersistenceSettings();
 		ps.setIncomingDataSupervisionDir("");
 		ps.setIncomingDataSupervisionActive(false);
 		ps.setIncomingDataClassifyFirst(false);
 		
-		ps.setProjectName("bank2"); 									   // will be used also for output files
+		ps.setProjectName( lastProjectName );							   // will be used also for output files
+		            // sth like "bank2" , i.e. the simple name of a folder where all the project files are located 
+		
 		ps.setKeepPreparedData(true); 									   // includes persistence of transformer model
 		ps.autoSaveSomFluidModels(true);
 		ps.autoPackagingOfCompleteModels(true);
-		
+		ps.setExportTransformModelAsEmbeddedObj(true);
 		
 
 		
 		// sfProperties.addDataSource( srctype,"D:/data/raw/simprofiles.txt");// the basic mode: data from a file; it also can receive data through ports
 
 		// a more difficult file
-		sfProperties.addDataSource( srctype,"bankn_d2.txt");               // if the persistence settings are available, the relative path will be guessed
-		// sfProperties.addDataSource( srctype,"D:/data/projects/bank2/data/raw/bankn_d2.txt"); we can also provide a file from an arbitrary location
+					String datasource = IniProperties.dataSource;
+					// sth like "bankn_d2.txt", i.e. only the filename without the path
+		sfProperties.addDataSource( srctype, datasource);          		   // if the persistence settings are available, the relative path will be used
+		
+		// this way we could also provide a file from an arbitrary location
+		// sfProperties.addDataSource( srctype,"D:/data/projects/bank2/data/raw/bankn_d2.txt"); 
+		
 		
 		sfProperties.setExtendingDataSourceEnabled(false); 				   // default=false; true for data updates via internal Glue-client or via directory supervision for online learning
 		
@@ -734,7 +865,14 @@ class SomModuleInstanceM1 implements 	Runnable,
 	
 	
 	private void prepareSOM(){
+	
+	}
 		
+		
+	private void prepareSomOptimizer(){
+		// loads an existing targeted SOM and starts/continues/repeats the optimizing according to the settings 
+		// results are saved or provided to the Glue, then the Som-layer stops / application exits
+
 		
 		/* TODO 
 		 * - we need a similar persistence mechanism as for the glue stuff !!
@@ -758,7 +896,7 @@ class SomModuleInstanceM1 implements 	Runnable,
 		}
 		
 		 
-		sfFactory = SomFluidFactory.get(sfProperties);					   // creating the factory	
+		sfFactory = SomFluidFactory.get(sfProperties);					   // creating the factory; calling without "factorymode" parameter, optimizer will be assumed	
 		
 		  
 		sfProperties.addFilter( sfFactory, "var",0.3,"<",1,1,true);        // filter that act on the values of observations
@@ -770,7 +908,7 @@ class SomModuleInstanceM1 implements 	Runnable,
 		sfProperties.exportXml();
 		String xstr = sfProperties.getExportedXml();
 		
-		SomFluidMonoTaskIntf sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( ); //  
+		SomFluidMonoTaskIntf sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( SomFluidFactory._INSTANCE_TYPE_OPTIMIZER ); //  
 		 
  		
 		sfTask.setContinuity( 1,1) ;                 // param1: Level of Spela looping: 1=simple model, 2=checking 
@@ -794,6 +932,7 @@ class SomModuleInstanceM1 implements 	Runnable,
 		sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( ); 
 		sfTask.setStartMode(1) ;  
 		sfTask.setContinuity(2,0,200);
+		 
 		
 		sfFactory.produce( sfTask );
 		
@@ -813,6 +952,12 @@ class SomModuleInstanceM1 implements 	Runnable,
 		*/
 	}
 
+	/**
+	 * creating a simple string that is used to create a "boot file": SomFluid then is able to know 
+	 * about the project of the last run, in case a "resume" is requested
+	 * 
+	 * @return
+	 */
 	private String _prepareStartupTraceInfo() {
 		
 		String cfgroot, userdir, lastproject, infoStr="";
