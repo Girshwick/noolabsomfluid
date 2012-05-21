@@ -155,6 +155,13 @@ public class XpathQuery {
 	}
 	
 	
+	public void clear(){
+		xmlStr = "";
+		domDoc = null;
+		queryPrefix="" ;
+	}
+
+
 	public void parseXml(){
 		try{
 			domDoc = parseXmlStr() ;
@@ -164,12 +171,111 @@ public class XpathQuery {
 		}
 	}
 	
-	public void clear(){
-		xmlStr = "";
-		domDoc = null;
-		queryPrefix="" ;
-	}
+	private org.w3c.dom.Document parseXmlStr( InputStream instream){
+		
+		DocumentBuilderFactory dbf;
+		DocumentBuilder db ;
+		
+		try {
+			
+			dbf = DocumentBuilderFactory.newInstance();
+			//Using factory get an instance of document builder
+			db = dbf.newDocumentBuilder();
 	
+			//parse using builder to get DOM representation of the XML file
+				domDoc =  db.parse(instream) ;
+		
+		/*	
+		}catch(ParserConfigurationException pce) {
+			pce.printStackTrace();
+		}catch(SAXException se) {
+			
+			se.printStackTrace();
+		*/
+		}catch (Exception e) {
+			// e.printStackTrace();
+		}
+	
+		return domDoc ;
+	}
+
+
+	public org.w3c.dom.Document parseXmlStr( ){
+		  
+		
+		try {
+			xmlStream = null;
+			if (xmlStr.length()>2){
+				xmlStream = new ByteArrayInputStream( xmlStr.getBytes("UTF-8") );
+			}
+			// opposite direction is using a java obj
+			// StreamToString sts = new StreamToString();
+			
+			if ((xmlStream!=null) && (xmlStream.available()>0)){
+				domDoc = parseXmlStr(xmlStream) ;
+			}
+			
+			Thread.yield(); // tribute to SAX...
+			
+		}catch(IOException ioe) {
+			ioe.printStackTrace();
+		}
+		return domDoc ;
+	}
+
+
+	public org.w3c.dom.Document getDomDoc() {
+		return domDoc;
+	}
+
+
+	public String getQueryPrefix() {
+	
+		return queryPrefix;
+	}
+
+
+	public void setQueryPrefix(String xquery) {
+	
+		queryPrefix = xquery;
+	}
+
+
+	public String getXMLString(){
+		
+		String xmlstr ="" ;
+		
+		XMLBuilder builder ;
+		 
+		Transformer transformer = null ;
+		StreamResult sr ;
+		DOMSource source ;
+		
+		
+		try{
+			if (domDoc==null){
+				domDoc = parseXmlStr( ) ;
+			}
+	
+			transformer = TransformerFactory.newInstance().newTransformer();
+			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+	
+			// initialize StreamResult with File object to save to file
+			sr = new StreamResult(new StringWriter());
+			source = new DOMSource(domDoc);
+			
+			transformer.transform(source, sr);
+	
+			xmlstr = sr.getWriter().toString();
+			 
+		}catch(Exception e){
+			
+		}
+		 
+		return xmlstr;
+	}
+
+
 	public void ensureXmlDoc( String xmlstr){
 		
 		if (domDoc==null){
@@ -275,43 +381,6 @@ public class XpathQuery {
 		
 		return xvalue;
 	}
-	
-	public String getXMLString(){
-		
-		String xmlstr ="" ;
-		
-		XMLBuilder builder ;
-		 
-		Transformer transformer = null ;
-		StreamResult sr ;
-		DOMSource source ;
-		
-		
-		try{
-			if (domDoc==null){
-				domDoc = parseXmlStr( ) ;
-			}
-
-			transformer = TransformerFactory.newInstance().newTransformer();
-			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-
-			// initialize StreamResult with File object to save to file
-			sr = new StreamResult(new StringWriter());
-			source = new DOMSource(domDoc);
-			
-			transformer.transform(source, sr);
-
-			xmlstr = sr.getWriter().toString();
-			 
-		}catch(Exception e){
-			
-		}
-		 
-		return xmlstr;
-	}
-	
-	
- 
 	
 	public void addChildTagElement( String xmlpath, String tagname  ){ // e.g.  "//transaction", "request" 
 	
@@ -726,8 +795,9 @@ public class XpathQuery {
 				
 				xresult = nodes.item(0) ;
 				
-			} // nodes len > 0 ?
-			
+			} else{// nodes len > 0 ?
+				xresult = null;
+			}
 		}catch(Exception e){
 			
 		}
@@ -765,6 +835,14 @@ public class XpathQuery {
 			if (domDoc == null) {
 				return null;
 			}
+			
+			if (queryPrefix.length()>0){ 
+				if (fullxmlpath.startsWith("//")){ 
+					fullxmlpath = fullxmlpath.substring(2, fullxmlpath.length());
+				}
+				fullxmlpath = queryPrefix+"//"+fullxmlpath;
+			}
+
 			
 			expr = xpath.compile( fullxmlpath );
 			
@@ -1405,61 +1483,6 @@ public class XpathQuery {
 		return xvalue;
 	}
 	
-	private org.w3c.dom.Document parseXmlStr( InputStream instream){
-		
-		DocumentBuilderFactory dbf;
-		DocumentBuilder db ;
-		
-		try {
-			
-			dbf = DocumentBuilderFactory.newInstance();
-			//Using factory get an instance of document builder
-			db = dbf.newDocumentBuilder();
-
-			//parse using builder to get DOM representation of the XML file
-				domDoc =  db.parse(instream) ;
-		
-		/*	
-		}catch(ParserConfigurationException pce) {
-			pce.printStackTrace();
-		}catch(SAXException se) {
-			
-			se.printStackTrace();
-		*/
-		}catch (Exception e) {
-			// e.printStackTrace();
-		}
-
-		return domDoc ;
-	}
-
-	public org.w3c.dom.Document parseXmlStr( ){
-		  
-		
-		try {
-			xmlStream = null;
-			if (xmlStr.length()>2){
-				xmlStream = new ByteArrayInputStream( xmlStr.getBytes("UTF-8") );
-			}
-			// opposite direction is using a java obj
-			// StreamToString sts = new StreamToString();
-			
-			if ((xmlStream!=null) && (xmlStream.available()>0)){
-				domDoc = parseXmlStr(xmlStream) ;
-			}
-			
-			Thread.yield(); // tribute to SAX...
-			
-		}catch(IOException ioe) {
-			ioe.printStackTrace();
-		}
-		return domDoc ;
-	}
-
-	public org.w3c.dom.Document getDomDoc() {
-		return domDoc;
-	}
-
 	public String changeAtrributeValue( String parentTagName, String attr, String valueStr) {
 		
 		String outStr = "";
@@ -1520,17 +1543,6 @@ public class XpathQuery {
 	}
 
 
-	public String getQueryPrefix() {
-	 
-		return queryPrefix;
-	}
-	
-	public void setQueryPrefix(String xquery) {
-
-		queryPrefix = xquery;
-	}
-	
-	
 	private static void buildEntryList( List<String> entries, String parentXPath, Element parent ) {
 		
 	    NamedNodeMap attrs = parent.getAttributes();

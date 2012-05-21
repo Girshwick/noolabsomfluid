@@ -17,6 +17,8 @@ import org.NooLab.utilities.net.GUID;
 import org.NooLab.utilities.strings.StringsUtil;
 
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 
 import com.jamesmurty.utils.XMLBuilder;
 
@@ -158,7 +160,7 @@ public abstract class XMessageAbs {
 				embeddingtag = embeddingtag.replace("///", "//");
 			}
 			
-			xpathQuery.setXml( xmlstr ) ;
+			xpathQuery.ensureXmlDoc( xmlstr ) ;
 			Thread.yield(); out.delay(2);
 			
 			ruid = GUID.randomvalue() ;
@@ -293,7 +295,7 @@ public abstract class XMessageAbs {
 			attrValue = str;
 			entryExists = (str != null) && (str.length() > 0);
 
-			xpathQuery.setXml(rawXmlMsg);
+			xpathQuery.ensureXmlDoc(rawXmlMsg);
 
 			guidStr = GUID.randomvalue() ;
 			
@@ -468,7 +470,7 @@ public abstract class XMessageAbs {
     	domainSpecs = domainSpecs + itemSpecs;
     	
     	if (xpathQuery.domDoc==null){
-    		xpathQuery.setXml( rawXmlMsg ) ;
+    		xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
     	}
     	
 		list = xpathQuery.getMatchingXmlNodes( domainSpecs );
@@ -513,7 +515,7 @@ public abstract class XMessageAbs {
     	domainSpecs = domainSpecs + itemSpecs;
     	
     	if (xpathQuery.domDoc==null){
-    		xpathQuery.setXml( rawXmlMsg ) ;
+    		xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
     	}
     	
     	listItems = xpathQuery.getAttributesValues( domainSpecs , itemSpecs, attrSpecs );
@@ -561,7 +563,7 @@ public abstract class XMessageAbs {
 			if ((domainSpecs.length()==0) || (attrLabel.length()==0)){
 				return null;
 			}
-			xpathQuery.setXml( rawXmlMsg ) ;
+			xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
 			
 			if (domainSpecs.startsWith("//")){
 				domainSpecs = domainSpecs.replace("//", "");
@@ -671,7 +673,7 @@ public abstract class XMessageAbs {
     		}
         	
         	
-    		xpathQuery.setXml( rawXmlMsg ) ;
+    		xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
     		
         	xmlNodeObj = xpathQuery.getMatchingXmlNode( xquery ) ;
         	
@@ -696,7 +698,7 @@ public abstract class XMessageAbs {
 			if ((domainSpecs.length()==0) || (attrSpecs.length()==0)){
 				return xmlNodeObj;
 			}
-			xpathQuery.setXml( rawXmlMsg ) ;
+			xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
 			
 			if (domainSpecs.startsWith("//")){
 				domainSpecs = domainSpecs.replace("//", "");
@@ -761,7 +763,7 @@ public abstract class XMessageAbs {
 				return false;
 			}
     		
-			xpathQuery.setXml( rawXmlMsg ) ;
+			xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
     		
 			node = (Node) xpathQuery.getXmlNodeByName( domainSpecs );
 			
@@ -980,7 +982,7 @@ public abstract class XMessageAbs {
         		 //   //property[@id='1'] 
         	
         	  
-    		xpathQuery.setXml( rawXmlMsg ) ;
+    		xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
     		
         	xmlNodeObj = xpathQuery.getMatchingXmlNode( xquery ) ;
         	
@@ -1030,7 +1032,7 @@ public abstract class XMessageAbs {
 			if ((domainSpecs.length()==0) || (attrSpecs.length()==0)){
 				return infoStr;
 			}
-			xpathQuery.setXml( rawXmlMsg ) ;
+			xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
 			
 			if (domainSpecs.startsWith("//")){
 				domainSpecs = domainSpecs.replace("//", "");
@@ -1213,12 +1215,12 @@ public abstract class XMessageAbs {
     	long value=-1;
 		 
 		
-		xpathQuery.setXml( rawXmlMsg ) ;
+		xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
 		 
 		if ((domainSpecs.length()==0) || (attrSpecs.length()==0)){
 			return value;
 		}
-		xpathQuery.setXml( rawXmlMsg ) ;
+		xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
 		
 		if (domainSpecs.startsWith("//")){
 			domainSpecs = domainSpecs.replace("//", "");
@@ -1278,6 +1280,48 @@ public abstract class XMessageAbs {
     	return value;
     }
     
+    public String getTextData( String rawXmlMsg, String xpath){ 
+	
+    	/*
+	 // Get the text node
+Text text1 = (Text)element.getFirstChild();
+String string = text1.getData();
+	 */
+    	String textData = "";
+    	NodeList nodes =null ;
+    	Node node = null;
+
+    	
+    	try{
+    		
+
+        	xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
+        	
+        	Object nodeObj = xpathQuery.getMatchingXmlNode(xpath) ;
+        	
+        	if (nodeObj!=null){
+        		String cn = nodeObj.getClass().getSimpleName() ;  
+        		// "DTMNodeList"
+        	
+        		if (cn.toLowerCase().contains("nodelist")){
+        			nodes = (NodeList)nodeObj ;
+        			if (nodes.getLength()==0){
+        				nodes=null;
+        			}
+        		}else{
+        			node = (Node)nodeObj ;	
+        		}
+        	
+        	
+        		Text xnText = (Text)(node.getFirstChild() );
+        		textData = xnText.getData();
+        	}	
+    	}catch(Exception e){
+    		e.printStackTrace();
+    	}
+    	
+    	return textData;
+	}
 	
 	public boolean rawIndicatorsCheck( String rawXmlMsg, String[] rawIndicators){
 		boolean rB=false;
@@ -1298,6 +1342,19 @@ public abstract class XMessageAbs {
 		return rB;
 	}
 	
+	 
+	public boolean tagExists(String rawXmlMsg, String xpath) {
+		
+		boolean rB=false;
+		
+		xpathQuery.ensureXmlDoc(  rawXmlMsg ) ;
+    	
+    	Object nodeObj = xpathQuery.getMatchingXmlNode(xpath) ;
+		
+		rB = nodeObj != null; 
+		
+		return rB;
+	}
 	
 	public String listContainsAny( String strList1, String strList2 ){
 		
@@ -1619,8 +1676,8 @@ public abstract class XMessageAbs {
 
     
     
-    public boolean getBool(String str) {
-		boolean rB=false;
+    public boolean getBool(String str, boolean defaultVal) {
+		boolean rB=defaultVal;
 
 		str = str.toLowerCase();
 		
