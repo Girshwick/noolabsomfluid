@@ -5,10 +5,13 @@ import java.util.Vector;
 
 import org.NooLab.somfluid.SomApplicationIntf;
 import org.NooLab.somfluid.util.XmlStringHandling;
+import org.NooLab.somtransform.TransformationModel;
+import org.NooLab.somtransform.TransformationStack;
 import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.objects.StringedObjects;
 import org.NooLab.utilities.strings.StringsUtil;
 import org.w3c.dom.Node;
 
@@ -34,7 +37,7 @@ public class SomAppModelLoader {
 	String modelPackageName = "" ;
 	
 	
-	
+	transient StringedObjects strgObj = new StringedObjects() ;
 	transient DFutils fileutil = new DFutils();
 	transient XmlStringHandling xMsg = new XmlStringHandling() ;
 	transient StringsUtil strgutil = new StringsUtil();
@@ -65,7 +68,8 @@ public class SomAppModelLoader {
 		// this refers to the name of the project as it is contained in the model file!!
 		// on first loading, a catalog of available model will be created for faster access if it does not exists
 
-		if (activeModel.length()>0){
+		if (activeModel.length()>0){      
+											out.print(2, "checking model catalog associated with selected project ...") ;
 			checkCreateLocationCatalog() ;
 		} else{
 			// alternatively, we set the active model to blank here, and provide the package name ;
@@ -82,12 +86,14 @@ public class SomAppModelLoader {
 		mcItem = soappModelCatalog.getItemByModelname( activeModel );
 		
 		if (mcItem != null){
-			
+											out.print(2, "loading resources for requested model <"+activeModel+"> ...  ") ;
 			soappClassifier   = loadSomAppClassifier(mcItem);
 			
 			soappTransformer  = loadSomAppTransformer(mcItem);
-
 			
+			
+		}else{
+			out.print(2, "identification resources for requested model <"+activeModel+"> failed.") ;
 		}
 	}
 
@@ -149,24 +155,22 @@ public class SomAppModelLoader {
 				  soappT.modelname = str ; // must be the same as for som
 			
 			// embedded serialized object ?
-			str = xMsg.getSpecifiedInfo(rawXmlStr, "//transformations/storage/format", "type") ;
-			      if (str.length()>0){
-			    	  if (str.toLowerCase().startsWith("embed")){
-			    		  explicitXML = false;
-			    	  }else{
-			    		  explicitXML = true;
-			    	  }
-			      }else{
-			    	  explicitXML = true;
-			      }
-			
+			str = xMsg.getSpecifiedInfo(rawXmlStr, "//transformations/storage/format", "embedded") ;
+			      explicitXML = !xMsg.getBool(str, false) ;
+			    	  
+			if (explicitXML == true){
+				
+				if (xMsg.tagExists( rawXmlStr,"//transformations/storage/objectdata")){
+					explicitXML = false;
+				}
+			}
 			if (explicitXML == false){
 				
 				// load everything at once
-				loadTransformationModelFromSerialized(rawXmlStr);
+				loadTransformationModelFromSerialized(soappT,rawXmlStr);
 				
 				return 0;
-			}
+			} 
 			// all transformations, containing sub-sections "column"
 			// explicit storage
 			Vector<Object> algoNodeObjects = xMsg.getItemsList(rawXmlStr, "//transformations", "column", "index") ;
@@ -262,10 +266,28 @@ public class SomAppModelLoader {
 	}
 	
 	
-	private void loadTransformationModelFromSerialized(String rawXmlStr) {
+	/**
+	 * 
+	 * @param soappT
+	 * @param rawXmlStr
+	 */
+	private void loadTransformationModelFromSerialized( SomAppTransformer soappT,String rawXmlStr) {
 	
+		xMsg.setConditionalXPath("");
+		String str = xMsg.getTextData( rawXmlStr, "//transformations/objectdata");
+	 
+		Object object = strgObj.decode(str) ;
 		
-		
+		if (object instanceof TransformationModel){ // we pick only the list of transformations
+			TransformationModel tm = (TransformationModel)object;
+			
+			soappT.transformationModel.setOriginalColumnHeaders( new ArrayList<String>( tm.getOriginalColumnHeaders() ));
+			// this is very important for setting up the dataTable, data vectors to be classified !!!
+			
+			soappT.transformationModel.setVariableTransformations(  new ArrayList<TransformationStack>(tm.getVariableTransformations()) ) ;
+			
+			// and the original vector of column headers = assignates = features  
+		}
 		
 	}
 

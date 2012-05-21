@@ -66,7 +66,7 @@ public class SomContainer {
 	public XMLBuilder getSomProjectDescriptionXml(SomFluidXMLHelper xEngine) {
 
 		XMLBuilder  spbuilder = xEngine.getXmlBuilder( "project" );
-		String datestr, machineID="",engineID="";
+		String datestr, machineID="",engineID="",prjLabel="";
 		 
 			// ............................................
 			spbuilder = spbuilder.e("general");
@@ -81,10 +81,11 @@ public class SomContainer {
 			    }
 			    
 			    SomFluidTask _task = somObj.sfFactory.somFluidModule.somTasks.getItemByGuid(taskGuid) ;
-			    
+			    prjLabel = sfProperties.getPersistenceSettings().getProjectName();
 			    long deltaTsec = (_task.closetime - _task.opentime)/1000;
 			    
 				spbuilder = spbuilder.e("task").a("id", taskGuid).up() 
+									 .e("name").a("label", ""+prjLabel ).up()
 								 	 .e("date").a("value", datestr).up() 
 								 	 .e("timeneeded").a("sec", ""+deltaTsec).a("h", String.format("%.3f", (double)deltaTsec/3600.0)).up()
 								 	 .e("machine").a("id", machineID).up()

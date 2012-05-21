@@ -25,14 +25,25 @@ public class TransformationModel implements Serializable{
 	transient SomTransformerIntf somTransformer;
 	transient SomDataObject  somData ;
 	
+	
 	/** any of the variables gets a transformation stack assigned as soon as an initialization is requested */
 	ArrayList<TransformationStack> variableTransformations = new ArrayList<TransformationStack>();
-
+	
+	ArrayList<String> originalColumnHeaders = new ArrayList<String>() ;
+	ArrayList<String> derivedColumnHeaders  = new ArrayList<String>() ;
+	
+	ArrayList<String> requiredVariables  = new ArrayList<String>() ;
+	SomAssignatesDerivations derivations;
+	
+	
+	
 	ArrayList<String> xmlImage = new ArrayList<String>() ;
 	
 	transient SomFluidXMLHelper xEngine = new SomFluidXMLHelper();
 	transient StringsUtil strgutil = new StringsUtil();
 	transient PrintLog out ;
+
+	
 	
 	// ========================================================================
 	public TransformationModel(SomTransformerIntf transformer, SomDataObject somdata){
@@ -95,15 +106,25 @@ public class TransformationModel implements Serializable{
 		return xmlstr;
 	}
 
-	public int getIndexByOutputReferenceGuid(String tguid) {
+	public TransformationStack getItem(int index) {
+		TransformationStack tstack=null;
+		
+		if ((index>=0) && (index<variableTransformations.size())){
+			tstack = variableTransformations.get(index);
+		}
+		
+		return tstack;
+	}
 
+	public int getIndexByOutputReferenceGuid(String tguid) {
+	
 		TransformationStack ts;
 		int index = -1;
-
+	
 		for (int i = 0; i < variableTransformations.size(); i++) {
-
+	
 			ts = variableTransformations.get(i);
-
+	
 			if (ts.outputColumnIds.indexOf(tguid) >= 0) {
 				index = i;
 				break;
@@ -112,11 +133,37 @@ public class TransformationModel implements Serializable{
 		return index ;
 	}
 
+	public void setOriginalColumnHeaders() {
+		
+		ArrayList<String> rawcolHeaders = new ArrayList<String>();
+		originalColumnHeaders.size();
+		ArrayList<SomAssignatesDerivationTree> dTrees ;
+		
+		dTrees = derivations.derivationTrees ; // the trees for all approvably (!) raw variables...
+		
+		for (int i=0;i<dTrees.size();i++){
+			String varlabel = dTrees.get(i).baseVariableLabel;
+			rawcolHeaders.add(varlabel) ;
+		}
+		originalColumnHeaders.clear();
+		originalColumnHeaders.addAll(rawcolHeaders) ;
+	}
+
+	public void setOriginalColumnHeaders(ArrayList<String> stritems) {
+		originalColumnHeaders.clear();
+		originalColumnHeaders.addAll(stritems) ;
+	}
+	
+	public void setDerivedColumnHeaders(ArrayList<String> colHeaders) {
+		derivedColumnHeaders = colHeaders;
+	}
+
+	
 	/**
 	 * TODO: only the first time (= map is empty) we go through the loop, else we use the 2-map
 	 *       especially for many variables it is expensive
 	 */
-	public TransformationStack findTransformationStackByGuid( String stackedTransformGuid){
+	public TransformationStack findTransformationStackByStackGuid( String transformStackGuid){
 		
 		TransformationStack tstack = null, ts;
 		StackedTransformation st;
@@ -127,17 +174,37 @@ public class TransformationModel implements Serializable{
 			for (int s=0;s< ts.getItems().size();s++){
 				
 				st = ts.getItems().get(s) ;
-				if (st.idString.contentEquals(stackedTransformGuid) ){
+				if (st.idString.contentEquals(transformStackGuid) ){
 					tstack = ts;
 					break;
 				}
 			}
-			
+			if (tstack!=null){
+				break;
+			}
 		}
 		
 		return tstack ;
 	}
 
+	public TransformationStack  findTransformationStackByGuid( String stackedTransformGuid){
+		
+		TransformationStack tstack = null, ts;
+		StackedTransformation st;
+		
+		for (int i=0;i< variableTransformations.size();i++){
+			
+			ts = variableTransformations.get(i);
+			 
+			if (ts.transformGuid.contentEquals(stackedTransformGuid)){
+				tstack = ts;
+				break;
+			}
+		}
+		
+		return tstack ;
+	}
+	
 	public int findTransformationStackByVariable(Variable variable) {
 
 		int index=-1;
@@ -190,7 +257,7 @@ public class TransformationModel implements Serializable{
 		
 		
 		stguid = st.idString ;
-		pvarTStack = findTransformationStackByGuid( parentGuid ) ;
+		pvarTStack = findTransformationStackByStackGuid( parentGuid ) ;
 		
 		varLabel = pvarTStack.varLabel ;
 		index = variables.getIndexByLabel(varLabel) ;
@@ -251,6 +318,32 @@ public class TransformationModel implements Serializable{
 	public void setXmlImage(ArrayList<String> xmlImage) {
 		this.xmlImage = xmlImage;
 	}
+
+	public ArrayList<String> getOriginalColumnHeaders() {
+		return originalColumnHeaders;
+	}
+
+	public ArrayList<String> getRequiredVariables() {
+		return requiredVariables;
+	}
+
+	public void setRequiredVariables(ArrayList<String> requiredVariables) {
+		this.requiredVariables = requiredVariables;
+	}
+
+	public SomAssignatesDerivations getDerivations() {
+		return derivations;
+	}
+
+	public void setDerivations(SomAssignatesDerivations derivations) {
+		this.derivations = derivations;
+	}
+
+	public ArrayList<String> getDerivedColumnHeaders() {
+		return derivedColumnHeaders;
+	}
+
+
 
 	 
 	

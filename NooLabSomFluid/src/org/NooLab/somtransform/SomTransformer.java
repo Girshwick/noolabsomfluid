@@ -1,6 +1,7 @@
 package org.NooLab.somtransform;
 
-import java.io.IOException;
+ 
+import java.io.File;
 import java.util.*;
 
 import org.NooLab.somfluid.SomFluidProperties;
@@ -12,7 +13,7 @@ import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.data.NormValueRangesIntf;
 import org.NooLab.somfluid.properties.PersistenceSettings;
-import org.NooLab.somfluid.storage.ContainerStorageDevice;
+ 
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.PersistentAgentIntf;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
@@ -92,6 +93,8 @@ public class SomTransformer implements SomTransformerIntf,
 	
 	TransformationModel transformationModel;
  
+	SomAssignatesDerivations somDerivations ;
+	
 	SomTransformerInitialization initialization;
 	
 	IndexedDistances advAutoTransformations = new IndexedDistances();
@@ -127,6 +130,7 @@ public class SomTransformer implements SomTransformerIntf,
 		transformationModel = new TransformationModel(this, somData);
 		
 		initialization = new SomTransformerInitialization();
+		somDerivations = new SomAssignatesDerivations(this);
 		
 		fileorg = sfProperties.getFileOrganizer() ;
 		fileutil = fileorg.getFileutil();
@@ -167,7 +171,7 @@ public class SomTransformer implements SomTransformerIntf,
 				tstack.baseVariable = variable; 
 				tstack.varLabel = variable.getLabel() ;
 			
-				transformationModel.variableTransformations.add(tstack) ;
+				transformationModel.variableTransformations.add(tstack) ; 
 			}
 		}
 		 
@@ -240,7 +244,6 @@ public class SomTransformer implements SomTransformerIntf,
 		
 	} 
 
-
 	public void extractTransformationsXML(boolean embeddedObject ){
 		
 		
@@ -257,10 +260,11 @@ public class SomTransformer implements SomTransformerIntf,
 	 * 
 	 * 
 	 */
+ 
 	public void extractTransformationsXML( int derivationLevel, String version, int revision, boolean embeddedObject){
 		
 		XMLBuilder builder;
-		String xmlstr,tmpdir, xstr ;
+		String xmlstr ;
 		
 		this.derivationLevel = derivationLevel ;
 		this.version = version ;
@@ -269,9 +273,9 @@ public class SomTransformer implements SomTransformerIntf,
 		// create target directory = temporary by java  
 		try {
 			
-			tmpdir = DFutils.createTempDir( SomDataObject._TEMPDIR_PREFIX).getAbsolutePath();
+			// String tmpdir = DFutils.createTempDir( SomDataObject._TEMPDIR_PREFIX).getAbsolutePath();
 			
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
@@ -287,7 +291,17 @@ public class SomTransformer implements SomTransformerIntf,
 		builder = builder.importXMLBuilder( getSourceDescriptionXml() );
 		// builder = builder.e("sources").up();
 		
+		// creating XML about the context
+		getTransformerContextAsXml(builder);
 		
+		analyzeDerivationsOfVariables(); 
+		
+		transformationModel.derivations = somDerivations ;
+
+		transformationModel.setOriginalColumnHeaders();
+		
+		transformationModel.setDerivedColumnHeaders( new ArrayList<String>( somData.getNormalizedDataTable().getColumnHeaders() )); 
+
 		
 		 
 		if (embeddedObject){
@@ -295,23 +309,22 @@ public class SomTransformer implements SomTransformerIntf,
 			String serTModelObjStr = strobj.encode( transformationModel ) ;
 			// create xml embedding, put format info
 			
+			String rqvarListStr = xEngine.digestStringList( transformationModel.requiredVariables );
 			builder = builder.e("transformations")
+			                      .e("requiedvariables").a("list", rqvarListStr).up()
 			                      .e("storage")
 			                          .e("format").a("embedded", ""+xEngine.booleanize(embeddedObject)).up()
 			                      .up()
 			                      .e("objectdata").t(serTModelObjStr).up()
 			                 .up();
 			// "//transformations/storage/format", "type") ;
-			xstr = "";
+			
 		}else{
 			// creating the XML String from transformations, add a chapter "transformations"
-			xstr = transformationModel.getXML(builder);
+			transformationModel.getXML(builder);
 		}
 		
-		// creating XML about the context
-		String cxstr = getTransformerContextAsXml();
-		
-		 
+  
 		xmlstr = xEngine.getXmlStr(builder, true);
 		
 		xmlstr = strgutils.replaceAll(xmlstr, "<parameters/>", "");
@@ -322,6 +335,45 @@ public class SomTransformer implements SomTransformerIntf,
 		// out.print(2, xmlstr) ;
 	}
 	
+	private SomAssignatesDerivations analyzeDerivationsOfVariables() {
+		 
+		if (transformationModel==null){
+			transformationModel = new TransformationModel(this, somData);
+		}
+		somDerivations.initialize();
+		
+		somDerivations.createDerivationTrees() ;
+		
+		return somDerivations;
+	}
+
+
+	public void determineRequiredRawVariables( ArrayList<String> selectedModelVars){
+		
+		ArrayList<String> reqVars = new ArrayList<String>();
+		String varlabel ;
+		SomAssignatesDerivationTree dTree;
+		ArrayList<SomAssignatesDerivationTree> dTrees;
+		
+		// in this way it should also work to create the roots representation
+		for (int i=0;i<selectedModelVars.size();i++){
+			varlabel = selectedModelVars.get(i);
+			 
+			dTrees = transformationModel.derivations.getTreesByVariable( 1, varlabel); // 0=base, 1=any
+			// dtransformationModel.derivations.getVariablesOfTree( dTree ) ;
+			
+			for (int d=0;d<dTrees.size();d++){
+				varlabel = dTrees.get(d).baseVariableLabel ;
+				reqVars.add(varlabel) ;
+			}
+			// derivationTrees. 
+		}// i->
+		
+		transformationModel.requiredVariables.clear();
+		transformationModel.requiredVariables.addAll(reqVars) ;
+	}
+
+
 	public ArrayList<String> getXmlImage() {
 		if (xmlImage==null){
 			xmlImage = new ArrayList<String> ();
@@ -334,9 +386,23 @@ public class SomTransformer implements SomTransformerIntf,
 		
 		XMLBuilder builder = xEngine.getXmlBuilder( "sources" );
 		
-		PersistenceSettings ps = sfProperties.getPersistenceSettings();
+		// PersistenceSettings ps = sfProperties.getPersistenceSettings();
+		// ps.getProjectName();
 		
-		int varcount=0, reccount=0,bytecount=0;
+		int varcount=0, reccount=0;
+		long filedatetimestamp=0,bytecount=0;
+		
+		varcount = somData.getData().getHeadersCount() ;
+		varcount = somData.getData().getColcount() ;
+		reccount = somData.getDataTable().getRowcount() ;
+		
+		String srcfilename = somData.getDataTable().getSourceFilename();
+		File file = new File(srcfilename);
+		filedatetimestamp = file.lastModified() ;
+		bytecount = file.length();
+
+		// SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+		// System.out.println("After Format : " + sdf.format(file.lastModified()));
 		
 		builder = builder
 						 .e("sourcetype").a("value", ""+sfProperties.getSourceType()).up()
@@ -344,6 +410,7 @@ public class SomTransformer implements SomTransformerIntf,
 						 .e("size").a("variables", ""+varcount)
 						           .a("records",""+reccount)
 						           .a("bytes",""+bytecount)
+						           .a("filedate",""+filedatetimestamp)
 						 .up()
 						 ;
 				
@@ -386,7 +453,7 @@ public class SomTransformer implements SomTransformerIntf,
  
 
 
-	private String getTransformerContextAsXml(){
+	private String getTransformerContextAsXml(XMLBuilder builder){
 		
 		return  "";
 	}
@@ -425,7 +492,7 @@ public class SomTransformer implements SomTransformerIntf,
 			StackedTransformation st,sta ;
 			Variables variables;
 			
-			TransformationStack newTStack,varTStack ;
+			TransformationStack varTStack ;
 			
 			// known: dataTableObj = the data table , the items in the tstack have access to the variable objects
 			// uses transformations as algos even for basic stuff !!
@@ -462,10 +529,10 @@ public class SomTransformer implements SomTransformerIntf,
 						v = varTStack.baseVariable ;
 						
 						varLabel = v.getLabel() ;
-if (varLabel.toLowerCase().contains("recht")){ 
-	int zz;
-	zz=0;
-}						
+						
+if (varLabel.toLowerCase().contains("recht")){
+	n=0;
+}
 						currentFormat = varTStack.getLatestFormat() ; // is a sibling of the call "varTStack.getFormatAtStackPos()" ;
 						if (currentFormat<0){
 							currentFormat = v.getRawFormat() ;
@@ -502,8 +569,11 @@ if (varLabel.toLowerCase().contains("recht")){
 							// it takes the format id from its predecessor 
 							// we address the base table here , since we are ahead of normalization 
 							// this also sets "inputVarLabels" in created stack
-							newTStack = createAddVariableByCopy( 0, varTStack);
- 							
+							 
+							createAddVariableByCopy( 0, varTStack);
+ 							// it will be added to the right of the table, so we will meet it later in the loop, 
+							// no need to deal with it right now (like this: TransformationStack newTStack = ...)
+							
 							cn = transformationModel.variableTransformations.size() ;
 							st = varTStack.getLastPosition();
 							st = varTStack.getFirstPosition();
@@ -552,7 +622,7 @@ if (varLabel.toLowerCase().contains("recht")){
 							continue;
 						}
 						
-	if (i>=16){
+	if (i>=18){
 		result = -2;
 	}
 						// note that mv in strings is encoded as "-M.V."
@@ -590,7 +660,7 @@ if (varLabel.toLowerCase().contains("recht")){
 							strvals = dtc.getCellValueStr() ;
 							st.getInData().add( strvals );
 							
-	if (varLabel.toLowerCase().contains("sales")){
+	if (varLabel.toLowerCase().contains("recht")){
 		n=0;
 	}
 							varTStack.update();
@@ -665,7 +735,7 @@ if (varLabel.toLowerCase().contains("recht")){
 					
 					ArrayList<Double> primaryInValues ;
 					ArrUtilities arrutils = new ArrUtilities();
-					double vmax ;
+					double vmax =0.0;
 					
 					for (int t=0;t<transformationModel.variableTransformations.size();t++){
 						
@@ -695,6 +765,9 @@ if (varLabel.toLowerCase().contains("recht")){
 							if ((vlist.size()>0) && ( strgutils.isNumericX( vlist.get(0)) )){
 								primaryInValues = (ArrayList<Double>)vlist ;	
 								vmax  = arrutils.arrayMax(primaryInValues, -3.0) ;
+								if (vmax>1){
+									// ???
+								}
 							}
 						}
 						
@@ -757,7 +830,7 @@ if (varLabel.toLowerCase().contains("recht")){
 		 */
 		public void applyAdvNumericalTransforms( IndexedDistances listOfPutativeTransforms ) {
 			
-			int n,k,r, advAprioriTransformsCount=0;
+			int k,r, advAprioriTransformsCount=0;
 			String tvLabel, varlabel ;
 			boolean hb,targetDefined=false ;
 			TransformationStack varTStack, newVarTStack ;
@@ -781,7 +854,7 @@ if (varLabel.toLowerCase().contains("recht")){
 				advAutoTransformations.addItems( listOfPutativeTransforms );
 			}
 			
-			boolean a=false;
+			
 			try{
 				
 				dataTable = dataTableNormalized ;
@@ -802,7 +875,7 @@ if (varLabel.toLowerCase().contains("recht")){
 	
 						// check whether this column has already been identified as "ordinal"
 						if (varTStack.outputColumnIds.size()>0){
-							int fid = variable.getRawFormat(); // // e.g. __FORMAT_INT = 2;  __FORMAT_ORD = 3
+							int fid = variable.getRawFormat(); // ???  e.g. __FORMAT_INT = 2;  __FORMAT_ORD = 3
 						}
 						
 						// get the out-data of the last transformation in the stack
@@ -857,7 +930,7 @@ if (varLabel.toLowerCase().contains("recht")){
 							EmpiricDistribution ed = npc.statisticalDescription.getEmpiricDistribution();
 							if (ed.isVariableIsNominal()){
 								// stop processing of this var, just make an entry to the variables data format
-								int vix = somData.getVariables().getIndexByLabel(varlabel) ;
+								// int vix = somData.getVariables().getIndexByLabel(varlabel) ;
 								
 								variable.setRawFormat( DataTable.__FORMAT_ORD ) ;
 								variable.setValueScaleNiveau(Variable._VARIABLE_SCALE_NOMINAL);
@@ -1433,8 +1506,7 @@ if (basevarLabel.contains("Bisher_c2")){
 						}
 						varTStack.setFirstItemForUpdate( varTStack.items.size()-1);
 						varTStack.update();
-						int k;
-						k=0;
+						
 					
 				} // format ?
 				
@@ -2018,11 +2090,18 @@ if (basevarLabel.contains("Bisher_c2")){
 	}
 
 
+	/**
+	 * TODO: NOT READY; no ABBR. so far !!!
+	 * 
+	 * @param varStrings
+	 * @return
+	 */
 	private String createLabelForSpriteDerivedVariable(String[] varStrings) {
 		
 		String newLabel = "",dLevelIndicationStr;
 		int ix,dmax = 0;
 		int exptotalLength = 5;
+		
 		String[] prepVarStrings = new String[varStrings.length];
 		
 		// we have to check the stack for similar name... etc.

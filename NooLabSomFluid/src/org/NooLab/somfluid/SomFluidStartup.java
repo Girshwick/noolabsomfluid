@@ -68,13 +68,13 @@ public class SomFluidStartup {
 	
 	/** provides a coherent storage for results under a common base folder  */
 	public static String getLastProjectName() {
-	 
+		lastProjectName = IniProperties.lastProjectName ;
 		return lastProjectName;
 	}
 
 	/**   */
 	public static String getLastDataSet() {
-		
+		lastDataSet = IniProperties.dataSource ;
 		return lastDataSet;
 	}
 

@@ -3,6 +3,8 @@ package org.NooLab.somfluid;
 import org.NooLab.somfluid.app.SomAppClassifier;
 import org.NooLab.somfluid.app.SomAppModelLoader;
 import org.NooLab.somfluid.app.SomAppProperties;
+import org.NooLab.somfluid.app.SomAppTransformer;
+import org.NooLab.somfluid.app.SomModelCatalog;
 import org.NooLab.utilities.logging.PrintLog;
 
  
@@ -63,12 +65,15 @@ class SomApplication implements SomApplicationIntf {
 		
 		soappLoader = new SomAppModelLoader(this,soappProperties);
 		
+		// loading the som model
 		soappLoader.loadModel();
 		
-		SomAppClassifier soc = soappLoader.getSoappClassifier() ;
-		soappLoader.getSoappTransformer() ;
+		// in this way we access it 
+		// SomAppClassifier  soc = soappLoader.getSoappClassifier() ;
+		// SomAppTransformer sot = soappLoader.getSoappTransformer() ;
 		
-		soappLoader.getSoappModelCatalog() ; // :)
+		// for maintaining meta-description
+		// SomModelCatalog smc = soappLoader.getSoappModelCatalog() ; // :)
 		
 
 		
@@ -80,7 +85,10 @@ class SomApplication implements SomApplicationIntf {
 	public void perform() {
 		out.print(2,"performing classification") ;
 		
+		// reading the data source, into SomDataObject 
+		// if not present, we do nothing (waiting just for the incoming data)
 		
+		// this reading we have to do tolerant against shifts of raster: possibly we have to rearrange it
 		
 	}
 

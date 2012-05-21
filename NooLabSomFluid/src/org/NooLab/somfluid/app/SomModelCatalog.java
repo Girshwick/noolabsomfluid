@@ -218,7 +218,7 @@ public class SomModelCatalog implements Serializable{
 
 		int result, ixItem, r;
 		XmlStringHandling sxMsg;
-		String str,vLabels ;
+		String str,vLabels , rawXmlStr="";
 		ArrayList<String> fieldlabels ;
 		Vector<Object> xmlContentItems;
 
@@ -322,7 +322,7 @@ public class SomModelCatalog implements Serializable{
 		
 		ArrayList<String> subfolders ;
 		String pkgname="" ;
-		int nd ;
+		int nd,ix ;
 		SomAppModelCatalog availableModelCatalog;
 		ModelCatalogItem mcItem ;
 		
@@ -339,19 +339,22 @@ public class SomModelCatalog implements Serializable{
 			
 			// that's from catalog file
 			int cin = soappModelCatalog.items.size();
+			ix = -1;
+			if ( (mcItem!=null) && ( mcItem.packageName.length()>0) && (mcItem.modelName.length()>0)){
+				ix = soappModelCatalog.getItemIndexByIDs( mcItem.packageName, mcItem.modelName ) ;
 			
-			int ix = soappModelCatalog.getItemIndexByIDs( mcItem.packageName, mcItem.modelName ) ;
 			if (ix>=0){
 				int dcount = CollectionUtils.disjunction(soappModelCatalog.items.get(ix).fieldlabels , mcItem.fieldlabels).size() ;
-				if (dcount==0){
-					soappModelCatalog.items.get(ix).confirmed = true ;
-				}else{
-					mcItem.confirmed = true ;
-					soappModelCatalog.add(mcItem) ;
+					if (dcount == 0) {
+						soappModelCatalog.items.get(ix).confirmed = true;
+					} else {
+						mcItem.confirmed = true;
+						soappModelCatalog.add(mcItem);
+					}
+				} else {
+					mcItem.confirmed = true;
+					soappModelCatalog.add(mcItem);
 				}
-			}else{
-				mcItem.confirmed = true ;
-				soappModelCatalog.add(mcItem) ;
 			}
 			// confirmed
 		} // ->
@@ -362,7 +365,8 @@ public class SomModelCatalog implements Serializable{
 		while (m>=0){
 			
 			mcItem = soappModelCatalog.items.get(m) ;
-			if (mcItem.confirmed==false){
+			if ((mcItem.confirmed==false) || 
+				( mcItem.packageName.length()==0) || (mcItem.modelName.length()==0) ){
 				soappModelCatalog.items.remove(m) ;
 			}
 			

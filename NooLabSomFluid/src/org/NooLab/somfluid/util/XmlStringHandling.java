@@ -51,24 +51,7 @@ public class XmlStringHandling extends XMessageAbs implements XMessageIntf{
 	}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
+  
 
 
 	
