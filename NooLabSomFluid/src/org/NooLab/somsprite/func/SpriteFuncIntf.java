@@ -1,5 +1,7 @@
 package org.NooLab.somsprite.func;
 
+import java.util.ArrayList;
+
 import org.NooLab.somsprite.FunctionCohortParameterSet;
 
 public interface SpriteFuncIntf {
@@ -17,4 +19,6 @@ public interface SpriteFuncIntf {
 	public void allowVariablesCountMismatch(boolean flag);
 	
 	public FunctionCohortParameterSet getCohortParameterSet() ;
+	
+	public ArrayList<String> getVariables();
 }

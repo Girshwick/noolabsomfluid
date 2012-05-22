@@ -17,7 +17,7 @@ public abstract class SomAssignatesDerivationTreeAbstract implements Serializabl
 
 	transient SomDataObject somData;
 	
-	protected ArrayList<CollectedVariable> collectedVariables;
+	protected ArrayList<CollectedVariable> collectedVariables = new ArrayList<CollectedVariable>();
 	
 	protected ArrayList<String> variableLabels = new ArrayList<String>();
 	protected ArrayList<String> stackGuids     = new ArrayList<String>();
@@ -37,6 +37,9 @@ public abstract class SomAssignatesDerivationTreeAbstract implements Serializabl
 	}
  
 	public ArrayList<CollectedVariable> getCollectedVariables() {
+		if (collectedVariables==null){
+			collectedVariables = new ArrayList<CollectedVariable>(); 
+		}
 		return collectedVariables;
 	}
 

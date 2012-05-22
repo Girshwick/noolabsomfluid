@@ -146,6 +146,7 @@ public class Variable implements Serializable{
 	 */
 	public String[] getParentItems() {
 		return parentItems;
+		 
 	}
 
 	public void setMinimum(double minimum) {

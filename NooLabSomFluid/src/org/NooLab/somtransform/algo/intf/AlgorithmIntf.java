@@ -25,6 +25,8 @@ public interface AlgorithmIntf extends AlgorithmParameterIntf, Serializable{
 	public static final int _ALGO_RANGEVIOLATION_AUTOCORRECT = 4;
 
 	
+
+	
 	public int getType();
 	
 	public String getVersion();
@@ -38,6 +40,8 @@ public interface AlgorithmIntf extends AlgorithmParameterIntf, Serializable{
 	public int calculate() ;
 
 	public ArrayList<Double> getValues( int part ) ;
+	
+	
 	
 	public ArrayList<Double> getDescriptiveResults() ;
 	

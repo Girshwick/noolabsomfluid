@@ -415,6 +415,8 @@ public class SomFluid
 
 			boolean embed = sfProperties.persistenceSettings.isExportTransformModelAsEmbeddedObj() ;
 			// creating an xml image
+			moz.getSomDataObj().getTransformer().determineRequiredRawVariablesByIndexes( moz.getOutresult().getBestMetric().getVarIndexes() );
+			
 			moz.getSomDataObj().getTransformer().extractTransformationsXML(embed);
 			
 			ArrayList<String> txstrings = moz.getSomDataObj().getTransformer().getXmlImage() ;

@@ -22,6 +22,7 @@ import org.NooLab.somsprite.AnalyticFunctionSpriteImprovement;
 import org.NooLab.somsprite.AnalyticFunctionTransformationsIntf;
 import org.NooLab.somtransform.algo.distribution.EmpiricDistribution;
 import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
+import org.NooLab.somtransform.algo.intf.AlgoTransformationIntf;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
@@ -311,7 +312,7 @@ public class SomTransformer implements SomTransformerIntf,
 			
 			String rqvarListStr = xEngine.digestStringList( transformationModel.requiredVariables );
 			builder = builder.e("transformations")
-			                      .e("requiedvariables").a("list", rqvarListStr).up()
+			                      .e("requiredvariables").a("list", rqvarListStr).up()
 			                      .e("storage")
 			                          .e("format").a("embedded", ""+xEngine.booleanize(embeddedObject)).up()
 			                      .up()
@@ -347,7 +348,42 @@ public class SomTransformer implements SomTransformerIntf,
 		return somDerivations;
 	}
 
-
+	public void determineRequiredRawVariablesByIndexes( ArrayList<Integer> proposedindexes){
+		
+		ArrayList<Integer> removalsIxs = new ArrayList<Integer>() ;
+		ArrayList<String> selectedModelVars;
+		int tvindex,rix;
+		Variables variables = somData.getVariables();
+		
+		tvindex = variables.getTvColumnIndex();   removalsIxs.add(tvindex);
+		int iix = variables.getIdColumnIndex() ;  removalsIxs.add(iix);
+		
+		
+		removalsIxs.addAll( variables.getIndexesForVariablesList( variables.getIdVariables() ) ) ; 
+		removalsIxs.addAll( variables.getIndexesForVariablesList( variables.getTargetedVariables() ) ) ; 
+		
+		if (removalsIxs.size()>0){
+			
+			for (int i=0;i<removalsIxs.size();i++){
+				rix = removalsIxs.get(i) ;
+				int ix = proposedindexes.indexOf(rix);
+				if (ix>=0){
+					proposedindexes.remove(ix) ;
+				}	
+			} // i->
+			
+		}
+		
+		
+		selectedModelVars = variables.deriveVariableSelection(proposedindexes, 0);
+		// remove target variable
+		
+			
+		determineRequiredRawVariables(selectedModelVars);
+		
+	}
+	
+	
 	public void determineRequiredRawVariables( ArrayList<String> selectedModelVars){
 		
 		ArrayList<String> reqVars = new ArrayList<String>();
@@ -355,16 +391,24 @@ public class SomTransformer implements SomTransformerIntf,
 		SomAssignatesDerivationTree dTree;
 		ArrayList<SomAssignatesDerivationTree> dTrees;
 		
+		
+		varlabel = "";
+		
 		// in this way it should also work to create the roots representation
 		for (int i=0;i<selectedModelVars.size();i++){
+		
 			varlabel = selectedModelVars.get(i);
-			 
+			
+if (varlabel.toLowerCase().contains("datum_c")){
+	int k;
+	k=0;  
+}
 			dTrees = transformationModel.derivations.getTreesByVariable( 1, varlabel); // 0=base, 1=any
 			// dtransformationModel.derivations.getVariablesOfTree( dTree ) ;
 			
 			for (int d=0;d<dTrees.size();d++){
 				varlabel = dTrees.get(d).baseVariableLabel ;
-				reqVars.add(varlabel) ;
+				if (reqVars.indexOf(varlabel)<0)reqVars.add(varlabel) ;
 			}
 			// derivationTrees. 
 		}// i->
@@ -1244,9 +1288,9 @@ if (basevarLabel.contains("Bisher_c2")){
 
 				params.add(ct.expression);
 				params.add(varMapping);
-
+				 
 				((AlgorithmIntf) st.algorithm).setParameters(params);
-
+				((AlgoTransformationIntf) st.algorithm).setInputColumnsCount(ct.variablesStr.length) ;
 				
 				// in-data has n columns  (n>=1), dependent on transformation ...
 				varTStack.items.get(0).inData.clear() ;

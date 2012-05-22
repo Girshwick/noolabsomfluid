@@ -22,8 +22,9 @@ public class Evaluator {
 	
 	Map<String,Object> functions = new HashMap<String,Object>() ;
 	Map<String,String> expressions = new HashMap<String,String>() ;
-	ArrayList<String> xList = new ArrayList<String>();
+	ArrayList<String>  xList = new ArrayList<String>();
 	
+	ArrayList<String>  variables = new ArrayList<String>() ;
 	
 	// ========================================================================
 	public Evaluator(SomSprite somsprite){
@@ -61,9 +62,22 @@ public class Evaluator {
 		return resultObj ;
 	}
 	
-	public String[] getArgumentsOfExpr(String expression){
+	public String[] getArgumentsOfExpr(String expressionName){
 		String[] args = new String[0];
 		
+		 
+		SpriteFuncIntf func = (SpriteFuncIntf) functions.get(expressionName) ;
+		
+		if ((func != null) && (func.getVariables() != null)) {
+			int n = func.getVariables().size();
+			if (n > 0) {
+				args = new String[n];
+				for (int i = 0; i < func.getVariables().size(); i++) {
+					args[i] = func.getVariables().get(i);
+				}
+			}
+		}
+
 		return args ;
 	}
 
@@ -106,7 +120,8 @@ public class Evaluator {
 	public void createFunction( String name, String expression){
 		
 		SpriteFuncIntf func;
-		 
+		ArrayList<String> variables ;
+		
 		if ((expression.length()==0) || (name).length()==0){
 			return;
 		}
@@ -115,10 +130,12 @@ public class Evaluator {
 
 			func = new XFunction( expression );
 			func.setName(name);
+			variables = func.getVariables() ;
 			
 			functions.put(name, func) ;
 			expressions.put(name, expression) ;
 			xList.add(name) ;
+			 
 		}
 	}
 
@@ -133,6 +150,7 @@ public class Evaluator {
 		
 		func = new XFunction( expression, fcp);
 		
+		variables = func.getVariables() ;
 		functions.put(name, func) ;
 		expressions.put(name, expression) ;
 		xList.add(name) ;

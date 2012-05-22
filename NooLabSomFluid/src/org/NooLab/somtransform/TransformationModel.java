@@ -266,6 +266,30 @@ public class TransformationModel implements Serializable{
 	}
 
 	
+	public int getTransformStackIndexByOutputGuid(String transformGuid) {
+		
+		int index=-1;
+		TransformationStack ts, tstack=null;
+		 
+		for (int i = 0; i < variableTransformations.size(); i++) {
+
+			ts = variableTransformations.get(i);
+
+			if (ts.outputColumnIds.indexOf(transformGuid)>=0) {
+				tstack = ts;
+				break;
+			}
+		}
+
+		if ((tstack != null) && (tstack.transformGuid.contentEquals(transformGuid) == false)) { 
+			// not the same
+			index = tstack.index;
+		}
+
+		return index;
+	}
+	
+	
 	public int getIndexByLabel(String varLabel) {
 		int index=-1;
 		

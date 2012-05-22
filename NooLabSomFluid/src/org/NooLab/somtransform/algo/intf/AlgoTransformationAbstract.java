@@ -29,11 +29,13 @@ abstract public class AlgoTransformationAbstract implements AlgoTransformationIn
 	protected int rangeViolationHandlingMode = AlgorithmIntf._ALGO_RANGEVIOLATION_AUTOCORRECT ;
 	protected int rangeViolationCounter=0;
 	
-	protected boolean hasParameters = false; // will be true in case of algos like NumValEnum
+	protected boolean hasParameters = false; // will be true in case of algorithms like NumValEnum
 	
 	protected AlgorithmParameters parameters ; 
 	
 	protected String autoDescription = "" ;
+
+	protected int inputColumnsCount = 1;
 	
 	// ------------------------------------------------------------------------
 	public AlgoTransformationAbstract(){
@@ -74,6 +76,12 @@ abstract public class AlgoTransformationAbstract implements AlgoTransformationIn
 	
 	abstract public String getDescription() ;
 	
+	public int getInputColumnsCount(){
+		return inputColumnsCount;
+	}
+	public void setInputColumnsCount( int icc){
+		inputColumnsCount = icc;
+	}
 	
 	@Override
 	public void setDatDescription(DataDescription datadescription) {

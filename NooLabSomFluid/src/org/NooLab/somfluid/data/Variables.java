@@ -281,6 +281,7 @@ public class Variables implements Serializable, VariablesIntf{
 		return labels;
 	}
 
+	 
 	
 	public ArrayList<Double> getUseIndicationForLabelsList( ArrayList<String> stringList ) {
 		
@@ -319,6 +320,14 @@ public class Variables implements Serializable, VariablesIntf{
 		return indexes;
 	}
 
+	public ArrayList<Integer> getIndexesForVariablesList(ArrayList<Variable> variablesList) {
+		ArrayList<Integer> ixes ; 
+		ixes = getIndexesForLabelsList( getLabelsForVariablesList( variablesList ) ) ;
+		return ixes;
+	}
+	
+	
+	
 	@Override
 	public ArrayList<Variable> getActiveVariables() {
 		ArrayList<Variable> selection = new ArrayList<Variable>(); 
@@ -1053,6 +1062,8 @@ public class Variables implements Serializable, VariablesIntf{
 	 
 		strgutil = new StringsUtil();
 	}
+
+
 
 	
 }

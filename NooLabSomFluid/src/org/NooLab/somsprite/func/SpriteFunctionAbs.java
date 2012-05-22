@@ -594,6 +594,10 @@ if (formula.contains("k")){
 		 
 		allowVariablesCountMismatch = flag;
 	}
+
+	public ArrayList<String> getVariables() {
+		return variables;
+	}
 	
 }
 

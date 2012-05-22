@@ -4,6 +4,9 @@ import java.util.ArrayList;
 
 import org.NooLab.somtransform.DataDescription;
 
+
+
+
 public interface AlgoTransformationIntf  extends AlgorithmIntf{
 
 	
@@ -19,5 +22,6 @@ public interface AlgoTransformationIntf  extends AlgorithmIntf{
 
 	double handlingRangeProtection(double value);
 		
-	
+	public int getInputColumnsCount() ;
+	public void setInputColumnsCount( int inColCount ) ;
 }

@@ -315,7 +315,7 @@ public class EvoMetrices implements Serializable{
 		evmItems.add(evoResultItem) ;
 		
 		// comparison only for z>1
-		if (z>1){
+		if ((z>1) && (bestResult!=null) && (sq!=null)){
 			// compare sq to bestSomQuality
 			scoreDifference = sq.somQualityData.score - bestResult.sqData.score ;
 			improvement = scoreDifference<0;

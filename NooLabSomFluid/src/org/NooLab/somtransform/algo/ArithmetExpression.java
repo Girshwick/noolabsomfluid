@@ -40,6 +40,7 @@ public class ArithmetExpression extends AlgoTransformationAbstract{
 
 	@Override
 	public int calculate() {
+		
 		int result = -1;
 		double v, value1=-1.0,value2=-1.0, resultValue = -1;
 		String expression;
@@ -56,9 +57,15 @@ public class ArithmetExpression extends AlgoTransformationAbstract{
 			expression = ap.getLabel(); // e.g. (1+a-b)/(1+a+b), a+b etc...
 			// if (aps.size()>1) ap = aps.get(1);
 			
+			 
 			Evaluator evaluator = new Evaluator();
 			evaluator.createFunction("expression", expression) ;
-			 
+			String[] args = evaluator.getArgumentsOfExpr("expression") ;
+			
+			if (args.length>1){
+				inputColumnsCount = args.length ;
+			}
+			
 			for (int i=0;i<values.size(); i++){
 				
 				resultValue = -1.0 ;
