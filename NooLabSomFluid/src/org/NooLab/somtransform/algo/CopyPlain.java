@@ -97,4 +97,13 @@ public class CopyPlain extends AlgoColumnWriterAbstract{
 		
 	}
 
+
+	@Override
+	public String[] showAvailableParameters() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+
 }

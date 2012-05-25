@@ -12,6 +12,7 @@ import org.NooLab.somfluid.app.IniProperties;
 import org.NooLab.utilities.dialog.FileFolderChooser;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.files.PathFinder;
+import org.NooLab.utilities.strings.StringsUtil;
 
 public class SomFluidStartup {
 
@@ -50,20 +51,26 @@ public class SomFluidStartup {
 		
 		String selectedFolder="";
 		FileFolderChooser fileDialog ;
-		
-		// looping = false;
-		// this.noLoop();
-		
+		 
 		fileDialog = new FileFolderChooser();
 		
 		fileDialog.selectFolder(IniProperties.fluidSomProjectBasePath); 
 		
 		selectedFolder = fileDialog.getSelectedFolder( true ); 
 		
+		selectedFolder = StringsUtil.replaceall(selectedFolder, "\\\\", "/");
+		selectedFolder = StringsUtil.replaceall(selectedFolder, "\\", "/");
+		selectedFolder = StringsUtil.replaceall(selectedFolder, "//", "/");
+		selectedFolder = StringsUtil.replaceall(selectedFolder, "/.", "/");
+		selectedFolder = DFutils.createPath(selectedFolder , "/");
+		
 		IniProperties.fluidSomProjectBasePath = selectedFolder ;
-		// looping = true;
-		// this.loop() ;
+		 
 		return selectedFolder;
+	}
+	
+	public static String getProjectBasePath(){
+		return IniProperties.fluidSomProjectBasePath ;
 	}
 	
 	/** provides a coherent storage for results under a common base folder  */
@@ -74,6 +81,8 @@ public class SomFluidStartup {
 
 	/**   */
 	public static String getLastDataSet() {
+		
+		IniProperties.dataSource = StringsUtil.replaceall(IniProperties.dataSource, "\\", "/") ;
 		lastDataSet = IniProperties.dataSource ;
 		return lastDataSet;
 	}
@@ -114,18 +123,39 @@ public class SomFluidStartup {
 	public static String  introduceDataSet() {
 		String activeDataFile="";
 
-		String idir = DFutils.createPath( IniProperties.fluidSomProjectBasePath, IniProperties.lastProjectName+"/data/") ;
-		
-		FileFolderChooser fileDialog = new FileFolderChooser();
-		
-		activeDataFile = fileDialog.openFile(idir) ;
-		
-		if ( activeDataFile.length()>0)  {
-			IniProperties.dataSource = activeDataFile;
-			IniProperties.saveIniProperties();
+		try{
+			
+			if (IniProperties.lastProjectName.length()==0){
+				SomFluidStartup.selectActiveProject() ;
+			}
+			
+			String idir = DFutils.createPath( IniProperties.fluidSomProjectBasePath, IniProperties.lastProjectName+"/data/") ;
+			
+			FileFolderChooser fileDialog = new FileFolderChooser();
+			
+			activeDataFile = fileDialog.openFile(idir) ;
+			
+			if ( fileDialog.getFullPathFilename().startsWith(IniProperties.fluidSomProjectBasePath)==false){
+				activeDataFile = fileDialog.getFullPathFilename();
+			}
+			if ( activeDataFile.length()>0)  {
+				IniProperties.dataSource = activeDataFile;
+				IniProperties.saveIniProperties();
+			}
+			
+			
+		}catch(Exception e){
+			e.printStackTrace();
 		}
-		
 		return activeDataFile;
+	}
+
+	public static boolean checkClassifierSetting() {
+		boolean rB= true;
+		
+		
+		
+		return rB;
 	}
 
 }

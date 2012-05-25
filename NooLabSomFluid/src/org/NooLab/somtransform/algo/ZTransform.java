@@ -6,6 +6,7 @@ import org.NooLab.somtransform.algo.intf.AlgoTransformationAbstract;
 import org.NooLab.somtransform.algo.intf.AlgoTransformationIntf;
 import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
 import org.NooLab.somtransform.algo.intf.AlgorithmParameter;
+import org.NooLab.somtransform.algo.intf.AlgorithmParameters;
 
 
 
@@ -45,7 +46,7 @@ public class ZTransform extends AlgoTransformationAbstract {
 
 	@Override
 	public ArrayList<Double> getValues(int part) {
-		// TODO Auto-generated method stub
+		 
 		return null;
 	}
 
@@ -53,7 +54,7 @@ public class ZTransform extends AlgoTransformationAbstract {
 
 	@Override
 	public ArrayList<Double> getTransformedValues() {
-		// TODO Auto-generated method stub
+		 
 		return null;
 	}
 
@@ -61,16 +62,23 @@ public class ZTransform extends AlgoTransformationAbstract {
 
 	@Override
 	public ArrayList<Double> getDescriptiveResults() {
-		// TODO Auto-generated method stub
+		 
 		return null;
 	}
 
 	@Override
 	public String getDescription() {
-		// TODO Auto-generated method stub
+		 
 		return null;
 	}
- 
+	/*
+	@Override
+	public void setParameters(AlgorithmParameters algorithmParams) throws Exception {
+		if (parametersNullCheck(algorithmparams)==false) return;
+		parameters.items.addAll( algorithmparams.getItems() ) ;
+		
+	}
+     */
  
 
 }

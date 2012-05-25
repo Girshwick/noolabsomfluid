@@ -3,7 +3,6 @@ package org.NooLab.somtransform.algo.intf;
 import java.util.ArrayList;
 
 import org.NooLab.somtransform.DataDescription;
-import org.NooLab.utilities.datatypes.IndexedDistances;
 
 
 
@@ -102,7 +101,30 @@ abstract public class AlgoTransformationAbstract implements AlgoTransformationIn
 		return rB;
 	}
 	
+
+	@Override
+	public void clearValueTable() {
+		valueTable.clear();
+	}
 	
+	@SuppressWarnings("unchecked")
+	@Override
+	public int addValueTableColumn( ArrayList<?> inValueCol ) {
+		// ArrayList<ArrayList<?>> inValues
+		valueTable.add((ArrayList<Double>) inValueCol) ;
+		
+		return valueTable.size();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public void setValueTableColumn( int index, ArrayList<?> inValueCol ) {
+
+		valueTable.set(index, (ArrayList<Double>) inValueCol) ;
+	}
+	
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public int setValues(ArrayList<ArrayList<?>> inValues) {
 		
@@ -181,87 +203,51 @@ abstract public class AlgoTransformationAbstract implements AlgoTransformationIn
 		return parameters;
 	}
 	
+ 
+	@Override
+	public void setParameters(ArrayList<Object> params)  throws Exception{
+		 
+		basicParametersAssimilation(params) ;
+	}
+	
 	
 	@Override
-	public void setParameters(ArrayList<Object> params) throws Exception {
-		 
-		Object obj ;
-		String cn, str;
-		AlgorithmParameter algoparam ;
+	public void setParameters(AlgorithmParameters algorithmparams)  throws Exception{
 		
-		str="";
-		if ((params!=null) && (params.size()>0)){
-			if (parameters==null){
-				parameters = new AlgorithmParameters( this) ;
-			}
-		}
+		if (parametersNullCheck(algorithmparams)==false) return;
+		basicParametersAssimilation(algorithmparams) ;
+	}
+
+	
+	
+	protected boolean parametersNullCheck(AlgorithmParameters algorithmparams){
+		boolean rB=true;
 		
-		for (int i=0;i<params.size();i++){
-			
-			obj = params.get(i);
-			cn  = obj.getClass().getSimpleName() ;
-
-			if (cn.toLowerCase().contains("string[]")){
-				
-				continue;
-			}
-			if (cn.toLowerCase().contains("string")){
-				
-				str = (String)obj;
-				algoparam = new AlgorithmParameter();
-				algoparam.setLabel(str) ;
-				parameters.add(algoparam);
-				
-				continue;
-			}
-			if (cn.toLowerCase().contains("int[]")){
-				continue;
-			}
-			if (cn.toLowerCase().contains("double[]")){
-
-				double[] numvalues = (double[])(obj);
-
-				algoparam = new AlgorithmParameter();
-				algoparam.setNumValues(numvalues) ;
-				parameters.add(algoparam);
-
-				continue;
-			}
-			
-			if (cn.toLowerCase().contains("int")){
-				
-				int numvalue = (int)((Integer)obj);
-				
-				algoparam = new AlgorithmParameter();
-				algoparam.setNumValue( (double)numvalue ) ;
-				parameters.add(algoparam);
-
-				continue;
-			}
-			
-			if (cn.toLowerCase().contains("double")){
-				
-				double numvalue = (double)((Double)obj);
-				
-				algoparam = new AlgorithmParameter();
-				algoparam.setNumValue(numvalue) ;
-				parameters.add(algoparam);
-
-				continue;
-			}
-
-			if (cn.toLowerCase().contains("arraylist")){
-				continue;
-			}
-			
-			
-			// IndexedDistances ixds = IndexedDistances.class.cast(obj) ;
-			algoparam = new AlgorithmParameter();
-			algoparam.obj = obj;
-			parameters.add(algoparam);
+		if (algorithmparams==null){
+			rB=false;
 		}
+		if ((algorithmparams.items==null) || (algorithmparams.items.size()==0)){
+			rB=false;
+		}
+		return rB;
+	}
+
+	protected void basicParametersAssimilation(AlgorithmParameters algorithmParams){
+		
+		AlgorithmParametersHelper paramsHelper = new AlgorithmParametersHelper ();
+		
+		parameters = paramsHelper.assimilate(this, algorithmParams);
+	}
+	
+	protected void basicParametersAssimilation( ArrayList<Object> params ){
+		
+		AlgorithmParametersHelper paramsHelper = new AlgorithmParametersHelper ();
+		
+		parameters = paramsHelper.assimilateOpenObjectList(this, params);
 		
 	}
+	 
+	
 	
 	public String[] showAvailableParameters() {
 		String[] paramsDescription = new String[0];

@@ -6,11 +6,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.NooLab.somfluid.SomFluidPluginSettings;
+import org.NooLab.somfluid.app.SomAppSomObject;
 import org.NooLab.somtransform.algo.clazz.AlgoClassLoader;
 import org.NooLab.somtransform.algo.intf.AlgoColumnWriterIntf;
 import org.NooLab.somtransform.algo.intf.AlgoMeasurementIntf;
 import org.NooLab.somtransform.algo.intf.AlgoTransformationIntf;
 import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
+import org.NooLab.somtransform.algo.intf.AlgorithmParameters;
  
 
 
@@ -35,8 +37,8 @@ public class StackedTransformation  implements Serializable{
  
 	private static final long serialVersionUID = 3159521555594775507L;
 
-	transient SomFluidPluginSettings pluginSettings ;
-	transient TransformationEnvIntf transformOriginator ;
+	private transient SomFluidPluginSettings pluginSettings ;
+	private transient TransformationEnvIntf transformOriginator ;
 	
 	/** its indeed an ID , not an index position ! */
 	int serialID = -1; 
@@ -50,12 +52,15 @@ public class StackedTransformation  implements Serializable{
 	/** Reflection is used to create an instance  */
 	String algorithmName = "";
 	transient Object algorithm ;
-	
+
+	/** this serves as a transfer container when the transformations are serialized  */
+	AlgorithmParameters algoParameters;
 	/** 
+	 * defined in AlgorithmIntf
 	 * 0=passive, 1=value transform, 2=column writer, determines the interface and thus the handling of data
 	 */
-	int algorithmType = -1;
-
+	private int algorithmType = -1;
+	 
 	
 	ArrayList<String>  inputColumnLabels = new ArrayList<String>();
 	ArrayList<Integer> inputColumns = new ArrayList<Integer>();
@@ -65,7 +70,7 @@ public class StackedTransformation  implements Serializable{
 	String 	 outputColumnId;
 	
 	int stackPosForInData = -1;  // -1 = last
-	transient ArrayList<ArrayList<?>> inData = new ArrayList<ArrayList<?>>();
+	private transient ArrayList<ArrayList<?>> inData = new ArrayList<ArrayList<?>>();
 	
 	transient ArrayList<ArrayList<Double>> bufferedData;
 	transient ArrayList<Double> outData = new ArrayList<Double>();
@@ -84,13 +89,14 @@ public class StackedTransformation  implements Serializable{
 	// ========================================================================
 	public StackedTransformation( SomFluidPluginSettings pluginsettings){
 		// we need access to pluginsettings 
-		pluginSettings = pluginsettings ;
-		transformOriginator = pluginSettings.getTransformationOriginator() ;
+		setPluginSettings(pluginsettings) ;
+		setTransformOriginator(getPluginSettings().getTransformationOriginator()) ;
 		
 	}
+
+	
+	
 	// ========================================================================
-
-
 
 	public void createAlgoObject(int algorithmType) {
 		 
@@ -110,9 +116,14 @@ public class StackedTransformation  implements Serializable{
 		
 	}
 	
-	
+	public void createOutData() {
+		createOutData(null) ;
+	}
 	public void createOutData(ArrayList<Double> values) {
 		 
+		if (outData==null){
+			outData = new ArrayList<Double>();
+		}
 		//  ArrayList<ArrayList<Double>> bufferedData;
 		if (values!=null){
 			outData.clear() ;
@@ -121,6 +132,13 @@ public class StackedTransformation  implements Serializable{
 		
 	}
 	
+	 
+	public void createInDataContainer() {
+		inData = new ArrayList<ArrayList<?>>();
+	}
+
+
+
 	public void update(){
 		
 	}
@@ -129,6 +147,35 @@ public class StackedTransformation  implements Serializable{
 				
 	}
 	
+	public void setPluginSettings(SomFluidPluginSettings pluginsettings) {
+		pluginSettings = pluginsettings;
+		
+		if (transformOriginator==null){
+			transformOriginator = pluginSettings.getTransformationOriginator() ;
+		}
+		
+	}
+
+
+
+	public SomFluidPluginSettings getPluginSettings() {
+		return pluginSettings;
+	}
+
+
+
+	public void setTransformOriginator(TransformationEnvIntf transformoriginator) {
+		transformOriginator = transformoriginator;
+	}
+
+
+
+	public TransformationEnvIntf getTransformOriginator() {
+		return transformOriginator;
+	}
+
+
+
 	/**
 	 * @return the inputColumnLabels
 	 */
@@ -227,6 +274,24 @@ public class StackedTransformation  implements Serializable{
 	 */
 	public int getAlgorithmType() {
 		return algorithmType;
+	}
+
+
+
+	public void setAlgorithmType(int algorithmType) {
+		this.algorithmType = algorithmType;
+	}
+
+
+
+	public AlgorithmParameters getAlgoParameters() {
+		return algoParameters;
+	}
+
+
+
+	public void setAlgoParameters(AlgorithmParameters algoParameters) {
+		this.algoParameters = algoParameters;
 	}
 
 
@@ -352,12 +417,12 @@ public class StackedTransformation  implements Serializable{
 		// is it a plugin class ?
 		
 		 
-		if (transformOriginator.isAlgorithmPluggedin(algoname)){
+		if (getTransformOriginator().isAlgorithmPluggedin(algoname)){
 			
 			// classToLoad = packagePath + algoname ;
 			
 			// use "algoname" to look up in pluginSettings.getLoadedPluginClasses()
-			algoObjectClass = transformOriginator.getPluginClassByName(algoname) ;
+			algoObjectClass = getTransformOriginator().getPluginClassByName(algoname) ;
 			classLoader = new AlgoClassLoader( algoObjectClass.getClassLoader());
 			parentClassLoader =	classLoader.getParent() ; 
 			
@@ -422,7 +487,15 @@ public class StackedTransformation  implements Serializable{
 	}
 
 
+	
+	
+	
+	
+	
+	
 
+	// ========================================================================
+	
 	/**
 	 * @return the outputColumnId
 	 */
@@ -449,6 +522,78 @@ public class StackedTransformation  implements Serializable{
 
 	public void setPackagePath(String packagePath) {
 		this.packagePath = packagePath;
+	}
+
+
+
+	public void setInData(ArrayList<ArrayList<?>> indata) {
+		inData = indata;
+	}
+
+
+
+	public ArrayList<String> getInputColumnIDs() {
+		return inputColumnIDs;
+	}
+
+
+
+	public void setInputColumnIDs(ArrayList<String> inputColumnIDs) {
+		this.inputColumnIDs = inputColumnIDs;
+	}
+
+
+
+	public int[] getMvCount() {
+		return mvCount;
+	}
+
+
+
+	public void setMvCount(int[] mvCount) {
+		this.mvCount = mvCount;
+	}
+
+
+
+	public boolean isMultiVarInput() {
+		return multiVarInput;
+	}
+
+
+
+	public void setMultiVarInput(boolean multiVarInput) {
+		this.multiVarInput = multiVarInput;
+	}
+
+
+
+	public void setSerialID(int serialID) {
+		this.serialID = serialID;
+	}
+
+
+
+	public void setIdString(String idString) {
+		this.idString = idString;
+	}
+
+
+
+	public void setAlgorithmName(String algorithmName) {
+		this.algorithmName = algorithmName;
+	}
+
+
+
+	public void setInputColumns(ArrayList<Integer> inputColumns) {
+		this.inputColumns = inputColumns;
+	}
+
+
+
+	public void setDataDescription(DataDescription dataDescription) {
+		this.dataDescription = dataDescription;
 	}
 
  

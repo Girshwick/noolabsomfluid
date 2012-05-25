@@ -174,6 +174,30 @@ public class SomFluidPluginSettings implements 	Serializable,
 		return null;
 	}
 
+	public String getInternalJarPackagePath() {
+		return internalJarPackagePath;
+	}
+
+	public void setInternalJarPackagePath(String internalJarPackagePath) {
+		this.internalJarPackagePath = internalJarPackagePath;
+	}
+
+	public void setCatalogFileName(String catalogFileName) {
+		this.catalogFileName = catalogFileName;
+	}
+
+	public void setAlgoDeclarations(SerialMap algoDeclarations) {
+		this.algoDeclarations = algoDeclarations;
+	}
+
+	public void setLoadedPluginClasses(ArrayList<String> loadedPluginClasses) {
+		this.loadedPluginClasses = loadedPluginClasses;
+	}
+
+	public void setTransformationOriginator(TransformationEnv transformationOriginator) {
+		this.transformationOriginator = transformationOriginator;
+	}
+
 
 
 	

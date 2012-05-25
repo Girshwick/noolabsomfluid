@@ -41,24 +41,33 @@ public class MissingValues extends AlgoTransformationAbstract {
 		double v;
 		int result = -1;
 		
-		outvalues.clear() ;
-		
-		if (values!=null){
-			for (int i=0;i<values.size();i++){
-				if (values.get(i)==null){
-					v = -1.0 ; // TODO: apply parameters
-				}else{
-					v = (Double) values.get(i) ;
+		try{
+			
+			outvalues.clear() ;
+			
+			if (values!=null){
+				for (int i=0;i<values.size();i++){
+					if (values.get(i)==null){
+						v = -1.0 ; // TODO: apply parameters
+					}else{
+						v = (Double) values.get(i) ;
+					}
+					outvalues.add(v);
 				}
-				outvalues.add(v);
 			}
-		}
-		if (stringvalues!=null){
-			for (int i=0;i<stringvalues.size();i++){
-				outstringvalues.add( stringvalues.get(i) );
+			if (stringvalues!=null){
+				for (int i=0;i<stringvalues.size();i++){
+					outstringvalues.add( stringvalues.get(i) );
+				}
+				
 			}
 			
+			
+			result = 0;
+		}catch(Exception e){
+			result = -7;
 		}
+		
 		 
 		return result;
 	}

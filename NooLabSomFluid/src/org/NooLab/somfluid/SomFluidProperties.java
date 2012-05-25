@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.NooLab.somfluid.app.SomAppProperties;
+import org.NooLab.somfluid.app.SomFluidAppPropertiesAbstract;
 import org.NooLab.somfluid.components.AlgorithmDeclarationsLoader;
 import org.NooLab.somfluid.components.DataFilter;
 import org.NooLab.somfluid.core.engines.det.ResultRequests;
@@ -19,11 +20,16 @@ import org.NooLab.somfluid.properties.SpriteSettings;
 import org.NooLab.somfluid.properties.ValidationSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
+import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
 import org.NooLab.utilities.files.DFutils;
 
 
 											//  as usual, we offer particular views on this container
-public class SomFluidProperties implements 	//  
+public class SomFluidProperties 
+									extends
+												SomFluidAppPropertiesAbstract
+									implements 	// 
+												SomFluidAppGeneralPropertiesIntf,
 												DataHandlingPropertiesIntf,
 											// 
 												LatticePropertiesIntf,
@@ -58,30 +64,15 @@ public class SomFluidProperties implements 	//
 	
 	
 	transient SomFluidFactory sfFactory ;
-	transient AlgorithmDeclarationsLoader algoDeclarations;
-	
-	int glueType = 0;
-	
-	// type of data source for active access:
-	// 1=file, 2=db, 3=serialized SomdataObject
-	int sourceType = -1;
-	String dataSrcFilename = "";
+
 	
 	/** <0: don't load, 0: immediate uptake; >0:delayed uptake (in millis) */
 	int dataUptakeControl = -1 ;
 	
 	// that is for _SOMTYPE_MONO only ! 
-	ModelingSettings modelingSettings = new ModelingSettings() ;
+	
 	DataUseSettings dataUseSettings = new DataUseSettings() ;
-		
-	SomFluidPluginSettings pluginSettings = new SomFluidPluginSettings();
-
-	/** concerns persistence of objects, including the models exported for "offline" use */
-	PersistenceSettings persistenceSettings  ;
-	
-	/** concerns results */
-	OutputSettings outputSettings ; 
-	
+		 
 	// lattice
 	int somType = -1; // mandatory 
 	int initialNodeCount = -1;
@@ -112,15 +103,15 @@ public class SomFluidProperties implements 	//
 
 	transient private String currentSettingsXml="";
 
-	transient static SettingsTransporter settingsTransporter;
 	
-	transient FileOrganizer fileOrganizer;
+	
+	
 
 
 	
 	
 	// ========================================================================
-	protected SomFluidProperties(){
+	public SomFluidProperties(){
 		
 	}
 	// ========================================================================
@@ -153,15 +144,11 @@ public class SomFluidProperties implements 	//
 		return sfp;
 	}
 	
-	public FileOrganizer getFileOrganizer(){
-		return fileOrganizer;
+	@Override
+	public SomFluidProperties getSelfReference() {
+		return this;
 	}
-	public void setFileOrganizer( FileOrganizer  forg){
-		fileOrganizer = forg ;
-	}
-	 
-		 
-	 
+ 
 	
 	public void importSettings(){
 		
@@ -311,18 +298,10 @@ public class SomFluidProperties implements 	//
 	}
 
 
-	public ModelingSettings getModelingSettings() {
-		return modelingSettings;
-	}
-
 	public SpriteSettings getSpriteSettings(){
 		return modelingSettings.getSpriteSettings() ;
 	}
-	
-	public SomFluidPluginSettings getPluginSettings() {
-		return pluginSettings;
-	}
-
+  
 
 	public void importTransformationParameterDefaults(String filename) {
 		// TODO 
@@ -399,19 +378,19 @@ public class SomFluidProperties implements 	//
 	 * @param sourceType 1=full data file, 5=profiles for simulation
 	 * @param filename
 	 */
-	public void setDataSource(int sourceType, String locatorname) {
+	public void setDataSource(int sourcetype, String locatorname) {
 		// 
-		this.sourceType = sourceType;
+		this.sourceType = sourcetype;
 		dataSrcFilename = locatorname ; 
 	}
 
 	/**   */
-	public boolean addDataSource(int sourceType, String locatorname) {
+	public boolean addDataSource(int sourcetype, String locatorname) {
 		boolean result=false;
 		String rootpath =""; // e.g.  "D:/data/projects/"
 		String prjname = "", filename="",relPath;
 		
-		this.sourceType = sourceType;
+		sourceType = sourcetype;
 		locatorname = locatorname.trim();
 		
 		if ((locatorname.indexOf("/")==0) || (DFutils.fileExists(locatorname)==false)){
@@ -434,10 +413,7 @@ public class SomFluidProperties implements 	//
 		return result;
 	}
 
-	public String getDataSrcFilename() {
-		return dataSrcFilename;
-	}
-
+	 
 
 	public void setDataSrcFilename(String dataSrcFilename) {
 		this.dataSrcFilename = dataSrcFilename;
@@ -817,16 +793,8 @@ public class SomFluidProperties implements 	//
 	public void setDataUseSettings(DataUseSettings dataUseSettings) {
 		this.dataUseSettings = dataUseSettings;
 	}
+ 
 
-
-	public void setPluginSettings(SomFluidPluginSettings pluginSettings) {
-		this.pluginSettings = pluginSettings;
-	}
-
-
-	public void setOutputSettings(OutputSettings outputSettings) {
-		this.outputSettings = outputSettings;
-	}
 
 
 	public void setPathToSomFluidSystemRootDir(String dir) {

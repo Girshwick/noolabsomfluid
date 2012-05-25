@@ -229,8 +229,70 @@ public class Variables implements Serializable, VariablesIntf{
 		return labels;
 	}
 	
+	/**
+	 * 
+	 * @param vars a Variables obj, that contains a list of Variable objects
+	 * @param filtermode   0=raw 1=derived 2=all 3= all without id variables, 4 all without tv's , 5 all without id's+tv's
+	 *                     +10 = without blacklisted variables, <=-10 = within blacklisted or otherwise excluded variables 
+	 * @return
+	 */
+	public ArrayList<String> getLabelsForVariablesList(Variables vars, int filtermode) {
 
-	public ArrayList<String> getLabelsForVariablesList(Variables vars, boolean applyOpenFilter){
+		ArrayList<String> labels = new ArrayList<String>();
+		Variable v;
+		boolean sm=false;
+		
+		
+		for (int i = 0; i < vars.size(); i++) {
+			v = vars.getItem(i);
+			sm = true;
+			if (filtermode >= 10) {
+				String vlabel = v.getLabel();
+				sm = openForInspection(v) && (this.getBlacklistLabels().indexOf(vlabel)<0) ;
+				filtermode = filtermode-10;
+			}
+			if (filtermode <=-10) {
+				String vlabel = v.getLabel();
+				sm = (openForInspection(v)==false) || (this.getBlacklistLabels().indexOf(vlabel)>=0) ;
+				filtermode = Math.abs( filtermode ) ;
+				filtermode = filtermode-10;
+			}
+			
+			if (sm) {
+				sm = false;
+				switch (filtermode) {
+					case 0:
+						sm = v.isDerived() == false;
+						break;
+					case 1:
+						sm = v.isDerived();
+						break;
+					case 2:
+						sm = true;
+						break;
+					case 3:
+						sm = v.isID() == false;
+						break;
+					case 4:
+						sm = v.isTV() == false;
+						break;
+					case 5:
+						sm = (v.isTV() == false) && (v.isID() == false);
+						break;
+					default:
+						sm = false;
+				}
+
+				if (sm) {
+					labels.add(v.getLabel());
+				}
+			}
+		}
+
+		return labels;
+	}
+	
+	public ArrayList<String> getLabelsForVariablesList(Variables vars, boolean applyOpenFilter){  
 		
 		ArrayList<String> labels = new ArrayList<String>();
 		Variable v;
@@ -1062,6 +1124,7 @@ public class Variables implements Serializable, VariablesIntf{
 	 
 		strgutil = new StringsUtil();
 	}
+
 
 
 

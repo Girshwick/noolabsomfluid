@@ -9,6 +9,7 @@ import java.util.*;
 import org.NooLab.somfluid.SomDataDescriptor;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.app.SomAppTransformer;
 import org.NooLab.somfluid.components.variables.SomVariableHandling;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
@@ -26,6 +27,7 @@ import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.PersistentAgentIntf;
 import org.NooLab.somtransform.SomTransformer;
+import org.NooLab.somtransform.SomTransformerIntf;
 
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.files.DFutils;
@@ -62,7 +64,7 @@ public class SomDataObject 	implements      Serializable,
 	public static final String _TEMPDIR_PREFIX = "~noo-sf-" ;
 	
 	transient DataHandlingPropertiesIntf dataHandlingProperties;
-	transient SomTransformer transformer;
+	transient SomTransformerIntf transformer;
 	transient SomTransformer profilesTransformer;
 	
 	
@@ -519,7 +521,7 @@ public class SomDataObject 	implements      Serializable,
 			
 			profilesTransformer = new SomTransformer( this, sfprops );
 			 
-			DataReceptor dataReceptor = new DataReceptor( sfprops, this );
+			DataReceptor dataReceptor = new DataReceptor(  this );
 			
 			// establishes a "DataTable" from a physical source
 			dataReceptor.loadProfilesFromFile( _filename );
@@ -815,7 +817,7 @@ public class SomDataObject 	implements      Serializable,
 	}
 
 
-	public void importDataTable( SomTransformer transformer, DataTable datatable, int applyExtendedPreparations ){
+	public void importDataTable( SomTransformerIntf somTransformerIntf, DataTable datatable, int applyExtendedPreparations ){
 		 
 		
 		if (datatable==null){
@@ -850,37 +852,41 @@ public class SomDataObject 	implements      Serializable,
 			data.createRowOrientedTable() ;
 			// TODO check here for buffered transformed data
 			
-			
+			if (modelingSettings.getVariables()==null){
+				modelingSettings.setVariables(variables);
+			}
 			// creating variables objects, setting info about raw data format
 			actualizeVariables();
 			
 			// --- transforming data ------------------------------------------
 			
 			// this creates a clone of the DataTable !
- 			transformer.setDataTable(data) ;
+ 			somTransformerIntf.setDataTable(data) ;
 			
  			// no transformations are applied here, just Transform.Stacks initialized, MV+StdStats prepared, 
  			// but no LinNorm ...  no NVE 
- 			transformer.initializeTransformationModel();
+ 			somTransformerIntf.initializeTransformationModel();
  			
- 			transformer.basicTransformToNumericalFormat(); 
+ 			somTransformerIntf.basicTransformToNumericalFormat(); 
  			// XXX TODO ADDED COLs are shifted 1 pos to the top == 1 pos too short !!!!!!!!!!
  			
- 			
+ 			if (somTransformerIntf instanceof SomAppTransformer){
+ 				return;
+ 			}
 			// like the SomSprite, just on raw variables, but based on samples of max 1000 values
  			// transformer.applyAprioriLinkChecking();
 			
 											out.print(2, "importDataTable(), normalizing data...");
 			// normalizing data: only now the data are usable
 			// note that index columns and string columns need to be excluded
-			// which we can do via the format[] value : use onls 1<= f <= 7, exclude otherwise
+			// which we can do via the format[] value : use only 1<= f <= 7, exclude otherwise
 			
 			// normalizedSomData = transformer.normalizeData(variables);   
-			transformer.normalizeData(); // just adding everywhere LinNorm, caring for output data
+			somTransformerIntf.normalizeData(); // just adding everywhere LinNorm, caring for output data
 			
 			// creating the usable table as an instance of DataTable
 			// should also be a clone? in order to decouple process interferences?
-			normalizedSomData = transformer.writeNormalizedData() ; 
+			normalizedSomData = somTransformerIntf.writeNormalizedData() ; 
 			normalizedSomData.setName("normalized table");
 			
 			if (applyExtendedPreparations>0){
@@ -890,7 +896,7 @@ public class SomDataObject 	implements      Serializable,
  			// will draw a copy from numerical columns and add a LinNorm at the end if necessary
 			
 											out.print(2, "importDataTable(), applying advanced apriori transformations...");
-				transformer.applyAdvNumericalTransforms();
+				somTransformerIntf.applyAdvNumericalTransforms(null);
 
 				/*
 				//again writing the table containing the normalized data
@@ -899,7 +905,7 @@ public class SomDataObject 	implements      Serializable,
 				*/
 			}
 			
-			transformer.createDataDescriptions();
+			somTransformerIntf.createDataDescriptions();
 			
 			normalizedSomData.createRowOrientedTable( ) ;
 			
@@ -1017,7 +1023,7 @@ public class SomDataObject 	implements      Serializable,
 	 * TODO: check whether format info is transferred ....
 	 * 
 	 */
-	private void actualizeVariables() {
+	private void actualizeVariables() throws Exception{
 		Variables vs;
 		Variable v;
 		DataTableCol  column ;
@@ -1025,6 +1031,9 @@ public class SomDataObject 	implements      Serializable,
 		
 		boolean  idcolFound=false ;
 		
+		if (modelingSettings==null){
+			throw(new Exception("settings object (modeling) is null"));
+		}
 		String tvstr = modelingSettings.getActiveTvLabel();
 		
 		// if there is then only 1 we set this one as active...
@@ -1247,16 +1256,16 @@ public class SomDataObject 	implements      Serializable,
 	/**
 	 * @return the transformer
 	 */
-	public SomTransformer getTransformer() {
-		return transformer;
+	public SomTransformerIntf getTransformer() {
+		return transformer; // SomTransformer@124614c
 	}
 
 
 	/**
-	 * @param transformer the transformer to set
+	 * @param transformer2 the transformer to set
 	 */
-	public void setTransformer(SomTransformer transformer) {
-		this.transformer = transformer;
+	public void setTransformer(SomTransformerIntf transformer ) {
+		this.transformer = transformer ;
 		
 	}
 

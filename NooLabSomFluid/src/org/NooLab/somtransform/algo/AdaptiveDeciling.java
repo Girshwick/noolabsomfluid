@@ -8,18 +8,22 @@ import org.NooLab.somtransform.algo.intf.AlgoColumnWriterAbstract;
 public class AdaptiveDeciling extends AlgoColumnWriterAbstract {
 
 	
+	private static final long serialVersionUID = 5315820887253628451L;
+
+	
+	
+	
+	
 	
 	@Override
-	public ArrayList<Double> writeTransformedValues(String outColumnLabel,
-			int bufferIndex) {
-		// TODO Auto-generated method stub
+	public ArrayList<Double> writeTransformedValues(String outColumnLabel, int bufferIndex) {
+		// 
 		return null;
 	}
 
 	@Override
-	public ArrayList<Double> acquireBufferedValues(int stackID,
-			int[] bufferIndexes) {
-		// TODO Auto-generated method stub
+	public ArrayList<Double> acquireBufferedValues( int stackID, int[] bufferIndexes) {
+		// 
 		return null;
 	}
 
@@ -66,6 +70,17 @@ public class AdaptiveDeciling extends AlgoColumnWriterAbstract {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public String[] showAvailableParameters() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+
+ 
+
 
 	 
 

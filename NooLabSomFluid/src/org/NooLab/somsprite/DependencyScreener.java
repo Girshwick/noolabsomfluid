@@ -474,7 +474,7 @@ public class DependencyScreener {
 		}
 		
 		@SuppressWarnings("unchecked")
-		public ArrayList<AnalyticFunctionSpriteImprovement> check( int v1index, int v2index, double[][] depVarValues ){
+		public ArrayList<AnalyticFunctionSpriteImprovement> check( int v1index, int v2index, double[][] depVarValues ){ 
 			
 			double v1,v2,fv,fmax ,fmin , vesti;
 			int nex , knnClusterCount = 2,targetMode,k;
@@ -540,20 +540,42 @@ if ((expressionName.contains("logist2x")) ||
 					// else
 					fv = SpriteFuncIntf.__MISSING_VALUE;
 					
-					resultObj = evaluator.eval(expressionName, v1,v2) ;
+					if ((v1!=-1.0) && (v2!=-1.0)){
+						resultObj = evaluator.eval(expressionName, v1,v2) ;
+						// functions like log() automatically turn to type "Complex" for results if the argument (like a+b in log(a+b) ) is negative 
+					}else{
+						resultObj = -1.0 ;
+					}
 					
 					
 					if (resultObj instanceof ArrayList<?>){
 						fv = ((ArrayList<Double>)resultObj).get(0) ;
 						fvalues = new ArrayList<Double>( ((ArrayList<Double>)resultObj) );
 						resultVectors.add( fvalues );
-						// effectively, this build up a dynamic table
+						// effectively, this builds up a dynamic table
 					}else{
-						fvalues = new ArrayList<Double> ();
-						fv = (Double)resultObj;
-						// we change to ArrayList with 1 member, such we can always use a loop below
-						fvalues.add(fv);
-						resultVectors.add( fvalues );
+						try{
+							fvalues = new ArrayList<Double> ();
+							
+							String cn = resultObj.getClass().getSimpleName() ;
+							
+							if (cn.startsWith("Double")){
+								fv = (Double) resultObj;
+								// we change to ArrayList with 1 member, such we can always use a loop below
+								fvalues.add(fv);
+							} else {
+								fv = -1.0;
+							}
+							resultVectors.add( fvalues );
+							
+						}catch(Exception e){
+							String cn = resultObj.getClass().getSimpleName() ;
+							String emsg = "Problem in DependencyScreener (expression: "+expressionName+") when attempting to convert "+cn+" into (Double); func index : "+f+" ;  value index i : "+i+" ; v1index,v2index : "+v1index+", "+ v2index ;
+							System.err.println(emsg); // in AssociationDifferential.check()
+							e.printStackTrace();
+						}
+
+					
 					}
 					 
 				

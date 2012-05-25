@@ -53,7 +53,11 @@ public class ArithmetExpression extends AlgoTransformationAbstract{
 			outvalues.clear();
 			
 			aps = parameters.getItems() ;
-			if (aps.size()>0) ap = aps.get(0);
+			if (aps.size()>0){
+				ap = aps.get(0);
+			}else{
+				return -5;
+			}
 			expression = ap.getLabel(); // e.g. (1+a-b)/(1+a+b), a+b etc...
 			// if (aps.size()>1) ap = aps.get(1);
 			
@@ -78,9 +82,9 @@ public class ArithmetExpression extends AlgoTransformationAbstract{
 					if ((valueTable.size()>1) && (i<valueTable.get(1).size())){
 						value2 = valueTable.get(1).get(i);
 					}
-					// 1 or even 2 records are missing ???
+					//
 					
-					if (( value1 != -1.0) && ( value2 != -1.0)){
+					if (( value1 != -1.0) && ( value2 != -1.0) && ( value1 != -2.0) && ( value2 != -2.0)){
 						obj = evaluator.eval("expression",  value1,value2) ;
 						if ((obj!=null) && ( obj instanceof Double)){
 							resultValue = (Double)obj ;
@@ -92,7 +96,6 @@ public class ArithmetExpression extends AlgoTransformationAbstract{
 					}else{
 						resultValue = -1.0 ;
 					}
-					
 					
 					
 				}catch(Exception e){
@@ -115,17 +118,26 @@ public class ArithmetExpression extends AlgoTransformationAbstract{
 	}
 	
 
+	@Override
+	public void setParameters(AlgorithmParameters algorithmparams)  throws Exception{
+		
+		if (parametersNullCheck(algorithmparams)==false) return;
+		
+		parameters = new AlgorithmParameters(algorithmparams);
+		 
+	}
+	
 
 	@Override
 	public ArrayList<Double> getDescriptiveResults() {
-		// TODO Auto-generated method stub
+		// 
 		return null;
 	}
 
 
 	@Override
 	public String getDescription() {
-		// TODO Auto-generated method stub
+		//  
 		return null;
 	}
 

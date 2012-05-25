@@ -10,6 +10,9 @@ public interface AlgoColumnWriterIntf extends AlgorithmIntf{
 	
 	public ArrayList<Double> acquireBufferedValues( int stackID, int[] bufferIndexes ) ;
 
-	public AlgorithmParameters getParameters() ;
+ 
+	// @Override
+	// public int setValues( ArrayList<ArrayList<?>> inValues ) ;
+	
 	
 }

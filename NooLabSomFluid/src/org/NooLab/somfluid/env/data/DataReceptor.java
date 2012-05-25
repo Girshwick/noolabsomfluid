@@ -25,7 +25,7 @@ public class DataReceptor implements //
 										DataDBReceptorIntf,
 										DataglueReceptorIntf {
 
-	SomFluidProperties sfProperties;
+	 
 	SomDataObject somData;
 	
 	String loadedFile = "";
@@ -41,9 +41,9 @@ public class DataReceptor implements //
 	
 	
 	// ------------------------------------------------------------------------
-	public DataReceptor( SomFluidProperties sfProps, SomDataObject somdata) {
+	public DataReceptor(   SomDataObject somdata) {
 		
-		sfProperties = sfProps ;
+		 
 		somData = somdata;
 		
 	}

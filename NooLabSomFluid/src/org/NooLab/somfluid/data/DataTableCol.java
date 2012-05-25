@@ -400,11 +400,17 @@ public class DataTableCol implements Serializable,
 			d = d - 1.0;
 			if ( d <= (0.001/rcount) && (isMonotonic)){
 				formatIndicator = DataTable.__FORMAT_ID; // 0 ;
+			}else{
+				if (isMonotonic){
+					if ((numValueVariety.size()==nums) && (nums == intnums)){
+						formatIndicator = DataTable.__FORMAT_ID; // 0 ;
+					}
+				}
 			}
 			
 			if ((nums == intnums) && (formatIndicator>0)){
 				formatIndicator = DataTable.__FORMAT_INT; // 2 ;
-				if (minNumStrLen>=7){
+				if (minNumStrLen>=5){
 					formatIndicator = DataTable.__FORMAT_ORGINT ;	
 				}
 			}
@@ -677,7 +683,7 @@ public class DataTableCol implements Serializable,
 		if (isNumeric==true){
 			n = cellValues.size() ;
 		}else{
-			n = cellValueStr.size();
+			n = cellValueStr.size()-1; // ?????????????? if there is a header ... 
 		}
 		return n;
 	}

@@ -30,7 +30,9 @@ public class StatisticalDescriptionStandard extends AlgoMeasurementAbstract {
 	
 	// ------------------------------------------------------------------------
 	public StatisticalDescriptionStandard(){
+		super();
 		
+		dataDescription = new DataDescription();
 	}
 	// ------------------------------------------------------------------------	
 	
@@ -55,6 +57,10 @@ public class StatisticalDescriptionStandard extends AlgoMeasurementAbstract {
 		
 		
 		try{
+			
+			if ( parameters.isRecalculationBlocked() ){
+				return 0;
+			} // recalculationBlocked == false ?
 			
 			for (int i=0;i<values.size();i++){
 				v = values.get(i) ;
@@ -106,10 +112,9 @@ public class StatisticalDescriptionStandard extends AlgoMeasurementAbstract {
 				
 			}
 			// histogram description
-			
+
 			
 			// 
-			
 			result=0;
 			
 		}catch(Exception e){
@@ -119,7 +124,59 @@ public class StatisticalDescriptionStandard extends AlgoMeasurementAbstract {
 		return result;
 	}
 
+	/**
+	 *  all algorithms with particular dynamic parameters that should be transferred to further instances 
+	 *  of "SomTransformer" should overwrite this;</br></br>
+	 *  the  getParameters() is available through the topmost interface "AlgorithmIntf", that is, independent 
+	 *  of the type of the algorithm.</br></br>
+	 * 	The structure "AlgorithmParameters" remains the same for all: it is a container that contains an ArrayList[AlgorithmParameter],
+	 *  where "AlgorithmParameter" provides various slots; </br></br>
+	 *  Since the algorithm infrastructure does not know of anything about those parameters, the algorithm also should
+	 *  implement "setParameters(AlgorithmParameters)"
+	 * 
+	 */
+	@Override
+	public AlgorithmParameters getParameters() {
 
+		parameters.clear();
+		
+		AlgorithmParameter algoparam = new AlgorithmParameter();
+		
+		algoparam.setObj( dataDescription );
+		parameters.add(algoparam) ;
+		
+		return parameters;
+	}
+	
+	/**
+	 * the "setParameters()" should match "getParameters", only the implementation of the algorithm itself
+	 * knows how to extract the structure into local variables/classes
+	 * 
+	 */
+	@Override
+	public void setParameters( AlgorithmParameters algorithmParams) {
+		
+		Object obj;
+		
+		parameters.clear();
+		
+		
+		if ((algorithmParams==null) || (algorithmParams.getItems()==null) || 
+			(algorithmParams.getItems().size()==0)){
+			return;
+		}
+		obj = algorithmParams.getItem(0).getObj() ;
+		
+		
+		AlgorithmParameter algoparam = new AlgorithmParameter();
+		algoparam.setObj(obj) ;
+		
+		parameters.add(algoparam) ;
+		
+		dataDescription = (DataDescription)obj;
+	}
+
+	
 	@Override
 	public DataDescription retrieveDescriptiveResults() {
 		
@@ -129,14 +186,14 @@ public class StatisticalDescriptionStandard extends AlgoMeasurementAbstract {
 
 	@Override
 	public ArrayList<Double> getValues(int part) {
-		// TODO Auto-generated method stub
+		 
 		return null;
 	}
 
 
 	@Override
 	public ArrayList<Double> getDescriptiveResults() {
-		// TODO Auto-generated method stub
+	 
 		return null;
 	}
 
@@ -153,5 +210,7 @@ public class StatisticalDescriptionStandard extends AlgoMeasurementAbstract {
 	public void setRangeViolationCounter(int rangeViolationCounter) {
 	}
 
+ 
+	
 
 }

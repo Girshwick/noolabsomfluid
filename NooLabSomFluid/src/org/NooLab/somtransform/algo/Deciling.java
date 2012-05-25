@@ -6,6 +6,7 @@ import org.NooLab.somtransform.algo.intf.AlgoColumnWriterAbstract;
 import org.NooLab.somtransform.algo.intf.AlgoColumnWriterIntf;
 import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
 import org.NooLab.somtransform.algo.intf.AlgorithmParameter;
+import org.NooLab.somtransform.algo.intf.AlgorithmParameters;
 
 
 /**
@@ -47,57 +48,57 @@ public class Deciling extends AlgoColumnWriterAbstract {
 		// TODO Auto-generated method stub
 		return -1;
 	}
+	
+	
+	
+	@Override
+	public void setParameters(AlgorithmParameters algorithmParams) {
+		
+		basicParametersAssimilation(algorithmParams) ;
+		
+	}
+
+	
+
 	@Override
 	public ArrayList<Double> getDescriptiveResults() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	
 	@Override
-	public void setParameters(ArrayList<Object> params) {
-		
-		super.setParameters(params) ;
-		
-	}
-	
-	
-	@Override
-	public ArrayList<Double> writeTransformedValues(String outColumnLabel,
-			int bufferIndex) {
-		// TODO Auto-generated method stub
+	public ArrayList<Double> writeTransformedValues(String outColumnLabel, int bufferIndex) {
+
 		return null;
 	}
 
 	@Override
 	public ArrayList<Double> getValues(int part) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
-	public ArrayList<Double> acquireBufferedValues(int stackID,
-			int[] bufferIndexes) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
-	 
+	@Override
+	public ArrayList<Double> acquireBufferedValues(int stackID, int[] bufferIndexes) {
+
+		return null;
+	}
 
 	@Override
 	public int getRangeViolationCounter() {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public void setRangeViolationCounter(int rangeViolationCounter) {
-		// TODO Auto-generated method stub
 		
 	}
 
-
+	@Override
+	public String[] showAvailableParameters() {
+		// TODO Auto-generated method stub
+		return null;
+	}
  
-
 
 
 }

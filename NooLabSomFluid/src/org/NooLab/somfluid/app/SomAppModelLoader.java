@@ -1,9 +1,14 @@
 package org.NooLab.somfluid.app;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Vector;
 
 import org.NooLab.somfluid.SomApplicationIntf;
+import org.NooLab.somfluid.SomFluidFactory;
+import org.NooLab.somfluid.SomFluidStartup;
+import org.NooLab.somfluid.components.SomDataObject;
+import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.util.XmlStringHandling;
 import org.NooLab.somtransform.TransformationModel;
 import org.NooLab.somtransform.TransformationStack;
@@ -13,6 +18,7 @@ import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.objects.StringedObjects;
 import org.NooLab.utilities.strings.StringsUtil;
+import org.apache.commons.collections.CollectionUtils;
 import org.w3c.dom.Node;
 
 
@@ -24,17 +30,24 @@ import org.w3c.dom.Node;
  */
 public class SomAppModelLoader {
 
-	SomApplicationIntf somApplication;
+	transient SomFluidFactory sfFactory ;
+	
+	transient SomApplicationIntf somApplication;
 	SomAppProperties soappProperties ;
 	
 	SomModelCatalog soappModelCatalog ; 
 	
-	SomAppClassifier soappClassifier;
-	SomAppTransformer soappTransformer;
+	transient SomAppClassifier soappClassifier;
+	transient SomAppTransformer soappTransformer;
 	
 	String baseFolder ="";
 	String activeModel="";
+	String activeVersion="";
 	String modelPackageName = "" ;
+	
+	String dataSourceFile = "" ; 
+	
+	ArrayList<String> providedVarLabels = new ArrayList<String>(); 
 	
 	
 	transient StringedObjects strgObj = new StringedObjects() ;
@@ -45,10 +58,12 @@ public class SomAppModelLoader {
 	transient PrintLog out = new PrintLog(2,true);
 	
 	// ========================================================================
-	public SomAppModelLoader( SomApplicationIntf somApp, SomAppProperties properties ) {
+	public SomAppModelLoader( SomApplicationIntf somApp, SomFluidFactory factory ) {
 		 
 		somApplication = somApp;
-		soappProperties = properties ;
+		sfFactory = factory;
+		soappProperties = sfFactory.getSomAppProperties() ;
+		 
 		
 		soappModelCatalog = new SomModelCatalog( somApp , soappProperties)  ; 
 		
@@ -57,17 +72,115 @@ public class SomAppModelLoader {
 	
 	// ========================================================================
 	
-	public void loadModel(){
+	public void retrieveExpectedVarLabels() throws Exception {
+		 
+		String filename = "";
+		
+		
+		DataTable dataTable = somApplication.getSomData().getData();
+		
+		if (dataTable!=null){
+			
+			int chsz = dataTable.getColumnHeaders().size();
+			
+			if (chsz>1){
+				providedVarLabels = new ArrayList<String>(dataTable.getColumnHeaders());
+				return;
+			}
+			
+		} // dataTable ?
+		
+		// fallback: directly accessing the file... yet, this could be problematic, since umlauts are not corrected 
+		filename = soappProperties.getDataSourceFilename() ;
+		
+		
+		
+		
+		if (filename.trim().length()==0){
+			throw(new Exception("Data source filename is empty.")) ;
+		}
+		if (filename.indexOf("/")<0){
+			filename = fileutil.createpath( 
+											fileutil.createpath( SomFluidStartup.getProjectBasePath(),SomFluidStartup.getLastProjectName()) , 
+											SomFluidStartup.getLastDataSet()) ;	
+		}
+		 
+		if (fileutil.fileexists(filename)){
+		
+			dataSourceFile = filename;
+			
+			Vector<String> lines = fileutil.readFileintoVectorstringTable(filename) ;
+			String[] headerRow = lines.get(0).split("\t") ;
+			if (headerRow.length>1){
+				providedVarLabels = new ArrayList<String>(Arrays.asList(headerRow));
+				//"expected" := from the perspective of the model these contain the selected variables
+			}
+		}else{
+			
+		}
+		
+	}
+
+	// ========================================================================
 	
+	// ========================================================================
+	
+	/**
+	 * 
+	 * loading the som model: </br>
+	 * if a version has been provided, it will be tried to choose that one, </br>
+	 * else a particular one will be selected acc. to settings, and loaded; </br></br>
+	 * </br>
+	 * it requires the model catalog, which gets updated through calling "selectFromAvailableModels()"
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean loadModel() throws Exception{
+		
+		boolean rB = false ;
 		ModelCatalogItem mcItem ;
 		
+		// before, we have determined name and version according to the request options (e.g. "latest")
+		mcItem = soappModelCatalog.getItemByModelname( activeModel, activeVersion ); 
+		// here, an active version should always be defined, if not, the first one will be selected
+		
+		
+		if (mcItem != null){
+											out.print(2, "loading resources for requested model <"+activeModel+">, version <"+activeVersion+"> ...  ") ;
+			soappClassifier   = loadSomAppClassifier(mcItem);
+			
+			soappTransformer  = loadSomAppTransformer(mcItem);
+			
+			rB= (soappTransformer!=null) && (soappClassifier!=null);
+		}else{
+			out.print(2, "identification resources for requested model <"+activeModel+"> failed.") ;
+		}
+		return rB;
+	}
+
+	
+	/**
+	 * 
+	 * selecting from the available models 
+	 * - according to the request options (like best, latest, first...)
+	 * - such that the fields required by the model are provided by the data
+	 *  
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean selectFromAvailableModels() throws Exception{
+		
+		boolean rB=false;
+			
 		baseFolder = soappProperties.getBaseModelFolder() ;
 					 //  sth like:  "D:/data/projects/_classifierTesting/bank2/models"
 		
 		activeModel = soappProperties.getActiveModel() ; // sth like "bank2" 
 		// this refers to the name of the project as it is contained in the model file!!
 		// on first loading, a catalog of available model will be created for faster access if it does not exists
-
+	
 		if (activeModel.length()>0){      
 											out.print(2, "checking model catalog associated with selected project ...") ;
 			checkCreateLocationCatalog() ;
@@ -79,35 +192,117 @@ public class SomAppModelLoader {
 			activeModel = getModelThroughPackage(modelPackageName ) ;
 		}
 		
-		if (activeModel.length()==0){
-			return;
-		}
-
-		mcItem = soappModelCatalog.getItemByModelname( activeModel );
+		// now reading from the modelcatalog.dat
 		
-		if (mcItem != null){
-											out.print(2, "loading resources for requested model <"+activeModel+"> ...  ") ;
-			soappClassifier   = loadSomAppClassifier(mcItem);
+		/*
+	 	_MODELSELECT_LATEST      = 1;
+		_MODELSELECT_FIRSTFOUND  = 2;
+		_MODELSELECT_BEST        = 4;
+		_MODELSELECT_ROBUST      = 8;
+		_MODELSELECT_VERSION     = 16 ;
+		 */
+		ModelCatalogItem mcItem= null, mci = null ;
+
+		if (soappModelCatalog.size()>0){
+			int m=0;
+			boolean mciOK=false;
 			
-			soappTransformer  = loadSomAppTransformer(mcItem);
+			while ( (mciOK==false) && (mcItem==null) && (m<soappModelCatalog.size())){
+				
+				if (soappProperties.getModelSelectionMode() == SomAppProperties._MODELSELECT_FIRSTFOUND){
+					mci = soappModelCatalog.getItem(m);
+				}
+				
+				if (soappProperties.getModelSelectionMode() == SomAppProperties._MODELSELECT_LATEST){
+					mci = soappModelCatalog.getLatestItem();
+				}
+				if (soappProperties.getModelSelectionMode() == SomAppProperties._MODELSELECT_BEST){
+					mci = soappModelCatalog.getBestItem();
+				}
+				if (soappProperties.getModelSelectionMode() == SomAppProperties._MODELSELECT_VERSION){
+					mci = soappModelCatalog.getItemByModelname( activeModel, soappProperties.preferredModelVersion ) ;
+				}
+				
+				// checking whether the model contains the required fields mcItem.requiredfields
+				if (modelCheckRequirements(mci) == false ){
+					soappModelCatalog.addToExcludedItems(mci);
+				}else{
+					mciOK=true;
+					mcItem = mci;
+				}
+
+				m++;
+			} // ->
 			
 			
 		}else{
-			out.print(2, "identification resources for requested model <"+activeModel+"> failed.") ;
+			mcItem=null;
 		}
+		
+		
+		activeModel = "" ;
+		activeVersion = "" ;
+		
+		if (mcItem!=null){
+			activeVersion = mcItem.modelVersion;
+			activeModel = mcItem.modelName;
+			rB=true;
+			
+			if (activeModel.length()==0){
+				rB = false;
+			}
+			if (activeVersion.length()==0){
+				rB = false;
+			}
+
+		}else{ // mcItem ?
+			out.print(2,"No matching model (by required fields) found in the list (n="+soappModelCatalog.size()+") of available models.");
+		}
+		return rB;
 	}
 
-	
-	
-	
+	private boolean modelCheckRequirements(ModelCatalogItem mcItem) {
+		boolean rB=false  ;
+		
+	 
+		int xn, rn, mismatchCount = -1 ;
+		
+		try{
+		 	
+			xn = providedVarLabels.size();  // variables as provided by the data source
+			rn = mcItem.requiredfields.size() ;
+			
+			if ((xn>0) && (rn>0)){
+				int isectsz = CollectionUtils.intersection(providedVarLabels, mcItem.requiredfields).size() ;
+				// absolute...
+				mismatchCount = CollectionUtils.disjunction( providedVarLabels, mcItem.requiredfields).size();
+				// perspective "required" 
+				mismatchCount = Math.abs(isectsz - mcItem.requiredfields.size()) ;
+			}
+			
+			rB = mismatchCount == 0;
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
+		
+		return rB;
+	}
+
 	private SomAppTransformer loadSomAppTransformer(ModelCatalogItem mcItem) {
 		
 		int r;
 		SomAppTransformer soappT ;
 		
-		soappT = new SomAppTransformer();
+		SomDataObject sdo ;
+		sdo = somApplication.getSomData() ;
+		
+		soappT = new SomAppTransformer( sdo, soappProperties);
 		  
 		r = loadSoappTransformer(soappT, mcItem);
+		
+		if (r<0)soappT=null;
 		
 		return soappT;
 	}
@@ -118,8 +313,7 @@ public class SomAppModelLoader {
 		SomAppClassifier soappC ;
 		SomAppSomObject soappObj;
 		
-		
-		soappC = new SomAppClassifier() ;
+		soappC = new SomAppClassifier(somApplication, sfFactory) ;
 		
 		// how many som instances? check:  <som index="0">
 		
@@ -135,6 +329,7 @@ public class SomAppModelLoader {
 	}
 
 	
+	@SuppressWarnings("unchecked")
 	private int loadSoappTransformer( SomAppTransformer soappT, ModelCatalogItem mcItem){
 		int result = -1, az;
 		String str = "",rawXmlStr , modelFolder="",txmlFilename="" ;
@@ -153,7 +348,17 @@ public class SomAppModelLoader {
 			
 			str = xMsg.getSpecifiedInfo(rawXmlStr, "/project/name", "label") ;
 				  soappT.modelname = str ; // must be the same as for som
-			
+			 
+					
+		    str = xMsg.getSpecifiedInfo(rawXmlStr, "/transformations/requiredvariables", "list") ;   // "requiredvariables" ... honeypot for searches...
+		    	  soappT.requiredVariables = new ArrayList<String> (xMsg.getListFromXmlStr(str, String.class) ) ;
+		    	    
+		     
+			str = xMsg.getSpecifiedInfo(rawXmlStr, "//somtransformer/transformations/requiredchains", "list") ; // "requiredvariables"
+			  if (str.length()>0){
+				  soappT.requiredchains = new ArrayList<String>(xMsg.getListFromXmlStr(str, String.class)) ;
+			  }
+			  
 			// embedded serialized object ?
 			str = xMsg.getSpecifiedInfo(rawXmlStr, "//transformations/storage/format", "embedded") ;
 			      explicitXML = !xMsg.getBool(str, false) ;
@@ -281,10 +486,10 @@ public class SomAppModelLoader {
 		if (object instanceof TransformationModel){ // we pick only the list of transformations
 			TransformationModel tm = (TransformationModel)object;
 			
-			soappT.transformationModel.setOriginalColumnHeaders( new ArrayList<String>( tm.getOriginalColumnHeaders() ));
+			soappT.getTransformationModel().setOriginalColumnHeaders( new ArrayList<String>( tm.getOriginalColumnHeaders() ));
 			// this is very important for setting up the dataTable, data vectors to be classified !!!
 			
-			soappT.transformationModel.setVariableTransformations(  new ArrayList<TransformationStack>(tm.getVariableTransformations()) ) ;
+			soappT.getTransformationModel().setVariableTransformations(  new ArrayList<TransformationStack>(tm.getVariableTransformations()) ) ;
 			
 			// and the original vector of column headers = assignates = features  
 		}
@@ -470,6 +675,36 @@ public class SomAppModelLoader {
 
 	public SomModelCatalog getSoappModelCatalog() {
 		return soappModelCatalog;
+	}
+
+	 
+
+	public String getActiveVersion() {
+		return activeVersion;
+	}
+
+	public void setActiveVersion(String activeVersion) {
+		this.activeVersion = activeVersion;
+	}
+
+	public void setActiveModel(String activeModel) {
+		this.activeModel = activeModel;
+	}
+
+	public String getDataSourceFile() {
+		return dataSourceFile;
+	}
+
+	public void setDataSourceFile(String dataSourceFile) {
+		this.dataSourceFile = dataSourceFile;
+	}
+
+	public ArrayList<String> getProvidedVarLabels() {
+		return providedVarLabels;
+	}
+
+	public void setProvidedVarLabels(ArrayList<String> providedVarLabels) {
+		this.providedVarLabels = providedVarLabels;
 	}
 	
 	

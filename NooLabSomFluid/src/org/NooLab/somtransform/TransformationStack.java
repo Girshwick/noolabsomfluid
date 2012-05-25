@@ -90,19 +90,20 @@ public class TransformationStack implements Serializable {
 	transient SomFluidXMLHelper xEngine = new SomFluidXMLHelper();
 
 	// ========================================================================
-	public TransformationStack( SomTransformer transformer, SomFluidPluginSettings pluginsettings ){
+	public TransformationStack( SomTransformerAbstract somtransformer, SomFluidPluginSettings pluginsettings ){
 		
-		somTransformer = transformer ;
+		somTransformer = somtransformer.getSelfReference() ;
 		
 		transformGuid = GUID.randomvalue(); 
 		pluginSettings = pluginsettings;
 		
 		// -> TransformationEnvIntf. get
 	}
+	 
+	
 	// ========================================================================	
 
-
-	 
+ 
 	public String getGuid() {
 		return transformGuid;
 	}
@@ -153,7 +154,7 @@ public class TransformationStack implements Serializable {
 		
 		varLabel = baseVariable.getLabel();
 		isBlack  = somTransformer.somData.getVariables().getBlacklistLabels().indexOf(varLabel)>=0; 
-		isAbsExcluded = somTransformer.sfProperties.getAbsoluteFieldExclusions().indexOf(varLabel)>=0;
+		isAbsExcluded = somTransformer._sfProperties.getAbsoluteFieldExclusions().indexOf(varLabel)>=0;
 		
 		
 		// opening
@@ -203,7 +204,7 @@ if (varLabel.contains("Rechtsform")){
 			
 			// xstr = xEngine.transcodeStackedTransformation(i,stTransform) ;
 			 
-			builder = builder.e("algoritem").a("index", ""+i).a("name", stTransform.algorithmName ).a("type", ""+ stTransform.algorithmType);
+			builder = builder.e("algoritem").a("index", ""+i).a("name", stTransform.algorithmName ).a("type", ""+ stTransform.getAlgorithmType());
 			
 			if ((stTransform.dataDescription.max != -1) && (stTransform.dataDescription.max != stTransform.dataDescription.min)){ 
 				builder = builder.e("datadescription") 
@@ -233,7 +234,7 @@ if (varLabel.contains("Rechtsform")){
 							paramsbuilder = paramsbuilder.importXMLBuilder( pb );
 						}
 						
-						if (stTransform.algorithmType == AlgorithmIntf._ALGOTYPE_WRITER){
+						if (stTransform.getAlgorithmType() == AlgorithmIntf._ALGOTYPE_WRITER){
 							paramsbuilder = paramsbuilder.e("outlabel").a("value", stTransform.outputColumnLabel).up();
 						}	
 						
@@ -406,7 +407,7 @@ if (varLabel.contains("Rechtsform")){
 
 
 
-	@SuppressWarnings({ "rawtypes", "unused" })
+
 	public StackedTransformation introduceAlgorithmizedStackPosition( String algoName )
 																						throws Exception {
 
@@ -426,10 +427,10 @@ if (varLabel.contains("Rechtsform")){
 			}
 			
 		//
-		st.algorithmType = algorithmtype; // AlgorithmIntf._ALGOTYPE_WRITER;
+		st.setAlgorithmType(algorithmtype); // AlgorithmIntf._ALGOTYPE_WRITER;
 		st.outputColumnLabel = newLabel;
 		
-		st.createAlgoObject(st.algorithmType); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+		st.createAlgoObject(st.getAlgorithmType()); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 		
 		st.idString = GUID.randomvalue() ;
 		
@@ -438,38 +439,51 @@ if (varLabel.contains("Rechtsform")){
 		if (st.algorithm == null){
 	    	throw(new Exception("The requested algorithm "+algoName+" could not be instantiated: instantiation failed (object=null).")) ;
 		}
+		
+		if (defineAlgorithmObject( st )){
+			items.add(st);
+		}
 	    
-		Class c=null ;
 		
-		if (st.algorithmType == AlgorithmIntf._ALGOTYPE_PASSIVE ){
-				AlgoMeasurementIntf am = (((AlgoMeasurementIntf) st.algorithm));
-				latestDataDescriptionItem = items.size() ;
-				c = am.getClass();
+		return st;
+	}
+	
+	
+	@SuppressWarnings({ "rawtypes", "unused" })
+	public boolean defineAlgorithmObject( StackedTransformation st ) throws Exception{
+		boolean rB=false;
+
+		Class c = null;
+
+		if (st.getAlgorithmType() == AlgorithmIntf._ALGOTYPE_PASSIVE) {
+			AlgoMeasurementIntf am = (((AlgoMeasurementIntf) st.algorithm));
+			latestDataDescriptionItem = items.size();
+			c = am.getClass();
 		}
-		if (st.algorithmType == AlgorithmIntf._ALGOTYPE_VALUE ){
-				AlgoTransformationIntf at = (((AlgoTransformationIntf) st.algorithm));
-				c = at.getClass();
+		if (st.getAlgorithmType() == AlgorithmIntf._ALGOTYPE_VALUE) {
+			AlgoTransformationIntf at = (((AlgoTransformationIntf) st.algorithm));
+			c = at.getClass();
 		}
-		if (st.algorithmType == AlgorithmIntf._ALGOTYPE_WRITER ){
-				AlgoColumnWriterIntf aw = (((AlgoColumnWriterIntf) st.algorithm));
-				c = aw.getClass();
-		} 
-		
-		if (c!=null){
+		if (st.getAlgorithmType() == AlgorithmIntf._ALGOTYPE_WRITER) {
+			AlgoColumnWriterIntf aw = (((AlgoColumnWriterIntf) st.algorithm));
+			c = aw.getClass();
+		}
+
+		if (c != null) {
 			String className = c.getName();
 			Method[] mm = c.getMethods();
 			int n = mm.length;
 
 			Class[] interfaces = c.getInterfaces();
 
-			// check whether it implements one of the correct interfaces, and respective methods
-			
-			items.add(st);
+			// check whether it implements one of the correct interfaces, and
+			// respective methods
+
+			rB=true;
 		}
-		
-		return st;
+
+		return rB;
 	}
-	
 	/**
 	 * 
 	 * @param mode 0=all upstream , 1=downstream (will set recalc flag to true for linked stacks), 2=all linked,up- & downstream
@@ -486,6 +500,7 @@ if (varLabel.contains("Rechtsform")){
 	 * 
 	 * 
 	 */
+	@SuppressWarnings("unchecked")
 	public int update() {
 		
 		int result=0;
@@ -519,39 +534,43 @@ if (varLabel.contains("Rechtsform")){
 				
 				sti = items.get(i) ;
 				
+if (sti.getAlgorithmName().toLowerCase().contains("arith")){
+	int k;
+	k=0;
+}				
 				if ((firstItemForUpdate>0) && (firstItemForUpdate==i)){
-					if (sti.inData.size()==0){
+					if (sti.getInData().size()==0){
 						stp = items.get(i-1) ;
 						previousOutValues = stp.outData ;
-						sti.inData.add( previousOutValues ) ; // 
+						sti.getInData().add( previousOutValues ) ; // 
 					}
 				}
 				// providing the out-data of step (i) as in-data for step (i+1)
 				if ((i>0) && (previousOutValues!=null) && (previousOutValues.size()>0)){
 					
-					
 					// use this only for index 0
-					if ((sti.inData.size()==0) || (sti.multiVarInput==false)){
-						sti.inData.clear(); // possibility for caching here....
-						sti.inData.add( previousOutValues  ) ;  // in case of expressions, we may have several input columns
+					if ((sti.getInData()==null) || (sti.getInData().size()==0) || (sti.multiVarInput==false)){
+						if (sti.getInData()==null){ sti.createInDataContainer();} 
+						sti.getInData().clear(); // possibility for caching here....
+						sti.getInData().add( previousOutValues  ) ;  // in case of expressions, we may have several input columns
 					}else{
-						// in case of multi variable input, the algo knows itself about the other sources,
+						// in case of multi variable input, the algorithm knows itself about the other sources,
 						// only the first column (==itself) will needs to be dynamic here!
-						sti.inData.set(0, previousOutValues  ) ;
+						sti.getInData().set(0, previousOutValues  ) ;
 						// any instance of arithmet expression carries its own references for the required data source columns
 					}
 					
 					
 				}else{
 					// now for this stack item indat -> transform -> outdata
-					if (sti.inData.size()>0){
-						dataColValues = (ArrayList<Double>) sti.inData.get(0) ; // just an abbrev.
+					if (sti.getInData().size()>0){
+						dataColValues = (ArrayList<Double>) sti.getInData().get(0) ; // just an abbrev.
 					}else{
 						r=0;
 					}
 				}
 				
-				if ((i==0) && (sti.inData.size()==0)){
+				if ((i==0) && (sti.getInData().size()==0)){
 					result = -5;
 					break;
 				}
@@ -571,7 +590,7 @@ if (varLabel.contains("Rechtsform")){
 					}
 					
 					// valgo.setValues(dataColValues) ;
-					r = valgo.setValues( sti.inData ) ;
+					r = valgo.setValues( sti.getInData() ) ;
 					
 					if (r<0){
 						// optional: break and throw Exception
@@ -586,7 +605,7 @@ if (varLabel.contains("Rechtsform")){
 						}
 					}
 					rc = 0;
-					valgo.calculate() ; 
+					rc = valgo.calculate() ; 
 					
 					if ((rc>=0 ) && (rc<10)){
 						sti.createOutData(valgo.getValues(0));
@@ -597,6 +616,7 @@ if (varLabel.contains("Rechtsform")){
 						}
 					}else{
 						result = -9;
+						sti.outData = (ArrayList<Double>) sti.getInData().get(0);
 					}
 					
 										     // -1=input data, 0+= (first)+ col of out data,
@@ -608,10 +628,18 @@ if (varLabel.contains("Rechtsform")){
 					
 					malgo = ((AlgoMeasurementIntf)sti.algorithm) ;
 					
-					malgo.setValues( sti.inData ) ;
+					malgo.setValues( sti.getInData() ) ;
 					malgo.calculate() ; // calc of standard stats correct ?
 					
-					sti.dataDescription = new DataDescription( malgo.retrieveDescriptiveResults()) ;
+					if ((malgo.getParameters().isRecalculationBlocked()) && 
+						(sti.dataDescription!=null) && 
+						(sti.dataDescription.max>0.0)){
+						// do nothing
+						int k;
+						k=0;
+					}else{
+						sti.dataDescription = new DataDescription( malgo.retrieveDescriptiveResults()) ;
+					}
 					sti.createOutData( previousOutValues ) ;
 					double vv = items.get(i).dataDescription.max;
 					// sti.outData.addAll( previousOutValues );
@@ -753,7 +781,7 @@ if (varLabel.contains("Rechtsform")){
 
 
 
-	private int determineAlgoType(String algorithmName) {
+	public int determineAlgoType(String algorithmName) {
 		int atyp = -1;
 		
 		StackedTransformation st = new StackedTransformation(pluginSettings);

@@ -24,7 +24,7 @@ public class NumPropertiesChecker {
 
 	
 	SomTransformer somTransformer ;
-	SomFluidProperties sfProperties;
+	SomFluidAppGeneralPropertiesIntf sfProperties;
 	
 	DataTable dataTable ;
 	MissingValues missingValues; 
@@ -49,7 +49,7 @@ public class NumPropertiesChecker {
 		columnIndex = colindex; 
 
 		datavalues = dataTable.getColumn(colindex).getCellValues() ;
-		sfProperties = somTransformer.sfProperties;
+		sfProperties = (SomFluidAppGeneralPropertiesIntf) somTransformer.sfProperties;
 	}
 	
 	public NumPropertiesChecker( SomTransformer somtransformer, ArrayList<Double> values ){
@@ -58,7 +58,7 @@ public class NumPropertiesChecker {
 		datavalues = values ;
 		
 		missingValues = somTransformer.dataTableObj.getMissingValues();
-		sfProperties = somTransformer.sfProperties;
+		sfProperties = (SomFluidAppGeneralPropertiesIntf) somTransformer.sfProperties;
 	}
 	// ========================================================================
 
@@ -123,7 +123,9 @@ public class NumPropertiesChecker {
 		return statisticalDescription;
 	}
 
+	
 	public double[] getCoreTransformParameters( int task ) {
+		
 		double[] params = new double[0];
 		double v;
 		DescriptiveStatisticsValues  histoStats = statisticalDescription.getEmpiricDistribution().getHistoStats() ;
@@ -139,6 +141,7 @@ public class NumPropertiesChecker {
 	}
 
 	public ArrayList<Object> determineAdaptedParameters(int algotask, ArrayList<Double> values) {
+		
 		ArrayList<Object> params = new ArrayList<Object>();
 		double[] analyticParams;
 		

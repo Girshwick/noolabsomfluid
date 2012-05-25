@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import org.NooLab.somtransform.algo.intf.AlgoTransformationAbstract;
 import org.NooLab.somtransform.algo.intf.AlgorithmParameter;
+import org.NooLab.somtransform.algo.intf.AlgorithmParameters;
 
 
 /**
@@ -126,7 +127,12 @@ public class AdaptiveLogShift extends AlgoTransformationAbstract {
 		return result;		
 	}
 
-	
+
+	@Override
+	public void setParameters(AlgorithmParameters algorithmParams) throws Exception {
+		
+	}
+
 	@Override
 	public void setParameters(ArrayList<Object> params) throws Exception {
 		ArrayList<AlgorithmParameter> items ;
@@ -151,5 +157,6 @@ public class AdaptiveLogShift extends AlgoTransformationAbstract {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 
 }

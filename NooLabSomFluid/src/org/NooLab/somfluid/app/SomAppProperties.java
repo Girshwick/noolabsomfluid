@@ -8,8 +8,10 @@ import org.NooLab.somfluid.OutputSettings;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidPluginSettings;
 import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.storage.FileOrganizer;
+import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.net.GUID;
 
@@ -21,7 +23,13 @@ import org.NooLab.utilities.net.GUID;
  * 
  *
  */
-public class SomAppProperties implements 	SomAppPropertiesIntf,
+public class SomAppProperties 
+								extends 
+											SomFluidAppPropertiesAbstract 
+								implements 	
+											
+											SomAppPropertiesIntf,
+											DataHandlingPropertiesIntf,
 											Serializable{
 
 	private static final long serialVersionUID = 8129200314108478416L;
@@ -31,25 +39,28 @@ public class SomAppProperties implements 	SomAppPropertiesIntf,
 	public static final int _WORKINGMODE_SERVICEFLOW = 4 ;
 	public static final int _WORKINGMODE_SERVICEFILE = 5 ;
 
+
+	public static final int _MODELSELECT_LATEST      = 1;
+	public static final int _MODELSELECT_FIRSTFOUND  = 2;
+	public static final int _MODELSELECT_BEST        = 4;
+	public static final int _MODELSELECT_ROBUST      = 8;
+	public static final int _MODELSELECT_VERSION     = 16 ;
+	public static final int _MODELSELECT_STRUCPREF   = 100;
+	 
+	
 	static SomAppProperties sclappProperties ;
 
 	transient SomFluidFactory sfFactory ;
 	
 	transient SomFluidProperties sfProperties ; // better as a restricted interface, we do not need all settings for the classification app
 	
-	SomFluidPluginSettings pluginSettings = new SomFluidPluginSettings();
+	
+	
 	
 	
 	private String algorithmsConfigPath;
-
-
-	private PersistenceSettings persistenceSettings;
-
-
 	private int glueType;
-
-
-	private FileOrganizer fileOrganizer;
+	
 
 
 	private boolean pluginsAllowed;
@@ -57,24 +68,25 @@ public class SomAppProperties implements 	SomAppPropertiesIntf,
 	int workingMode = _WORKINGMODE_PROJECT;
 
 	
-	String dataSourceFilename = "";
+	
 
-	String supervisedDirectory = "";
+	
 	String baseModelFolder = "";
 	String modelName = "";
-	String activeModel;
-	String modelPackageName;
+	String activeModel ="";
+	String modelPackageName ="";
 	
+	int modelSelectionMode = _MODELSELECT_LATEST;
+	String preferredModelVersion = "";
 	
 	ArrayList<String> activeModels = new ArrayList<String> ();
 	
 	ArrayList<String> supervisionFilenameFilters = new ArrayList<String> ();
 	
-	transient DFutils fileutil = new DFutils();
-	
+	 
 	// ========================================================================
 	public SomAppProperties(String sourceForProperties){
-		
+			super();
 	}
 	// ========================================================================	
 	
@@ -110,10 +122,10 @@ public class SomAppProperties implements 	SomAppPropertiesIntf,
 		
 		fileOrganizer.setPropertiesBase(this);
 		
-		sfProperties.setInstanceType(glueinstanceType) ;
-		sfProperties.setFileOrganizer(fileOrganizer) ;
-		sfProperties.setPersistenceSettings(persistenceSettings) ;
-		sfProperties.setOutputSettings(outputSettings) ;
+		// setInstanceType(glueinstanceType) ; 
+		setFileOrganizer(fileOrganizer) ;
+		setPersistenceSettings(persistenceSettings) ;
+		setOutputSettings(outputSettings) ;
 	}
 
 	public void setFactoryParent(SomFluidFactory factory) {
@@ -144,7 +156,11 @@ public class SomAppProperties implements 	SomAppPropertiesIntf,
 		sfProperties.setAlgorithmsConfigPath( algorithmsConfigPath );
 	}
 
+	public SomFluidProperties getSelfReference() {
+		return sfProperties;
+	}
 
+	
 	public String getAlgorithmsConfigPath() {
 		return algorithmsConfigPath;
 	}
@@ -175,49 +191,19 @@ public class SomAppProperties implements 	SomAppPropertiesIntf,
 		return workingMode;
 	}
 
-	public void setDataSourceFile(String filename) {
-		dataSourceFilename = filename;
-	}
-
-	public String getDataSourceFilename() {
-		return dataSourceFilename;
-	}
-
-	public void setDataSourceFilename(String dataSourceFilename) {
-		this.dataSourceFilename = dataSourceFilename;
-	}
-
-	/**
-	 * 
-	 * @param dirname if null or empty, a tmpdir within java temp will be created
-	 * @return for provided custom dir success = 0, java temp = 1, if failed = -1
-	 */
-	public int setSupervisedDirectory( String dirname ) {
-		int result = -1;
+	public void setDataSourceFile(String projectBasePath, String lastProjectName, String lastDataSet) {
 		
-		if ((dirname==null) || (dirname.length()==0)){
-			String str = GUID.randomvalue().replace("-", "").substring(0,10) ;
-			dirname = fileutil.getTempFileJava("~noo-classifiers-"+str) ;
-			supervisedDirectory = dirname;
-			return 1;
-		}
-		if (fileutil.fileexists(dirname)==false){
-			fileutil.createDir(dirname) ;
-			if (fileutil.fileexists(dirname)){
-				result = 0;
-			}
+		if ((fileutil.fileexists(lastDataSet)) && (lastDataSet.indexOf("/")>0)){
+			dataSrcFilename = lastDataSet;
 		}else{
-			result = 0;
+			dataSrcFilename = fileutil.createpath(fileutil.createpath( projectBasePath, lastProjectName), "data/"+lastDataSet) ;
 		}
-		
-		supervisedDirectory = dirname;
-		
-		return result;
+		IniProperties.dataSource = dataSrcFilename ;
+		IniProperties.saveIniProperties();
 	}
 
-	public String getSupervisedDirectory() {
-		return supervisedDirectory;
-	}
+
+
 
 	public void addSupervisedFilename(String namefilter) {
 		supervisionFilenameFilters.add( namefilter );
@@ -238,6 +224,16 @@ public class SomAppProperties implements 	SomAppPropertiesIntf,
 		supervisionFilenameFilters.clear();
 	}
 
+	public void setBaseModelFolder(String selectProjectHome, String lastProjectName, String modelfolder) {
+	
+		String path = "";
+		
+		path = fileutil.createpath( selectProjectHome, lastProjectName);
+		path = fileutil.createpath( path, modelfolder);
+		
+		setBaseModelFolder(path) ;
+	}
+	
 	public void setBaseModelFolder(String baseFolder) {
 		
 		baseModelFolder = baseFolder.trim();
@@ -300,5 +296,55 @@ public class SomAppProperties implements 	SomAppPropertiesIntf,
 	public String getModelPackageName() {
 		return modelPackageName;
 	}
+
+	public int getModelSelectionMode() {
+		return modelSelectionMode;
+	}
+
+	public void setModelSelectionMode(int selectMode) {
+		if (selectMode>=100){
+			if (modelSelectionMode<100){
+				modelSelectionMode = modelSelectionMode + 100;
+			}
+		}else{
+			if (modelSelectionMode<100){
+				modelSelectionMode = selectMode;
+			}else{
+				modelSelectionMode = 100 + selectMode;
+			}
+		}
+		
+	}
+	public void setModelSelectionMode(int selectMode, String version) {
+		setModelSelectionMode(selectMode) ;
+		preferredModelVersion = version ;
+	}
+
+	public void resetModelSelectionMode() {
+		modelSelectionMode = _MODELSELECT_LATEST;
+	}
+
 	
+	public String getPreferredModelVersion() {
+		return preferredModelVersion;
+	}
+
+
+
+
+	
+	// ====================================================================================================
+	@Override
+	public int getDataUptakeControl() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+	@Override
+	public void setDataUptakeControl(int ctrlValue) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	 
+ 
 }

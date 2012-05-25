@@ -39,19 +39,26 @@ public interface AlgorithmIntf extends AlgorithmParameterIntf, Serializable{
 	
 	public int calculate() ;
 
-	public ArrayList<Double> getValues( int part ) ;
-	
-	
-	
 	public ArrayList<Double> getDescriptiveResults() ;
+	
+	
+	public String[] showAvailableParameters();
+	
 	
 	public AlgorithmParameters getParameters() ;
 	
-	public void setParameters( ArrayList<Object> params) throws Exception ;
+	public void setParameters( AlgorithmParameters algorithmParams ) throws Exception ;
+	public void setParameters( ArrayList<Object> params ) throws Exception ;
+	
+	
+	
+	
+	public ArrayList<Double> getValues( int part ) ;
 
 	public int setValues(ArrayList<ArrayList<?>> inValues);
 	
-
+	
+	
 	public int getRangeViolationCounter() ;
 
 	public void setRangeViolationCounter(int rangeViolationCounter) ;

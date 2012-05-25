@@ -7,9 +7,11 @@ import java.util.Arrays;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.data.DataTable;
+import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somtransform.algo.intf.AlgoTransformationIntf;
 import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
+import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
 
 
@@ -35,7 +37,8 @@ public class SomAssignatesDerivations  implements Serializable{
 
 	transient SomTransformer somTransformer;
 	
-	transient SomFluidProperties sfProperties;
+
+	transient SomFluidAppGeneralPropertiesIntf sfProperties;
 	transient SomDataObject somData;
 	transient DataTable dataTableObj;
 	
@@ -68,6 +71,10 @@ public class SomAssignatesDerivations  implements Serializable{
 	
 	public void initialize(){
 		
+		if (derivationTrees!=null){
+			derivationTrees.clear();
+			derivationTrees=null;
+		}
 		derivationTrees = new ArrayList<SomAssignatesDerivationTree>();
 		
 		initializeTrees();
@@ -76,7 +83,7 @@ public class SomAssignatesDerivations  implements Serializable{
 	}
 	
 	
-	public SomAssignatesDerivationTree getTreeByGuid(int mode, String tGuid){
+	public SomAssignatesDerivationTree getTreeByGuid( String tGuid){
 		
 		SomAssignatesDerivationTree dTree=null, dT;
 		
@@ -99,8 +106,8 @@ public class SomAssignatesDerivations  implements Serializable{
 	
 	
 	/**
-	 * a derived variable could be present in several trees, so we have to check them all
-	 * @param mode  0=compare to base variable, 1=compare to any variable in the tree 
+	 * a derived variable could be present in several trees, so we have to check them all</br>
+	 * @param mode  0=compare to base variable, 1=compare to any variable in the trees 
 	 */
 	public ArrayList<SomAssignatesDerivationTree> getTreesByVariable(int mode, String varlabel){
 		
@@ -160,18 +167,21 @@ public class SomAssignatesDerivations  implements Serializable{
 		
 		for (int i=0;i<dTree.collectedVariables.size();i++){
 			
-			
+			String vlabel = dTree.collectedVariables.get(i).varlabel;
+			if (vars.indexOf(vlabel)<0){
+				vars.add( vlabel);
+			}
 		} // i->
-		
 		return vars;
 	}
 
 
 	public void createDerivationTrees(){
 		
-		int ix;
+		int ix, tix;
 		String guidBaseVar, varlabel ;
 		ArrayList<TransformationStack> tStacks;
+		ArrayList<String> derivedVariablesStr, existentVariablesStr ,allVariablesStr ;
 		TransformationStack tStack;
 		SomAssignatesDerivationTree derivTree;
 		ArrayList<CollectedVariable> collectedVariables = null;
@@ -189,7 +199,16 @@ public class SomAssignatesDerivations  implements Serializable{
 		if (nn>0){
 			nn=nn+1-1;
 		}
-		for (int i=0;i<derivationTrees.size();i++){
+		
+		ix=0;
+		existentVariablesStr = variables.getLabelsForVariablesList(variables);
+		
+		
+		existentVariablesStr = variables.getLabelsForVariablesList(variables, 0); // 0=raw 1=derived 2=all
+		allVariablesStr = variables.getLabelsForVariablesList(variables, 2); // just for debug...
+		
+		
+		for (int i=0;i<derivationTrees.size();i++){ // should just contain the raw variables
 			
 			derivTree = derivationTrees.get(i);
 			
@@ -197,12 +216,13 @@ public class SomAssignatesDerivations  implements Serializable{
 			varlabel = derivTree.baseVariableLabel ;
 			
 if ( (varlabel.toLowerCase().startsWith("xd")) ||
-	 (varlabel.toLowerCase().contains("unde_seit_c"))){
+	 (varlabel.toLowerCase().contains("d1"))){
 	int k;
 	k=0;
 }			
 			if (guidBaseVar.length()>0){
-														
+				// this should be always true, since we start with non-derived variables only
+				// variableCollected( 1, guidBaseVar, null);
 				if (variableCollected( guidBaseVar ) == false){
 											out.print(4, "...checking transformation influences for variable <"+varlabel+">...");
 											
@@ -219,6 +239,67 @@ if ( (varlabel.toLowerCase().startsWith("xd")) ||
 				// collectedVariables.clear(); // ??? 
 			}
 		} // i -> all items in derivationTrees
+
+		ArrayList<CollectedVariable> cvs;
+		
+		derivedVariablesStr = variables.getLabelsForVariablesList(variables, 1); // 0=raw 1=derived 2=all
+		ArrayList<Integer> trace  = new ArrayList<Integer> ();
+		
+		for (int i=0;i<derivedVariablesStr.size();i++){
+			
+			cvs = new ArrayList<CollectedVariable>();
+			
+			varlabel = derivedVariablesStr.get(i) ;
+			tix = transformationModel.getIndexByLabel(varlabel);
+
+if (varlabel.toLowerCase().contains("d1b")){
+	int z;
+	z=0;
+}
+
+			trace.clear();  
+			trace = transformationModel.findTransformationRootStackIndex( varlabel, 1, trace);
+
+			for (int t=0;t<trace.size();t++){
+				
+				tStack = transformationModel.variableTransformations.get(trace.get(t)) ;
+				
+				//if (tix != trace.get(t))
+				{ 
+					CollectedVariable cv = new CollectedVariable( tStack.transformGuid, tStack.varLabel, trace.get(t)) ;
+					
+					cvs.add(cv) ;
+				}
+				
+			}// t->
+			// StackedTransformation findStackedTransformationByGuid( String stackedTransformGuid )
+			// collectedVariables = collectVariablesInTree( guidBaseVar, collectedVariables, derivTree, 0); // recursively traverse the variables
+			// collectVariablesInTree
+			
+			if (cvs.size()>=1){
+
+if (varlabel.toLowerCase().contains("d1b")){
+	int z;
+	z=0;
+}
+				int min = ArrUtilities.arraymin(trace,-1);
+				if (min>=0){
+					
+					// put it to the respective tree that is attached to the current variable under scrutiny
+					String tGuid = transformationModel.getItem(min).transformGuid ;
+					derivTree = getTreeByGuid(tGuid); 
+					
+					if (derivTree!=null){
+						derivTree.addCollectedVariables(cvs);
+					} // tree found ?
+				} // reasonable values in list of trace indexes ?
+			} // any cvs found ?
+			
+			// put it to the roots
+			// derivRoot = getRootByGuid(tGuid);
+			// derivRoot.addTraces( varlabel, trace) ;
+		}
+		
 		
 		// remove cleared items
 		int d = derivationTrees.size()-1;
@@ -228,6 +309,8 @@ if ( (varlabel.toLowerCase().startsWith("xd")) ||
 			
 			if (derivTree.baseGuid.length()==0){ 
 				derivationTrees.remove(d) ;
+			}else{
+				derivTree.sortCollectedVariables(1);
 			}
 			
 			d--;
@@ -237,6 +320,14 @@ if ( (varlabel.toLowerCase().startsWith("xd")) ||
 		
 		 
 		ix=0;
+	}
+
+
+	private void addRootsTraces(String varlabel, ArrayList<Integer> trace) {
+		// TODO Auto-generated method stub
+		
+		//derivationRoots.
+		
 	}
 
 
@@ -281,11 +372,15 @@ if ( (varlabel.toLowerCase().startsWith("xd")) ||
 				return collectedVariables;
 			}
 			tix=0;
-											
+			String stackBaseVLabel = tStack.varLabel ;							
 			for (int t=0;t<tStack.items.size();t++){
 				stackItem = tStack.getItem(t);
-				algotype = stackItem.algorithmType ;
+				algotype = stackItem.getAlgorithmType() ;
 				
+				/*
+				 * ATTENTION: not all transfers of data between columns are due to the push of copy/writers !
+				 *            formulas and other multi-source algorithms may fetch/pull the data !!   
+				 */
 				if (algotype == AlgorithmIntf._ALGOTYPE_WRITER){
 					
 					String vlabel = stackItem.outputColumnLabel ;
@@ -316,6 +411,15 @@ if (backtrcVarStr.toLowerCase().contains("unde_seit_c")){
 						// what's about cascaded arithmetic expressions?
 					}
 				}
+				
+				// search based on guids
+				
+				String stiGuid = stackItem.idString;
+				String stackGuid = tStack.transformGuid ;
+				
+				// search all references 
+				// collectedVariables
+				
 			}
 			
 		}catch(Exception e){
@@ -503,7 +607,7 @@ if (backtrcVarStr.toLowerCase().contains("unde_seit_c")){
 		transformationModel = somTransformer.transformationModel ;
 		
 		try{
-			
+			Variables variables = somData.getVariables();
 	
 			if (transformationModel==null){
 				out.printErr(2, "the <transformationModel> has been unexpectadly found to be =null.");
@@ -516,60 +620,72 @@ if (backtrcVarStr.toLowerCase().contains("unde_seit_c")){
 			colheaders = somData.getDataTable().getColumnHeaders();
 			
 			vn = colheaders.size();
-			result=1;
+			int vz = variables.size() ;
+			ix=0;
 			
-			for (int i=0;i<vn;i++){
+			ArrayList<String> existentVariablesStr ;
+			existentVariablesStr = variables.getLabelsForVariablesList(variables,0);
+			
+			result=1;
+			vz = existentVariablesStr.size() ;
+			
+			for (int i=0;i<vz;i++){
 				result = -3;
 				
-				derivTree = new SomAssignatesDerivationTree( somData );
-				varLabel = colheaders.get(i);
-				derivTree.baseVariableLabel = varLabel ;
-				tix = transformationModel.getIndexByLabel( derivTree.baseVariableLabel ) ;
-				
-				if (tix>=0){
-					
-					tStack = transformationModel.getVariableTransformations().get(tix);
-	
-					if (tStack.inputVarLabels!=null){
-						int tsinn = tStack.inputVarLabels.size();
+				varLabel = existentVariablesStr.get(i);
+				Variable variable = variables.getItemByLabel(varLabel);
 
-						if (tsinn > 0) {
-							continue;
-						}
-					}
+				if (variable.isDerived()==false){
+
+					derivTree = new SomAssignatesDerivationTree( somData );
+					derivTree.baseVariableLabel = varLabel ;
+					tix = transformationModel.getIndexByLabel( derivTree.baseVariableLabel ) ;
+					
+					if (tix>=0){
 						
-					vGuid = tStack.getGuid() ;
-					String[] pVar = tStack.baseVariable.getParentItems();
-					int pn = pVar.length ;
-					
-					derivTree.baseGuid = vGuid ; // guid of stack ~ serves also as GUID of column = used variable;
-					derivTree.baseVariableIndex = somData.getVariables().getIndexByLabel( varLabel ) ;
-					
-					// is there another tStack, which uses this one as output ?
-					// here we check a forward-link which equals the ID of the currently selected tStack
-					// relevant field in tStack is  tStack.outputColumnIds 
-					
-					int potix = transformationModel.getTransformStackIndexByOutputGuid( vGuid ); 
-					if (potix<0){
-						derivationTrees.add(derivTree) ;
-					}else{
-						
-						// actually, we should drill down, until there is no inputVarLabel (.length = 0 ?)
-						String tGuid = tStacks.get(potix).transformGuid ;
-						dT = this.getTreeByGuid(0, tGuid);
-						if (dT != null) {
-							int vix = somData.getVariables().getIndexByLabel(varLabel);
-							CollectedVariable cv = new CollectedVariable(vGuid, varLabel, vix);
-							dT.getCollectedVariables().add(cv);
+						tStack = transformationModel.getVariableTransformations().get(tix);
+		
+						if (tStack.inputVarLabels!=null){
+							int tsinn = tStack.inputVarLabels.size();
+
+							if (tsinn > 0) {
+								continue;
+							}
 						}
-					}
-					
-				} // stack available for variable ?
-				
-				
-				
+							
+						vGuid = tStack.getGuid() ;
+						String[] pVar = tStack.baseVariable.getParentItems();
+						int pn = pVar.length ;
+						
+						derivTree.baseGuid = vGuid ; // guid of stack ~ serves also as GUID of column = used variable;
+						derivTree.baseVariableIndex = somData.getVariables().getIndexByLabel( varLabel ) ;
+						
+						// is there another tStack, which uses this one as output ?
+						// here we check a forward-link which equals the ID of the currently selected tStack
+						// relevant field in tStack is  tStack.outputColumnIds 
+						
+						int potix = transformationModel.getTransformStackIndexByOutputGuid( vGuid ); 
+						if (potix<0){
+							derivationTrees.add(derivTree) ;
+						}else{
+							
+							// actually, we should drill down, until there is no inputVarLabel (.length = 0 ?)
+							String tGuid = tStacks.get(potix).transformGuid ;
+							dT = this.getTreeByGuid(tGuid);
+							if (dT != null) {
+								int vix = somData.getVariables().getIndexByLabel(varLabel);
+								CollectedVariable cv = new CollectedVariable(vGuid, varLabel, vix);
+								dT.getCollectedVariables().add(cv);
+							}
+						}
+						
+					} // stack available for variable ?
+
+				} // raw variable ?
+								
 			} // i-> all variables in raw file
 			
+			vn = derivationTrees.size();
 			if (vn>0)result=0;
 			
 		}catch(Exception e){

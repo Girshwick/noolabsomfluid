@@ -9,7 +9,12 @@ import org.NooLab.utilities.objects.StringedObjects;
 import org.apache.commons.collections.BidiMap;
 import org.apache.commons.collections.bidimap.DualHashBidiMap;
 
-public class AlgorithmParameter implements AlgorithmParameterIntf{
+public class AlgorithmParameter 
+									implements 	AlgorithmParameterIntf, 
+												Serializable{
+
+	
+	private static final long serialVersionUID = 6381743099970919337L;
 
 	// TODO: should not be "naked" strings, but (pseudo-)maps with a descriptor,
 	String label = "";   
@@ -36,6 +41,10 @@ public class AlgorithmParameter implements AlgorithmParameterIntf{
    			it.setValue("newValue");
  		}
 	*/
+	/** this object slot allows to pass any class  structure as parameters,
+	 * yet, this class has to be declared as "Serializable", and it should 
+	 * in fact be serializable (complete list of setters/getters)  
+	 */
 	public Object obj=null; 
 	
 	transient StringedObjects strobj = new StringedObjects();
@@ -44,10 +53,50 @@ public class AlgorithmParameter implements AlgorithmParameterIntf{
 	public AlgorithmParameter(){
 		
 	}
+	
+	/** for cloning , incl. on the level of the items */
+	@SuppressWarnings("unchecked")
+	public AlgorithmParameter(AlgorithmParameter inParamSet) {
+	
+		label = inParamSet.label;   
+		
+		typeLabel = inParamSet.typeLabel ;
+		
+		numValue = inParamSet.numValue ;
+		strValue = inParamSet.strValue ;
+
+		intValues = new int[inParamSet.intValues.length] ;
+				    if (intValues.length>0){
+				    	System.arraycopy(inParamSet.intValues, 0, intValues, 0, intValues.length);
+				    }
+		numValues = new double[inParamSet.numValues.length] ;
+				    if (numValues.length>0){
+				    	System.arraycopy(inParamSet.numValues, 0, numValues, 0, numValues.length);
+				    }
+
+		strValues = new String[inParamSet.strValues.length] ;
+				    if (strValues.length>0){
+				    	System.arraycopy(inParamSet.strValues, 0, strValues, 0, strValues.length);
+				    }
+		            
+		list = (ArrayList<Object>) strobj.decode( strobj.encode(inParamSet.list));
+
+		valuePairs = (ArrayList<ValuePair>) strobj.decode( strobj.encode(inParamSet.valuePairs));  ;
+		
+		map = new DualHashBidiMap(inParamSet.map);
+		 
+		Object obj = strobj.decode( strobj.encode(inParamSet.obj)); 
+		
+		
+	}
 	// ========================================================================
 	
 	
 	
+
+
+
+
 	/**
 	 * @return the label
 	 */
@@ -258,6 +307,23 @@ public class AlgorithmParameter implements AlgorithmParameterIntf{
 		public void setValue(Object value) {
 			this.value = value;
 		}
+	}
+
+
+	public BidiMap getMap() {
+		return map;
+	}
+
+
+
+	public void setMap(BidiMap map) {
+		this.map = map;
+	}
+
+
+
+	public void setValuePairs(ArrayList<ValuePair> valuePairs) {
+		this.valuePairs = valuePairs;
 	}
 	
 }

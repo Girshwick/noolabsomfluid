@@ -1,6 +1,7 @@
 package org.NooLab.somtransform;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import org.NooLab.somfluid.components.SomDataObject;
 
@@ -69,7 +70,6 @@ public class SomAssignatesDerivationTree extends SomAssignatesDerivationTreeAbst
 	public void setBaseVariableIndex(int baseVariableIndex) {
 		this.baseVariableIndex = baseVariableIndex;
 	}
-
 
 
 

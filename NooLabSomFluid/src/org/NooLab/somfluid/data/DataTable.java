@@ -518,7 +518,7 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 															if (out!=null){ out.print(3,"\ncheck format of columns...");};
 			
 			indexColPresent = false;												
-			for (i=0;i<n;i++){  // TODO make this multidigested if there are many variables (n>80), and many rows, such that even scanrow is large...
+			for (i=0;i<n;i++){  // TODO make this multi-digested if there are many variables (n>80), and many rows, such that even scanrow is large...
 															if (out!=null){ out.printprc(3, i, n, n/10, "") ;};
 				column = importTable.getColumn(i) ;
 				column.setMaxScanRows( importTable.getMaxScanRows() );
@@ -530,7 +530,7 @@ if (i>=9){
 				/*
 
 					check whether there is a unique ID as integer
-					// should not be done hee
+					// should not be done here
 					NVE : config: max number of groups  
 				 */
 				
@@ -799,19 +799,23 @@ if (ir==670){
 		}
 		newColumn.hasHeader = true;
 
-		columnHeaders.add(targetColumnLabel) ;
-
+		if (mode>=1){
+			columnHeaders.add(targetColumnLabel) ;
+		}
+		
 		dataTable.add(newColumn);
 
 		// don't forget the rows perspective....
 		ArrayList<Double>  row ;
 		double v;
-		for (int i=0;i<this.dataTableRows.size();i++){
-			
-			row = dataTableRows.get(i) ;
-			v = dataTable.get(sourceColumnIx).getValue(i);
-			row.add( v );
-			
+		if (dataTableRows != null) {
+			for (int i = 0; i < this.dataTableRows.size(); i++) {
+
+				row = dataTableRows.get(i);
+				v = dataTable.get(sourceColumnIx).getValue(i);
+				row.add(v);
+
+			}
 		}
 		
 		// return the index of the new column
@@ -1353,7 +1357,13 @@ if (ir==670){
 	}
 	
 	public String getColumnHeader( int index ){
-		return columnHeaders.get(index) ;
+		String colhead="";
+		
+		if ((index>=0) && (index<columnHeaders.size())){
+			colhead = columnHeaders.get(index) ;
+		}
+		return colhead ;
+		
 	}
 
 	public String getColumnHeader( DataTableCol colobj ){
@@ -1408,7 +1418,9 @@ if (ir==670){
 	}
 
 	public ArrayList<String> getColumnHeaders(){
-		 
+		if (columnHeaders==null){
+			columnHeaders = new ArrayList<String>();
+		}
 		return columnHeaders ;
 	}
 	
@@ -1615,8 +1627,11 @@ if (ir==670){
 		this.transposedTable = transposedTable;
 	}
 
-	public void setColumnHeaders(ArrayList<String> columnHeaders) {
-		this.columnHeaders = columnHeaders;
+	public void setColumnHeaders(ArrayList<String> columnheaders) {
+		if (columnheaders != null){
+			columnHeaders = columnheaders;
+			colcount = columnHeaders.size(); 
+		}
 	}
 
 	public void setHeadersCount(int headersCount) {

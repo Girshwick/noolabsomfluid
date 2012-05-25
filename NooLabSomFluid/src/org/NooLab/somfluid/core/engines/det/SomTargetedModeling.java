@@ -155,7 +155,7 @@ public class SomTargetedModeling    extends
 		
 		sfFactory = factory;
 		
-		sfProperties = sfFactory.sfProperties ;
+		sfProperties = sfFactory.getSfProperties() ;
 		 
 		
 		// only if requested by the properties ....

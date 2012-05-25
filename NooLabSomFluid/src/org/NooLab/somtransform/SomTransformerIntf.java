@@ -1,9 +1,12 @@
 package org.NooLab.somtransform;
 
+import java.util.ArrayList;
+
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.env.data.NormValueRangesIntf;
+import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somsprite.AnalyticFunctionTransformationsIntf;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 
@@ -93,6 +96,24 @@ public interface SomTransformerIntf {
 	public void importExpectedNormValueRanges( String filename );
 	
 	public void importExpectedNormValueRanges( NormValueRangesIntf valueRanges) ;
+
+	public void saveXml();
+
+	public FileOrganizer getFileorg();
+
+	public int save();
+
+	public void extractTransformationsXML(boolean embed);
+
+	public void initializeTransformationModel();
+
+	public void createDataDescriptions();
+
+	public ArrayList<String> getXmlImage();
+
+	public SomTransformer getSelfReference();
+
+	public int getDerivationLevel();
 
 	// ......................
 	

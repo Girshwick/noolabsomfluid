@@ -31,7 +31,7 @@ abstract public class AlgoMeasurementAbstract implements AlgoMeasurementIntf {
 	
 	// ------------------------------------------------------------------------
 	public AlgoMeasurementAbstract(){
-		
+		parameters = new AlgorithmParameters(this) ;
 	}
 	// ------------------------------------------------------------------------
 
@@ -88,15 +88,27 @@ abstract public class AlgoMeasurementAbstract implements AlgoMeasurementIntf {
 	
 	
 	@Override
+	public String[] showAvailableParameters() {
+		
+		return null;
+	}
+	
+	
+	@Override
 	public AlgorithmParameters getParameters() {
 		
 		return parameters;
 	}
+	
+	
 	@Override
-	public void setParameters(ArrayList<Object> params) {
-		// TODO Auto-generated method stub
-		
+	public void setParameters( AlgorithmParameters algorithmParams) {
 	}
+	
+	@Override
+	public void setParameters(ArrayList<Object> params) throws Exception {
+	}
+
 	
 	
 }

@@ -8,11 +8,14 @@ import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.properties.SettingsTransporter;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
+import org.NooLab.utilities.files.DFutils;
 
 import com.jamesmurty.utils.XMLBuilder;
 
 
 public class OutputSettings implements Serializable{
+
+	private static final long serialVersionUID = -7415869504223990046L;
 
 	public static final int _RESULTFILE_MHISTORY    = 1;
 	public static final int _RESULTFILE_MODELROC    = 3;
@@ -33,6 +36,7 @@ public class OutputSettings implements Serializable{
 	
 	// ......................................
 	
+	PersistenceSettings persistenceSettings;
 	
 	String resultfileOutputPath = "" ;
 	boolean asXml = false;
@@ -58,11 +62,12 @@ public class OutputSettings implements Serializable{
 	boolean isIncludeResultsToExportedPackages;
 	boolean isIncludeDataToExportedPackages;
 
-
+	SomAppPublishing appPublishing = new SomAppPublishing();
 	
 	private boolean resultFileZipping = true;
-	PersistenceSettings persistenceSettings;
 	private boolean exportApplicationModel;
+	
+	transient DFutils  fileutil = new DFutils();
 	
 	// ========================================================================
 	public OutputSettings(PersistenceSettings ps){
@@ -70,6 +75,8 @@ public class OutputSettings implements Serializable{
 		persistenceSettings = ps ;
 		
 		setDefaults() ;
+		 
+		
 	}
 	// ========================================================================
 	
@@ -356,6 +363,35 @@ public class OutputSettings implements Serializable{
 
 	public void setIncludeDataToExportedPackages(boolean flag) {
 		isIncludeDataToExportedPackages = flag;
+	}
+
+	public void setAppPublishing( SomAppPublishing somAppPubl ) {
+		appPublishing = somAppPubl;
+	}
+
+	public SomAppPublishing getAppPublishing() {
+		return appPublishing;
+	}
+
+	public void setPublishingLocation(String path) {
+		
+		path = DFutils.createPath(path, "/") ;
+		
+		appPublishing.setPublishingBasepath(path);
+	}
+
+	public void publishApplicationPackage(boolean flag) {
+		
+		if ((appPublishing.active != flag) && (flag)){
+			appPublishing.active = flag;
+			appPublishing.establishSpace() ;
+		}
+		appPublishing.active = flag;
+		
+	}
+
+	public void setCatalogFields(IndexedDistances catalogFields) {
+		this.catalogFields = catalogFields;
 	}
 
 }

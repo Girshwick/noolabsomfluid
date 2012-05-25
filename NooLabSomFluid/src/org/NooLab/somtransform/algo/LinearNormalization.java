@@ -54,19 +54,24 @@ public class LinearNormalization extends AlgoTransformationAbstract {
 				v = (Double)values.get(i) ;
 				// NOT here in LinNorm!!! but in any other algorithm... v = handlingRangeProtection(v);
 				
-				if ( v!= -1.0 ){
+				if (( v!= -1.0 ) && (v!=-2.0)){
 					
 					// the actual calculation ...
-					if (_max - _min == 0.0){
+					
+					if ((_max - _min <= 0.0) ){
 						vr = 0.0 ;
 					}else{
 						vr = (v- _min)/(_max - _min) ;
+					}
+					if (vr>1.0){
+						vr = 1.0;
+						// OR: -1.0 , according to the parameters
 					}
 					
 					hb = setCalculationResultValue(i,vr) ;
 					// put value to outvalues<>
 				} else{
-					setCalculationResultValue(i,-1.0) ;
+					setCalculationResultValue(i,v) ;
 				}
 				
 			}// -> all values

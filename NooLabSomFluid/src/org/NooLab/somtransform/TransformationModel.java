@@ -6,9 +6,11 @@ import java.util.ArrayList;
 import org.NooLab.somfluid.components.*;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
 import org.NooLab.utilities.strings.StringsUtil;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.jamesmurty.utils.XMLBuilder;
 
@@ -34,11 +36,11 @@ public class TransformationModel implements Serializable{
 	
 	ArrayList<String> requiredVariables  = new ArrayList<String>() ;
 	SomAssignatesDerivations derivations;
-	
-	
+	ArrayList<SomAssignatesDerivationTree> derivationTrees ;
 	
 	ArrayList<String> xmlImage = new ArrayList<String>() ;
 	
+	transient Variables variables ; 
 	transient SomFluidXMLHelper xEngine = new SomFluidXMLHelper();
 	transient StringsUtil strgutil = new StringsUtil();
 	transient PrintLog out ;
@@ -132,7 +134,87 @@ public class TransformationModel implements Serializable{
 		}
 		return index ;
 	}
-
+	
+	
+	
+	public ArrayList<String> extractRequiredChains() {
+		return extractRequiredChains(0);
+	}
+	/**
+	 * 
+	 * 
+	 * @param filtermode 1=remove entries that refer to roots that are not required
+	 * 
+	 * @return
+	 */
+	public ArrayList<String> extractRequiredChains(int filtermode) {
+		
+		ArrayList<String> requiredChainVariables = new ArrayList<String>(), treeVars; 
+		String varLabel, ctvar ;
+		ArrayList<SomAssignatesDerivationTree> candTrees;
+		
+		ctvar="" ;
+		if (derivations.derivationTrees.size()<=1){
+			derivations.createDerivationTrees();
+		}
+		// these variables are raw, untransformed
+		for (int i=0;i<requiredVariables.size();i++){
+			
+			varLabel = requiredVariables.get(i);
+			
+			candTrees = derivations.getTreesByVariable( 1,varLabel);
+			
+			for (int c=0;c<candTrees.size();c++){
+				
+				treeVars = derivations.getVariablesOfTree( candTrees.get(c) );
+				for (int v=0;v<treeVars.size();v++){
+					ctvar = treeVars.get(v).trim();
+					if (requiredChainVariables.indexOf(ctvar)<0){
+						requiredChainVariables.add(ctvar) ;
+					}
+				}
+			}// c-> all candidate trees, should be only one, since we are asking for raw variables...
+			
+		} // i-> all required variables
+		
+		ctvar="" ;
+		if (filtermode>=1){
+			// chains are constructed bottom-up, hence they may contain (derived) variables, that refer to roots,  
+			// which are NOT part of the required set of raw variables: these will be removed here 
+			for (int i=0;i<requiredChainVariables.size();i++){
+				
+				varLabel = requiredChainVariables.get(i) ; // e.g.  Kunde_seit, d1b_Stammkapital_Gruendungsdatum_c
+				
+				candTrees = derivations.getTreesByVariable( 1,varLabel);
+				for (int c=0;c<candTrees.size();c++){
+					treeVars = derivations.getVariablesOfTree( candTrees.get(c) );
+					int isz = CollectionUtils.intersection( treeVars, requiredVariables ).size();
+					if (isz==0){
+						requiredChainVariables.set(i, "");
+					}
+				}
+			 
+				
+			}//i->
+			
+		}
+		
+		// remove empty entries
+		int r=requiredChainVariables.size()-1;
+		while (r>=0){
+			
+			if (requiredChainVariables.get(r).length()==0){
+				requiredChainVariables.remove(r);
+			}
+			
+			r--;
+		}
+		requiredChainVariables.trimToSize() ;
+		
+		return requiredChainVariables;
+	}
+	
+	
 	public void setOriginalColumnHeaders() {
 		
 		ArrayList<String> rawcolHeaders = new ArrayList<String>();
@@ -163,7 +245,7 @@ public class TransformationModel implements Serializable{
 	 * TODO: only the first time (= map is empty) we go through the loop, else we use the 2-map
 	 *       especially for many variables it is expensive
 	 */
-	public TransformationStack findTransformationStackByStackGuid( String transformStackGuid){
+	public TransformationStack findTransformationStackByStackPositionGuid( String transformStackGuid){
 		
 		TransformationStack tstack = null, ts;
 		StackedTransformation st;
@@ -203,6 +285,15 @@ public class TransformationModel implements Serializable{
 		}
 		
 		return tstack ;
+	}
+	
+	public int findTransformationStackByLabel(String varLabel) {
+		
+		Variables variables = somData.getVariables();
+		
+		Variable variable = variables.getItemByLabel(varLabel) ; 
+		
+		return findTransformationStackByVariable(variable);
 	}
 	
 	public int findTransformationStackByVariable(Variable variable) {
@@ -248,6 +339,98 @@ public class TransformationModel implements Serializable{
 		return strans;
 	}
 
+	/**
+	 * search recursively back from a given element, and collects the trace;
+	 * note that backward references down to the root are only through multi-argument algorithms; </br> </br>
+	 * 
+	 * if there are no back ward references found for the given element, writer algorithms are searched
+	 * that write into the given column </br> </br>
+	 * 
+	 * call it like  int[] trace = ( label, 1 , new int[]{}) </br> </br> 
+	 * 
+	 * @param idStr  label of variable, guid of stack or guid of stack position
+	 * @param srcType 1=label, 2=stack guid, 3= stack position guid 
+	 * @return
+	 */
+	public ArrayList<Integer> findTransformationRootStackIndex( String idStr , int srcType, ArrayList<Integer> rootingIndexes ){
+
+		String varLabel="",srcVarLabel;
+		int ix;
+		TransformationStack tStack = null, ts;
+		StackedTransformation st;
+
+		
+		try{
+			
+			if (rootingIndexes.size()==0){
+				variables = somData.getVariables() ;
+			}
+			if (srcType<=1){ 
+				varLabel = idStr ; 
+				ix = findTransformationStackByLabel( varLabel) ;
+				tStack = this.variableTransformations.get(ix) ;
+	
+			}
+			
+			if (srcType==2){ 
+				tStack = findTransformationStackByGuid( idStr) ;
+				varLabel = tStack.varLabel ; 
+			}
+			
+			if (srcType==3){ 
+				tStack = findTransformationStackByStackPositionGuid( idStr ) ;
+				varLabel = tStack.varLabel ; 
+			}
+			
+			// register the index of the incoming variable, which we are going to check
+			ix = variables.getIndexByLabel(varLabel) ; 
+			rootingIndexes.add( ix );
+			
+			
+			
+			for (int i=0;i<tStack.inputVarLabels.size();i++){
+				srcVarLabel = tStack.inputVarLabels.get(i) ;
+				ix = variables.getIndexByLabel(srcVarLabel) ;
+				if (srcVarLabel.length()>0){
+					rootingIndexes = findTransformationRootStackIndex( srcVarLabel, 1,rootingIndexes );
+				}
+			}
+			
+			for (int i=0;i<tStack.size();i++){
+				
+				st = tStack.getItem(i);
+				AlgorithmIntf algo = (AlgorithmIntf)st.algorithm;
+				
+				if (algo.getType() == AlgorithmIntf._ALGOTYPE_VALUE){
+					// backward -> check incoming
+					for (int s=0;s<st.inputColumnLabels.size();s++){
+						srcVarLabel = st.inputColumnLabels.get(s) ;
+						// that's again not perfectly correct, it collects too much if there is
+						// more than 1 multi-source algorithm, where those are dependent on different source sets   
+						// 
+						if (srcVarLabel.length()>0)
+						rootingIndexes = findTransformationRootStackIndex( srcVarLabel, 1,rootingIndexes );
+					}
+				}
+				if (algo.getType() == AlgorithmIntf._ALGOTYPE_WRITER){
+					// forward -> check outgoing
+
+				}
+
+				
+			} // all items in stack
+			
+			
+			
+		}catch(Exception e){
+			
+		}
+		
+		return rootingIndexes ;
+	}
+	
+	
+	
 	public int findParentIndex( StackedTransformation st, String parentGuid ) {
 		
 		int index = -1, ix;
@@ -257,7 +440,7 @@ public class TransformationModel implements Serializable{
 		
 		
 		stguid = st.idString ;
-		pvarTStack = findTransformationStackByStackGuid( parentGuid ) ;
+		pvarTStack = findTransformationStackByStackPositionGuid( parentGuid ) ;
 		
 		varLabel = pvarTStack.varLabel ;
 		index = variables.getIndexByLabel(varLabel) ;

@@ -3,6 +3,7 @@ package org.NooLab.somfluid.storage;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.app.SomAppProperties;
 import org.NooLab.somfluid.properties.PersistenceSettings;
+import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.strings.StringsUtil;
@@ -24,7 +25,7 @@ public class FileOrganizer {
 	
 	// ....................................................
 	
-	SomFluidProperties sfProperties;
+	SomFluidAppGeneralPropertiesIntf sfProperties;
 	PersistenceSettings persistenceSettings;
 	
 	String rootDir="", projectDirName="", projectBaseDir="";
@@ -47,10 +48,12 @@ public class FileOrganizer {
 	}
 	// ========================================================================	
 
-	public void setPropertiesBase(SomFluidProperties properties){
+	public void setPropertiesBase(SomFluidAppGeneralPropertiesIntf properties){
 		
 		sfProperties = properties;
-		persistenceSettings = sfProperties.getPersistenceSettings();
+		if (sfProperties.getPersistenceSettings()!=null){
+			persistenceSettings = sfProperties.getPersistenceSettings();
+		}
 		update();
 		
 	}
@@ -236,7 +239,7 @@ public class FileOrganizer {
 	}
  
 	public SomFluidProperties getSfProperties() {
-		return sfProperties;
+		return sfProperties.getSelfReference();
 	}
 
 	public PersistenceSettings getPersistenceSettings() {

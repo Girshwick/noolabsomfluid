@@ -49,7 +49,9 @@ public class SomFluidFactory  implements 	//
 	
 	int physicalFieldStarted = 0;
 	
-	public SomFluidProperties sfProperties;
+	SomFluidProperties sfProperties;
+	SomAppProperties somAppProperties;
+	
 	SomFluidTask somFluidTask = null;
 	int somType = -1;
 	
@@ -75,7 +77,7 @@ public class SomFluidFactory  implements 	//
 	DFutils fileutil = new DFutils();
 	PrintLog out = new PrintLog(2, true);
 	private Random random;
-	private SomAppProperties somAppProperties;
+	
 		
 	// ------------------------------------------------------------------------
 	
@@ -324,13 +326,20 @@ public class SomFluidFactory  implements 	//
 	 * gets automatically called when a task is getting produced by the factory
 	 * @param sfTask
 	 */
-	public void saveTaskTrace(Object sfTask  ) {
+	public void saveTaskTrace( Object sfTask  ) {
 	
 		String dir="",fileName="";
 		int stype = sfProperties.getSomType();
 
 		FileOrganizer fileorg = new FileOrganizer ();
-		fileorg.setPropertiesBase(sfProperties);
+	 
+		if (somAppProperties!=null){
+			fileorg.setPropertiesBase(somAppProperties);
+		}else{
+			fileorg.setPropertiesBase(sfProperties);
+		}
+	 
+		
 		dir = fileorg.getObjectStoreDir();
 
 		dir = DFutils.createPath( dir, "task/"+stype+"/");

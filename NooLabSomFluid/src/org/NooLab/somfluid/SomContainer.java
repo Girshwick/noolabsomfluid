@@ -122,8 +122,7 @@ public class SomContainer {
 				spbuilder = spbuilder.e("bags").a("count", "0");
 				spbuilder = spbuilder.up();
 				// - - - - - - - - - - - - - - - - - -
-				
-				
+				 
 				
 			spbuilder = spbuilder.up();
 			
@@ -149,8 +148,23 @@ public class SomContainer {
 				
 			spbuilder = spbuilder.up();
 			// ............................................
-			
-			
+			 
+			spbuilder = spbuilder.e("quality");
+				double score = -1.0;
+				
+				try{
+					score = moz.getOutresult().getBestMetric().getActualScore();					
+				}catch(Exception e){}
+				
+				String str = String.format("%.3f", score) ;
+				spbuilder = spbuilder.e("score").a("value", str);
+				spbuilder = spbuilder.up();
+				// - - - - - - - - - - - - - - - - - -
+				
+				// validation data and robustness score 
+				
+			spbuilder = spbuilder.up();
+			// ............................................
 		spbuilder = spbuilder.up();
 		
 		return spbuilder ;

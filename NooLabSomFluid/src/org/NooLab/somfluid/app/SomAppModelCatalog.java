@@ -9,8 +9,9 @@ import org.NooLab.somfluid.SomApplicationIntf;
 
 public class SomAppModelCatalog {
 
-	
-	ArrayList<ModelCatalogItem> items = new ArrayList<ModelCatalogItem> (); 
+	 
+	ArrayList<ModelCatalogItem> items = new ArrayList<ModelCatalogItem> ();
+	ArrayList<ModelCatalogItem> excludedItems = new ArrayList<ModelCatalogItem> ();; 
 	
 	// ========================================================================
 	public SomAppModelCatalog(SomApplicationIntf somApp, SomAppProperties soappProperties) {
@@ -19,6 +20,21 @@ public class SomAppModelCatalog {
 	}
 	// ========================================================================
 
+	public int size() {
+		return items.size();
+	}
+ 
+	public ModelCatalogItem getItem(int index) {
+		ModelCatalogItem item=null;
+		
+		if ((index>=0) && (index<items.size())){
+			item = items.get(index);
+		}
+		return item;
+	}
+
+	
+	
 	public void add(ModelCatalogItem mcItem) {
 		
 		items.add(mcItem) ;
@@ -34,7 +50,7 @@ public class SomAppModelCatalog {
 			
 			boolean hb = mcItem.packageName.contentEquals(packageName);
 			
-			if (hb){
+			if ((hb) && (excludedItems.indexOf(mcItem)<0)){
 				hb = mcItem.modelName.contentEquals(modelName);
 			}
 			
@@ -52,7 +68,7 @@ public class SomAppModelCatalog {
 		
 		for (int i=0;i<items.size();i++){
 			mci = items.get(i);
-			if (mci.modelName.contentEquals(modelname)){
+			if ((mci.modelName.contentEquals(modelname))  && (excludedItems.indexOf(mci)<0)){
 				mcItem = mci;
 				break;
 			}
@@ -61,6 +77,37 @@ public class SomAppModelCatalog {
 		return mcItem;
 	}
 	
+	public ModelCatalogItem getItemByModelname(String modelname, String version) {
+		ModelCatalogItem mci, mcItem=null;
+		
+		for (int i=0;i<items.size();i++){
+			mci = items.get(i);
+			if ((mci.modelName.contentEquals(modelname)) && (excludedItems.indexOf(mci)<0)){
+				if (mci.modelVersion.contentEquals(version)){
+					mcItem = mci;
+					break;
+				}
+			}
+		}
+		
+		return mcItem;
+	}
+
+	public void clearExcludedItems() {
+		excludedItems.clear();
+	}
 	
+	public void addToExcludedItems(ModelCatalogItem item) {
+		excludedItems.add( item );
+		
+	}
+
+	public ArrayList<ModelCatalogItem> getExcludedItems() {
+		return excludedItems;
+	}
+
+	public void setExcludedItems(ArrayList<ModelCatalogItem> excludedItems) {
+		this.excludedItems = excludedItems;
+	}	
 	
 }

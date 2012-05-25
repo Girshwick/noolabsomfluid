@@ -22,12 +22,20 @@ public abstract class AlgoColumnWriterAbstract implements AlgoColumnWriterIntf{
 	}
 	// ========================================================================
 	
+	 
 	@Override
 	public int setValues(ArrayList values) {
 		 
 		return 0;
 	}
-	
+	 
+	/*
+	@Override
+	public int setValuesLists(ArrayList<ArrayList<?>> inValues) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+	*/
 	
 
 	@Override
@@ -35,86 +43,33 @@ public abstract class AlgoColumnWriterAbstract implements AlgoColumnWriterIntf{
 		return parameters;
 	}
 	
-	
 	@Override
 	public void setParameters(ArrayList<Object> params) {
-
-		Object obj ;
-		String cn, str;
-		AlgorithmParameter algoparam ;
 		
-		str="";
-		if ((params!=null) && (params.size()>0)){
-			if (parameters==null){
-				parameters = new AlgorithmParameters( this) ;
-			}
-		}
+		basicParametersAssimilation(params) ;
+	}
+	
+	
+	@Override
+	public void setParameters(AlgorithmParameters algorithmParams) {
 		
-		for (int i=0;i<params.size();i++){
-			
-			obj = params.get(i);
-			cn  = obj.getClass().getSimpleName() ;
+		basicParametersAssimilation(algorithmParams) ;
+	}
 
-			if (cn.toLowerCase().contains("string[]")){
-				
-				continue;
-			}
-			if (cn.toLowerCase().contains("string")){
-				
-				str = (String)obj;
-				algoparam = new AlgorithmParameter();
-				algoparam.setLabel(str) ;
-				parameters.add(algoparam);
-				
-				continue;
-			}
-			if (cn.toLowerCase().contains("int[]")){
-				continue;
-			}
-			if (cn.toLowerCase().contains("double[]")){
-
-				double[] numvalues = (double[])(obj);
-
-				algoparam = new AlgorithmParameter();
-				algoparam.setNumValues(numvalues) ;
-				parameters.add(algoparam);
-
-				continue;
-			}
-			
-			if (cn.toLowerCase().contains("int")){
-				
-				int numvalue = (int)((Integer)obj);
-				
-				algoparam = new AlgorithmParameter();
-				algoparam.setNumValue( (double)numvalue ) ;
-				parameters.add(algoparam);
-
-				continue;
-			}
-			
-			if (cn.toLowerCase().contains("double")){
-				
-				double numvalue = (double)((Double)obj);
-				
-				algoparam = new AlgorithmParameter();
-				algoparam.setNumValue(numvalue) ;
-				parameters.add(algoparam);
-
-				continue;
-			}
-
-			if (cn.toLowerCase().contains("arraylist")){
-				continue;
-			}
-			
-			
-			// IndexedDistances ixds = IndexedDistances.class.cast(obj) ;
-			algoparam = new AlgorithmParameter();
-			algoparam.obj = obj;
-			parameters.add(algoparam);
-		}
+	
+	
+	protected void basicParametersAssimilation(AlgorithmParameters algorithmParams){
 		
+		AlgorithmParametersHelper paramsHelper = new AlgorithmParametersHelper ();
+		
+		parameters = paramsHelper.assimilate(this, algorithmParams);
+	}
+	
+	protected void basicParametersAssimilation( ArrayList<Object> params ){
+		
+		AlgorithmParametersHelper paramsHelper = new AlgorithmParametersHelper ();
+		
+		parameters = paramsHelper.assimilateOpenObjectList(this, params);
 		
 	}
 

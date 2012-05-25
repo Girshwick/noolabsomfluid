@@ -10,15 +10,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
-import java.util.Vector;
+
 
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.components.DataFilter;
-import org.NooLab.somfluid.components.MetricsStructure;
-import org.NooLab.somfluid.components.SomModelDescription;
-import org.NooLab.somfluid.components.post.Coarseness;
-import org.NooLab.somfluid.components.post.MultiCrossValidation;
-import org.NooLab.somfluid.components.post.ParetoPopulationExplorer;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
 import org.NooLab.somfluid.core.engines.det.ClassesDictionary;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
@@ -419,14 +414,19 @@ public class ModelingSettings implements Serializable{
 	}
 
 	public String getActiveTvLabel() {
-		if (activeTvLabel.length()==0){
+		
+		if ((activeTvLabel==null) || (activeTvLabel.length()==0)){
 			
-			if (variables.getTvColumnIndex()>=0){
+			if ((variables!=null) && (variables.getTvColumnIndex()>=0)){
 				activeTvLabel = variables.getItem(variables.getTvColumnIndex()).getLabel() ;
 			}
 			if ((activeTvLabel.length()==0) && (variables!=null)){
 				int ix = variables.getIndexByLabel( activeTvLabel ) ;
-				activeTvLabel = variables.getItem(ix).getLabel() ;
+				if (ix>=0){
+					activeTvLabel = variables.getItem(ix).getLabel() ;
+				}else{
+					activeTvLabel = "";
+				}
 			}
 		}
 		return activeTvLabel;

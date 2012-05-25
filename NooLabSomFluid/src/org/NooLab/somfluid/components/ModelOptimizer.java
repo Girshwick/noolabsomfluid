@@ -199,7 +199,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			int n = 1;
 
 			
-			somTransformer = somDataObj.getTransformer();
+			somTransformer = somDataObj.getTransformer().getSelfReference();
 			// StackeTransformations still empty....  different somDataObj ???
 
 			// if not initialized... first test whether it is available

@@ -9,6 +9,7 @@ import org.NooLab.somfluid.SomFluidPluginSettingsIntf;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.app.SomAppProperties;
 import org.NooLab.somfluid.util.XmlStringHandling;
+import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.files.DirectoryContent;
 import org.NooLab.utilities.strings.StringsUtil;
@@ -37,7 +38,7 @@ public class AlgorithmPluginsLoader implements PluginLoaderIntf{
 	
 	boolean pluginsAvailable = false;
 	SomFluidPluginSettingsIntf pluginSettings;
-	SomFluidProperties sfProperties;
+	SomFluidAppGeneralPropertiesIntf sfProperties;
 	
 	ArrayList<String> jarfiles = new ArrayList<String>();
 	
@@ -51,17 +52,18 @@ public class AlgorithmPluginsLoader implements PluginLoaderIntf{
 		init( properties, false );
 	}
 	
-	public AlgorithmPluginsLoader(SomFluidProperties properties, boolean loadCatalog) {
+	public AlgorithmPluginsLoader(SomFluidAppGeneralPropertiesIntf properties, boolean loadCatalog) {
 		 
 		init( properties, loadCatalog);
 	}
-
+	/*
 	public AlgorithmPluginsLoader(SomAppProperties clappProperties, boolean loadCatalog) {
 		
 		init( clappProperties.getPropertiesConnection(), loadCatalog);
 	}
-
-	private void init( SomFluidProperties properties, boolean loadCatalog){
+ */
+	
+	private void init( SomFluidAppGeneralPropertiesIntf properties, boolean loadCatalog){
 		
 		sfProperties = properties ;
 		pluginSettings = sfProperties.getPluginSettings() ;
@@ -113,7 +115,7 @@ public class AlgorithmPluginsLoader implements PluginLoaderIntf{
 		
 		 
 		xMsg.setContentRoot("somtransformer") ;
-		xmlContentItems = xMsg.getItemsList(rawXmlStr, "//somtransformer", "/algorithm", "name") ;
+		xmlContentItems = xMsg.getItemsList(rawXmlStr, "//somtransformer/algorithms", "/algorithm", "name") ;
 		// <algorithm name="RunningMean"> <algorithm name="abc">, returns: "RunningMean","abc"   
 		 
 		
@@ -138,13 +140,13 @@ public class AlgorithmPluginsLoader implements PluginLoaderIntf{
 				// str = xMsg.getSpecifiedInfo(rawXmlStr, "//somtransformer/algorithm", "name", namedItem,"jar");
 				// hence we need to get it first as a list of nodes which has just 1 member 
 
-				algorithmSectionNodes = xMsg.selectListFromSpecifiedItem( rawXmlStr, "//somtransformer/algorithm","name", namedItem,"jar");
+				algorithmSectionNodes = xMsg.selectListFromSpecifiedItem( rawXmlStr, "//somtransformer/algorithms/algorithm","name", namedItem,"jar");
 				jarfilename = xMsg.getSpecifiedItemInfo(algorithmSectionNodes.get(0), "name");
 				
-				algorithmSectionNodes = xMsg.selectListFromSpecifiedItem( rawXmlStr, "//somtransformer/algorithm","name", namedItem,"package");
+				algorithmSectionNodes = xMsg.selectListFromSpecifiedItem( rawXmlStr, "//somtransformer/algorithms/algorithm","name", namedItem,"package");
 				pkgname = xMsg.getSpecifiedItemInfo(algorithmSectionNodes.get(0), "name");
 				
-				algorithmSectionNodes = xMsg.selectListFromSpecifiedItem( rawXmlStr, "//somtransformer/algorithm","name", namedItem,"group");
+				algorithmSectionNodes = xMsg.selectListFromSpecifiedItem( rawXmlStr, "//somtransformer/algorithms/algorithm","name", namedItem,"group");
 				grouplabel = xMsg.getSpecifiedItemInfo(algorithmSectionNodes.get(0), "name");
 				
 				sfProperties.getPluginSettings().addJarContentDeclaration( jarfilename, namedItem, pkgname, grouplabel) ;

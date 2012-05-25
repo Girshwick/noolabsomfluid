@@ -154,7 +154,7 @@ public class SomFluid
 		 
 		SimpleSingleModel simo ;
 		SimpleSingleModelDigester simoResultHandler ;
-		ModelingSettings modset = sfProperties.modelingSettings ;
+		ModelingSettings modset = sfProperties.getModelingSettings() ;
 			
 		sfTask.setSomHost(null) ;
 		somDataObjects.clear();
@@ -251,10 +251,25 @@ public class SomFluid
 		
 		sfTask.setDescription("SomApplication()") ;
 		sfTask.setSomHost(null) ;
-		 
-		soapp.loadModel() ;
+
 		
-		soapp.perform();
+		try {
+			
+			soapp.loadSource( soapp.soappProperties.getDataSrcFilename() ) ;
+			
+			if (soapp.loadModel() ){
+			
+				soapp.perform();
+			}else{
+				String str = soapp.getLastStatusMessage();
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		
+		
 	}
 
 
@@ -375,47 +390,18 @@ public class SomFluid
 		
 		dir = DFutils.createPath(dir, prj);
 		dir = DFutils.createPath(dir, "export/packages/"); // here we maintain a small meta file: latest export, date in days since,
-		int dc = fileutil.enumerateSubDir(dir,"") ;
-		boolean dirOk=false;
-
-		while (dirOk == false) {
-			
-			if (packageName.trim().length() > 0) {
-				pkgsubdir = packageName;
-			} else {
-
-				String fname = DFutils.createPath(dir, "" + dc);
-				while (fileutil.direxists(fname)) {
-					dc++;
-					fname = DFutils.createPath(dir, "" + dc);
-				}
-				pkgsubdir = "" + dc;
-
-			}
-
-			xRootDir = DFutils.createPath(dir, pkgsubdir + "/");
-			// here we store all , ending with slash enforces physical creation of dir
-			// we do NOT need a temp dir like this ... : DFutils.createTempDir( SomDataObject._TEMPDIR_PREFIX);
-
-			if (fileutil.direxists(xRootDir) == false) {
-				dirOk = false;
-				dc++;
-				packageName= packageName+dc;
-				 
-			} else {
-				dirOk = true;
-			}
-		}
-		
+		  
+		xRootDir = fileutil.createEnumeratedSubDir( dir, "", 0, 1000, -3 ); // 1000 = maxCount, -3 = remove oldest by date, -2 = remove first by sort 
+		  
 		ModelOptimizer moz = (ModelOptimizer )somHost ; // ;
 		
 		
 		somObjects = sfFactory.getSomObjects();
 		// somTransformer: extractTransformationsXML()
 
-			boolean embed = sfProperties.persistenceSettings.isExportTransformModelAsEmbeddedObj() ;
+			boolean embed = sfProperties.getPersistenceSettings().isExportTransformModelAsEmbeddedObj() ;
 			// creating an xml image
-			moz.getSomDataObj().getTransformer().determineRequiredRawVariablesByIndexes( moz.getOutresult().getBestMetric().getVarIndexes() );
+			moz.getSomDataObj().getTransformer().getSelfReference().determineRequiredRawVariablesByIndexes( moz.getOutresult().getBestMetric().getVarIndexes() );
 			
 			moz.getSomDataObj().getTransformer().extractTransformationsXML(embed);
 			
@@ -427,13 +413,13 @@ public class SomFluid
 				
 		// also ensures sufficient statistical description;
 		// we may have several SOMs, in case of bags or ensembles !!
-		modelcount = sfFactory.getSomObjects().extractSomModels();
-		
-		
-		
+            
+        // first we extract the xml ...
+        modelcount = sfFactory.getSomObjects().extractSomModels();
+        // ...then we retrieve it
 		ArrayList<String> sxstrings = somObjects.getXmlImage() ;
 		
-		if ((sxstrings.size()<=1) || (txstrings.size()<=1) ){ // || (modelcount==0)
+		if ((sxstrings.size()<=1) || (txstrings.size()<=1) ){
 			throw(new Exception("There are no models to export, or the translation of models into xml failed.")) ;
 		}
 		
@@ -475,6 +461,9 @@ public class SomFluid
 			somHost.getSomDataObj().getNormalizedDataTable().saveTableToFile( filename );
 		}
 		
+		SomAppPublishing appPublishing = sfProperties.getOutputSettings().getAppPublishing();
+		appPublishing.publishApplicationModel( xRootDir ) ;
+		 
 	}
 
 
@@ -666,7 +655,7 @@ public class SomFluid
 		
 		somDataObject.setTransformer(transformer) ;
 		
-		DataReceptor dataReceptor = new DataReceptor( sfProperties, somDataObject );
+		DataReceptor dataReceptor = new DataReceptor( somDataObject );
 		
 		// establishes a "DataTable" from a physical source
 		dataReceptor.loadProfilesFromFile( srcName );
@@ -718,7 +707,7 @@ public class SomFluid
 	
 		somDataObject.setTransformer(transformer) ;
 		
-		DataReceptor dataReceptor = new DataReceptor( sfProperties, somDataObject );
+		DataReceptor dataReceptor = new DataReceptor( somDataObject );
 		
 		// establishes a "DataTable" from a physical source
 		dataReceptor.loadFromFile(srcName);
@@ -747,8 +736,7 @@ public class SomFluid
 		
 		SomTransformer somTransformer;
 		 
-		somTransformer = somDataObj.getTransformer();
-		
+		somTransformer = somDataObj.getTransformer().getSelfReference();
 		
 		
 		
