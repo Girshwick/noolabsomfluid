@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 import processing.core.*;
 
-import org.NooLab.somfluid.SomFluid;
+import org.NooLab.somfluid.SomAppPublishing;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidIntf;
 import org.NooLab.somfluid.SomFluidMonoResultsIntf;
@@ -14,6 +14,7 @@ import org.NooLab.somfluid.SomFluidMonoTaskIntf;
 import org.NooLab.somfluid.SomFluidProbTaskIntf;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidStartup;
+import org.NooLab.somfluid.SomFluidTask;
 import org.NooLab.somfluid.SomProcessControlIntf;
 import org.NooLab.somfluid.app.IniProperties;
 import org.NooLab.somfluid.app.SomApplicationEventIntf;
@@ -26,12 +27,15 @@ import org.NooLab.somfluid.util.PowerSetSpringSource;
 import org.NooLab.somtransform.algo.externals.AlgorithmPluginsLoader;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
-import org.NooLab.utilities.dialog.FileFolderChooser;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.LogControl;
 
    
 /**
+ * 
+ * URGENT       evocount do not count correct !!!
+ * 
+ * 
  * 
  * Later: this applet should start the SomFluid as an application!!
  * Any communication should be performed through Glue
@@ -239,7 +243,7 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 		if (key=='d'){
 			// open data source
 			key=0;
-			boolean rB=false ; 
+			 
 			looping = false;
 
 			String datasrc = SomFluidStartup.introduceDataSet() ;
@@ -255,7 +259,7 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 		}
 		
 		if (key=='p'){ //select  a different base folder for projects
-			boolean rB=false ; 
+			 
 			looping = false;
 			
 			String selectedFolder = SomFluidStartup.selectProjectHome();
@@ -510,10 +514,12 @@ class SomModuleInstanceM1 implements 	Runnable,
 		PersistenceSettings ps;
 		AlgorithmPluginsLoader lap ;
 		
-		SomFluid sf;
+		
 
 		// this creates an XML string with all parameters and their default values
-		String str = sfProperties.getDefaultExport();
+		// String str = sfProperties.getDefaultExport();
+		
+		
 		
 		/*
 		 * note that there are a lot more of parameters that could be set for the SOM in order to exert full control,
@@ -668,7 +674,7 @@ class SomModuleInstanceM1 implements 	Runnable,
 																		   // ParetoPopulationExplorer, SomModelDescription, Coarseness, MultiCrossValidation, MetricsStructure 
 		
 				    													   // whichever of these 4 stopping criteria for the optimizer is reached first...
-		sfProperties.getModelingSettings().getOptimizerSettings().setMaxStepsAbsolute( 7 );     // low only for testing, or initial exploration, typically 500+
+		sfProperties.getModelingSettings().getOptimizerSettings().setMaxStepsAbsolute( 5 );     // low only for testing, or initial exploration, typically 500+
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -       // note that this step-count applies WITHIN a step on L2 as 
 																								 // controlled by "setMaxL2LoopCount" (see below, typically max=4)
 		
@@ -753,13 +759,14 @@ class SomModuleInstanceM1 implements 	Runnable,
 		
 		sfProperties.getOutputSettings().setIncludeDataToExportedPackages(true);
 		sfProperties.getOutputSettings().setIncludeResultsToExportedPackages(true);
+
 		
 		// TODO:  
 		// sfProperties.checkDerivationsOnRawData(true) ;
 		// sfProperties.setExportExtendedResultDataTable(true) ; 		   // writes a data table which contains the original variables + the MLE estimated derived variables
 		
 		
-		// general env
+		// general environment
 
 		sfProperties.setMessagingActive(false) ;					       // if true, the SomFluidFactory will start the glueClient ;
 		   																   // the SomFluid is then accessible through messaging (see the SomController application)
@@ -889,17 +896,30 @@ class SomModuleInstanceM1 implements 	Runnable,
 		// if this exists, it will be loaded
 		sfProperties = SomFluidProperties.getInstance( sourceForProperties );	
 		
-		// load from /resources in jar
+		// alternatively... load from /resources in jar ...
+		
+		
+		
+		//
 		
 		if ((sourceForProperties.length()==0) || ( sfProperties.initializationOK()==false )){
 			explicitlySettingProperties();
 		}
 		
-		 
 		sfFactory = SomFluidFactory.get(sfProperties);					   // creating the factory; calling without "factorymode" parameter, optimizer will be assumed	
+		 
 		
-		  
-		sfProperties.addFilter( sfFactory, "var",0.3,"<",1,1,true);        // filter that act on the values of observations
+		
+		sfProperties.getOutputSettings().setAppPublishing( new SomAppPublishing( sfFactory, true, 
+																				 "D:/data/projects/_classifierTesting", 
+																				 sfProperties.getPersistenceSettings().getProjectName(), "",       // name of package and dedicated version string 
+																				 SomAppPublishing._LOCATION_FILE) );
+		// sfProperties.getOutputSettings().setPublishingLocation( "D:/data/projects/_classifierTesting" );
+		// sfProperties.getOutputSettings().publishApplicationPackage(true);
+		
+  
+		
+		sfProperties.addFilter( "var",0.3,"<",1,1,true);        // filter that act on the values of observations
 																		   // can be defined only with an existing factory since we need access to the data
 																		   // not yet functional
 		
@@ -924,19 +944,17 @@ class SomModuleInstanceM1 implements 	Runnable,
 										 			//        >100  minimum delay in millis
 		
 		
-		
-		// sfFactory.produce( sfTask );          	// this produces the SomFluid and the requested som-type according to
-													// SomFluidProperties._SOMTYPE_MONO, referring implicitly to sfTask; 
-													//
-	
 		sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( ); 
 		sfTask.setStartMode(1) ;  
 		sfTask.setContinuity(2,0,200);
 		 
 		
-		sfFactory.produce( sfTask );
 		
-		// if we like to have graphical output, then start the applet for displaying it and 
+		sfFactory.produce( sfTask );          		// this produces the SomFluid and the requested som-type according to
+													// SomFluidProperties._SOMTYPE_MONO, referring implicitly to sfTask; 
+													//
+		
+	 	// if we like to have graphical output, then start the applet for displaying it and 
 		// define shake hands by means of GlueClients...
 		
 		
@@ -1010,12 +1028,26 @@ class SomModuleInstanceM1 implements 	Runnable,
 	}
 
 	
-	// call back events for providing informaton about the state of modeling
+	// call back events for providing information about the state of modeling
 
 	@Override
 	public void onCalculation(double fractionPerformed) {
 		// in case of large tasks
 	}
+
+	@Override
+	public void onProcessStarted(SomFluidTask sfTask, int applicationId, String pid) {
+	 
+		
+	}
+
+	@Override
+	public void onStatusMessage(SomFluidTask sfTask, int applicationId, int errcode, String msg) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	 
 	
 
 	

@@ -19,6 +19,7 @@ import org.NooLab.somfluid.SomFluidProbTaskIntf;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidResultsIntf;
 import org.NooLab.somfluid.SomFluidStateDescriptionIntf;
+import org.NooLab.somfluid.SomFluidTask;
 import org.NooLab.somfluid.SomProcessControlIntf;
 import org.NooLab.somfluid.app.SomAppUsageIntf;
 import org.NooLab.somfluid.app.SomApplicationEventIntf;
@@ -770,7 +771,7 @@ class SomModuleInstanceSD implements 	Runnable,
 		sfFactory = SomFluidFactory.get(sfProperties);					   // creating the factory	
 		
 		  
-		sfProperties.addFilter( sfFactory, "var",0.3,"<",1,1,true);        // filter that act on the values of observations
+		sfProperties.addFilter( "var",0.3,"<",1,1,true);        // filter that act on the values of observations
 																		   // can be defined only with an existing factory since we need access to the data
 																		   // not yet functional
 		
@@ -879,6 +880,18 @@ class SomModuleInstanceSD implements 	Runnable,
 	@Override
 	public void onCalculation(double fractionPerformed) {
 		// in case of large tasks
+	}
+
+	@Override
+	public void onProcessStarted(SomFluidTask sfTask, int applicationId, String pid) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onStatusMessage(SomFluidTask sfTask, int applicationId, int errcode, String msg) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 
