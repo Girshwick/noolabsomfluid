@@ -15,9 +15,11 @@ public interface SomApplicationIntf {
 	public boolean loadModel() throws Exception ;
 	
 	public SomAppModelLoader getSomAppModelLoader() ;
+	
 	public SomDataObject getSomData() ;
 	
-	public void perform() ;
+	/** creates a process and returns a task ID */
+	public String perform() ;
 	
 
 }

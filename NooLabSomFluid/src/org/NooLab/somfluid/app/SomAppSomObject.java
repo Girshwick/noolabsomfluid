@@ -2,10 +2,16 @@ package org.NooLab.somfluid.app;
 
 import java.util.ArrayList;
 
+import org.NooLab.somfluid.components.VirtualLattice;
+import org.NooLab.somfluid.core.SomProcessIntf;
+import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
+import org.NooLab.somfluid.core.nodes.MetaNode;
+import org.NooLab.utilities.datatypes.IndexedDistances;
+
 public class SomAppSomObject {
 
 	int index = -1;
-	
+	 
 	
 	// <project>
 	// <general>
@@ -30,31 +36,57 @@ public class SomAppSomObject {
 	int learnedFromRecordsCount = 0;
 	
 	// <nodes>
-	SomAppNodes soappNodes; 
+	// SomAppNodes soappNodes;
+	VirtualLattice soappNodes;
+
+	// structures
+	LatticePropertiesIntf latticeProps;
+	
+	SomAppClassifier soappClassifier;
+	
+	private ArrayList<Double> usageVector; 
 	
 	
 	// ========================================================================
 	public SomAppSomObject( SomAppClassifier soappC, int ix) {
 		 
-		soappNodes = new SomAppNodes(this) ; 
+		soappClassifier = soappC;
+	// 	soappNodes = new SomAppNodes(this) ;
+		soappNodes = new VirtualLattice( soappClassifier, latticeProps,0 ) ;
+								// soappClassifier as SomProcessIntf, 
 		index = ix;
 	}
 	
 	// ========================================================================	
 
+	public void setUsageVector(ArrayList<Double> usagevector) {
+		 
+		// distribute around nodes ?
+		usageVector = new ArrayList<Double>(usagevector);
+	}
+
 	public void createNodes() {
-		// TODO Auto-generated method stub
-		
+ 		
 		for (int i=0;i<nodeCount;i++){
-			SomAppNode node = new SomAppNode(i);
-			soappNodes.nodes.add( node );
+			SomAppNode node = new SomAppNode(soappNodes,soappClassifier.somData, i);
+			
+			// soappNodes.getNodes().add( node );
 		}
 		
 	}
 	
-	public SomAppNode getNodeByIndex( int index ){
+	public IndexedDistances getWinnerNodes(ArrayList<Double> values) {
+		IndexedDistances winnerNodes = new IndexedDistances();
+	
+	 
 		
-		return soappNodes.nodes.get(index) ;
+		
+		return winnerNodes;
+	}
+
+	public MetaNode getNodeByIndex( int index ){
+		
+		return soappNodes.getNodes().get(index) ;
 	}
 	
 	// ... other "get by" ...
@@ -174,13 +206,17 @@ public class SomAppSomObject {
 	}
 
 
-	public SomAppNodes getSoappNodes() {
+	public VirtualLattice getSoappNodes() {
 		return soappNodes;
 	}
 
 
-	public void setSoappNodes(SomAppNodes soappNodes) {
-		this.soappNodes = soappNodes;
+	public void setSoappNodes(VirtualLattice nodeCollection) {
+		soappNodes = nodeCollection;
+	}
+
+	public ArrayList<Double> getUsageVector() {
+		return usageVector;
 	}
 	
 

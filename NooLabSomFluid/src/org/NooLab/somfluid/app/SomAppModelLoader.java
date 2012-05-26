@@ -567,7 +567,9 @@ public class SomAppModelLoader {
 			for (int i=0;i<nodeObjects.size();i++){
 											// provide a process feedback to the available callback
 				
-				SomAppNode node = soappObj.soappNodes.nodes.get(i) ;
+				SomAppNodeIntf node = (SomAppNodeIntf)soappObj.soappNodes.getNodes().get(i) ;
+				// this derives from the <MetaNodeIntf>
+				
 				
 				Object obj = nodeObjects.get(i) ;
 				xMsg.clearBasicConditionLocation() ;
@@ -579,21 +581,21 @@ public class SomAppModelLoader {
 				
 				
 				str = xMsg.getSpecifiedInfo(rawXmlStr, "description/ppv", "value");
-					  node.ppv = xMsg.getNum(str, -1.0) ;
+					   node.setPpv( xMsg.getNum(str, -1.0) );
 				str = xMsg.getSpecifiedInfo(rawXmlStr, "description/ppvrank", "value");
-					  node.ppvRank = xMsg.getInt(str, 0);
+					  node.setPpvRank( xMsg.getInt(str, 0) );
 				str = xMsg.getSpecifiedInfo(rawXmlStr, "description/recordcount", "value");
-					  node.recordcount = xMsg.getInt(str, 0) ;
+					  node.setRecordcount( xMsg.getInt(str, 0) );
 				
 				str = xMsg.getSpecifiedInfo(rawXmlStr, "description/neighbors", "items");
-					  node.neighborsList = xMsg.getListFromXmlStr(str,Integer.class) ;
+					  node.setNeighborsList( xMsg.getListFromXmlStr(str,Integer.class) );
 				
 				str = xMsg.getSpecifiedInfo(rawXmlStr, "profile/values", "list");
-					  node.modelProfile = xMsg.getListFromXmlStr(str,Double.class) ;
+					  node.setModelProfile( xMsg.getListFromXmlStr(str,Double.class)) ;
 				str = xMsg.getSpecifiedInfo(rawXmlStr, "profile/variables", "list");
-					  node.assignates = xMsg.getListFromXmlStr(str,String.class) ;
+					  node.setAssignates( xMsg.getListFromXmlStr(str,String.class)) ;
 				str = xMsg.getSpecifiedInfo(rawXmlStr, "profile/variances", "list"); 
-					  node.modelProfileVariances = xMsg.getListFromXmlStr(str,Double.class) ; 
+					  node.setModelProfileVariances( xMsg.getListFromXmlStr(str,Double.class)) ; 
 				
 			} // i-> all nodeObjects
   

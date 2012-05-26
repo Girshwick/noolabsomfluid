@@ -287,7 +287,12 @@ public class SomTransformer
 			int rqvn = transformationModel.requiredVariables.size() ;
 			String rqvarListStr = xEngine.digestStringList( transformationModel.requiredVariables );
 			
-			// dcTrees = transformationModel.derivationTrees
+			/*
+			 * here we do not know about the selection as defined by the Som, we only know the required variables;
+			 * given these we select only those derived variables which could be built by means of the variables 
+			 * otherwise in the list
+			 * 
+			 */
 			ArrayList<String>  rqchnList  = transformationModel.extractRequiredChains(1) ;
 
 			String rqchnListStr = xEngine.digestStringList( rqchnList ); 
@@ -416,9 +421,7 @@ public class SomTransformer
 		
 		varlabel = "";
 		
-		if (somData.getVariables().getIndexByLabel("d1b_Stammkapital_Branchenscore")>0){
-			selectedModelVars.add("d1b_Stammkapital_Branchenscore");
-		}
+		selectedModelVars.add("d1b_Stammkapital_Branchenscore");
 		selectedModelVars.trimToSize();
 		
 		// in this way it should also work to create the roots representation

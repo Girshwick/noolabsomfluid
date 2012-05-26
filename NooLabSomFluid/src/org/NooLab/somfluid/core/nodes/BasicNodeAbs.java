@@ -54,6 +54,11 @@ public abstract class BasicNodeAbs implements
 		
 	}
 
+	/**
+	 * 
+	 * 
+	 * @param serialID
+	 */
 	public void initializeStructures(long serialID) {
 		 
 

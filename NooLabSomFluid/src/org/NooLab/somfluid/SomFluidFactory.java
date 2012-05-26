@@ -10,6 +10,7 @@ import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.somfluid.app.SomAppProperties;
 import org.NooLab.somfluid.app.SomAppUsageIntf;
 import org.NooLab.somfluid.app.SomAppValidationIntf;
+import org.NooLab.somfluid.app.SomApplicationEventIntf;
  
  
 import org.NooLab.somfluid.components.*;
@@ -32,7 +33,8 @@ import org.NooLab.utilities.logging.PrintLog;
  */
 public class SomFluidFactory  implements 	// 
 											SomFluidFactoryClientIntf,
-											SomAppFactoryClientIntf{
+											SomAppFactoryClientIntf,
+											SomFluidFactoryClassifierIntf{
 	
 	public static final int _INSTANCE_TYPE_SOM        = 1;
 	public static final int _INSTANCE_TYPE_SPRITE     = 2;
@@ -66,6 +68,8 @@ public class SomFluidFactory  implements 	//
 	DataFileReceptorIntf dataReceptor;
 	SomProcessControl somProcessControl ;
 	SomObjects somObjects;
+	SomApplicationEventIntf appInformer;
+	
 	
 	int instanceType   = -1;
 	int glueModuleMode = 0;
@@ -378,6 +382,13 @@ public class SomFluidFactory  implements 	//
 		}
 	}
 	
+	public void setMessagePort( SomApplicationEventIntf msgCallbackIntf ) {
+		 
+		appInformer = msgCallbackIntf;
+	}
+
+
+
 	public int getPhysicalFieldStarted() {
 		return physicalFieldStarted;
 	}
@@ -526,12 +537,13 @@ public class SomFluidFactory  implements 	//
 	}
 
 	
+ 
+	
 	/** 
 	 * takes the task and produces the SOM, usually, if not set otherwise, 
 	 * it also will start the process
 	 * @return 
 	 */
-	@SuppressWarnings("unused")
 	public  void produce( Object sfTask ) {
 	
 		SomFluidTask somFluidTask ;
@@ -698,6 +710,10 @@ public class SomFluidFactory  implements 	//
 		//  SomFluidStartup && IniProperties provide the folder and prjLabel
 		
 	}
+
+
+
+
 	
 	
 	

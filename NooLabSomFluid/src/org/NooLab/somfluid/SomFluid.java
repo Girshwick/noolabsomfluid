@@ -16,6 +16,7 @@ import org.NooLab.somfluid.properties.* ;
 import org.NooLab.somfluid.app.SomAppProperties;
 import org.NooLab.somfluid.app.SomAppUsageIntf;
 import org.NooLab.somfluid.app.SomAppValidationIntf;
+import org.NooLab.somfluid.app.SomApplicationEventIntf;
 import org.NooLab.somfluid.components.* ;
   
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
@@ -50,7 +51,7 @@ import org.NooLab.somtransform.SomTransformer;
  * transposing the data table, 
  * - clustering variables
  * 
- *  cross-validation by utans
+ *  cross-validation by Utans
  * 
  * 
  */
@@ -75,22 +76,24 @@ public class SomFluid
 	
 	
 	SomFluid sf ;
- 	
+	SomAppProperties soappProperties;
+	
+	
 	SomApplicationDsom somApplication;
 	
 	boolean isActivated=false, isInitialized=false;
 	boolean processIsRunning=false;
 	Thread sfThread;
 	
-	StringedObjects sob = new StringedObjects();
-	PrintLog out = new PrintLog(2, true);
 	private boolean processIsActivated=false;
 	private RepulsionFieldIntf particleField;
 	private boolean userBreak;
+	private SomApplicationEventIntf appInformer ;
+	
 	
 	transient DFutils fileutil = new DFutils();
-	private SomAppProperties soappProperties;
-	
+	transient StringedObjects sob = new StringedObjects();
+	transient PrintLog out = new PrintLog(2, true);
 	
 	// ------------------------------------------------------------------------
 	protected SomFluid( SomFluidFactory factory){
@@ -102,6 +105,7 @@ public class SomFluid
 		sfProperties = sfFactory.getSfProperties() ;
 		
 		somProcessControl = sfFactory.getSomProcessControl() ;
+		appInformer = sfFactory.appInformer ;
 		
 		sf = this;
 		
@@ -241,6 +245,8 @@ public class SomFluid
 	
 	private void performClassificationApp(SomFluidTask sfTask) {
 		
+		String classTaskId = "-1" ;
+		
 		SomApplication soapp;
 		// result handler ?
 		
@@ -259,9 +265,18 @@ public class SomFluid
 			
 			if (soapp.loadModel() ){
 			
-				soapp.perform();
+				classTaskId = soapp.perform();
+				
+				if (appInformer != null){
+					appInformer.onProcessStarted( sfTask, SomFluidFactory._INSTANCE_TYPE_CLASSIFIER, classTaskId) ;
+				}
 			}else{
 				String str = soapp.getLastStatusMessage();
+				
+				if (appInformer != null){
+					appInformer.onStatusMessage( sfTask, SomFluidFactory._INSTANCE_TYPE_CLASSIFIER, -1, str) ;
+											// -1 ... we should use a centralized error code directory instead
+				}
 			}
 			
 		} catch (Exception e) {
@@ -814,6 +829,13 @@ public class SomFluid
 	public PrintLog getOut() {
 		return out;
 	}
+
+	public void setApplicationMessagePort( SomApplicationEventIntf msgCallbackIntf) {
+		appInformer = msgCallbackIntf;
+	}
+
+
+
 
 	public void registerDataReceptor(DataFileReceptorIntf datareceptor ) {
 		somDataObjects.get(0).registerDataReceptor(datareceptor );

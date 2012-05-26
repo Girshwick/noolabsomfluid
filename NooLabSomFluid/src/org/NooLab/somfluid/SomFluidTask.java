@@ -3,7 +3,6 @@ package org.NooLab.somfluid;
 import java.io.Serializable;
 
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
-import org.NooLab.somfluid.core.engines.det.results.ModelOptimizerDigester;
 import org.NooLab.somfluid.core.engines.det.results.SomResultDigesterIntf;
 import org.NooLab.utilities.net.GUID;
 
@@ -41,6 +40,7 @@ public class SomFluidTask 	implements
 	
 	int callerStatus = 0;
 	 
+	String transportedGuid="";
 	
 	int somType;
 	String taskType;
@@ -468,6 +468,30 @@ public class SomFluidTask 	implements
 	}
 	public static boolean taskIsSomStorageFields(String typeid){
 		return typeid.toLowerCase().contentEquals( _TASK_SOMSTORAGEFIELD.toLowerCase()) ;
+	}
+
+
+
+	public String getTransportedGuid() {
+		return transportedGuid;
+	}
+
+
+
+	public void setTransportedGuid(String transportedGuid) {
+		this.transportedGuid = transportedGuid;
+	}
+
+
+
+	public int getTaskDispatched() {
+		return taskDispatched;
+	}
+
+
+
+	public void setTaskDispatched(int taskDispatched) {
+		this.taskDispatched = taskDispatched;
 	}
 	 
 }

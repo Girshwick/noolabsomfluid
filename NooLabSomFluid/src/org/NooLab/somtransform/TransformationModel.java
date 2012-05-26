@@ -153,7 +153,9 @@ public class TransformationModel implements Serializable{
 		String varLabel, ctvar ;
 		ArrayList<SomAssignatesDerivationTree> candTrees;
 		
+		
 		ctvar="" ;
+		
 		if (derivations.derivationTrees.size()<=1){
 			derivations.createDerivationTrees();
 		}
@@ -350,7 +352,7 @@ public class TransformationModel implements Serializable{
 	 * 
 	 * @param idStr  label of variable, guid of stack or guid of stack position
 	 * @param srcType 1=label, 2=stack guid, 3= stack position guid 
-	 * @return
+	 * @return a list of indices that refer to "Variables"
 	 */
 	public ArrayList<Integer> findTransformationRootStackIndex( String idStr , int srcType, ArrayList<Integer> rootingIndexes ){
 
@@ -502,6 +504,18 @@ public class TransformationModel implements Serializable{
 		return index;
 	}
 
+	public TransformationStack getItemByLabel(String varLabel) {
+		TransformationStack ts=null;
+		
+		int ix = getIndexByLabel(varLabel);
+		if (ix>=0){
+			ts = variableTransformations.get(ix);
+		}
+		
+		return ts;
+	}
+	
+	
 	public String getTmGuid() {
 		return tmGuid;
 	}

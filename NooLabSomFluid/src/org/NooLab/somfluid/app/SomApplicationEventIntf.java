@@ -2,6 +2,7 @@ package org.NooLab.somfluid.app;
 
 import org.NooLab.somfluid.SomFluidMonoResultsIntf;
 // import org.NooLab.somfluid.SomFluidStateDescriptionIntf;
+import org.NooLab.somfluid.SomFluidTask;
 
 
 
@@ -18,5 +19,9 @@ public interface SomApplicationEventIntf {
 	public void onResultsCalculated( SomFluidMonoResultsIntf results );
 	
 	public void onCalculation( double fractionPerformed );
+	
+	void onProcessStarted( SomFluidTask sfTask, int applicationId, String pid);
+
+	public void onStatusMessage(SomFluidTask sfTask, int applicationId, int errcode, String msg);
 	
 }

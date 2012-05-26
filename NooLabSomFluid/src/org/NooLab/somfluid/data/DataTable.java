@@ -83,7 +83,7 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 	
 	transient DataTable dt;
 
-	transient String tablename="";
+	private transient String tablename="";
 	// main variables / properties ....
 	
 	// our table consists of a list of columns
@@ -208,7 +208,7 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 		ps = fileorg.getPersistenceSettings() ;
 		DFutils fileutil = fileorg.getFileutil();
 		 
-		if ((tablename!=null) && (tablename.length()>0) && (tablename.toLowerCase().contains("norm"))){
+		if ((getTablename()!=null) && (getTablename().length()>0) && (getTablename().toLowerCase().contains("norm"))){
 			vstr="_n";
 		}
 		filename = ps.getProjectName()+"-datatable" + vstr + fileorg.getFileExtension( FileOrganizer._TABLEOBJECT ) ;
@@ -364,7 +364,7 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 		// ArrayList< ArrayList<Double> > dataTableRows = new ArrayList< ArrayList<Double>>() ;
 		// ArrayList<String> columnHeaders = new ArrayList<String>() ; 
 		 
-		if ((dataTableRows!=null) && (dataTableRows.size()>2) && (tablename.contains("norm"))){
+		if ((dataTableRows!=null) && (dataTableRows.size()>2) && (getTablename().contains("norm"))){
 			 
 			tablestr = arrutil.arr2text( columnHeaders, "\t") +"\n";
 			
@@ -726,7 +726,7 @@ if (i>=9){
 			dataTableRows.clear() ;
 			// ArrayList<DataTableCol> dataTable = new ArrayList<DataTableCol>() ; dataTableRows
 			// ArrayList< ArrayList<Double>>()
-if (tablename.contains("normalized")){
+if (getTablename().contains("normalized")){
 	dv=0.0;
 } 			
 			rc = dataTable.get(0).getCellValues().size();
@@ -1163,6 +1163,14 @@ if (ir==670){
 		return vstr;
 	}
 	
+	public void setTablename(String tablename) {
+		this.tablename = tablename;
+	}
+
+	public String getTablename() {
+		return tablename;
+	}
+
 	public boolean isFilled(){
 		boolean rb=false;
 		
@@ -1644,7 +1652,7 @@ if (ir==670){
 	}
 
 	public void setName(String tname) {
-		 tablename = tname; 
+		 setTablename(tname); 
 	}
 
 	

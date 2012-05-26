@@ -3,6 +3,7 @@ package org.NooLab.somtransform;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
@@ -176,17 +177,22 @@ public class SomAssignatesDerivations  implements Serializable{
 	}
 
 
+	@SuppressWarnings("unchecked")
 	public void createDerivationTrees(){
 		
 		int ix, tix;
 		String guidBaseVar, varlabel ;
 		ArrayList<TransformationStack> tStacks;
 		ArrayList<String> derivedVariablesStr, existentVariablesStr ,allVariablesStr ;
+		ArrayList<Integer> trace  ;
 		TransformationStack tStack;
 		SomAssignatesDerivationTree derivTree;
 		ArrayList<CollectedVariable> collectedVariables = null;
 		CollectedVariable collectedVariable ;
 		Variables variables = somData.getVariables();
+		Variable  tVar;
+		
+		
 		
 		if (out==null)out= somData.getOut();
 		ix=0;
@@ -243,7 +249,9 @@ if ( (varlabel.toLowerCase().startsWith("xd")) ||
 		ArrayList<CollectedVariable> cvs;
 		
 		derivedVariablesStr = variables.getLabelsForVariablesList(variables, 1); // 0=raw 1=derived 2=all
-		ArrayList<Integer> trace  = new ArrayList<Integer> ();
+		
+		trace  = new ArrayList<Integer> ();
+
 		
 		for (int i=0;i<derivedVariablesStr.size();i++){
 			
@@ -252,52 +260,86 @@ if ( (varlabel.toLowerCase().startsWith("xd")) ||
 			varlabel = derivedVariablesStr.get(i) ;
 			tix = transformationModel.getIndexByLabel(varlabel);
 
-if (varlabel.toLowerCase().contains("d1b")){
-	int z;
-	z=0;
-}
+ 
 
 			trace.clear();  
 			trace = transformationModel.findTransformationRootStackIndex( varlabel, 1, trace);
 
-			for (int t=0;t<trace.size();t++){
-				
-				tStack = transformationModel.variableTransformations.get(trace.get(t)) ;
-				
-				//if (tix != trace.get(t))
-				{ 
-					CollectedVariable cv = new CollectedVariable( tStack.transformGuid, tStack.varLabel, trace.get(t)) ;
-					
-					cvs.add(cv) ;
-				}
-				
-			}// t->
-			// StackedTransformation findStackedTransformationByGuid( String stackedTransformGuid )
-			// collectedVariables = collectVariablesInTree( guidBaseVar, collectedVariables, derivTree, 0); // recursively traverse the variables
-			// collectVariablesInTree
-			
-			if (cvs.size()>=1){
-
-if (varlabel.toLowerCase().contains("d1b")){
+if (trace.size()>2){
 	int z;
 	z=0;
 }
-				int min = ArrUtilities.arraymin(trace,-1);
-				if (min>=0){
+			Collections.sort(trace);   
+			trace = ArrUtilities.removeDoubleEntries(trace) ;
+			ArrayList<Integer> traceRoots = new ArrayList<Integer> ();
+			traceRoots.clear() ;
+			
+			// transform the finds into "CollectedVariable"s
+			for (int t = 0; t < trace.size(); t++) {
+
+				tVar = variables.getItem(trace.get(t) );
+				
+				if (tVar.isDerived() == false){
+					traceRoots.add( trace.get(t) );
+				}
+				if (tVar.isDerived() == true){
+					// we do not include raw variables here as a trace for derivation trees (yet we would need it for the root view!!)
+					// 
+					tStack = transformationModel.getItemByLabel( tVar.getLabel() ) ;
 					
-					// put it to the respective tree that is attached to the current variable under scrutiny
-					String tGuid = transformationModel.getItem(min).transformGuid ;
-					derivTree = getTreeByGuid(tGuid); 
-					
-					if (derivTree!=null){
-						derivTree.addCollectedVariables(cvs);
-					} // tree found ?
+					if (tStack!=null){
+						CollectedVariable cv = new CollectedVariable(tStack.transformGuid, tStack.varLabel, trace.get(t));
+						cvs.add(cv);
+					}
+				}
+				
+				
+			}// t->
+			
+			
+			if (cvs.size() >= 1) {
+ 
+				int min = ArrUtilities.arraymin(traceRoots, -1);
+				
+				if (min >= 0) {
+					// insert it to ANY raw variable listed in the trace:
+					// we begun with the derived end, and proceeded to the raw
+
+					for (int t = 0; t < traceRoots.size(); t++) {
+
+						// check the traces whether they are "basic" == not derived, then add the rest of the trace there too
+						
+						tVar = variables.getItem(traceRoots.get(t));
+						if (tVar.isDerived() == false) {
+							
+							// put it to the respective tree that is attached to the
+							// current variable under scrutiny
+							String tGuid = transformationModel.getItem( traceRoots.get(t) ).transformGuid;
+							derivTree = getTreeByGuid(tGuid);
+
+							if (derivTree != null) {
+								// this will check for double entries before actually adding
+								derivTree.addCollectedVariables(cvs);
+
+							} // tree found ?
+							else {
+								out.printErr(2, "derivation tree chain not found for variable : " + varlabel);
+							}
+							
+							
+							
+						} //raw ?
+						min=min+1-1;
+					} //t->
 				} // reasonable values in list of trace indexes ?
+
+				
+
 			} // any cvs found ?
 			
-			// put it to the roots
+			// put it to the roots, possibly before the trees...
 			// derivRoot = getRootByGuid(tGuid);
-			// derivRoot.addTraces( varlabel, trace) ;
+			// derivRoot.addTraces( varLabel, trace) ;
 		}
 		
 		
@@ -316,9 +358,7 @@ if (varlabel.toLowerCase().contains("d1b")){
 			d--;
 		}
 		
-		// now checking all derived variables ----------------------------------*********************************
-		
-		 
+	 
 		ix=0;
 	}
 

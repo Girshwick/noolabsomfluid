@@ -10,14 +10,14 @@ public class DataFilter implements Serializable{
 
 	private static final long serialVersionUID = 2588764350213284361L;
 
-	transient SomFluidFactory sfFactory;
+	// transient SomFluidFactory sfFactory;
 	transient ModelingSettings modelingSettings;
 	
 	BooleanTable boolTable ;
 	
 	
 	// ========================================================================
-	public DataFilter(SomFluidFactory factory, ModelingSettings modset) {
+	public DataFilter( ModelingSettings modset) {
 		 
 		modelingSettings = modset ;
 		

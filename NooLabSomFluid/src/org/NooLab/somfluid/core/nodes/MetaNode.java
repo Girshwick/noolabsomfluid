@@ -73,7 +73,7 @@ import org.NooLab.somfluid.util.BasicStatisticalDescription;
  * Yet there is the possibility (via imported interface) that the intensity of the ...
  * 
  * A proper distinction between the extensional part and the intensional part is established.
- * In the intensional part, profiles are distinguished from weights (in standard kohonen, they are not distinguished)
+ * In the intensional part, profiles are distinguished from weights (in standard Kohonen, they are not distinguished)
  * It is important to understand that what is commonly called "weight" vector is not a weight vector at all. 
  * Its the profile vector that describes the intensional mapping of the extensional list.
  * 

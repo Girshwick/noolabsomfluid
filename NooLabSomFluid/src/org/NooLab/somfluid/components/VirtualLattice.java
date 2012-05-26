@@ -35,6 +35,7 @@ import org.NooLab.somfluid.core.engines.det.results.ModelProperties;
 import org.NooLab.somfluid.core.nodes.LatticeIntf;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
+import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.core.*;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.DataTableCol;
@@ -112,7 +113,7 @@ public class VirtualLattice implements LatticeIntf{
 	
 	
 	// ========================================================================
-	public VirtualLattice(SomProcessIntf parent, LatticePropertiesIntf latticeProps, int z){
+	public VirtualLattice(SomProcessIntf parent, LatticePropertiesIntf latticeProps, int svlIndex){
 		  
 		latticeProperties = latticeProps;
 		somProcessParent = parent;
@@ -123,7 +124,7 @@ public class VirtualLattice implements LatticeIntf{
 		
 		// ..........................................................
 		
-		selectionResultsQueueDigester = new SelectionResultsQueueDigester(z) ;
+		selectionResultsQueueDigester = new SelectionResultsQueueDigester( svlIndex ) ;
 		// out.printErr(2, "startSelectionResultsQueueDigester(a)");
 		
 		out.delay(60);

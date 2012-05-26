@@ -629,26 +629,25 @@ public class SomFluidProperties
 
 	public DataFilter getDataFilter(SomFluidFactory factory) {
 		 
-		return modelingSettings.getDataFilter(factory)  ;
+		return modelingSettings.getDataFilter()  ;
 	}
 
 
 	/**
 	 * 
-	 * @param factory
 	 * @param variableLabel
 	 * @param lower     numeric criterion
 	 * @param upper
-	 * @param bTableRow row in boolean table, will autocorrect to next reasonable value
-	 * @param bTableCol col in boolean table, will autocorrect to next reasonable value </br>
+	 * @param bTableRow row in boolean table, will auto-correct to next reasonable value
+	 * @param bTableCol col in boolean table, will auto-correct to next reasonable value </br>
 	 *                  any value>1 will be interpreted as OR condition within an AND condition
 	 *                  negative values indicate XOR 
 	 * @param active
 	 */
-	public void addFilter( SomFluidFactory factory,String variableLabel, 
+	public void addFilter( String variableLabel, 
 						   double num, String operator, int bTableRow, int bTableCol, boolean active) {
 		
-		modelingSettings.getDataFilter(factory).addFilter(variableLabel, num, operator, bTableRow, bTableCol, active) ;
+		modelingSettings.getDataFilter().addFilter(variableLabel, num, operator, bTableRow, bTableCol, active) ;
 	}
 
 

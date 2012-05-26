@@ -1,38 +1,40 @@
 package org.NooLab.somfluid.app;
 
 import java.io.Serializable;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.SomApplicationIntf;
 import org.NooLab.somfluid.SomFluidFactory;
+import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
+import org.NooLab.somfluid.components.VirtualLattice;
+import org.NooLab.somfluid.core.SomProcessIntf;
+import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
-import org.NooLab.somtransform.SomAssignatesDerivations;
 import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.somtransform.StackedTransformation;
 import org.NooLab.somtransform.TransformationModel;
 import org.NooLab.somtransform.TransformationStack;
-import org.NooLab.somtransform.algo.intf.AlgoColumnWriterIntf;
-import org.NooLab.somtransform.algo.intf.AlgoMeasurementIntf;
 import org.NooLab.somtransform.algo.intf.AlgoTransformationIntf;
 import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
+
 import org.NooLab.utilities.strings.StringsUtil;
 
 
 /**
  * 
  * TODO:  statistical description gets not exported, because algorithms   
- *  	  are not included in transformation model, only their names -->> we need the params of algorithms, e.g. also for NVE !!!
+ *  	  are not included in transformation model, only their names -->> we need the parameters of algorithms, e.g. also for NVE !!!
  * 
  *
  */
-public class SomAppClassifier implements Serializable{
+public class SomAppClassifier implements SomProcessIntf, Serializable{
 
 	private static final long serialVersionUID = 1300587404052091239L;
 
@@ -48,7 +50,7 @@ public class SomAppClassifier implements Serializable{
 	SomApplicationIntf somApplication;
 	SomAppModelLoader  soappLoader;
 	
-	// SomAppClassifier   soappClassify ;
+
 	SomAppTransformer  soappTransform ;
 
 	SomDataObject somData;
@@ -60,6 +62,11 @@ public class SomAppClassifier implements Serializable{
 	
 	boolean transformationModelImported=false;
 	boolean transformationsExecuted=false;
+	
+	// is a guid-identifiable object, containing guid, universal serial, data section, status, commands, results
+	public ArrayList<Object> dataQueue = new ArrayList<Object>(); 
+	transient ClassificationProcess classProcess=null;
+
 	
 	transient private ArrayList<String> transformedVariables = new ArrayList<String>();
 	transient private ArrayList<String> postponedVariables   = new ArrayList<String>();
@@ -84,10 +91,10 @@ public class SomAppClassifier implements Serializable{
 	}
 	// ========================================================================	
 	
-	public void prepare() {
+	public boolean prepare() {
+		boolean rB=false;
 		
-		try{
-			
+		try{	
 
 			// soappClassify = soappLoader.getSoappClassifier() ;
 			soappTransform = soappLoader.getSoappTransformer() ;
@@ -103,22 +110,36 @@ public class SomAppClassifier implements Serializable{
 				//SomAppSomObject somObject = soappClassify.somObjects.get(0);
 				SomAppSomObject somObject = somObjects.get(0);
 				
-				nodeCount = somObject.soappNodes.nodes.size();
+				nodeCount = somObject.soappNodes.getNodes().size();
 
 				if (nodeCount >= 3){
 				
-					transformIncomingData();
-						
+					rB= transformIncomingData();
+					 
+					
 				} // nodeCount >= 3?
 			} // soappClassify.somObjects?
 			
 		}catch(Exception e){
 			e.printStackTrace();
 		}
-		
+		return rB;
 	}
 
 
+	public String createDataTask() {
+		 
+		
+		SomAppDataTask soappDataTask = new  SomAppDataTask( ) ;
+		
+		// sfFactory, somApplication, this,
+		
+		soappDataTask.setDataObject( somData );
+		
+		dataQueue.add( soappDataTask );
+		
+		return soappDataTask.getGuidStr() ;
+	}
 	/**
 	 * this cares for correct object references (SomDataObject, TransformationModel, etc.) and
 	 * applies the transformation stack to the provided data
@@ -127,8 +148,8 @@ public class SomAppClassifier implements Serializable{
 	 * only necessary transformations will be applied
 	 * 
 	 */
-	protected void transformIncomingData() {
-		
+	protected boolean transformIncomingData() {
+		boolean rB=false;
 		ArrayList<String> targetStruc ;
 		
 		
@@ -143,12 +164,12 @@ public class SomAppClassifier implements Serializable{
 				
 					executeTransformationModel();
 			}
-
+			rB = transformationModelImported && transformationsExecuted ;
 			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+		return rB;
 	}
 		
 	
@@ -174,145 +195,156 @@ public class SomAppClassifier implements Serializable{
 
 		SomTransformer sot; //just for debug 
 
+		try{
 		
-		
-		// --------------------------------------------
-		rawDataTable = soappTransform.getDataTableObj();
-		columnVarLabels = rawDataTable.getColumnHeaders();
 
-		int columnLen = rawDataTable.getColumn(0).size() ;
-		normDataTable = new DataTable(somData, true);
+			// --------------------------------------------
+			rawDataTable = soappTransform.getDataTableObj();
+			columnVarLabels = rawDataTable.getColumnHeaders();
 
-		normDataTable.setColumnHeaders(columnVarLabels);
-		tformats = new int[normDataTable.getColcount()];
-		for (int i = 0; i < tformats.length; i++) {
-			tformats[i] = 1;
-		}
-		normDataTable.setFormats(tformats);
-			
-			/*
-			 * exporting the transform model should also provide a list of variables that appear in the chained trees
-			 * these we would need to select the necessary stacks, to avoid the superfluous ones
-			 */
+			int columnLen = rawDataTable.getColumn(0).size() ;
+			normDataTable = new DataTable(somData, true);
 
-		transformModel = soappTransform.getTransformationModel() ;
-		variables = somData.getVariables() ;
-			
-			// we need to refer to the imported model for setting up the target table = normDataTable
-				// 1. first the data which are provided by the input
-			
-			for (int i=0;i<rawDataTable.getColcount();i++){
-				DataTableCol column = new DataTableCol(normDataTable, i);
-				 
-				normDataTable.getDataTable().add(column) ;
+			normDataTable.setColumnHeaders(columnVarLabels);
+			tformats = new int[normDataTable.getColcount()];
+			for (int i = 0; i < tformats.length; i++) {
+				tformats[i] = 1;
 			}
-				// 2. the columns that are derived, we do not distinguish or analyze the dependencies here
-			
-		stackList = transformModel.getVariableTransformations();
+			normDataTable.setFormats(tformats);
 				
-		for (int i=0;i<stackList.size();i++){
-		
-			// base variable is available through serialized persistence, it has been loaded through transform.xml
-			
-			Variable perBaseVar = stackList.get(i).getBaseVariable();
-			varLabel = perBaseVar.getLabel();
+				/*
+				 * exporting the transform model should also provide a list of variables that appear in the chained trees
+				 * these we would need to select the necessary stacks, to avoid the superfluous ones
+				 */
 
-			if ((perBaseVar != null) && (perBaseVar.isDerived())) {
-				ctvix = soappTransform.requiredchains.indexOf(varLabel);
-				if (ctvix >= 0) {
-
-					Variable newCVar = new Variable(perBaseVar);
-
+			transformModel = soappTransform.getTransformationModel() ;
+			variables = somData.getVariables() ;
+				
+				// we need to refer to the imported model for setting up the target table = normDataTable
+					// 1. first the data which are provided by the input
+				
+				for (int i=0;i<rawDataTable.getColcount();i++){
 					DataTableCol column = new DataTableCol(normDataTable, i);
-					normDataTable.getDataTable().add(column);
-					normDataTable.getColumnHeaders().add(newCVar.getLabel());
-					variables.additem(newCVar);
+					 
+					normDataTable.getDataTable().add(column) ;
+				}
+					// 2. the columns that are derived, we do not distinguish or analyze the dependencies here
+				
+			stackList = transformModel.getVariableTransformations();
+					
+			for (int i=0;i<stackList.size();i++){
+			
+				// base variable is available through serialized persistence, it has been loaded through transform.xml
+				
+				Variable perBaseVar = stackList.get(i).getBaseVariable();
+				varLabel = perBaseVar.getLabel();
+
+				if ((perBaseVar != null) && (perBaseVar.isDerived())) {
+					ctvix = soappTransform.requiredchains.indexOf(varLabel);
+					if (ctvix >= 0) {
+
+						Variable newCVar = new Variable(perBaseVar);
+
+						DataTableCol column = new DataTableCol(normDataTable, i);
+						normDataTable.getDataTable().add(column);
+						normDataTable.getColumnHeaders().add(newCVar.getLabel());
+						variables.additem(newCVar);
+					}
+
+				}
+			}
+				// should be available, comes with the TransformationModel-object: it contains trees & chains...
+				// SomAssignatesDerivations soappDerives = soappTransform.getSomDerivations() ;
+			
+			columnVarLabels = variables.getLabelsForVariablesList(variables);
+			
+			
+			boolean ready=false;
+			
+			while (ready==false){
+				ready=true;
+				
+				try{
+					
+					for (int i = 0; i < columnVarLabels.size(); i++) {
+						varLabel = columnVarLabels.get(i);
+												out.print(2,"establishing transformation stack (1) for variable : "+ varLabel) ;
+												
+						popoVarIx = postponedVariables.indexOf(varLabel) ;				
+						if ((popoVarIx>=0) || (transformedVariables.indexOf(varLabel)<0)){
+							
+							if (transformVariable( normDataTable, rawDataTable, varLabel, (popoVarIx>=0) ) ){
+								 
+								transformedVariables.add(varLabel) ;
+								if (popoVarIx>=0){
+									postponedVariables.remove( popoVarIx);
+								}
+							}else{
+								postponedVariables.add(varLabel) ;
+							}
+							
+						} // still to treat ?
+						
+					} // all variables
+					
+				}catch(Exception e){
+					e.printStackTrace();
+				}
+				
+				ready = postponedVariables.size()==0;
+			}
+			 
+			// soappTransform.requiredVariables
+				
+			// updating all stacks from the perspective of the normalized Table
+
+			columnVarLabels = normDataTable.getColumnHeaders();
+
+			for (int i = 0; i < columnVarLabels.size(); i++) {
+
+				boolean calculateCol = false;
+				varLabel = columnVarLabels.get(i);
+				variable = variables.getItemByLabel(varLabel);
+
+				// obsolete: variable.setRawFormat(rawDataTable.getFormats()[i]);
+
+				rvix = soappTransform.requiredVariables.indexOf(varLabel);
+
+				calculateCol = (rvix >= 0) || (variable.isDerived());
+
+				if (calculateCol) {
+
 				}
 
-			}
-		}
-			// should be available, comes with the TransformationModel-object: it contains trees & chains...
-			// SomAssignatesDerivations soappDerives = soappTransform.getSomDerivations() ;
-		
-		columnVarLabels = variables.getLabelsForVariablesList(variables);
-		
-		
-		boolean ready=false;
-		
-		while (ready==false){
-			ready=true;
+			} // -> all columns in normalized table
+
+			// filling all empty columns in norm table with -1, such that they are defined
+			normDataTable.getColumnHeaders().trimToSize();  columnVarLabels = normDataTable.getColumnHeaders();
+			DataTableCol tablecol;
+			normDataTable.setTablename("normalized");
 			
-			try{
+			for (int i=0;i<normDataTable.getColcount();i++){
 				
-				for (int i = 0; i < columnVarLabels.size(); i++) {
-					varLabel = columnVarLabels.get(i);
-											out.print(2,"establishing transformation stack (1) for variable : "+ varLabel) ;
-											
-					popoVarIx = postponedVariables.indexOf(varLabel) ;				
-					if ((popoVarIx>=0) || (transformedVariables.indexOf(varLabel)<0)){
-						
-						if (transformVariable( normDataTable, rawDataTable, varLabel, (popoVarIx>=0) ) ){
-							 
-							transformedVariables.add(varLabel) ;
-							if (popoVarIx>=0){
-								postponedVariables.remove( popoVarIx);
-							}
-						}else{
-							postponedVariables.add(varLabel) ;
-						}
-						
-					} // still to treat ?
-					
-				} // all variables
+				varLabel = columnVarLabels.get(i) ;
+				tablecol = normDataTable.getColumn(i) ;
 				
-			}catch(Exception e){
-				e.printStackTrace();
+				if (tablecol.getCellValues().size()==0){
+				
+					cellvalues = ArrUtilities.createCollection( columnLen, -1.0) ;
+					tablecol.getCellValues().addAll(cellvalues) ;
+				}
+				
 			}
 			
-			ready = postponedVariables.size()==0;
-		}
-		 
-		// soappTransform.requiredVariables
-			
-		// updating all stacks from the perspective of the normalized Table
-
-		columnVarLabels = normDataTable.getColumnHeaders();
-
-		for (int i = 0; i < columnVarLabels.size(); i++) {
-
-			boolean calculateCol = false;
-			varLabel = columnVarLabels.get(i);
-			variable = variables.getItemByLabel(varLabel);
-
-			variable.setRawFormat(rawDataTable.getFormats()[i]);
-
-			rvix = soappTransform.requiredVariables.indexOf(varLabel);
-
-			calculateCol = (rvix >= 0) || (variable.isDerived());
-
-			if (calculateCol) {
-
-			}
-
-		} // -> all columns in normalized table
-
-		// filling all empty columns in norm table with -1, such that they are defined
-		
-		for (int i=0;i<normDataTable.getColcount();i++){
-			DataTableCol tablecol = normDataTable.getColumn(i) ;
-			if (tablecol.getCellValues().size()==0){
-				cellvalues = ArrUtilities.createCollection( columnLen, -1.0) ;
-				tablecol.getCellValues().addAll(cellvalues) ;
-			}
-		}
-			
-		
-		transformationsExecuted = true;
-		
-	}
+			// create row perspective
+			normDataTable.createRowOrientedTable();		
 	
+			transformationsExecuted = true;
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 	 
-	
+	}
 	
 	@SuppressWarnings("unchecked")
 	private boolean transformVariable(	DataTable normDataTable, DataTable rawDataTable, 
@@ -731,7 +763,7 @@ public class SomAppClassifier implements Serializable{
 			// somObjects = soappClassify.somObjects ;
 			SomAppSomObject somobj = somObjects.get(0);
 			
-			targetVector = somobj.soappNodes.getNode(0).assignates ;
+			targetVector = ((SomAppNodeIntf)somobj.soappNodes.getNode(0)).getAssignates() ;
 			
 		}catch(Exception e){
 			
@@ -744,17 +776,92 @@ public class SomAppClassifier implements Serializable{
 	 * 
 	 * @param currObject 
 	 */
-	@SuppressWarnings("unchecked")
-	public void performClassification(Object dataObject){
+	
+	public void performClassification(Object dataTaskObject){
 		
 		ArrayList<Double> dataRecord ;
+		SomAppDataTask datatask;
+		Object obj ;
 		
-		dataRecord = (ArrayList<Double>)dataObject ;
 		
-		// transform data from mini table (1-record tables are identical to full many-records tables)
+		datatask = (SomAppDataTask)dataTaskObject;
+		
+		obj = datatask.preparedDataTable;
+		
+		if ((obj!=null) && (obj instanceof String)){
+		
+			// the SomDataObject should already exist due to initial import of data, 
+			// just handle the record, inclusive normalization 
+			
+			introduceDataToSomApplication(); 
+			/*
+			 *  we need a flag about the context: 
+			 *    - first time= norm data are available, 
+			 *    - next time = data must be assimilated into SomDataObject, in case of service mode
+			 */
+		}
+		
+		if ((obj!=null) || (obj instanceof SomDataObject)){
+			// nothing special to do
+		}
+		 
+		executeClassificationModel();
+		
+	}
+	
+	
+	/**
+	 * we are NOT establishing the full SOM!
+	 * We just create a table of aligned records and determine the winner list by measuring the similarity 
+	 * 
+	 */
+	private void executeClassificationModel() {
+	
+		// acts as a replacement for DSom*
+		SomAppSomObject  somObject = somObjects.get(0);
+		
+		DataTable dataTable ;
+		ArrayList<Double> values,usageVector = null;
+		
+		IndexedDistances winners;
+		
+		
+		// the object SomAppNodes is a "replacement", surrogate for the VirtualLattice
+		SomAppNodes somPseudoLattice;
+		
+		
+		
+		// TODO IMPORTANT !!!
+		somObject.setUsageVector(usageVector);
+		
+		
+		
+		dataTable = somData.getNormalizedDataTable() ;
+		
+		for (int i=0;i<dataTable.getRowcount();i++){
+
+			values = dataTable.getRowValuesArrayList(i);
+			
+			winners = somObject.getWinnerNodes( values );
+			
+			if (winners.size()>0){
+				
+			}else{
+				
+			}
+			
+		} // i-> all records
+		
 		
 		
 	}
+	
+	
+	private void introduceDataToSomApplication() {
+		 
+		
+	}
+	
 	
 	
 	
@@ -796,16 +903,28 @@ public class SomAppClassifier implements Serializable{
 
 
 	public void start(int modeFile) {
-		ClassificationProcess classProcess;
-											out.print(2,"starting sub-process...") ;
-		classProcess = new ClassificationProcess ();
-		classProcess.start();
+		
+											out.print(3,"starting sub-process...") ;
+		if (classProcess ==null){						
+			
+			classProcess = new ClassificationProcess ();
+			classProcess.start();
+			
+		}else{
+			if (classProcess.isRunning==false){
+				classProcess.start();
+			}
+		}
+		
 	}
 	
 	
 	/**
 	 * 
-	 * this is an internal service, which receives records, processes them, and collects the results
+	 * this is an internal service, which 
+	 * works on the data queue : this is maintained by the embedding parent class , where records are received;
+	 *  
+	 * here we just call the performing routine, which also is in the parent class
 	 * 
 	 *
 	 */
@@ -815,8 +934,6 @@ public class SomAppClassifier implements Serializable{
 		public boolean isRunning = false;
 		public boolean isWorking=false;
 		
-		ArrayList<Object> dataQueue = new ArrayList<Object>(); 
-		// should be a guid-identifiable object, containing guid, universal serial, data section, status, commands, results
 		
 		// ------------------------------------------------
 		public ClassificationProcess(){
@@ -840,7 +957,7 @@ public class SomAppClassifier implements Serializable{
 					isWorking = true;
 					
 					while (dataQueue.size()>0){
-						Object currObject = dataQueue.get(0) ;
+						Object currObject = dataQueue.get(0) ;  // queue is empty ...
 						dataQueue.remove(0) ;
 						performClassification( currObject );
 						
@@ -856,7 +973,74 @@ public class SomAppClassifier implements Serializable{
 			
 			isRunning = false;
 		}
+
+		public boolean isRunning() {
+			return isRunning;
+		}
+
+		public boolean isWorking() {
+			return isWorking;
+		}
+
+		public ArrayList<Object> getDataQueue() {
+			return dataQueue;
+		}
 		
+		
+	}
+
+
+	@Override
+	public SomDataObject getSomDataObject() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getNeighborhoodNodes(int index, int surroundN) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public SomFluidProperties getSfProperties() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public LatticePropertiesIntf getLatticeProperties() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public VirtualLattice getSomLattice() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ArrayList<Double> getUsageIndicationVector(boolean inclTV) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ArrayList<Integer> getUsedVariablesIndices() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setUsedVariablesIndices(ArrayList<Integer> usedVariables) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void clear() {
+		// TODO Auto-generated method stub
 		
 	}
 }

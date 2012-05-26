@@ -1,5 +1,7 @@
 package org.NooLab.somfluid;
 
+import java.util.ArrayList;
+
 import org.NooLab.somfluid.app.IniProperties;
 import org.NooLab.somfluid.app.SomAppClassifier;
 import org.NooLab.somfluid.app.SomAppModelLoader;
@@ -167,14 +169,13 @@ class SomApplication implements SomApplicationIntf {
 			// 1. get all, inclusive properties
 		}
 		
-		
-		
 		return rB;
 	}
 	
 	
 	
-	public void perform() {
+	
+	public String perform() {
 											out.print(2,"\ngoing to start performing classifications...") ;
 											
 		
@@ -183,13 +184,21 @@ class SomApplication implements SomApplicationIntf {
 		
 		// this reading we have to do tolerant against shifts of raster: possibly we have to rearrange it
 		 
-	 
-		
 		soappClassify = soappLoader.getSoappClassifier() ;
+		
 		// this applies the loaded transformation model to the loaded data, creating the table of normalized data
 		soappClassify.prepare();
 		
+		// a guid-identifiable container object: containing guid, universal serial, data section, status, commands, results
+		String guidStr = soappClassify.createDataTask();
+		 
 		soappClassify.start( SomAppClassifier._MODE_FILE ); // 1 = filemode, 3=service
+		
+		// waiting ?
+		
+		
+		
+		return guidStr;
 	}
 
 

@@ -840,10 +840,10 @@ public class ModelingSettings implements Serializable{
 		validationSettings.setParameters(parameters);
 	}
 
-	public DataFilter getDataFilter(SomFluidFactory factory) {
+	public DataFilter getDataFilter() {
 		 
 		if (dataFilter==null){
-			dataFilter = new  DataFilter(factory,this) ;
+			dataFilter = new  DataFilter(this) ;
 		}
 		return dataFilter;
 	}
@@ -869,9 +869,6 @@ public class ModelingSettings implements Serializable{
 		this.transformationSettings = transformationSettings;
 	}
 
-	public DataFilter getDataFilter() {
-		return dataFilter;
-	}
 
 	public void setDataFilter(DataFilter dataFilter) {
 		this.dataFilter = dataFilter;

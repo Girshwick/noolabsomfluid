@@ -78,7 +78,7 @@ public abstract class AbstractMetaNode  extends
 	
 	// ========================================================================
 	public AbstractMetaNode( VirtualLattice vnodes , DataSourceIntf somdata){
-		super();
+		super();          // VirtualLattice
 		
 		numID = SerialGuid.numericalValue() ;
 		
@@ -124,8 +124,22 @@ public abstract class AbstractMetaNode  extends
 		autonomy = new Autonomy(this);
 	}
 	 
-
  
+	public AbstractMetaNode(LatticeIntf nodeCollection, DataSourceIntf somdata) {
+		super();  
+
+		numID = SerialGuid.numericalValue() ;
+		
+		somData = somdata;
+		
+		virtualLattice = (VirtualLattice) nodeCollection;
+
+	
+		initializeStructures(serialID);
+			 	
+		out = virtualLattice.getOut();
+	}
+
 
 
 	protected Object decodeMsgObject( Object stringedObj){
