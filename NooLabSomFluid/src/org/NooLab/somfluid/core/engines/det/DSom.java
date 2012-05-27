@@ -20,6 +20,7 @@ import org.NooLab.somfluid.core.engines.det.results.ModelProperties;
 import org.NooLab.somfluid.core.engines.det.results.SomTargetResults;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.properties.ModelingSettings;
+import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
 import org.NooLab.utilities.logging.PrintLog;
 
  
@@ -61,7 +62,7 @@ public class DSom extends Observable implements DSomIntf{
 	
 	// SomFluid somFluidParent;
 	SomFluidFactory sfFactory;
-	SomFluidProperties sfProperties;
+	SomFluidAppGeneralPropertiesIntf sfProperties;
 	
 	SomDataObject somData;
 	VirtualLattice somLattice;
@@ -271,7 +272,7 @@ public class DSom extends Observable implements DSomIntf{
 	}
 
 
-	public SomFluidProperties getSfProperties() {
+	public SomFluidAppGeneralPropertiesIntf getSfProperties() {
 		return sfProperties;
 	}
 

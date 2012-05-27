@@ -2,20 +2,21 @@ package org.NooLab.somfluid;
 
 import java.util.ArrayList;
 
+import org.NooLab.utilities.callback.ProcessFeedBackContainerIntf;
+import org.NooLab.utilities.files.DFutils;
+import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.net.GUID;
+import org.NooLab.utilities.strings.StringsUtil;
+
 import org.NooLab.somfluid.app.IniProperties;
 import org.NooLab.somfluid.app.SomAppClassifier;
 import org.NooLab.somfluid.app.SomAppModelLoader;
 import org.NooLab.somfluid.app.SomAppProperties;
-import org.NooLab.somfluid.app.SomAppTransformer;
-import org.NooLab.somfluid.app.SomModelCatalog;
+import org.NooLab.somfluid.app.SomAppResultAnalyses;
+import org.NooLab.somfluid.app.SomApplicationEventIntf;
 import org.NooLab.somfluid.components.SomDataObject;
+import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 import org.NooLab.somfluid.env.data.DataReceptor;
-import org.NooLab.somtransform.SomTransformer;
-import org.NooLab.somtransform.SomTransformerIntf;
-import org.NooLab.utilities.files.DFutils;
-import org.NooLab.utilities.logging.PrintLog;
-import org.NooLab.utilities.strings.StringsUtil;
-
  
 
 
@@ -29,7 +30,7 @@ import org.NooLab.utilities.strings.StringsUtil;
  * 
  *
  */
-class SomApplication implements SomApplicationIntf {
+class SomApplication implements SomApplicationIntf{
 
 	SomFluidFactory sfFactory ; 
 	SomFluidTask sfTask;
@@ -41,7 +42,11 @@ class SomApplication implements SomApplicationIntf {
 	SomAppClassifier soappClassify;
 	SomAppModelLoader soappLoader;
 	
+	SomAppResultAnalyses resultAnalyses;  
 	
+	/** a Guid that identifies the process as the master process for progress (and other) messages */
+	String messageProcessGuid;
+	transient SomApplicationEventIntf messagePort ;
 	
 	transient PrintLog out;
 	transient DFutils fileutil = new DFutils();
@@ -52,8 +57,10 @@ class SomApplication implements SomApplicationIntf {
 	public SomApplication( 	SomFluid somfluid, SomFluidTask task, SomFluidFactory factory ){
 		
 		somFluid = somfluid;
-		 
+		messagePort = somFluid.appInformer ;
 		sfTask = task;
+		
+		messageProcessGuid = GUID.randomvalue() ;
 		
 		init( factory, factory.getSomAppProperties() );
 	}
@@ -76,11 +83,6 @@ class SomApplication implements SomApplicationIntf {
 	}
 	// ========================================================================	
 
-
-	public SomAppModelLoader getSomAppModelLoader(){
-		
-		return soappLoader;
-	}
 
 	public boolean loadModel() throws Exception{
 		 
@@ -132,12 +134,12 @@ class SomApplication implements SomApplicationIntf {
 	public boolean checkApplicability() {
 		
 		boolean rB=true;
-		String filename,version ,model,_testversion, somxfile,transfxfile;
+		String filename,version ,_testversion, somxfile,transfxfile;
 		
-		int selectionMode = soappProperties.getModelSelectionMode();
+		//int selectionMode = soappProperties.getModelSelectionMode();
 		
 		filename = soappProperties.getBaseModelFolder();
-		model   = soappProperties.getActiveModel() ;
+		// String model   = soappProperties.getActiveModel() ;
 
 		version = soappProperties.getPreferredModelVersion() ;
 		
@@ -185,46 +187,68 @@ class SomApplication implements SomApplicationIntf {
 		// this reading we have to do tolerant against shifts of raster: possibly we have to rearrange it
 		 
 		soappClassify = soappLoader.getSoappClassifier() ;
+		// soappClassify = null from there ??
+		
 		
 		// this applies the loaded transformation model to the loaded data, creating the table of normalized data
 		soappClassify.prepare();
 		
-		// a guid-identifiable container object: containing guid, universal serial, data section, status, commands, results
+		// create a guid-identifiable container object that is containing 
+		//   guid, universal serial, data section, status, commands, results
 		String guidStr = soappClassify.createDataTask();
 		 
 		soappClassify.start( SomAppClassifier._MODE_FILE ); // 1 = filemode, 3=service
 		
+		
+		while (soappClassify.processIsRunning()==false){
+			out.delay(0) ;
+		}
 		// waiting ?
+		while (soappClassify.processIsRunning()){
+			out.delay(0); // 0 = implies a wait by sleep(0,1)
+		}
 		
+		resultAnalyses = soappClassify.getResultAnalyses() ;
 		
+		sfTask.isCompleted = true;
+		
+		somFluid.onTaskCompleted(sfTask);
 		
 		return guidStr;
 	}
 
 
+	public SomAppModelLoader getSomAppModelLoader(){
+		
+		return soappLoader;
+	}
+	
+	public void close(){
+		soappClassify.clear() ;
+	}
 
-	public SomDataObject loadSource( String srcname ) throws Exception{
+	public SomDataObject loadSource( ) {// throws Exception{
+		SomDataObject sdo;
+		
+		sdo = loadSource();
+		
+		return sdo;
+	}
+
+	public SomDataObject loadSource( String srcname ){// throws Exception{
 		
 		SomDataObject somDataObject;
-		int result=-1;
 		String srcName ="";
-		String loadedsrc ;
 		// 
 
 		srcName = srcname;
 		if ((srcName.length()==0) || (DFutils.fileExists(srcName)==false)){
 			srcName = soappProperties.getDataSrcFilename();
 		}
+		
 		soappProperties.setDataSourceFile(srcName);
-		 
 		
 		somDataObject = createSomDataObject() ;
-	
-		SomAppTransformer sop;
-		
-		SomTransformerIntf transformer = new SomAppTransformer( somDataObject, soappProperties );
-	
-		somDataObject.setTransformer(transformer) ; // SomTransformer@124614c
 		
 		DataReceptor dataReceptor = new DataReceptor( somDataObject );
 		
@@ -235,15 +259,31 @@ class SomApplication implements SomApplicationIntf {
 			}
 		}
 		// establishes a "DataTable" from a physical source
-		dataReceptor.loadFromFile(srcName);
+		try {
+		
+			dataReceptor.loadFromFile(srcName);
+
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
 		if (fileutil.fileexists(srcName)){
 			soappProperties.setDataSourceFile(srcName);
 		}
 		
 		
+		// "importDataTable()" needs a SomTransformer as : SomTransformerIntf transformer; in SomData
+		try {
+		
+			soappLoader.createSomTransformerInstance(somDataObject);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 		// imports the DataTable into the SomDataObject, and uses a SomTransformer instance 
 		// in order to provide a basic numeric version of the data by calling SomTransformer.basicTransformToNumericalFormat()
 		somDataObject.importDataTable( dataReceptor, 1 ); 
+		
 		// it is NOT normalized, just imported into table, list of variables and format detected
 		/*
 		 	not here in the classification task...
@@ -257,6 +297,19 @@ class SomApplication implements SomApplicationIntf {
 	}
 
 	
+	public SomFluidTask getSomFluidTask() {
+		return sfTask;
+	}
+
+	public SomDataObject getSomData() {
+		return somData;
+	}
+
+	@Override
+	public void setSomData(SomDataObject somdata) {
+		somData = somdata ;
+	}
+
 	public SomDataObject createSomDataObject() {
 		SomDataObject _somDataObject;
 		
@@ -270,10 +323,6 @@ class SomApplication implements SomApplicationIntf {
 		_somDataObject.prepare();
 		
 		return _somDataObject;
-	}
-
-	public SomDataObject getSomData() {
-		return somData;
 	}
 
 	public String getLastStatusMessage() {
@@ -294,6 +343,34 @@ class SomApplication implements SomApplicationIntf {
 
 	public SomAppModelLoader getSoappLoader() {
 		return soappLoader;
+	}
+
+	public SomAppResultAnalyses getResultAnalyses() {
+		return resultAnalyses;
+	}
+
+	@Override
+	public SomApplicationEventIntf getMessagePort() {
+		return messagePort;
+	}
+
+	 
+ 	@Override  // by ProcessFeedBackIntf
+	public void update(ProcessFeedBackContainerIntf processFeedBackContainer) {
+ 		messagePort.onProgress( processFeedBackContainer );		
+	}
+
+ 	/**
+ 	 * a Guid that identifies the process as the master process for progress (and other) messages
+ 	 */
+	@Override  // by ProcessFeedBackIntf
+	public String getMessageProcessGuid() {
+		return messageProcessGuid;
+	}
+
+	@Override  // by ProcessFeedBackIntf
+	public PrintLog setOut() {
+		 return out;
 	}
 
 	

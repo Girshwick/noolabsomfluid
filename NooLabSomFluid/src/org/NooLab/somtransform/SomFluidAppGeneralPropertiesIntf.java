@@ -2,6 +2,7 @@ package org.NooLab.somtransform;
 
 import java.util.ArrayList;
 
+import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidPluginSettings;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.AlgorithmDeclarationsLoader;
@@ -38,6 +39,14 @@ public interface SomFluidAppGeneralPropertiesIntf {
 	void setDataSrcFilename(String dataSrcFilename);
 
 	void setPluginSettings(SomFluidPluginSettings pluginsettings);
+
+	int getMultiProcessingLevel();
+
+	int getShowSomProgressMode();
+
+	SomFluidFactory getSfFactory();
+
+	int getSomType();
 
 	 
 

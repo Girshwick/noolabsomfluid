@@ -24,6 +24,7 @@ import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.properties.ValidationSettings;
 import org.NooLab.somfluid.util.PowerSetSpringSource;
+import org.NooLab.utilities.callback.ProcessFeedBackContainerIntf;
 import org.NooLab.utilities.logging.LogControl;
 
 
@@ -574,6 +575,12 @@ class SomModuleInstance implements 	Runnable,
 
 	@Override
 	public void onStatusMessage(SomFluidTask sfTask, int applicationId, int errcode, String msg) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onProgress(ProcessFeedBackContainerIntf processFeedBackContainer) {
 		// TODO Auto-generated method stub
 		
 	}

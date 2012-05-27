@@ -1,25 +1,44 @@
 package org.NooLab.somfluid;
 
 import org.NooLab.somfluid.app.SomAppModelLoader;
+import org.NooLab.somfluid.app.SomAppResultAnalyses;
+import org.NooLab.somfluid.app.SomApplicationEventIntf;
 import org.NooLab.somfluid.components.SomDataObject;
+import org.NooLab.utilities.callback.ProcessFeedBackIntf;
 
 
 
 
-public interface SomApplicationIntf {
+public interface SomApplicationIntf extends ProcessFeedBackIntf{
 
 	
+
+	public SomDataObject loadSource() throws Exception;
+
+	public boolean loadModel() throws Exception ;
+
+	/** creates a process and returns a task ID */
+	public String perform() ;
 	
 	public boolean checkApplicability();
-	
-	public boolean loadModel() throws Exception ;
+
+	// ----------------------------------------------------
 	
 	public SomAppModelLoader getSomAppModelLoader() ;
 	
+	public SomFluidTask getSomFluidTask() ;	
+
 	public SomDataObject getSomData() ;
 	
-	/** creates a process and returns a task ID */
-	public String perform() ;
+	public void setSomData(SomDataObject somdata);
+
+	public SomAppResultAnalyses getResultAnalyses() ;
+	
+	// ----------------------------------------------------
+
+	public SomApplicationEventIntf getMessagePort();
+
+	public String getMessageProcessGuid();
 	
 
 }

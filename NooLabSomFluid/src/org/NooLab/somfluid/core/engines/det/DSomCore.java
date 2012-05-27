@@ -3,7 +3,7 @@ package org.NooLab.somfluid.core.engines.det;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.SomFluidTask;
+ 
 import org.NooLab.somfluid.components.variables.SomVariableHandling;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
@@ -27,13 +27,14 @@ import org.NooLab.somscreen.EvoMetrices;
 import org.NooLab.somscreen.SomQuality;
 import org.NooLab.somscreen.SomScreening;
 
-import org.NooLab.somtransform.algo.AdaptiveDiscretization;
+import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
+ 
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
 
  
 /**
- * this impementation claims to contain ensemble based feature selection
+ * this implementation claims to contain ensemble based feature selection
  * http://java-ml.sourceforge.net/api/0.1.6/
  * 
  * TODO   minimal node size is not corrected for , there are nodes with 2 items in it ...
@@ -46,7 +47,7 @@ public class DSomCore {
 	DSom dSom;
 	
 	SomProcessIntf somProcess;
-	SomFluidProperties sfProperties ;
+	SomFluidAppGeneralPropertiesIntf sfProperties ;
 	
 	ModelingSettings modset;
 	DataSampler dataSampler = new DataSampler();

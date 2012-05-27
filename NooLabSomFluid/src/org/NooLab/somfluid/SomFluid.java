@@ -88,7 +88,7 @@ public class SomFluid
 	private boolean processIsActivated=false;
 	private RepulsionFieldIntf particleField;
 	private boolean userBreak;
-	private SomApplicationEventIntf appInformer ;
+	transient SomApplicationEventIntf appInformer ;
 	
 	
 	transient DFutils fileutil = new DFutils();
@@ -257,8 +257,8 @@ public class SomFluid
 		
 		sfTask.setDescription("SomApplication()") ;
 		sfTask.setSomHost(null) ;
-
 		
+		// setMessagePort( SomApplicationEventIntf msgCallbackIntf );
 		try {
 			
 			soapp.loadSource( soapp.soappProperties.getDataSrcFilename() ) ;
@@ -348,7 +348,13 @@ public class SomFluid
 			}else{
 				out.printErr(2,"\nThe following task has been finished and closed: "+sfTask.guidID+"\n");
 			}
-		}
+		} // completed "ModelOptimizer"
+		
+		if ((sfTask.isCompleted) && (cn.toLowerCase().contains("somapplication"))){
+			
+			out.printErr(2,"\nThe following task has been finished and closed: "+sfTask.guidID+"\n");
+			
+		}  // completed "SomApplication"
 	}
 
 

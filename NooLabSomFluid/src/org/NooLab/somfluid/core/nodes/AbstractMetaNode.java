@@ -70,6 +70,8 @@ public abstract class AbstractMetaNode  extends
 	String openLatticeFutureGuid ="";
 	int openLatticeFutureTask = -1 ;
 	
+	
+	
 	StatisticSample sampler;
 	Random nRandom ;
 	StringedObjects sobj = new StringedObjects();
@@ -323,6 +325,11 @@ if (v0!=vv){
 		
 		
 	}
+
+	public VirtualLattice getVirtualLattice() {
+		return virtualLattice;
+	}
+
 
 	/** ony nodes with an activationState>=0 will be considered in any learning */
 	public void setActivation(int stateflag) {

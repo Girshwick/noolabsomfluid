@@ -1,6 +1,7 @@
 package org.NooLab.somfluid.app;
 
 import org.NooLab.somfluid.OutputSettings;
+import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidPluginSettings;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.AlgorithmDeclarationsLoader;
@@ -31,6 +32,7 @@ public class SomFluidAppPropertiesAbstract
 	protected ModelingSettings modelingSettings = new ModelingSettings() ;
 	
 	protected int glueType = 0;
+	protected int multiProcessingLevel = 0;
 	
 	// type of data source for active access:
 	// 1=file, 2=db, 3=serialized SomdataObject
@@ -54,6 +56,12 @@ public class SomFluidAppPropertiesAbstract
 		return fileOrganizer;
 	}
 	
+	@Override
+	public SomFluidFactory getSfFactory() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	public void setFileOrganizer(FileOrganizer forg) {
 		fileOrganizer = forg;
 	}
@@ -181,6 +189,23 @@ public class SomFluidAppPropertiesAbstract
 
 	public String getSupervisedDirectory() {
 		return supervisedDirectory;
+	}
+
+	@Override
+	public int getMultiProcessingLevel() {
+		return multiProcessingLevel;
+	}
+
+	@Override
+	public int getShowSomProgressMode() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getSomType() {
+	
+		return 0;
 	}
 	
 }
