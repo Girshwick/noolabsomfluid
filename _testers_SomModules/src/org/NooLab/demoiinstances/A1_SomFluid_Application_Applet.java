@@ -27,6 +27,7 @@ import org.NooLab.somfluid.app.SomApplicationEventIntf;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somtransform.algo.externals.AlgorithmPluginsLoader;
+import org.NooLab.utilities.callback.ProcessFeedBackContainerIntf;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.files.PathFinder;
 import org.NooLab.utilities.logging.LogControl;
@@ -139,7 +140,7 @@ public class A1_SomFluid_Application_Applet extends PApplet{
 			IniProperties.saveIniProperties() ;
 			
 			System.err.println("The following file has been selected as data source for classification : "+ SomFluidStartup.getLastDataSet() );
-			System.err.println("The project path is currently set to : " + IniProperties.fluidSomProjectBasePath+"/"+SomFluidStartup.getLastProjectName());
+			System.err.println("The project path is currently set to : " + (IniProperties.fluidSomProjectBasePath+"/"+SomFluidStartup.getLastProjectName()).replace("//", "/"));
 			
 			looping = true;
 			this.loop() ;
@@ -418,6 +419,8 @@ class SomModuleInstanceA1 implements 	Runnable,
 		// on first loading, a catalog of available model will be created for faster access if it does not exists
 		soappProperties.setActiveModel( SomFluidStartup.getLastProjectName() ); // sth like "bank2",  i.e. just the name, it must exist as a subdir
 		
+		soappProperties.setIndexVariable("Id");
+		soappProperties.setIndexVariableColumnIndex(0);
 		
 		// if there are several model packages of the same name in the "BaseModelFolder", this
 		// will control the mode of selection from those
@@ -429,8 +432,18 @@ class SomModuleInstanceA1 implements 	Runnable,
 		//    clappProperties.setActiveModel("");
 		//    clappProperties.setModelPackageName("1"); // this directory or zip-packages must exist and will be turned into 
 		
+		/* we also need a selection mode that allows to hold multiple models, according to criteria: 
 		
-		
+		   all of them require to provide the max number of models to be loaded
+		   
+		   - set of variables sets,                   SomAppProperties._MODELSELECT_MULTI_ASSIGNATES
+		     requires to provide those sets 
+		     advantage: if a record contains missing values in some of the variables, 
+		                we can try to select the matching model 
+		   - distinctiveness of metric across models  SomAppProperties._MODELSELECT_MULTI_DISTINCTSTRUC
+		     requires to provide distinctiveness criteria (number of mismatches of intensions of models)
+		   - etc. 
+		*/
 		
 		/*         
 		 * basically we may provide 2 modes: explicit call = project mode, and waiting
@@ -492,7 +505,8 @@ class SomModuleInstanceA1 implements 	Runnable,
 		sfcFactory.setMessagePort(this) ;
 		
 		somApp = sfcFactory.createSomApplication( soappProperties );   
-		 
+		String msgProcessGuid = somApp.getMessageProcessGuid(); 
+		// a Guid that identifies the process as the master process for progress (and other) messages
 	}
 	
 	 
@@ -533,13 +547,25 @@ class SomModuleInstanceA1 implements 	Runnable,
 	public void onCalculation(double fractionPerformed) {
 		// in case of large tasks
 	}
-
-
-
+ 
 	@Override
 	public void onStatusMessage(SomFluidTask sfTask, int applicationId, int errcode, String msg) {
 	 
 		
+	}
+ 
+	@Override
+	public void onProgress( ProcessFeedBackContainerIntf processFeedBackContainer ) {
+		 
+		// processFeedBackContainer contains a guid about the master process, information about the originating object, a base message, and the progress state)
+		
+		double progress = processFeedBackContainer.getCompletionProgress();
+		String procId   = processFeedBackContainer.getMessageProcessID() ;
+		String loopingObj = processFeedBackContainer.getHostingObjectName();
+		
+		if (progress>50)processFeedBackContainer.setDisplayMode( ProcessFeedBackContainerIntf._DISPLAY_SMOOTH );
+		// we may delegate the task of displaying back to the progress display helper
+		processFeedBackContainer.pushDisplay( loopingObj );
 	}
 
 

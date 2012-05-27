@@ -25,6 +25,7 @@ import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.util.PowerSetSpringSource;
 import org.NooLab.somtransform.algo.externals.AlgorithmPluginsLoader;
+import org.NooLab.utilities.callback.ProcessFeedBackContainerIntf;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.files.DFutils;
@@ -1043,6 +1044,12 @@ class SomModuleInstanceM1 implements 	Runnable,
 
 	@Override
 	public void onStatusMessage(SomFluidTask sfTask, int applicationId, int errcode, String msg) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onProgress(ProcessFeedBackContainerIntf processFeedBackContainer) {
 		// TODO Auto-generated method stub
 		
 	}
