@@ -953,8 +953,21 @@ public class Variables implements Serializable, VariablesIntf{
 	/**
 	 * 
 	 * 
+	 * @param indexes list of index positions, referring to the table SomDataObject
+	 * @return
+	 * @throws Exception
+	 */
+	public ArrayList<Double> deriveUsageVector( ArrayList<Integer> indexes ) throws Exception{ 
+		return deriveUsageVector( new String[]{}, indexes, 1);
+	}
+	public ArrayList<Double> deriveUsageVector( String[] refVariableLabels, ArrayList<Integer> indexes ) throws Exception{ 
+		return deriveUsageVector( refVariableLabels, indexes, 0); 
+	}
+	/**
+	 * 
+	 * 
 	 * @param indexes index values
-	 * @param mode =0: refering to global list, =1: refering "somMapTable"
+	 * @param mode =0: referring to global list, =1: referring "somMapTable"
 	 * @return
 	 */
 	public ArrayList<Double> deriveUsageVector( String[] refVariableLabels, ArrayList<Integer> indexes, int mode ) throws Exception{ 
@@ -1030,12 +1043,12 @@ public class Variables implements Serializable, VariablesIntf{
 	}
 
 	/**
-	 * accepts ArrayLists of type Double, Integer, String
+	 * accepts ArrayLists of type Double, Integer, String </br> </br>
 	 * 
-	 * dependent on type, a transcription is provided:
-	 *  from double = full vector indicating activity by values >0.0  -->  list of indexes 
-	 *  from int    = just the reverse of that
-	 *  from String = list of variable labels -> list of indexes
+	 * dependent on type, a transcription is provided: </br></br>
+	 *  from double = full vector indicating activity by values &gt;0.0 ="usageIndicatonVector" as Array&lt;Double&gt;  </br> 
+	 *  from int    = just the reverse of that = list of indexes of used variables </br>
+	 *  from String = list of variable labels -&gt; list of indexes </br></br>
 	 *  
 	 *  
 	 * @param indications

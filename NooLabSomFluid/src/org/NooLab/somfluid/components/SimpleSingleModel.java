@@ -74,7 +74,7 @@ public class SimpleSingleModel implements SomHostIntf, Serializable{
 	
 	public void setInitialVariableSelection(ArrayList<String>  vs){
 		
-		ArrayList<Double> initialUsageIndicator = new ArrayList<Double>();
+		//ArrayList<Double> initialUsageIndicator = new ArrayList<Double>();
 		
 		if (somDataObj==null){
 			return;

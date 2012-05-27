@@ -189,7 +189,7 @@ public class SomTargetedModeling    extends
 											out.print(4,"Node <"+i+">, serial = "+mnode.getSerialID());
 			try{
 				
-
+				// requires NodesInformer
 				registerNodeinNodesInformer( mnode );
 				 
 				ArrayList<Variable> vari = somDataObject.getVariableItems();

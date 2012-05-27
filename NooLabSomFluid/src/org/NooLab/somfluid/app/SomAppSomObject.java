@@ -2,11 +2,18 @@ package org.NooLab.somfluid.app;
 
 import java.util.ArrayList;
 
+import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
+import org.NooLab.repulsive.particles.Particle;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.SomProcessIntf;
+import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
+import org.NooLab.somfluid.core.engines.det.ProfileVectorMatcher;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
+import org.NooLab.somfluid.data.Variable;
+import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
+import org.NooLab.utilities.logging.PrintLog;
 
 public class SomAppSomObject {
 
@@ -37,7 +44,7 @@ public class SomAppSomObject {
 	
 	// <nodes>
 	// SomAppNodes soappNodes;
-	VirtualLattice soappNodes;
+	VirtualLattice soappNodes=null;
 
 	// structures
 	LatticePropertiesIntf latticeProps;
@@ -47,6 +54,8 @@ public class SomAppSomObject {
 	private ArrayList<Double> usageVector; 
 	
 	
+	PrintLog out;
+	
 	// ========================================================================
 	public SomAppSomObject( SomAppClassifier soappC, int ix) {
 		 
@@ -55,6 +64,7 @@ public class SomAppSomObject {
 		soappNodes = new VirtualLattice( soappClassifier, latticeProps,0 ) ;
 								// soappClassifier as SomProcessIntf, 
 		index = ix;
+		out = soappClassifier.out ;
 	}
 	
 	// ========================================================================	
@@ -62,23 +72,77 @@ public class SomAppSomObject {
 	public void setUsageVector(ArrayList<Double> usagevector) {
 		 
 		// distribute around nodes ?
-		usageVector = new ArrayList<Double>(usagevector);
+		if (usagevector!=null){
+			usageVector = new ArrayList<Double>(usagevector);
+		}
 	}
 
-	public void createNodes() {
+	public void _createNodes() {
  		
+		ArrayList<String> varLabels = new ArrayList<String>();
+		
+		
+		if( soappNodes==null){
+			soappNodes = new VirtualLattice( soappClassifier, latticeProps,0 );
+		}
+		// if (soappNodes.)
+		
+		// soappNodes has to receive the definition of the profiles before defining the nodes
+		// soappNodes.spreadVariableSettings();
+		soappNodes.setAveragePhysicalDistance(10.0); // should be taken from loaded model (missing there!)
+		
 		for (int i=0;i<nodeCount;i++){
 			SomAppNode node = new SomAppNode(soappNodes,soappClassifier.somData, i);
 			
-			// soappNodes.getNodes().add( node );
-		}
+			// requires NodesInformer, not necessary for soapp ?
+			// registerNodeinNodesInformer( node );
+			
+			ArrayList<Variable> vari = soappClassifier.somData.getVariableItems();
+
+			// ProfileVectorIntf pv =
+			
+			node.getIntensionality().getProfileVector().setVariables( vari ) ;
+			node.getExtensionality().getStatistics().setVariables(vari);
+
+			
+		} // -> to requested node count
 		
 	}
 	
-	public IndexedDistances getWinnerNodes(ArrayList<Double> values) {
-		IndexedDistances winnerNodes = new IndexedDistances();
+	// ... other "get by" ...
+	
+	
+	
+	
+	// ----------------------------------------------------
 	
 	 
+
+	public IndexedDistances getWinnerNodes(ArrayList<Double> profilevalues) {
+		IndexedDistances winnerNodes = new IndexedDistances();
+		IndexDistance ixd ;
+		double distance;
+		ProfileVectorMatcher bmuSearch;
+		ArrayList<Integer> boundingIndexList = new ArrayList<Integer>();
+		ArrayList<MetaNode> nodeCollection = new ArrayList<MetaNode>(); 
+
+		// get the similarity for all nodes and put it to the ixds structure
+
+		// ProfileVectorMatcher
+		// ... = somLattice.getNode(srcNodeIndex).getIntensionality().getProfileVector().getValues();
+
+		bmuSearch = new ProfileVectorMatcher( 0,out);
+		bmuSearch.setNodeCollection( soappNodes.getNodes() ).setParameters(profilevalues, 10, boundingIndexList);
+		
+		bmuSearch.createListOfMatchingUnits(1);
+		
+		winnerNodes.addAll( bmuSearch.getList(10) );
+		
+		// sorting such that the first item is the one with the smallest distance
+		winnerNodes.sort(-1) ;
+		winnerNodes.sort(1) ;
+		
+		
 		
 		
 		return winnerNodes;
@@ -95,6 +159,8 @@ public class SomAppSomObject {
 	
 	
 	// ----------------------------------------------------
+
+	
 
 	public int getIndex() {
 		return index;
@@ -216,6 +282,10 @@ public class SomAppSomObject {
 	}
 
 	public ArrayList<Double> getUsageVector() {
+		
+		if (usageVector==null){
+			usageVector = new  ArrayList<Double>(); // avoid null, change to empty
+		}
 		return usageVector;
 	}
 	

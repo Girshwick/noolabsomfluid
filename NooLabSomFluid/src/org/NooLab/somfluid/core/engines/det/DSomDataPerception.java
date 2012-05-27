@@ -1053,7 +1053,7 @@ if (extSizeInNeighbors.size()>0){
 			
 			bmuSearch.createListOfMatchingUnits(1);
 			
-			sortedNeighbors = bmuSearch.getList( -1 ) ;
+			sortedNeighbors = bmuSearch.getList( -1 ) ; // correctly sorted ?
 			
 			if (sortedNeighbors.size()==0){
 				return;

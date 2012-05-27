@@ -98,7 +98,7 @@ public class SomFluidProperties
 
 	private String systemRootDir;
 	
-	private int multiProcessingLevel = 0;
+	
 
 
 	transient private String currentSettingsXml="";

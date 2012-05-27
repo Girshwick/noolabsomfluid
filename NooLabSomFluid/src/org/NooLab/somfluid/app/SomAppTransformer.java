@@ -59,8 +59,12 @@ public class SomAppTransformer
 		soappProperties = properties;
 		soappTransforms = new SomAppTransforms( this ) ; // 
 		
-		somData = new SomDataObject(soappProperties); // we will fill the data later
-
+		if (sdo==null){
+			somData = new SomDataObject(soappProperties); // we will fill the data later
+		}else{
+			somData = sdo; 
+		}
+		
 		// this structure we will have to reconstruct from the file
 		transformationModel = new TransformationModel( (SomTransformerIntf)this, somData);
 		

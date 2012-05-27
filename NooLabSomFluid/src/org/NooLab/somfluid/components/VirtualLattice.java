@@ -1010,6 +1010,14 @@ public class VirtualLattice implements LatticeIntf{
 	}
 
 
+	public IntensionalitySurfaceIntf getIntensionalitySurface() {
+		return intensionalitySurface;
+	}
+
+	public void setExtensionalityDynamics(ExtensionalityDynamicsIntf extensionalityDynamics) {
+		this.extensionalityDynamics = extensionalityDynamics;
+	}
+
 	public int getSurroundError() {
 		return surroundError;
 	}
@@ -1027,7 +1035,7 @@ public class VirtualLattice implements LatticeIntf{
 
 	public int getMultiProcessingLevel() {		 
 		return somProcessParent.getSfProperties().getMultiProcessingLevel() ;
-	}
+	}// e.g. SomAppClassifier, moz, etc. ==SomProcessIntf 
 
 	private MetaNode getBySerial(long nodeSerialID){
 		MetaNode node=null;
@@ -1310,7 +1318,7 @@ public class VirtualLattice implements LatticeIntf{
 		return intensionalitySurface;
 		
 	}
-
+	
 	public IntensionalitySurfaceIntf distributeIntensionalitySurface( long serialID ) {
 		
 		IntensionalitySurfaceIntf intensionSurf = null ;

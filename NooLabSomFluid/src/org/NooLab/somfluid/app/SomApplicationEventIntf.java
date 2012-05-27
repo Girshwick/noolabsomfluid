@@ -3,6 +3,8 @@ package org.NooLab.somfluid.app;
 import org.NooLab.somfluid.SomFluidMonoResultsIntf;
 // import org.NooLab.somfluid.SomFluidStateDescriptionIntf;
 import org.NooLab.somfluid.SomFluidTask;
+import org.NooLab.utilities.callback.ProcessFeedBackContainerIntf;
+import org.NooLab.utilities.callback.ProcessFeedBackIntf;
 
 
 
@@ -23,5 +25,7 @@ public interface SomApplicationEventIntf {
 	void onProcessStarted( SomFluidTask sfTask, int applicationId, String pid);
 
 	public void onStatusMessage(SomFluidTask sfTask, int applicationId, int errcode, String msg);
+
+	public void onProgress(ProcessFeedBackContainerIntf processFeedBackContainer);
 	
 }

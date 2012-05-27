@@ -82,6 +82,10 @@ public class SomAppProperties
 	ArrayList<String> activeModels = new ArrayList<String> ();
 	
 	ArrayList<String> supervisionFilenameFilters = new ArrayList<String> ();
+
+
+	String indexVariableLabel = "" ;
+	int indexVariableLabelIndex = -1 ;
 	
 	 
 	// ========================================================================
@@ -343,6 +347,36 @@ public class SomAppProperties
 	public void setDataUptakeControl(int ctrlValue) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	public void setIndexVariable(String vLabelStr) {
+		indexVariableLabel = vLabelStr ;
+		
+	}
+
+	public void setIndexVariableColumnIndex(int colIndex) {
+		indexVariableLabelIndex = colIndex ;
+		
+	}
+
+	public String getIndexVariableLabel() {
+		return indexVariableLabel;
+	}
+
+	public void setIndexVariableLabel(String indexVariableLabel) {
+		this.indexVariableLabel = indexVariableLabel;
+	}
+
+	public int getIndexVariableLabelIndex() {
+		return indexVariableLabelIndex;
+	}
+
+	public void setIndexVariableLabelIndex(int indexVariableLabelIndex) {
+		this.indexVariableLabelIndex = indexVariableLabelIndex;
+	}
+
+	public void setPreferredModelVersion(String preferredModelVersion) {
+		this.preferredModelVersion = preferredModelVersion;
 	}
 
 	 

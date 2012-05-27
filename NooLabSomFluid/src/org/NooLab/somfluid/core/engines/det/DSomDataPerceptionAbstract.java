@@ -11,6 +11,7 @@ import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.properties.ModelingSettings;
+import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
  
 import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 import org.NooLab.utilities.logging.PrintLog;
@@ -26,7 +27,7 @@ public class DSomDataPerceptionAbstract {
 	protected SomDataObject  somData;
 	protected VirtualLattice somLattice;
 	
-	protected SomFluidProperties sfProperties;
+	protected SomFluidAppGeneralPropertiesIntf sfProperties;
 	protected ModelingSettings modelingSettings ;
 	
 	ArrayList<MetaNodeIntf> nodeCollection = new ArrayList<MetaNodeIntf>(); 

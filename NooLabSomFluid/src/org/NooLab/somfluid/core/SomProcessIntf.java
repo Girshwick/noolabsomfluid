@@ -6,6 +6,7 @@ import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
+import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
 
 public interface SomProcessIntf {
 
@@ -14,7 +15,7 @@ public interface SomProcessIntf {
 
 	public String getNeighborhoodNodes(int index, int surroundN);
 
-	public SomFluidProperties getSfProperties();
+	public SomFluidAppGeneralPropertiesIntf getSfProperties();
 
 	public LatticePropertiesIntf getLatticeProperties();
 	
