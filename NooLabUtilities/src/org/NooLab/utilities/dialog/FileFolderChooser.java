@@ -13,6 +13,7 @@ import java.util.Arrays;
 
 import javax.swing.*; 
  
+import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.strings.StringsUtil;
 
 
@@ -37,7 +38,7 @@ public class FileFolderChooser {
 
 	String basePath  = "" ;
 	String selectedFolder = "" ;
-	
+	String fullPathFilename = "" ;
 	
 	private boolean adjustedPath = false;
 	
@@ -121,7 +122,9 @@ public class FileFolderChooser {
 		target= _FFC_FOLDER ;
 		
 		if (basedir.length()>0){
+			basedir = StringsUtil.replaceall(basedir, "\\\\", "/");
 			basedir = StringsUtil.replaceall(basedir, "\\", "/");
+			basedir = StringsUtil.replaceall(basedir, "//", "/");
 		}
 		basePath = basedir;
 		
@@ -142,7 +145,8 @@ public class FileFolderChooser {
         
          
         if (basedir.length()>0){
-			File baseFolder = new File(basedir);
+        	String _bd = DFutils.createPath(basedir, "."); // if it does not exist, it will open the user's home dir
+			File baseFolder = new File(_bd);
 			folderselection.setCurrentDirectory(baseFolder);
 		}
         
@@ -165,6 +169,8 @@ public class FileFolderChooser {
             File inputVerzFile = folderselection.getSelectedFile();
             selectedFolder = inputVerzFile.getPath();
             selectedFolder = StringsUtil.replaceall(selectedFolder, "\\", "/");
+            selectedFolder = StringsUtil.replaceall(selectedFolder, "\\\\", "/");
+            selectedFolder = StringsUtil.replaceall(selectedFolder, "//", "/");
             System.out.println("selected path : " + selectedFolder);
         }
         if (result == JFileChooser.CANCEL_OPTION) {
@@ -252,8 +258,9 @@ public class FileFolderChooser {
 		FileChooser fc = new FileChooser(); 
 		 
 		if (basedir.length()>0){
-			File baseFolder = new File(basedir);
+			File baseFolder = new File(basedir+".");
 			fc.setSelectedFile(baseFolder);
+			
 		}
 		
 		// in response to a button click: 
@@ -269,9 +276,14 @@ public class FileFolderChooser {
 		
 		if (returnVal == JFileChooser.APPROVE_OPTION) { 
 		  File file = fc.getSelectedFile(); 
-		  // see if it's an image 
+		
 		  // (better to write a function and check for all supported extensions) 
 		  selectedFilename = file.getName();
+		  fullPathFilename = file.getAbsolutePath() ;
+		  
+		  fullPathFilename = strgutil.replaceAll(fullPathFilename, "\\\\", "/");
+		  fullPathFilename = strgutil.replaceAll(fullPathFilename, "\\", "/");
+		  fullPathFilename = strgutil.replaceAll(fullPathFilename, "//", "/");
 		  
 		  if (filenameIsSupported( selectedFilename)){
 			  
@@ -306,6 +318,10 @@ public class FileFolderChooser {
 	public void adjustToBaseFolder(boolean flag) {
 
 		adjustedPath = flag;
+	}
+
+	public String getFullPathFilename() {
+		return fullPathFilename;
 	}
 	
 	/*

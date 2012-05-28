@@ -4,6 +4,9 @@ package org.NooLab.utilities.net;
 
 import java.util.UUID;
 
+import org.NooLab.utilities.net.connex.NicAddresses;
+import org.NooLab.utilities.strings.StringsUtil;
+
 
 
 
@@ -59,7 +62,26 @@ public class GUID {
 		return uuidStr;
 	}
 
-	
+	/**
+	 * 
+	 * returns a random Guid, which is extended by the Mac - address of the first found NIC
+	 * 
+	 * @return
+	 */
+	static public String extendedGuid(){
+		
+		String str = randomvalue();
+		
+		String macnicStr = NicAddresses.getMac();
+		if (macnicStr.length()>0){
+			macnicStr = StringsUtil.replaceall(macnicStr, ":", "");
+			macnicStr = StringsUtil.replaceall(macnicStr, "-", "");
+			macnicStr = "-"+macnicStr;
+		}
+		str = str+macnicStr ;
+		
+		return str;
+	}
 }
 
 

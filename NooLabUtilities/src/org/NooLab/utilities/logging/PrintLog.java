@@ -69,6 +69,8 @@ public class PrintLog {
 	// helper objects .................
 
 	DFutils filutil = new DFutils();
+
+	private String collectedPrintOut = "";
 	
 	
 
@@ -96,7 +98,11 @@ public class PrintLog {
 	public void delay(int millis){
 		try {
 			Thread.currentThread().yield();
-			Thread.currentThread().sleep(millis);
+			if (millis>0){
+				Thread.currentThread().sleep(millis);
+			}else{
+				Thread.currentThread().sleep(0, 1);
+			}
 		} catch (Exception e) {}
 	}
 	
@@ -582,5 +588,22 @@ if ((msg==null) ){
 
 	public void setPrefix(String prefix) {
 		this.prefix = prefix;
+	}
+ 
+	public void resetPrintOutCollection() {
+		
+		collectedPrintOut = "" ;
+	}
+ 
+	public void collectPrintOut(String cOutStr) {
+
+		collectedPrintOut = collectedPrintOut + cOutStr + "\n"; 
+	}
+
+
+
+	public String getPrintOutCollection() {
+		
+		return collectedPrintOut;
 	}
 }

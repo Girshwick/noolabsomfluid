@@ -20,6 +20,7 @@ import java.util.*;
  
 
 import org.NooLab.utilities.datetime.DateTimeValue;
+import org.NooLab.utilities.net.GUID;
 import org.NooLab.utilities.strings.*;
 
 
@@ -673,8 +674,6 @@ public class DFutils extends Thread{
 		    }
 		};
 		files = dir.listFiles(fileFilter);
-		
-		
 	}
 	
 	
@@ -682,7 +681,9 @@ public class DFutils extends Thread{
 		int n=0;
 
 		File[] files = dirutil.getSubDirectories( namefilter, basedir);
-		n = files.length ;
+		if (files!=null){
+			n = files.length ;
+		}
 		
 		return n;
 	}
@@ -843,27 +844,25 @@ public class DFutils extends Thread{
    * @throws IOException
    */
 	static protected File copyToTemp(InputStream is) throws IOException {
-		File t ;
-		FileOutputStream os ;
-		int numBytes ;
-		
-		
+		File t;
+		FileOutputStream os;
+		int numBytes;
+
 		t = File.createTempFile("idok_temp", null);
-      os = new FileOutputStream(t);
-      
-      byte[] buf = new byte[4096];
-      
-      while (true) {
-          numBytes = is.read(buf);
-          if (numBytes <= 0)
-              break;
-          os.write(buf, 0, numBytes);
-      }
-      os.close();
-      return t;
-  }
+		os = new FileOutputStream(t);
+
+		byte[] buf = new byte[4096];
+
+		while (true) {
+			numBytes = is.read(buf);
+			if (numBytes <= 0) break;
+			os.write(buf, 0, numBytes);
+		}
+		os.close();
+		return t;
+	}
 	
-	
+	/** returns the name of a file or a directory without any of its parents' names */
 	public String getSimpleName( String filename){
 		
 		String simpleName = filename ;
@@ -1160,7 +1159,7 @@ public class DFutils extends Thread{
 		}
 	}
 
-	public  void copyFile(String source, String dest) {
+	public boolean copyFile(String source, String dest) {
 		File srcfil, destfil ;
 		
 		srcfil  = new File(source);
@@ -1170,17 +1169,22 @@ public class DFutils extends Thread{
 			this.deleteFile(dest);
 		}
 		
-		copyFile( srcfil, destfil ) ;
+		boolean rB = copyFile( srcfil, destfil ) ;
+		
+		return rB;
 	}
 
 	
-	public void copyFile(File sourceFile, File destFile) {
+	public boolean copyFile(File sourceFile, File destFile) {
+		boolean rB = false;
+		
 		FileInputStream fis;
 		FileOutputStream fos;
 		
 		FileChannel source = null;
 		FileChannel destination = null;
 
+		String destFilename = "";
 		
 		try {
 			if (!destFile.exists()) {
@@ -1200,6 +1204,8 @@ public class DFutils extends Thread{
 
 				destination.transferFrom(source, 0, source.size());
 				
+				destFilename = destFile.getAbsolutePath();
+				
 			} finally {
 				if (source != null) {
 					source.close();
@@ -1209,10 +1215,14 @@ public class DFutils extends Thread{
 				}
 			}
 
+			rB = fileexists(destFilename ); 
+				
 		} catch (IOException e) {
 			System.out.println("\nError while copying file : \n"+sourceFile.getAbsolutePath()+"  \n  to \n"+destFile.getAbsolutePath()+"  \n\n"); 
 			e.printStackTrace();
+			rB = false;
 		}
+		return rB;
 	}
 
 	public void copyFileN( String filename, String bakfilename){
@@ -1794,6 +1804,9 @@ public class DFutils extends Thread{
 	 */ 
 	public boolean fileexists(String filename){
 		boolean rB = false;
+		
+		if (filename==null)filename="";
+		
 		File file = new File(filename);
 	
 		if (file.isDirectory()) {
@@ -2607,7 +2620,129 @@ public class DFutils extends Thread{
 		return downloadedFilename;
 	}
 
+	/**
+	 * 
+	 * 
+	 * 
+	 * @param basePath
+	 * @param subdirPrefix
+	 * @param startEnumValue
+	 * @param maxCount
+	 * @param removeMode
+	 * @return
+	 */
+	public String createEnumeratedSubDir( String basePath, String subdirPrefix, int startEnumValue , int maxCount, int removeMode){
+		String createdFolder = "";
+		
+		String pkgsubdir,packageName;
+		int dc; 
+		boolean dirOk;
+		
+		try{
+			
 
+			packageName = subdirPrefix; // this.getSimpleName( basePath );
+			
+			dc = enumerateSubDir(basePath,"") ;
+			if (dc<startEnumValue)dc=startEnumValue;
+			
+			if (dc > maxCount){
+				File[] folders = dirutil.getSubDirectories( "", basePath) ;
+				
+				for (int f=0;f<folders.length;f++){
+					if (removeMode == -3){ // by date
+						
+					}
+					if (removeMode == -2){ // by sorting
+						
+					}
+				}
+			}
+			
+			dirOk=false;
+
+			while (dirOk == false) {
+				
+				if (packageName.trim().length() > 0) {
+					pkgsubdir = packageName;
+				} else {
+
+					String fname = createpath(basePath, "" + dc);
+					while (direxists(fname)) {
+						dc++;
+						fname = createpath(basePath, "" + dc);
+					} // -> looping until we found an enum that does not exist
+					pkgsubdir = "" + dc;
+
+				} 
+
+				createdFolder = createpath(basePath, pkgsubdir+"/"); // creating it..
+				// here we store all , ending with slash enforces physical creation of dir
+				// we do NOT need a temp dir like this ... : DFutils.createTempDir( SomDataObject._TEMPDIR_PREFIX);
+				
+				// 
+				
+				// 
+				if (direxists(createdFolder) == false) { // did it fail for other reasons? e.g. is there a file of that name
+					dirOk = false;
+					dc++;
+					packageName= packageName+dc;
+					 
+				} else {
+					int fsz = dirutil.getFileList("", createdFolder).size() ;
+					if (fsz==0){
+						dirOk = true;
+					}else{
+						dirOk = false;
+						dc++;
+						packageName= packageName+dc;
+					}
+				}
+			} // ->
+				
+		}catch(Exception e){
+			createdFolder = createpath(basePath, GUID.randomvalue());
+		}
+		
+		
+		return createdFolder;
+	}
+
+	/*
+	 
+		int dc = enumerateSubDir(basePath,"") ;
+		boolean dirOk=false;
+
+		while (dirOk == false) {
+			
+			if (packageName.trim().length() > 0) {
+				pkgsubdir = packageName;
+			} else {
+
+				String fname = DFutils.createPath(basePath, "" + dc);
+				while (direxists(fname)) {
+					dc++;
+					fname = DFutils.createPath(basePath, "" + dc);
+				}
+				pkgsubdir = "" + dc;
+
+			}
+
+			createdFolder = DFutils.createPath(basePath, pkgsubdir + "/");
+			// here we store all , ending with slash enforces physical creation of dir
+			// we do NOT need a temp dir like this ... : DFutils.createTempDir( SomDataObject._TEMPDIR_PREFIX);
+
+			if (direxists(createdFolder) == false) {
+				dirOk = false;
+				dc++;
+				packageName= packageName+dc;
+				 
+			} else {
+				dirOk = true;
+			}
+		}
+		
+	 */
 	
 	
 	
