@@ -714,8 +714,16 @@ if (i>=9){
 		
 	}
 
-	public void createRowOrientedTable(  ){
+	/**
+	 * clears any previous rpw perspective and creates a fresh one
+	 */
+	public void createRowOrientedTable(){
+		createRowOrientedTable(0);
+	}
+	
+	public void createRowOrientedTable( int alignedByVariables ){
 		
+		boolean useCol;
 		DataTableCol col ;
 		ArrayList<Double> values;
 		ArrayList<Double> rowdata;
@@ -723,7 +731,10 @@ if (i>=9){
 		double dv;
 		 
 		try{
-			dataTableRows.clear() ;
+			if (dataTableRows==null){
+				dataTableRows = new ArrayList<ArrayList<Double>>(); 
+			}
+			dataTableRows.clear() ;  
 			// ArrayList<DataTableCol> dataTable = new ArrayList<DataTableCol>() ; dataTableRows
 			// ArrayList< ArrayList<Double>>()
 if (getTablename().contains("normalized")){
@@ -735,23 +746,36 @@ if (getTablename().contains("normalized")){
 			for (int r=0;r<rc;r++){
 				ir=r;
 				rowdata = new ArrayList<Double>(); 
-if (ir==670){
-	dv=0;
-}
+
+
 				for (int c=0;c<cc;c++){
 					ic=c;
-					try{
-						col = dataTable.get(c); 
-						values = col.getCellValues();
-						if ((values!=null) && (values.size()>=r-1)){
-							dv = values.get(r) ;
-						}else{
+					
+					useCol=true;
+					if (alignedByVariables>=1){
+						
+						
+					}
+
+					if (useCol) {
+
+						try {
+
+							col = dataTable.get(c);
+
+							values = col.getCellValues();
+							if ((values != null) && (values.size() >= r - 1)) {
+								dv = values.get(r);
+							} else {
+								dv = -1.0;
+							}
+
+						} catch (Exception e) {
 							dv = -1.0;
 						}
-					}catch(Exception e){
-						dv=-1.0;
-					}
-					rowdata.add(dv);
+						rowdata.add(dv);
+
+					}// useCol ?
 				}
 
 				dataTableRows.add(rowdata) ;

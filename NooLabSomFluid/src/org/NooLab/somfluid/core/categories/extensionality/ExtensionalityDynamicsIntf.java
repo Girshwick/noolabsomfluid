@@ -58,4 +58,7 @@ public interface ExtensionalityDynamicsIntf {
 
 	public int getPpvRank();
 
+	public void setSupport(int n);
+
+	public int getSupport();
 }

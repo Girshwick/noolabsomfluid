@@ -112,6 +112,8 @@ abstract public class AlgoTransformationAbstract implements AlgoTransformationIn
 	public int addValueTableColumn( ArrayList<?> inValueCol ) {
 		// ArrayList<ArrayList<?>> inValues
 		valueTable.add((ArrayList<Double>) inValueCol) ;
+		//  valueTable out of order ?
+		// -> also to inValues ...
 		
 		return valueTable.size();
 	}

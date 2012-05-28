@@ -934,7 +934,7 @@ public class VirtualLattice implements LatticeIntf{
 		if ((index>=0) && (index<nodes.size())){
 			node = nodes.get(index) ;
 		}
-		nodes.get(index) ;
+		// nodes.get(index) ;
 		return node;
 	}
 	
@@ -983,8 +983,8 @@ public class VirtualLattice implements LatticeIntf{
 		
 	}
 	 
-	public void setNode(){
-		
+	public void setNode(int index , MetaNode nodeObj){
+		nodes.set(index, nodeObj);
 	}
 
 

@@ -393,6 +393,11 @@ if (varLabel.contains("Rechtsform")){
 
 
 
+	public void setPluginSettings(SomFluidPluginSettings pluginSettings) {
+		this.pluginSettings = pluginSettings;
+	}
+
+
 	public StackedTransformation getItem(int index) {
 		StackedTransformation st;
 		
@@ -496,7 +501,7 @@ if (varLabel.contains("Rechtsform")){
 	/**
 	 * 
 	 * update the originating stack 
-	 * so update should ensure that, in a recursive manner, until a nonderived variable can be updated from normalized data
+	 * so update should ensure that, in a recursive manner, until a non-derived variable can be updated from normalized data
 	 * 
 	 * 
 	 */
@@ -551,8 +556,12 @@ if (sti.getAlgorithmName().toLowerCase().contains("arith")){
 					// use this only for index 0
 					if ((sti.getInData()==null) || (sti.getInData().size()==0) || (sti.multiVarInput==false)){
 						if (sti.getInData()==null){ sti.createInDataContainer();} 
+						
 						sti.getInData().clear(); // possibility for caching here....
-						sti.getInData().add( previousOutValues  ) ;  // in case of expressions, we may have several input columns
+						 
+						// in case of expressions, we may have several input columns
+						// the first variable refers most likely to the first param, all others to the provided
+						sti.getInData().add( previousOutValues  ) ;  
 					}else{
 						// in case of multi variable input, the algorithm knows itself about the other sources,
 						// only the first column (==itself) will needs to be dynamic here!

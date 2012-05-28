@@ -49,7 +49,7 @@ class ProfileVector implements Serializable, ProfileVectorIntf {
 	ArrayList<String>   intSomNodeProperties = new ArrayList<String>(); 
 	ArrayList<Double>   intSomNodePropValues = new ArrayList<Double>();
 	
-	// this is produced by concat of "values" + "intSomNodePropValues", it is visible only for dedicated modes
+	// this is produced by concatenation of "values" + "intSomNodePropValues", it is visible only for dedicated modes
 	ArrayList<Double>   compoundValues       = new ArrayList<Double>();
 	
 	// statistical description of the WeightVector for faster access
@@ -189,7 +189,11 @@ class ProfileVector implements Serializable, ProfileVectorIntf {
 
 
 	public void setValues(ArrayList<Double> invalues) {
-		this.values = invalues;
+		this.values = new ArrayList<Double>();
+		
+		for (int i=0;i<invalues.size();i++){
+			values.add( invalues.get(i));
+		}
 		
 		for (int i=0;i<values.size();i++){
 			

@@ -5,6 +5,15 @@ import java.util.ArrayList;
 import org.NooLab.somtransform.algo.intf.AlgoTransformationAbstract;
 
 
+/**
+ * 
+ * 
+ * TODO: we need a parameter that indicates a conditional normalization: 
+ *       if the value distribution is binary or ternary (2 or 3 different values) AND
+ *       all values are within [>0 .. <1] then we do NOT transform it
+ *       !!! max value should be <=0.9 !!! and min value>=0.1 in order to activate this mechanism 
+ * 
+ */
 public class LinearNormalization extends AlgoTransformationAbstract {
 
 	private static final long serialVersionUID = -668560046926702153L;

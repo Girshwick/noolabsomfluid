@@ -170,7 +170,7 @@ public class SimilarityCalculator{
 		// normalizing the distance per position !!!! 
 		// that's important to compare the variance of distance values across models where the feature vector is of different length
 		// emphasizing strong contrasts by 18% (1/6)
-		df = d / z + 0.2 * (d0 / z);
+		df = d / (double)z + 0.2 * (d0 / (double)z);
 		
 		differencedValues1.clear();
 		differencedValues2.clear();

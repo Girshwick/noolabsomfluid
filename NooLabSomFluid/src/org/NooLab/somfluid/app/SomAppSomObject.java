@@ -134,19 +134,21 @@ public class SomAppSomObject {
 		bmuSearch = new ProfileVectorMatcher( 0,out);
 		bmuSearch.setNodeCollection( soappNodes.getNodes() ).setParameters(profilevalues, 10, boundingIndexList);
 		
+		bmuSearch.linkNodeCollection( soappNodes.getNodes());
+		
 		bmuSearch.createListOfMatchingUnits(1);
 		
 		winnerNodes.addAll( bmuSearch.getList(10) );
 		
-		// sorting such that the first item is the one with the smallest distance
-		winnerNodes.sort(-1) ;
-		winnerNodes.sort(1) ;
-		
-		
-		
-		
+		// the list has already been sorted by bmuSearch such that the first item is the one with the smallest distance
+		 
+		 
 		return winnerNodes;
-	}
+	}	
+		
+		
+		
+	
 
 	public MetaNode getNodeByIndex( int index ){
 		

@@ -6,8 +6,10 @@ import java.util.Vector;
 
 import org.NooLab.somfluid.SomApplicationIntf;
 import org.NooLab.somfluid.SomFluidFactory;
+import org.NooLab.somfluid.SomFluidPluginSettings;
 import org.NooLab.somfluid.SomFluidStartup;
 import org.NooLab.somfluid.components.SomDataObject;
+import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.DataTableCol;
@@ -544,17 +546,38 @@ public class SomAppModelLoader {
 
 	
 	
-	
+	/**
+	 * 
+	 * this loads the som.xml into a VirtualLattice structure, which is essentially a collection of MetaNodes; </br></br>
+	 * such, the standard way = same methods as in som learning are used for classifying records </br>
+	 * 
+	 * it also reduces the table for normalized data and builds the appropriate usage vector
+	 * 
+	 * 
+	 * @param soappObj
+	 * @param mcItem
+	 * @param somObjIndex
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	private int loadSomObject( SomAppSomObject soappObj, ModelCatalogItem mcItem, int somObjIndex) {
+
 		int result = -1;
-		Variables variables;
-		ArrayList<String> usedVariables = new ArrayList<String>(); 
-		ArrayList<Integer> usedVariablesIndexes ;
-		ArrayList<Double> usageIndicationVector = new ArrayList<Double> ();
-		
 		String str = "",rawXmlStr , modelFolder="",somxmlFilename="" ;
 		Object subtag;
+		ArrayList<Double> loadedValues ;
+
+		Variables variables;
+		MetaNode mnode;
+
+		ArrayList<SomAppNode> localNodeCollection = new ArrayList<SomAppNode>();
+		ArrayList<String>  loadedVariables, syntheticVarMetric = new ArrayList<String>();
+		ArrayList<String>  usedVariables = new ArrayList<String>(); 
+		ArrayList<Integer> usedVariablesIndexes ;
+		ArrayList<Double>  profileValues,usageIndicationVector = new ArrayList<Double> ();
+		
+
+		
 		
 		variables = somData.getVariables() ;
 		
@@ -597,6 +620,24 @@ public class SomAppModelLoader {
 																"/project/context/somtype", "typeid"); 	
 				   soappObj.somTypeId = xMsg.getInt(str, 0) ;
 			
+			str =  xMsg.getSpecifiedConditionalInfo( rawXmlStr, "//somobjects/som", "index", ""+somObjIndex, 
+																"/project/risk/ecr", "value");
+				   double v = soappProperties.getRiskAttitudeByECR();
+			       if (v<0){
+			    	   v = 0.25 ;
+			       }
+				   v = xMsg.getNum(str, v );
+				   soappProperties.setRiskLevelByECR(v);
+
+			str =  xMsg.getSpecifiedConditionalInfo( rawXmlStr, "//somobjects/som", "index", ""+somObjIndex, 
+															    "/project/risk/requiredsupport", "value"); 	
+				   int n = soappProperties.getRiskConfidenceByClusterSupport();
+				   if (n<0){
+					   n = 0;
+				   }
+				   n = xMsg.getInt(str, n); // 
+				   soappProperties.setRiskLevelByECR(v);
+
 			// <content> ... filter, noise etc. is missing
 			
 			// get all nodes as object
@@ -622,25 +663,24 @@ public class SomAppModelLoader {
 	 		
 			soappObj.nodeCount = xmlNodeObjects.size();
 			
-		 	// soappObj.createNodes();
 			
 		 									out.print(2, "going to load som classification model, <"+soappObj.nodeCount+"> nodes expected...") ;
             soappObj.soappNodes.clear() ;
-            
-            								ProcessFeedBackContainer processFeedBackContainer = new ProcessFeedBackContainer( xmlNodeObjects.size(), somApplication);
+            soappObj.soappNodes.setSomData(somData) ;
+            								ProcessFeedBackContainer processFeedBackContainer = new ProcessFeedBackContainer( 0,71, xmlNodeObjects.size(), somApplication);
             								processFeedBackContainer.setHostingObject( this.getClass().getSimpleName() );
-            								
-            								
+            
             // we have to transfer the data from nodeObjects to MetaNodeIntf in soappObj.soappNodes
             // soappNodes is an instance of VirtualLattice!!
-            ArrayList<Variable> vari = somData.getVariableItems();
-            
+            								
             // as provided and/or available
             int vn = somData.getNormalizedDataTable().getColumnHeaders().size() ;
             
             usageIndicationVector = ArrUtilities.createCollection(vn, 0.0) ;
-            
-          
+             
+            // note that we need 2 loops, because we reduce the table size AND the set of the variables, we also have to care about requested index variables
+            // subsequently the variable collection will not contain not-needed stuff
+            // first creating nodes and reading the data into helper structure, then establishing node profile data
 			for (int i=0;i<xmlNodeObjects.size();i++){
 											// provide a process feedback to the available callback
 											processFeedBackContainer.setCurrentProgressValue(i) ;
@@ -648,7 +688,7 @@ public class SomAppModelLoader {
 				// this derives from the <MetaNodeIntf>
 				// MetaNode node = new MetaNode(soappObj.soappNodes, somData );
 				
-				SomAppNode node = new SomAppNode(soappObj.soappNodes, somData );
+				SomAppNode node = new SomAppNode(soappObj.soappNodes, somData ); // 161c9d1
 				
 				Object obj = xmlNodeObjects.get(i) ;
 				xMsg.clearBasicConditionLocation() ;
@@ -663,6 +703,10 @@ public class SomAppModelLoader {
 					   node.setPpv( xMsg.getNum(str, -1.0) );
 				str = xMsg.getSpecifiedInfo(rawXmlStr, "description/ppvrank", "value");
 					  node.setPpvRank( xMsg.getInt(str, 0) );
+				
+				str = xMsg.getSpecifiedInfo(rawXmlStr, "description/npv", "value");
+				   	  node.setNpv( xMsg.getNum(str, -1.0) );
+
 				str = xMsg.getSpecifiedInfo(rawXmlStr, "description/recordcount", "value");
 					  node.setRecordcount( xMsg.getInt(str, 0) );
 				
@@ -671,33 +715,135 @@ public class SomAppModelLoader {
 				
 				str = xMsg.getSpecifiedInfo(rawXmlStr, "profile/values", "list");
 					  node.setModelProfile( xMsg.getListFromXmlStr(str,Double.class)) ;
+					  
 				str = xMsg.getSpecifiedInfo(rawXmlStr, "profile/variables", "list");
 					  node.setAssignates( xMsg.getListFromXmlStr(str,String.class)) ;
+					  
 				str = xMsg.getSpecifiedInfo(rawXmlStr, "profile/variances", "list"); 
 					  node.setModelProfileVariances( xMsg.getListFromXmlStr(str,Double.class)) ; 
 				
 				
-				// requires NodesInformer, not necessary for soapp ?
-				// registerNodeinNodesInformer( node );
-				if (i==0){
-					usedVariables = node.getAssignates();
-					usedVariablesIndexes = (ArrayList<Integer>) variables.transcribeUseIndications(usedVariables);
-					usageIndicationVector = (ArrayList<Double>) variables.transcribeUseIndications(usedVariablesIndexes) ;
-					
-					soappObj.soappNodes.getIntensionalitySurface().setUsageIndicationVector(usageIndicationVector) ;
-					soappObj.soappNodes.getSimilarityConcepts().setUsageIndicationVector(usageIndicationVector) ;
-					
-					soappObj.setUsageVector( usageIndicationVector );
-				}
+				ArrUtilities.resetCollection( node.getProfileVector().getValues(), 0.0);
 				
-				node.getIntensionality().getProfileVector().setVariables( vari ) ;
-				node.getExtensionality().getStatistics().setVariables(vari);
-
-				soappObj.soappNodes.addNode( node ) ;
+				// establishing two parallel lists of different flavors of the node  
+				soappObj.soappNodes.addNode( node ) ; // MetaNode , does not know about assignates
+				localNodeCollection.add(node) ;       // SomAppNode, flavor used as an intermediate structure
 			} // i-> all nodeObjects
 											processFeedBackContainer.setCurrentProgressValue(xmlNodeObjects.size()) ;
+			
+			
+			result=1;
+
+			
+			// the synthesis consists from the optionally requested id variables ... TODO: we have to check whether they are present in the data
+		 	
+			if (soappProperties.indexVariableLabels.size()>0){
+				syntheticVarMetric = arrutil.collectionGetConfirmedContainments( soappProperties.indexVariableLabels, 
+																				 somData.getNormalizedDataTable().getColumnHeaders());	
+			}
+			
+			// ... and from the imported variables
+			syntheticVarMetric.addAll( localNodeCollection.get(0).getAssignates() );
+			
+			DataTable normDataTable = somData.getNormalizedDataTable() ;
+			
+			// streamlining the collection of variables
+			// note, that at this point we need the table of transformed data !!! 
+			int vm = variables.size()-1;
+			
+			while (vm>=0){
+				
+				String varLabel = variables.getItem(vm).getLabel();
+				if (syntheticVarMetric.indexOf(varLabel)<0){
+					variables.removeItem(vm); 	// should be happen "everywhere", in "each" instance of somData / variables -> check !!??? 
+				 								// since we move around only the reference
+					normDataTable.getColumnHeaders().remove(vm);
+					normDataTable.getDataTable().remove(vm) ;
+					
+					int ix = somData.getVariableLabels().indexOf(varLabel);
+					if (ix>=0){
+						somData.getVariableLabels().remove(ix) ;
+					}
+				}
+				vm--;
+			}
+			normDataTable.setColcount( normDataTable.getDataTable().size()) ;
+			normDataTable.getDataTable().trimToSize();
+			normDataTable.getColumnHeaders().trimToSize();
+			variables.getItems().trimToSize() ;
+
+			// we have to re-establish the row perspective of the DataTable !!!
+			normDataTable.createRowOrientedTable(1);
+			
+			//
+			
+            ArrayList<Variable> vari = somData.getVariableItems();
+
+            usedVariables = localNodeCollection.get(0).getAssignates();
+            
+			usedVariablesIndexes = (ArrayList<Integer>) variables.transcribeUseIndications(usedVariables); usedVariablesIndexes.trimToSize();
+			usageIndicationVector = (ArrayList<Double>) variables.transcribeUseIndications(usedVariablesIndexes) ; usageIndicationVector.trimToSize();
+			
+			soappObj.soappNodes.getIntensionalitySurface().setUsageIndicationVector(usageIndicationVector) ;
+			soappObj.soappNodes.getSimilarityConcepts().setUsageIndicationVector(usageIndicationVector) ;
+			
+			soappObj.setUsageVector( usageIndicationVector );
+			
+			syntheticVarMetric = normDataTable.getColumnHeaders() ;
+			profileValues = ArrUtilities.createCollection( usageIndicationVector.size(), 0.0) ;
+			
+											processFeedBackContainer = new ProcessFeedBackContainer( 69,100, xmlNodeObjects.size(), somApplication);
+											processFeedBackContainer.setHostingObject( this.getClass().getSimpleName() );
+											processFeedBackContainer.setStepWidth(5.0) ;
+											
+			for (int i=0;i<soappObj.soappNodes.size();i++){
+											processFeedBackContainer.setCurrentProgressValue(i) ;
+											
+				mnode = soappObj.soappNodes.getNode(i) ; 
+				
+				
+				
+				// requires NodesInformer, not necessary for soapp ?
+				// registerNodeinNodesInformer( node );
+				mnode.getIntensionality().getProfileVector().setVariables( vari ) ;
+				mnode.getExtensionality().getStatistics().setVariables(vari);
+				
+				// thats wrong !! we need a mapping
+				loadedValues = localNodeCollection.get(i).modelProfile ;
+				loadedVariables = localNodeCollection.get(i).assignates ;
+				
+				ArrUtilities.resetCollection( profileValues, 0.0);
+				
+				for (int p=0;p<loadedValues.size();p++){
+					String varLabel = loadedVariables.get(p) ;
+					int ix = normDataTable.getColumnHeaders().indexOf(varLabel) ;
+					if (ix>=0){
+						profileValues.set(ix, loadedValues.get(p) );
+					}
+				}
+				
+				mnode.alignProfileVector( mnode.getIntensionality().getProfileVector() );
+				
+				mnode.getProfileVector().setValues(profileValues);
+				mnode.getProfileVector().setVariables(vari) ;
+				mnode.getProfileVector().setVariablesStr( syntheticVarMetric );
+				
+				n = localNodeCollection.get(i).getRecordcount() ;
+				mnode.getExtensionality().setSupport( n ) ;
+				mnode.getExtensionality().setPPV( localNodeCollection.get(i).ppv );
+				mnode.getExtensionality().setNPV( localNodeCollection.get(i).npv );
+				//soappObj.soappNodes.
+				// ProfileVectorIntf profileVector ;
+				soappObj.soappNodes.setNode(i,mnode);
+				
+				out.print(4, "node <"+i+"> ("+mnode.toString()+") :  "+ ArrUtilities.arr2Text( mnode.getProfileVector().getValues(), 3)) ;
+			}
+			
+			// we have a reduced table for normalized data and the appropriate usage vector
+			
 			result=0;
 											out.print(2, "som classification model containing <"+soappObj.nodeCount+" nodes> has been successfully loaded.") ;
+											
 		}catch(Exception e){
 			e.printStackTrace() ;
 			result = -7;
@@ -850,6 +996,9 @@ public class SomAppModelLoader {
 					}
 
 				}
+				
+				SomFluidPluginSettings pluginSettings = soappTransformer.soappProperties.getPluginSettings() ;
+				stackList.get(i).setPluginSettings(pluginSettings) ;
 			}
 				// should be available, comes with the TransformationModel-object: it contains trees & chains...
 				// SomAssignatesDerivations soappDerives = soappTransform.getSomDerivations() ;
@@ -866,11 +1015,14 @@ public class SomAppModelLoader {
 					
 					for (int i = 0; i < columnVarLabels.size(); i++) {
 						varLabel = columnVarLabels.get(i);
-												out.print(2,"establishing transformation stack (1) for variable : "+ varLabel) ;
+												out.print(4,"establishing transformation stack (1) for variable : "+ varLabel) ;
 												
 						popoVarIx = postponedVariables.indexOf(varLabel) ;				
 						if ((popoVarIx>=0) || (transformedVariables.indexOf(varLabel)<0)){
-							
+if (i==13){
+	int zz;
+	zz=0;
+}
 							if (transformVariable( normDataTable, rawDataTable, varLabel, (popoVarIx>=0) ) ){
 								 
 								transformedVariables.add(varLabel) ;
@@ -917,7 +1069,8 @@ public class SomAppModelLoader {
 			} // -> all columns in normalized table
 
 			// filling all empty columns in norm table with -1, such that they are defined
-			normDataTable.getColumnHeaders().trimToSize();  columnVarLabels = normDataTable.getColumnHeaders();
+			normDataTable.getColumnHeaders().trimToSize();  
+			columnVarLabels = normDataTable.getColumnHeaders();
 			DataTableCol tablecol;
 			normDataTable.setTablename("normalized");
 			
@@ -926,11 +1079,20 @@ public class SomAppModelLoader {
 				varLabel = columnVarLabels.get(i) ;
 				tablecol = normDataTable.getColumn(i) ;
 				
+				int rix = soappProperties.getIndexVariableLabels().indexOf(varLabel) ;
+
 				if (tablecol.getCellValues().size()==0){
-				
-					cellvalues = ArrUtilities.createCollection( columnLen, -1.0) ;
+					// keep raw values for variables that are requested for being routed through...
+					if (rix<0){
+						cellvalues = ArrUtilities.createCollection( columnLen, -1.0) ;
+					}else{
+						cellvalues = somData.getData().getColumn(i).getCellValues() ; 
+						tablecol.getCellValueStr().addAll( somData.getData().getColumn(i).getCellValueStr() ) ;
+					}
 					tablecol.getCellValues().addAll(cellvalues) ;
 				}
+				
+				
 				
 			}
 			
@@ -950,7 +1112,6 @@ public class SomAppModelLoader {
 	
 	@SuppressWarnings("unchecked")
 	private boolean transformVariable(	DataTable normDataTable, DataTable rawDataTable, 
-										  
 										String varLabel,
 										boolean revisitedVariable ) {
 		boolean transformSuccess  ;
@@ -964,7 +1125,7 @@ public class SomAppModelLoader {
 		Variables variables;
 		Variable variable;
 
-		ArrayList<Double> cellvalues;
+		ArrayList<Double> cellvalues = null;
 		 
 		ArrayList<TransformationStack> stackList;
 
@@ -981,7 +1142,7 @@ public class SomAppModelLoader {
 			variables = somData.getVariables() ;
 			
 			if (revisitedVariable){
-				// remove previously introduced stack and data (first data in algo, then algo the stackedTransforms
+				// remove previously introduced stack and data (first data in algorithm, then algorithm the stackedTransforms
 				
 			}
 			
@@ -1018,9 +1179,11 @@ public class SomAppModelLoader {
 
 					// get the index in the raw table (which we got as input data for the classification task)
 					rdix = rawDataTable.getColumnHeaders().indexOf(varLabel);
-												out.print(2,"establishing transformation stack (2) for variable : "+ varLabel) ;
+												out.print(3,"establishing transformation stack (2) for variable : "+ varLabel) ;
 					// selecting the transformation stack by previously determined index
 					varTStack = transformModel.getVariableTransformations().get(tix);
+					  
+					
 					varTStack.setFirstFormat(variable.getRawFormat());
 					varTStack.setBaseVariable(variable); varTStack.getItems().trimToSize();
 
@@ -1089,7 +1252,7 @@ public class SomAppModelLoader {
 									// only for those we have raw values
 									cellvalues = somData.getDataTable().getColumn(rdix).getCellValues();
 								} else {
-									cellvalues = ArrUtilities.createCollection(columnLen, -1.0);
+									cellvalues = ArrUtilities.createCollection(columnLen, 0.0);
 									// this will be corrected on update
 								}
 								sT.getInData().add(cellvalues);
@@ -1122,9 +1285,17 @@ public class SomAppModelLoader {
 								ArrayList<Double> srcCellValues;
 								AlgoTransformationIntf dynTAlgo = ((AlgoTransformationIntf)sT.getAlgorithm()) ; 
 								
+								
+								sT.multiVarInput = true;
+								// we need to update the GUIDs of the backward links
+								// sT.getInputColumnIDs().add( srcstack.transformGuid );
+								sT.getInputColumnIDs().size() ;
+								
 								for (int c=0;c<sT.getInputColumnLabels().size();c++){
+									
 									String srcLabel = sT.getInputColumnLabels().get(c) ;
 									int srcLabelTableIx = normDataTable.getColumnHeaders().indexOf(srcLabel) ;
+									
 									if (srcLabelTableIx>=0){
 										srcCellValues = normDataTable.getColumn(srcLabelTableIx).getCellValues();
 										if (srcCellValues.size()==0){
@@ -1161,6 +1332,8 @@ public class SomAppModelLoader {
 										{
 											if (srcCellValues.size() > 0) {
 												dynTAlgo.addValueTableColumn(srcCellValues);
+												// in "AlgoTransformationAbstract"
+												sT.getInData().add( srcCellValues );
 											}
 										}
 									}
@@ -1179,14 +1352,20 @@ public class SomAppModelLoader {
 	}
 	
 					if (failure==0){
-						
 
+					 
+						
 						varTStack.setLatestDataDescriptionItem(-1);
 						varTStack.setFirstItemForUpdate(0);
+						 
+						checkStackForProperNormalizationStack(varTStack) ;
+						
 						// update is exclusively backward directed (to the left of the table), 
 						// NEVER forward directed, to the right of the table thus we can call update here
 						varTStack.update();
 
+						// checkStackForProperNormalization( normDataTable, varTStack, varLabel, ctvix);
+						
 						int colix = normDataTable.getColumnHeaders().indexOf(varLabel);
 						if (colix>=0){
 							DataTableCol tablecol = normDataTable.getColumn(colix) ;
@@ -1221,6 +1400,90 @@ public class SomAppModelLoader {
 	
 	
 	
+	private void checkStackForProperNormalizationStack(TransformationStack varTStack) {
+		 
+		int tsz ,i, lastValAlgoPos ;
+		boolean normFound =false;
+		StackedTransformation st ; 
+		AlgoTransformationIntf valgo ;
+		AlgorithmIntf algo;
+		
+		// linNorm as last value algorithm ?
+		tsz = varTStack.size() ;
+		i = tsz-1;
+		
+		lastValAlgoPos = -1;
+		
+		while (i>=0){
+		
+			st = varTStack.getItem(i);
+			
+			algo = (AlgorithmIntf)(st.getAlgorithm());
+			if ((lastValAlgoPos == -1) && (algo.getType() == AlgorithmIntf._ALGOTYPE_VALUE )){
+				lastValAlgoPos = i;
+				break;
+			}
+			
+			i--;
+		} //
+		
+		if (lastValAlgoPos>0){
+			algo = (AlgorithmIntf)varTStack.getItem(lastValAlgoPos).getAlgorithm() ;
+			valgo = (AlgoTransformationIntf)(varTStack.getItem(lastValAlgoPos).getAlgorithm());
+				
+			String cn = valgo.getClass().getSimpleName().toLowerCase() ; 
+			if (cn.contains("linearnorm")){
+				normFound = true;
+			}
+		}
+		
+		
+		if (normFound==false){
+			try {
+			
+				varTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
+				varTStack.introduceAlgorithmizedStackPosition("LinearNormalization") ;
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+			}
+		}
+		
+	}
+
+	private int checkStackForProperNormalization( DataTable normDataTable, TransformationStack varTStack, String varLabel, int ctvix) {
+
+		int restartPosition = -1;
+		ArrayList<Double> cellvalues;
+	
+		int xp,ip;
+		double xpv=100.0, ipv = -100.0;
+
+		
+		int colix = normDataTable.getColumnHeaders().indexOf(varLabel);
+		
+		if (colix>=0){
+			
+			
+			// determine min, max
+			// Min, Max within [0..1] ?
+			DataTableCol tablecol = normDataTable.getColumn(colix) ;
+			
+			cellvalues = varTStack.getLastPosition().getOutData();
+
+			xp = arrutil.arrayMaxPos(cellvalues) ;
+			ip = arrutil.arrayMinPos(cellvalues, new Double[]{-1.0,-2.0}, -0.0001 );
+			if (xp>=0)xpv = cellvalues.get(xp);
+			if (ip>=0)ipv = cellvalues.get(ip);
+
+			
+			
+		} // column defined ?
+		
+		return restartPosition;
+	}
+
 	@SuppressWarnings("unused")
 	private void introduceDerivedVariable( 	StackedTransformation sT, 
 											TransformationStack varTStack, 
