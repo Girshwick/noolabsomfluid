@@ -417,10 +417,20 @@ class SomModuleInstanceA1 implements 	Runnable,
 		
 		// this refers to the name of the project as it is contained in the model file!!
 		// on first loading, a catalog of available model will be created for faster access if it does not exists
-		soappProperties.setActiveModel( SomFluidStartup.getLastProjectName() ); // sth like "bank2",  i.e. just the name, it must exist as a subdir
+		soappProperties.setActiveModel( SomFluidStartup.getLastProjectName() ); // sth like "bank2",  i.e. just the name, it must exist as a sub-directory
 		
-		soappProperties.setIndexVariable("Id");
-		soappProperties.setIndexVariableColumnIndex(0);
+		soappProperties.setIndexVariables( new String[]{"Id","Mahnung_TV"});     
+		                                                            // the user might be using a compound/structured key for identification, so we map such compound id
+																	// if one of those does not exist, it will be disregarded silently
+																    // !!! note that they are not used as index at all, the are just routed through
+		// soappProperties.setIndexVariableColumnIndexes( new int[]{0});           
+		                                                            // alternatively (& less controlled) we could provide the list of columns 
+																	// containing such index information, these indices refer to the provided data !!!
+		
+		// if those usage parameters are not set, the values will be taken from the model 
+		soappProperties.setRequiredConfidenceBySupport(8);
+		soappProperties.setRiskLevelByECR(0.25) ;
+				
 		
 		// if there are several model packages of the same name in the "BaseModelFolder", this
 		// will control the mode of selection from those

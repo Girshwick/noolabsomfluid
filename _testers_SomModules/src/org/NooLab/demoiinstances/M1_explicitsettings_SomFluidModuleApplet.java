@@ -675,7 +675,7 @@ class SomModuleInstanceM1 implements 	Runnable,
 																		   // ParetoPopulationExplorer, SomModelDescription, Coarseness, MultiCrossValidation, MetricsStructure 
 		
 				    													   // whichever of these 4 stopping criteria for the optimizer is reached first...
-		sfProperties.getModelingSettings().getOptimizerSettings().setMaxStepsAbsolute( 5 );     // low only for testing, or initial exploration, typically 500+
+		sfProperties.getModelingSettings().getOptimizerSettings().setMaxStepsAbsolute( 25 );     // low only for testing, or initial exploration, typically 500+
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -       // note that this step-count applies WITHIN a step on L2 as 
 																								 // controlled by "setMaxL2LoopCount" (see below, typically max=4)
 		
