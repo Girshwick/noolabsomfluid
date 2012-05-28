@@ -773,6 +773,37 @@ public class ArrUtilities {
 		return pos;
 	}
 	
+	public static int arraymin(ArrayList<Integer> intlist, int defaultVal) {
+		
+		int resultMin = defaultVal;
+		
+		int ix = arrayminpos(intlist); 
+		if (ix>=0){
+			resultMin = intlist.get(ix); 
+		}
+			
+		return resultMin;
+	}
+
+
+	private static int arrayminpos(ArrayList<Integer> intlist) {
+		
+		int minPos = -1;
+		int minval = 999999999;
+		
+		for (int i=0;i<intlist.size();i++){
+			
+			int v = intlist.get(i);
+			if (v<minval){
+				minval = v;
+				minPos=i;
+			}
+		}
+		
+		return minPos;
+	}
+
+
 	public double arrayMin( double[] valarr, double defaultValue){
 		double return_value=0.0, min =  9999999999.9;
 		int i;
@@ -1933,6 +1964,191 @@ public class ArrUtilities {
 		}
 		outStr = str.toString() ;
 		return outStr ;
+	}
+
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static void resetCollection( ArrayList gList, Object fillValue) {
+		
+		int clength;
+		//ArrayList gList = null;
+		String cname = fillValue.getClass().getSimpleName();
+		 		
+		clength = gList.size();
+		
+		if (cname.toLowerCase().startsWith("doub")) {
+			double defaultVal = (Double) fillValue;
+			 
+			for (int i = 0; i < clength; i++) {
+				gList.set( i,defaultVal );
+			}
+		}
+		if (cname.toLowerCase().startsWith("int")) {
+			
+			int defaultVal = (Integer) fillValue;
+			
+			gList = new ArrayList<Integer>();
+			for (int i = 0; i < clength; i++) {
+				gList.add( defaultVal );
+			}
+		}
+		if (cname.toLowerCase().startsWith("str")) {
+			gList = new ArrayList<String>();
+
+			String defaultVal = (String) fillValue;
+			
+			gList = new ArrayList<Integer>();
+			for (int i = 0; i < clength; i++) {
+				gList.add( defaultVal );
+			}
+		}
+
+		//return gList;
+	}
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static ArrayList createCollection(int clength, Object fillValue) {
+
+		ArrayList gList = null;
+		String cname = fillValue.getClass().getSimpleName();
+		 		
+		
+		if (cname.toLowerCase().startsWith("doub")) {
+			double defaultVal = (Double) fillValue;
+
+			gList = new ArrayList<Double>();
+			for (int i = 0; i < clength; i++) {
+				gList.add( defaultVal );
+			}
+		}
+		if (cname.toLowerCase().startsWith("int")) {
+			
+			int defaultVal = (Integer) fillValue;
+			
+			gList = new ArrayList<Integer>();
+			for (int i = 0; i < clength; i++) {
+				gList.add( defaultVal );
+			}
+		}
+		if (cname.toLowerCase().startsWith("str")) {
+			gList = new ArrayList<String>();
+
+			String defaultVal = (String) fillValue;
+			
+			gList = new ArrayList<Integer>();
+			for (int i = 0; i < clength; i++) {
+				gList.add( defaultVal );
+			}
+		}
+
+		return gList;
+
+	}
+
+
+	private static int objectsSimpleEqual( Object obj1, Object obj2){
+		
+		int result = -3;
+		
+		String cn1, cn2 ;
+		double v1=0,v2=0;
+		int vi1=0,vi2=0;
+		String s1="",s2="";
+		
+		cn1 = obj1.getClass().getSimpleName().toLowerCase() ;
+		cn2 = obj2.getClass().getSimpleName().toLowerCase() ;
+		
+		if (cn1.startsWith("doubl")){
+			v1 = (Double)obj1;
+		}
+		if (cn1.startsWith("int")){
+			vi1 = (Integer)obj1;
+		}
+		if (cn1.startsWith("string")){
+			s1 = (String)obj1;
+		}
+		if (cn2.startsWith("doubl")){
+			v1 = (Double)obj2;
+			if (v1==v2)result=0;
+		}
+		if (cn2.startsWith("int")){
+			vi2 = (Integer)obj2;
+			if (vi1==vi2)result=0;
+		}
+		if (cn2.startsWith("string")){
+			s2 = (String)obj2;
+			if (s1.contentEquals(s2))result=0;
+		}
+		
+		return result;
+	}
+	
+	@SuppressWarnings("rawtypes")
+	public static ArrayList removeDoubleEntries(ArrayList list) {
+		
+		Object obj;
+		
+		int i=list.size()-1;
+		
+		while ((i>0) && (list.size()>0)){
+			
+			obj = list.get(i) ;
+			
+			for (int j=i-1;j>=0;j--){
+				if ( objectsSimpleEqual(obj, list.get(j)) == 0){
+					list.remove(i) ;
+					break;
+				}
+			}
+			
+			i--;
+		}
+		
+		list.trimToSize() ;
+		return list;
+	}
+
+
+	public int arrayMinPos( ArrayList<Double> values, Double[] excludedValues, Double lowerBarrier) {
+		double v,minv = 9999999999999999999.09;
+		boolean consider ;
+		int minp = 0;
+		
+		Arrays.sort(excludedValues) ;
+		
+		for (int i=0;i<values.size();i++){
+			consider = true;
+			v = values.get(i) ;
+			consider = Arrays.binarySearch(excludedValues, v)<0 ;
+			if (consider ){
+				if (lowerBarrier!=null){
+					consider = (v>=(double)lowerBarrier);
+				}
+			}
+			if (consider ){
+				if (v<minv){
+					minv=v;
+					minp=i;
+				}
+			}
+		}
+		
+		return minp;
+	}
+
+
+	public ArrayList<String> collectionGetConfirmedContainments( ArrayList<String> itemsToCheck,
+																 ArrayList<String> referenceItems) {
+		ArrayList<String> confirmedItems = new ArrayList<String>();
+		
+		for (int i=0;i<itemsToCheck.size();i++){
+			String str = itemsToCheck.get(i);
+			if ( referenceItems.indexOf( str )>=0){
+				confirmedItems.add(str) ;
+			}
+		}
+		
+		return confirmedItems;
 	}
 
  

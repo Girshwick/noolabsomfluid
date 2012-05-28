@@ -23,6 +23,22 @@ public class NicAddresses {
 		return null ;
 	}
 	
+	/**
+	 * returns the first found MAC.
+	 * Note that this could change, dependent on hardware settings by the OS (WiFi on/off, ethernet NIC on/off)
+	 * @return
+	 */
+	public static String getMac(){
+		Vector<String> macs;
+		String mac="";
+		
+		macs = getMacs() ;
+		if (macs.size()>0){
+			mac = macs.get(0) ;
+		}
+		return mac;
+	}
+	
 	
 	public static Vector<String> getMacs(){
 		Vector<String> macIds = new Vector<String>();
@@ -133,6 +149,11 @@ public class NicAddresses {
 		
 		return ipAddresses;
 	}
+	
+	/**
+	 * returns a collection of ipAddresses
+	 * @return
+	 */
 	public static Vector<String> get(){
 
 		Vector<String> ipAddresses = new Vector<String>(); 

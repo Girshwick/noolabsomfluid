@@ -75,6 +75,25 @@ public abstract class XMessageAbs {
 	}
 
 
+
+	public String cleanSimple(String rawXmlStr) {
+
+		rawXmlStr = rawXmlStr.trim();
+		// cleaning...
+		if (rawXmlStr.length()>10){
+			int p = rawXmlStr.indexOf("<?xml version=\"1.0");
+			if ((p>0) && (p<9)){
+				rawXmlStr = rawXmlStr.substring(p,rawXmlStr.length());
+			}
+		}
+		if (rawXmlStr.indexOf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")<0){
+			rawXmlStr = rawXmlStr.trim() + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" ;
+		}
+			
+		return rawXmlStr;
+	}
+
+	
 	public String getContentRoot() {
 		return contentRoot;
 	}

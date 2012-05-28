@@ -59,7 +59,7 @@ public class IndexedDistances implements Serializable{
 	public int getIndexByStr( String checkstr){
 		int pos=-1;
 		
-		// we should maintain a treemap...
+		// we should maintain a TreeMap...
 		for (int i=0;i<items.size();i++){
 			String str = items.get(i).guidStr ;
 			if (checkstr.contentEquals(str)){
@@ -70,7 +70,13 @@ public class IndexedDistances implements Serializable{
 		return pos;
 	}
 	
-	
+	/**
+	 * 
+	 * sorting the list of indexed distances according to the distances
+	 * 
+	 * @param direction  1=increasing order, -1=decreasing order
+	 * 
+	 */
 	@SuppressWarnings("unchecked")
 	public void sort(int direction){
 		if (direction < -0.5){
@@ -229,6 +235,12 @@ public class IndexedDistances implements Serializable{
 	}
 
 
+	public ArrayList<String> getAllFieldLabels() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
 	class ixdComparator implements Comparator{
 
 		int direction=0;
@@ -273,12 +285,6 @@ public class IndexedDistances implements Serializable{
 			return result;
 		}
 		
-	}
-
-
-	public ArrayList<String> getAllFieldLabels() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
  	 

@@ -79,8 +79,22 @@ public class IndexDistance implements Serializable, IndexDistanceIntf{
 		distance = 0.0 ;
 		guidStr = str  ; 
 	}
-	// ========================================================================
+	
+	public IndexDistance( IndexDistance inItem) {
 
+		index = inItem.index ;
+		secindex = inItem.secindex ;
+		distance = inItem.distance ;
+		guidStr = inItem.guidStr ; 
+		
+		if (inItem.data.size()>0){
+			for (int i=0;i<inItem.data.size();i++){
+				// not a complete clone... 
+				data.add( inItem.data.get(i) ) ;
+			}
+		}
+	}
+	// ========================================================================
 
 	public int getIndex2() {
 		return secindex;
