@@ -57,6 +57,8 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	double majorityValueIdentifier = -1.0 ;
 
 	private int ppvRank;
+
+	private int support;
 	
 	// ========================================================================
 	public ExtensionalityDynamics( SomDataObject somdata){
@@ -179,6 +181,40 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	@Override
 	public double getNPV() {
 		return npv;
+	}
+
+	@Override
+	public void setSupport(int n) {
+		support = n;
+		
+	}
+
+	public int getSupport() {
+		return support;
+	}
+
+	public SomDataObject getSomData() {
+		return somData;
+	}
+
+	public void setSomData(SomDataObject somData) {
+		this.somData = somData;
+	}
+
+	public double getPpv() {
+		return ppv;
+	}
+
+	public void setPpv(double ppv) {
+		this.ppv = ppv;
+	}
+
+	public double getNpv() {
+		return npv;
+	}
+
+	public void setNpv(double npv) {
+		this.npv = npv;
 	}
 
 	 

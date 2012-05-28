@@ -843,10 +843,16 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 	}
 
 	@Override
-	public ArrayList<Long> getExtensionRecordsIndexValues() {
-		ArrayList<Long> recIndexValues = new ArrayList<Long>();
+	public ArrayList<Integer> getExtensionRecordsIndexValues() {
+		/*
+		ArrayList<Long> recIndexValues=null;
 		
-		return recIndexValues;
+		if (recIndexValues==null){
+			recIndexValues = new ArrayList<Long>();
+		}
+		*/
+		return getExtensionality().getListOfRecords();
+		
 	}
 
 	public void setSomData(SomDataObject somdata) {
@@ -854,6 +860,10 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 		somData = somdata;
 	}
 
+
+	public void alignProfileVector(ProfileVectorIntf profileVectorObj) {
+		profileVector = profileVectorObj ;
+	}
 
 	public ArrayList<IndexDistanceIntf> getListOfQualifiedIndexes() {
 		return listOfQualifiedIndexes;

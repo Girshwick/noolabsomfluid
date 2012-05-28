@@ -2,6 +2,7 @@ package org.NooLab.somfluid.app;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 
 import org.NooLab.somfluid.OutputSettings;
@@ -86,6 +87,13 @@ public class SomAppProperties
 
 	String indexVariableLabel = "" ;
 	int indexVariableLabelIndex = -1 ;
+
+	ArrayList<String>  indexVariableLabels = new ArrayList<String>();
+	ArrayList<Integer> indexVariableLabelIndexes = new ArrayList<Integer>();
+
+
+	private double ecrRisk = -1 ;
+	private int requiredSupport = -1;
 	
 	 
 	// ========================================================================
@@ -337,6 +345,9 @@ public class SomAppProperties
 
 
 	
+	public void setPreferredModelVersion(String modelversion) {
+		preferredModelVersion = modelversion;
+	}
 	// ====================================================================================================
 	@Override
 	public int getDataUptakeControl() {
@@ -348,7 +359,6 @@ public class SomAppProperties
 		// TODO Auto-generated method stub
 		
 	}
-
 	public void setIndexVariable(String vLabelStr) {
 		indexVariableLabel = vLabelStr ;
 		
@@ -365,6 +375,24 @@ public class SomAppProperties
 
 	public void setIndexVariableLabel(String indexVariableLabel) {
 		this.indexVariableLabel = indexVariableLabel;
+		indexVariableLabels = new ArrayList<String>();
+		indexVariableLabels.add(indexVariableLabel);
+	}
+
+	public void setIndexVariables(String[] labels) {
+		indexVariableLabels = new ArrayList<String>(Arrays.asList(labels)) ;
+		if (indexVariableLabels.size()>0){
+			indexVariableLabel = indexVariableLabels.get(0) ;
+		}
+	}
+
+	public ArrayList<String> getIndexVariableLabels() {
+		return indexVariableLabels;
+	}
+
+	public void setIndexVariableLabels(ArrayList<String> variableLabels) {
+		indexVariableLabels = variableLabels;
+		
 	}
 
 	public int getIndexVariableLabelIndex() {
@@ -373,10 +401,61 @@ public class SomAppProperties
 
 	public void setIndexVariableLabelIndex(int indexVariableLabelIndex) {
 		this.indexVariableLabelIndex = indexVariableLabelIndex;
+		indexVariableLabelIndexes = new ArrayList<Integer>();
+		indexVariableLabelIndexes.add(indexVariableLabelIndex) ;
 	}
 
-	public void setPreferredModelVersion(String preferredModelVersion) {
-		this.preferredModelVersion = preferredModelVersion;
+	public void setIndexVariableColumnIndexes(int[] indexValues) {
+
+		indexVariableLabelIndexes = new ArrayList<Integer>();
+		for (int i=0;i<indexValues.length;i++){
+			indexVariableLabelIndexes.add( indexValues[i] );
+		}
+		if (indexVariableLabelIndexes.size()>0){
+			indexVariableLabelIndex = indexVariableLabelIndexes.get(0) ;
+		}
+	}
+
+	public ArrayList<Integer> getIndexVariableLabelIndexes() {
+		return indexVariableLabelIndexes;
+	}
+
+	public void setIndexVariableLabelIndexes(ArrayList<Integer> indexVariableLabelIndexes) {
+		this.indexVariableLabelIndexes = indexVariableLabelIndexes;
+	}
+
+	public double getRiskAttitudeByECR() {
+		return ecrRisk ;
+	}
+
+	public double getEcrRisk() {
+		return ecrRisk;
+	}
+	
+	/**
+	 * if not set, the models ECR will be taken
+	 * @param ecrValue
+	 */
+	public void setRiskLevelByECR(double ecrValue) {
+		ecrRisk = ecrValue;
+	}
+	public void setEcrRisk(double ecrValue) {
+		ecrRisk = ecrValue;
+	}
+
+	public int getRiskConfidenceByClusterSupport() {
+		return requiredSupport ;
+	}
+
+	public int getRequiredSupport() {
+		return requiredSupport;
+	}
+
+	public void setRequiredSupport(int groupsupport) {
+		requiredSupport = groupsupport;
+	}
+	public void setRequiredConfidenceBySupport(int groupsupport) {
+		requiredSupport = groupsupport;
 	}
 
 	 

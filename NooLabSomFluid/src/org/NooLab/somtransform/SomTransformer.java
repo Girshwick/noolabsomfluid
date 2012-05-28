@@ -1002,6 +1002,7 @@ if (basevarLabel.contains("Bisher_c2")){
 						cn = st.algorithm.getClass().getSimpleName() ;
 						
 					if (cn.contains("ArithmetExpression")){
+						
 						st.getInData().add( colvalues );
 						st.multiVarInput = true;
 						// we need to update the GUIDs of the backward links
@@ -1028,7 +1029,7 @@ if (basevarLabel.contains("Bisher_c2")){
 				nv = transformationModel.variableTransformations.size();
 				addedVariablesByIndex.add(nv-1);
 				
-				ra = varTStack.update() ;
+				ra = varTStack.update() ; // check why the ValueTable does not get cleared... as in SomApp...
 				
 				if (ra==0){
 					realizedCount++;

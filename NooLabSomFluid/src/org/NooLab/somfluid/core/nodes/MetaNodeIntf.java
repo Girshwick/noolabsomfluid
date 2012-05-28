@@ -41,7 +41,7 @@ public interface MetaNodeIntf extends NodeObserverIntf {
 
 	public ExtensionalityDynamicsIntf getExtensionality()  ;
 
-	public ArrayList<Long> getExtensionRecordsIndexValues() ;
+	public ArrayList<Integer> getExtensionRecordsIndexValues() ;
 
 	public DataSourceIntf getSomData() ;
 

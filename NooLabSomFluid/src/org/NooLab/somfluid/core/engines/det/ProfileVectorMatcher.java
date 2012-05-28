@@ -73,7 +73,15 @@ public class ProfileVectorMatcher{
 	
 	
 	public ProfileVectorMatcher setNodeCollection( ArrayList<MetaNode> nodecollection ){
-		nodeCollection = new ArrayList<MetaNode> (nodecollection); 
+		
+		nodeCollection = new ArrayList<MetaNode>(nodecollection);
+		
+		if (nodeCollectionIndexes.size() == 0) {
+			for (int i = 0; i < nodecollection.size(); i++) {
+				nodeCollectionIndexes.add(i);
+			}
+		}
+		
 		mode = 1;
 		return this;
 	}
@@ -82,6 +90,7 @@ public class ProfileVectorMatcher{
 		 
 		nodeCollectionIndexes.addAll(nodeIndexCollection) ;
 	}
+	
 	public void addNodeToCollection( MetaNode nodeForCollection ){
 		nodeCollection.add(nodeForCollection) ; mode = 1;
 	}
@@ -249,7 +258,7 @@ public class ProfileVectorMatcher{
 				// node.getSimilarity.usageIndicationVector is wrong, hence profile.getValues() is also wrong
 											if (outMode==0){
 												outMode=1;
-												String str = ArrUtilities.arr2Text(profile.getValues(), 1) ;
+												// String str = ArrUtilities.arr2Text(profile.getValues(), 1) ;
 												// out.print(2, "createListOfMatchingNodes(), profile values vector 1 : "+str) ;
 											}
 	
@@ -291,7 +300,7 @@ public class ProfileVectorMatcher{
 		finally {
 	
 		}
-		 
+		n=0;
 	}
 
 	private void createListOfMatchingRecords( SimilarityIntf simIntf ){

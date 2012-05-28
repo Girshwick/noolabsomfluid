@@ -14,6 +14,9 @@ public interface SomAppNodeIntf extends MetaNodeIntf{
 	public double getPpv();
 	public void setPpv(double value);
 	
+	public void setNpv(double numVal) ; 
+	public double getNpv();
+	
 	public int getPpvRank();
 	public void setPpvRank(int value);
 	

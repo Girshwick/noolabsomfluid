@@ -33,7 +33,9 @@ public class SomAppNode
 	int index = -1;
 	
 	// <description>
-	double ppv = -1 ;
+	double ppv = -1.0 ;
+	double npv = -1.0 ;
+	
 	int ppvRank = -1 ;
 	int recordcount = 0; 
 	
@@ -49,6 +51,8 @@ public class SomAppNode
 	
 	// variables 
 	ArrayList<String> assignates = new ArrayList<String> ();
+
+	
 	
 	//-------------------------------------------------------------------------
 	public SomAppNode( VirtualLattice  nodeCollection , DataSourceIntf somData , int nodindex ){
@@ -77,6 +81,16 @@ public class SomAppNode
 
 	public void setPpv(double ppv) {
 		this.ppv = ppv;
+	}
+
+	public void setNpv(double numVal) {
+		npv = numVal;
+		
+	}
+	
+	@Override
+	public double getNpv() {
+		return npv;
 	}
 
 	public int getPpvRank() {
@@ -131,7 +145,7 @@ public class SomAppNode
 	
 
 	@Override
-	public ArrayList<Long> getExtensionRecordsIndexValues() {
+	public ArrayList<Integer> getExtensionRecordsIndexValues() {
 		return getExtensionRecordsIndexValues(); 
 	}
 	
@@ -255,6 +269,8 @@ public class SomAppNode
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+
 	
 	// ========================================================================
 	

@@ -23,6 +23,7 @@ import org.NooLab.somtransform.algo.intf.AlgoTransformationIntf;
 import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexedDistances;
+import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 
 import org.NooLab.utilities.strings.StringsUtil;
@@ -74,6 +75,7 @@ public class SomAppClassifier implements SomProcessIntf, Serializable{
 
 	
 	transient PrintLog out;
+	transient DFutils fileutil = new DFutils(); // DEBUG ONLY !!
 	transient StringsUtil strgutil = new StringsUtil();
 	transient ArrUtilities arrutil = new ArrUtilities();
 	// ========================================================================
@@ -284,11 +286,12 @@ public class SomAppClassifier implements SomProcessIntf, Serializable{
 		ArrayList<Double> values,usageIndicationVector = new ArrayList<Double>();
 		ArrayList<Integer> useIndexesVector = new ArrayList<Integer>() ;
 		Variables variables;
-		
+		ArrayList<Integer> mvcExcludedRecords = new ArrayList<Integer> ();
 		// the object SomAppNodes is a "replacement", surrogate for the VirtualLattice
 	 	
 		variables = somDataForClassification.getVariables() ;
 		
+		out.resetPrintOutCollection();
 		
 		if (somObjects.size()==1){
 			somObject = somObjects.get(0);	
@@ -308,6 +311,16 @@ public class SomAppClassifier implements SomProcessIntf, Serializable{
 		// the references to the respective columns
 		
 		int rc = dataTable.getRowcount() ;
+		
+		// we have to create a table = extract the relevant columns such that the 
+		// resulting table matches the model
+		// we need not rebuild the whole structure, just header, and rows
+		
+		// we also include the index variables ArrayList<String> getIndexVariableLabels()
+		for (int i=0;i<rc;i++){
+			values = dataTable.getRowValuesArrayList(i);
+			
+		}
 		
 		// 
 		for (int i=0;i<rc;i++){
@@ -338,7 +351,7 @@ public class SomAppClassifier implements SomProcessIntf, Serializable{
 			} catch (Exception e) {
 				e.printStackTrace();
 				// put this to a special edition of "resultAnalysis"
-				recordIsOk = false;
+				recordIsOk = false; mvcExcludedRecords.add(i);
 			}
 
 			if (recordIsOk){
@@ -346,8 +359,8 @@ public class SomAppClassifier implements SomProcessIntf, Serializable{
 				winners = somObject.getWinnerNodes( values );
 				
 				if (winners.size()>0){
-				
-					resultAnalysis = (new SomAppResultAnalysis(winners)).prepare();
+					 
+					resultAnalysis = (new SomAppResultAnalysis( somData, soappProperties,somObject,winners)).prepare(i,values); 
 					resultAnalyses.add(resultAnalysis) ;
 
 				}else{
@@ -358,9 +371,10 @@ public class SomAppClassifier implements SomProcessIntf, Serializable{
 
 			
 		} // i-> all records
-		
+		 
 		rc=0;
-		
+		fileutil.writeFileSimple( soappProperties.getBaseModelFolder()+"testresult.txt", out.getPrintOutCollection());
+		out.resetPrintOutCollection() ;
 	}
 	
 	
