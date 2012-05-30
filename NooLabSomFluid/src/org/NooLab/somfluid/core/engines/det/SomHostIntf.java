@@ -14,22 +14,26 @@ import org.NooLab.somfluid.core.engines.det.results.ModelProperties;
 
 public interface SomHostIntf {
 
-	
-	public SomFluid getSomFluid();
-	
+
 	public void onTargetedModelingCompleted( ModelProperties results );
 
-	public ModelProperties getSomResults() ;
-	
+	// ----------------------------------------------------
+
 	public SomFluidTask getSfTask();
 	
 	public SomFluidFactory getSfFactory() ;
 
-	public SomDataObject getSomDataObj() ;
-	 
+	public SomFluid getSomFluid();
+
 	public SomFluidProperties getSfProperties();
 	
+	public ModelProperties getSomResults() ;
+	
+	public SomDataObject getSomDataObj() ;
+	 
 	public SomProcessIntf getSomProcess();
+	
+	// ----------------------------------------------------
 	
 	public ModelProperties getResults() ;
   

@@ -51,7 +51,7 @@ public class PowerSetSpringSource {
 
 	
 	/** 
-	 * the items of this list refre to the items from which the sets are made
+	 * the items of this list refer to the items from which the sets are made
 	 *  
 	 * the items describe the count of being selected, selection probabilities,
 	 * counts of being postponed in case of weighted, random selection
@@ -94,6 +94,7 @@ public class PowerSetSpringSource {
 	public PowerSetSpringSource( SomDataObject somdata){
 		somData = somdata;
 		selectionProperties = new SelectionProperties();
+		out = somData.getOut() ;
 	}
 
 	public PowerSetSpringSource(int preferredlimit) {

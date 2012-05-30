@@ -64,10 +64,17 @@ public class OutputSettings implements Serializable{
 
 	SomAppPublishing appPublishing = new SomAppPublishing();
 	
-	private boolean resultFileZipping = true;
-	private boolean exportApplicationModel;
+	boolean resultFileZipping = true;
+	boolean exportApplicationModel;
+	boolean zippedExportedPackages = false;
 	
 	transient DFutils  fileutil = new DFutils();
+
+	private boolean writeResultFiles = false;
+
+	private boolean isHtmlCompatible;
+
+	private String lastResultLocation;
 	
 	// ========================================================================
 	public OutputSettings(PersistenceSettings ps){
@@ -284,7 +291,7 @@ public class OutputSettings implements Serializable{
 		this.resultFilesMap = resultFilesMap;
 	}
 
-	public void createZipPackage(boolean flag) {
+	public void createZipPackageFromResults(boolean flag) {
 		resultFileZipping = flag ;
 		
 	}
@@ -337,8 +344,17 @@ public class OutputSettings implements Serializable{
 		return exportApplicationModel;
 	}
 
-	public void setExportApplicationModel(boolean exportApplicationModel) {
-		this.exportApplicationModel = exportApplicationModel;
+	public void setExportApplicationModel(boolean exportAppModel) {
+		exportApplicationModel = exportAppModel;
+	}
+	
+	public void setZippedExportedPackages(boolean flag) {
+		zippedExportedPackages = flag;
+		
+	}
+
+	public boolean isZippedExportedPackages() {
+		return zippedExportedPackages;
 	}
 
 	public XMLBuilder exportPropertiesAsXBuilder(SettingsTransporter settingsTransporter) {
@@ -369,6 +385,17 @@ public class OutputSettings implements Serializable{
 		appPublishing = somAppPubl;
 	}
 
+	/**
+	 * returns a reference to the object "SomAppPublishing", which holds some basic data
+	 * @return
+	 */
+	public SomAppPublishing getAppPublishingOrganizer() {
+		return appPublishing;
+	}
+	/**
+	 * returns a reference to the object "SomAppPublishing", which holds some basic data
+	 * @return
+	 */
 	public SomAppPublishing getAppPublishing() {
 		return appPublishing;
 	}
@@ -393,5 +420,41 @@ public class OutputSettings implements Serializable{
 	public void setCatalogFields(IndexedDistances catalogFields) {
 		this.catalogFields = catalogFields;
 	}
+
+	
+	
+	public boolean writeResultFiles() {
+		return writeResultFiles;
+	}
+	public boolean isWriteResultFiles() {
+		return writeResultFiles;
+	}
+	public void setWriteResultFiles(boolean flag) {
+		this.writeResultFiles = flag;
+	}
+
+	public boolean isHtmlCompatible() {
+		 
+		return isHtmlCompatible;
+	}
+
+	public void setHtmlCompatible(boolean isHtmlCompatible) {
+		this.isHtmlCompatible = isHtmlCompatible;
+	}
+
+	public void setLastResultLocation(String folder) {
+		if (fileutil.direxists(folder)){
+			lastResultLocation = folder;
+		}
+		
+	}
+
+	public String getLastResultLocation() {
+		return lastResultLocation;
+	}
+
+	
+
+
 
 }

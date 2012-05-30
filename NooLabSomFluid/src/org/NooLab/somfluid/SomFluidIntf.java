@@ -19,6 +19,8 @@ public interface SomFluidIntf {
 	 
 	//-------------------------------------------------------------------------
 	
+	public String addTask(SomFluidTask somFluidTask);
+	
 	// returning callback from task processes that implement the interface "somHost", e.g. ModelOptimizer, SimpleSingleModel, ...
 	
 	public void onTaskCompleted( SomFluidTask sfTask );

@@ -41,14 +41,16 @@ public class SomFluidProperties
 	
 	transient static SomFluidProperties sfp; 
 	
-	public final static int _SOMTYPE_MONO = 1; 
-	public final static int _SOMTYPE_PROB = 2;
+	public final static int _SOMTYPE_PROB = 1;
+	public final static int _SOMTYPE_MONO = 2; 
 	
 	public final static int _SRC_TYPE_FILE = 1;
 	public final static int _SRC_TYPE_DB   = 3;
 	public final static int _SRC_TYPE_OBJ  = 5;
-	public final static int _SRC_TYPE_XML  = 10;
+	public final static int _SRC_TYPE_XSTREAM = 12;
+	public final static int _SRC_TYPE_ONLINE  = 100;
 
+	
 	public static final int _SIM_NONE      = -1;
 	public static final int _SIM_SURROGATE = 3;
 	public static final int _SIM_PROFILES  = 5;
@@ -241,7 +243,7 @@ public class SomFluidProperties
 	 */
 	public String getDefaultExport() {
 	 
-		return null;
+		return "";
 	}
 
 
@@ -494,7 +496,11 @@ public class SomFluidProperties
 		return restrictionForSelectionSize;
 	}
 
-
+	/**
+	 * if node grow beyond that number of records, they will be split; this could provoke bagging or growing, if allowed
+	 * 
+	 * @param count
+	 */
 	public void setAbsoluteRecordLimit(int count) {
 		modelingSettings.setAbsoluteRecordLimit(count);
 	}
@@ -508,7 +514,8 @@ public class SomFluidProperties
 	 *                       if there are enough data 
 	 * @param maxRecordCount whenever a SOM takes at least this number of records, bagging will be applied (if it has been activated)
 	 */
-	public void defineSomBags(int recordsPerNode, int maxNodeCount, int maxRecordCount) {
+	public void defineSomBags( int maxNodeCount, int recordsPerNode, int maxRecordCount) {
+		
 		modelingSettings.getSomBagSettings().setSombagRecordsPerNode(recordsPerNode) ;
 		modelingSettings.getSomBagSettings().setSombagMaxNodeCount(maxNodeCount) ;
 		modelingSettings.getSomBagSettings().setSombagMaxRecordCount(maxRecordCount) ;
@@ -610,10 +617,12 @@ public class SomFluidProperties
 		modelingSettings.setValidationParameters(parameters);
 	}
 
-	public void setInstanceType(int glueinstanceType) {
+	public void setGlueInstanceType(int glueinstanceType) {
 		glueType = glueinstanceType;
-		
-		
+	}
+	
+	public void setInstanceType(int somInstanceType) {
+		 
 		fileOrganizer = new FileOrganizer() ;  
 		persistenceSettings = new PersistenceSettings(fileOrganizer);
 		outputSettings = new OutputSettings(persistenceSettings);
@@ -754,7 +763,9 @@ public class SomFluidProperties
 		
 		String ps ;
 		ps = DFutils.createPath( pathstring,"/");
-
+		if (pathstring==null){
+			return;
+		}
 		if (pathstring.endsWith("/")==false){
 			pathstring = pathstring+"/" ; 
 		}

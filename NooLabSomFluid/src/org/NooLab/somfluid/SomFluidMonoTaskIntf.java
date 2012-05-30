@@ -17,5 +17,6 @@ public interface SomFluidMonoTaskIntf extends SomFluidTaskIntf{
 
 	public String getGuid();
 	
+	public int getCounter();
 	
 }

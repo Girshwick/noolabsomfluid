@@ -22,6 +22,7 @@ import org.NooLab.somfluid.components.* ;
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 import org.NooLab.somfluid.core.engines.det.results.ModelOptimizerDigester;
 import org.NooLab.somfluid.core.engines.det.results.SimpleSingleModelDigester;
+import org.NooLab.somfluid.core.engines.det.results.SomResultDigesterIntf;
   
 import org.NooLab.somfluid.env.data.*;
 import org.NooLab.somtransform.SomTransformer;
@@ -93,7 +94,7 @@ public class SomFluid
 	
 	transient DFutils fileutil = new DFutils();
 	transient StringedObjects sob = new StringedObjects();
-	transient PrintLog out = new PrintLog(2, true);
+	transient PrintLog out = new PrintLog(2, false, "[SomFluid]");
 	
 	// ------------------------------------------------------------------------
 	protected SomFluid( SomFluidFactory factory){
@@ -125,9 +126,9 @@ public class SomFluid
 	public void prepareParticlesField( RepulsionFieldEventsIntf eventSink ){
 		
 		int initialNodeCount = sfProperties.getInitialNodeCount();
-
-		out.print(2, "creating the physical node field for " + initialNodeCount
-				+ " particles...");
+ 
+		out.setPrefix( "[SomFluid]") ; 
+		out.print(2, "creating the physical node field for " + initialNodeCount + " particles... this could take a few seconds...");
 
 		// we need to harvest the events here!
 		if ((particleField != null) && (particleField.getNumberOfParticles() != initialNodeCount)) {
@@ -203,6 +204,7 @@ public class SomFluid
 		optimizerResultHandler = new ModelOptimizerDigester( moz , sfFactory);
 		sfTask.setSomResultHandler( optimizerResultHandler ) ;
 		
+		
 		moz.perform();
 		// will return in "onTaskCompleted()"
 		
@@ -211,6 +213,7 @@ public class SomFluid
 		 * don't forget about SomBags as kind of ensemble learning !!!
 		 * 
 		 */
+		
 		
 	}
 	
@@ -240,6 +243,7 @@ public class SomFluid
 		sfFactory.openSource(); // just prepares access, includes connection to dir, db
 		
 		new SomAssociativeStorage( this, sfFactory, sfProperties, createSomDataObject() ); 
+		sfTask.setTaskType( SomFluidTask._TASK_SOMSTORAGEFIELD);
 	}
 
 	
@@ -257,6 +261,7 @@ public class SomFluid
 		
 		sfTask.setDescription("SomApplication()") ;
 		sfTask.setSomHost(null) ;
+		sfTask.setTaskType( SomFluidTask._TASK_CLASSIFICATION);
 		
 		// setMessagePort( SomApplicationEventIntf msgCallbackIntf );
 		try {
@@ -286,77 +291,6 @@ public class SomFluid
 		
 		
 	}
-
-
-	// ========================================================================
-	public String addTask(SomFluidTask somFluidTask) {
-		 
-		somFluidTask.guidID = GUID.randomvalue() ;
-		somTasks.add(somFluidTask);
-		
-		somTasks.setSfFactory(sfFactory) ;
-		
-		out.print(2, "...now there are "+somTasks.size()+" tasks in the SomFluid-queue...") ; out.delay(100) ;
-		
-		isActivated = true;
-		
-		return somFluidTask.guidID  ;
-	}
-
-
-	@Override
-	public void onTaskCompleted( SomFluidTask sfTask ) {
-		 
-		out.printErr(1, "\nSomFluid task has been completed, returning instance : "+ sfTask.getDescription()+", "+sfTask.getSomHost().toString().replace("org.NooLab.somfluid.", "")+"\n" );
-		
-		/* sfTask contains a reference to 
-		 *   - somHost
-		 *   - the SomResultDigesterIntf
-		 * thus we just can call the interface's method ...
-		 * the routing to the appropriate class will be taken "automatically" (we prepared it in the task specific method)
-		 * 
-		 * it will use persistence settings
-		 */
-		
-		
-		sfTask.getSomResultHandler().handlingResults() ;
-		String cn = sfTask.somHost.getClass().getSimpleName() ;
-		
-		if ((sfTask.isCompleted) && (cn.toLowerCase().contains("modeloptimizer"))){
-			
-			SomFluidTask _task = sfFactory.somFluidModule.somTasks.getItemByGuid( sfTask.guidID);
-			if (_task==null){
-				somTasks.add(sfTask);
-			}
-			
-			// put the model to the list
-			// provide an option ... 	
-			sfFactory.getSomObjects().addSom(sfTask.somHost, sfTask.guidID ) ;
-			
-			if (sfProperties.getOutputSettings().isExportApplicationModel()){
-				// call as task ?
-				try {
-				
-					exportModel(sfTask) ;
-					
-					
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				sfTask.setExported(true);
-				out.printErr(2,"\nThe following task has been finished, exported and closed: "+sfTask.guidID+"\n");
-			}else{
-				out.printErr(2,"\nThe following task has been finished and closed: "+sfTask.guidID+"\n");
-			}
-		} // completed "ModelOptimizer"
-		
-		if ((sfTask.isCompleted) && (cn.toLowerCase().contains("somapplication"))){
-			
-			out.printErr(2,"\nThe following task has been finished and closed: "+sfTask.guidID+"\n");
-			
-		}  // completed "SomApplication"
-	}
-
 
 
 	public void exportModel( String taskGuid, String packageName)  throws Exception{
@@ -405,14 +339,16 @@ public class SomFluid
 			throw(new Exception("The model has already been exported (enforcing the export is disabled)."));
 		}
 		
-		// dir = D:\data\projects\bank2\export\packages\~version-1.100"
-		dir = sfProperties.getSystemRootDir();
-		prj = sfProperties.getPersistenceSettings().getProjectName(); // "bank2"
+		
+		// goal for dir = D:/data/projects/bank2/export/packages/ ....
+		dir = sfProperties.getSystemRootDir();                        // D:/data/projects/
+		prj = sfProperties.getPersistenceSettings().getProjectName(); // +"bank2" -> D:/data/projects/bank2/
 		
 		dir = DFutils.createPath(dir, prj);
 		dir = DFutils.createPath(dir, "export/packages/"); // here we maintain a small meta file: latest export, date in days since,
-		  
-		xRootDir = fileutil.createEnumeratedSubDir( dir, "", 0, 1000, -3 ); // 1000 = maxCount, -3 = remove oldest by date, -2 = remove first by sort 
+		  												   // D:/data/projects/bank2/export/packages/
+		
+		xRootDir = fileutil.createEnumeratedSubDir( dir, "", 0, 19, -3 ); // 19 = maxCount, -3 = remove oldest by date, -2 = remove first by sort 
 		  
 		ModelOptimizer moz = (ModelOptimizer )somHost ; // ;
 		
@@ -456,6 +392,15 @@ public class SomFluid
 		fileutil.writeFileSimple(tfilename, transformXstring);
 		fileutil.writeFileSimple(sfilename, somXstring);
 		
+		if (sfProperties.getOutputSettings().writeResultFiles()){
+			String rpath = sfProperties.getOutputSettings().getLastResultLocation();
+			if (fileutil.direxists(rpath)){
+				String refMsg = "location of exported package :\t "+xRootDir;
+				filename = fileutil.createpath(rpath, "packageExportsLocation.txt");
+				fileutil.writeFileSimple(filename, refMsg);
+			}
+		}
+		
 		/*
 		 *  there are essentially those two files, transform.xml, and som.xml
 		 *   ::  +2  if it is required that the data should be included (original and transformed will be written)
@@ -467,6 +412,7 @@ public class SomFluid
 		if (sfProperties.getOutputSettings().isIncludeResultsToExportedPackages()){
 			boolean asHtmlTable=false ; // TODO: on option
 			
+			sfProperties.getOutputSettings().setAsXml(true);
 			srXstring = somHost.getOutResultsAsXml(asHtmlTable);
 			
 			filename = DFutils.createPath(xRootDir, "somresults.xml");
@@ -482,9 +428,102 @@ public class SomFluid
 			somHost.getSomDataObj().getNormalizedDataTable().saveTableToFile( filename );
 		}
 		
-		SomAppPublishing appPublishing = sfProperties.getOutputSettings().getAppPublishing();
-		appPublishing.publishApplicationModel( xRootDir ) ;
+		if (sfProperties.getOutputSettings().isExportApplicationModel()){
+			
+			SomAppPublishing appPublishing = sfProperties.getOutputSettings().getAppPublishing();
+			appPublishing.publishApplicationModel( xRootDir ) ;
+		
+			if (sfProperties.getOutputSettings().isZippedExportedPackages()){
+				// create a zip package from exported directory: everything is in the folder <xRootDir>
+				// naming: include base path and project name into the name, as well as a properties file which we create on the fly
+				// TODO:  satisfy "setZippedExportedPackages()"
+			}
+		} // exporting ?
+	}
+
+
+
+
+	// ========================================================================
+	public String addTask(SomFluidTask somFluidTask) {
 		 
+		somFluidTask.guidID = GUID.randomvalue() ;
+		somTasks.add(somFluidTask);
+		
+		somTasks.setSfFactory(sfFactory) ;
+		
+		 
+		out.setPrefix( "[SomFluid]") ; 
+		out.print(2, "...now there are "+somTasks.size()+" tasks in the SomFluid-queue...") ; out.delay(100) ;
+		
+		isActivated = true;
+		
+		return somFluidTask.guidID  ;
+	}
+
+
+
+
+	@Override
+	public void onTaskCompleted( SomFluidTask sfTask ) {
+		 
+		out.printErr(1, "\nSomFluid task has been completed, returning instance : "+ sfTask.getDescription()+", "+sfTask.getSomHost().toString().replace("org.NooLab.somfluid.", "")+"\n" );
+		
+		/* sfTask contains a reference to 
+		 *   - somHost
+		 *   - the SomResultDigesterIntf
+		 * thus we just can call the interface's method ...
+		 * the routing to the appropriate class will be taken "automatically" (we prepared it in the task specific method)
+		 * 
+		 * it will use persistence settings
+		 */
+		
+		
+		
+		// 
+		
+		if (sfTask.isCompleted){
+			
+			// not active yet... SomResultDigesterIntf resultHandler = sfTask.getSomResultHandler();
+			// not active yet... resultHandler.handlingResults() ;
+			
+			if (SomFluidTask.taskIsModelOptimizer(sfTask)){ 
+
+				SomFluidTask _task = sfFactory.somFluidModule.somTasks.getItemByGuid(sfTask.guidID);
+				if (_task == null) {
+					somTasks.add(sfTask);
+				}
+
+				// put the model to the list
+				// provide an option ...
+				sfFactory.getSomObjects().addSom(sfTask.somHost, sfTask.guidID);
+
+				ModelOptimizer moz = (ModelOptimizer) sfTask.somHost;
+				moz.saveResults();
+
+				if (sfProperties.getOutputSettings().isExportApplicationModel()) {
+					// call as task ?
+					try {
+
+						exportModel(sfTask);
+
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					sfTask.setExported(true);
+					
+					out.printErr(2, "\nThe following task has been finished, exported and closed: " + sfTask.guidID + "\n");
+				} else {
+					out.printErr(2, "\nThe following task has been finished and closed: " + sfTask.guidID + "\n");
+				}
+			}
+		} // completed "ModelOptimizer"
+		
+		if (SomFluidTask.taskIsSomApplication(sfTask)){ 
+			
+			out.printErr(2,"\nThe following task has been finished and closed: "+sfTask.guidID+"\n");
+			
+		}  // completed "SomApplication"
 	}
 
 
@@ -528,7 +567,9 @@ public class SomFluid
 						
 						if ((sfTask!=null) && (sfTask.taskDispatched==0) && (sfTask.isCompleted==false) && (sfTask.isExported==false)){
 							out.print(2,"\nworking on task, id = "+sfTask.guidID);
-							
+							int n = sfProperties.getModelingSettings().getOptimizerSettings().getMaxStepsAbsolute();
+							out.print(2,"expected infimum number of explored variable combinations : " +n+"\n");
+									 
 							sfTask.taskDispatched=1;
 							TaskDispatcher td = new TaskDispatcher(sfTask);
 							 
@@ -908,7 +949,7 @@ public class SomFluid
 	public void onCalculationsCompleted() {
 		
 		if (sfFactory.getPhysicalFieldStarted()==0){
-			out.print(2,"Calculations (SomFluid as event mgr) in particle field have been completed.");
+			out.print(2,"Calculations (SomFluid as event mgr) in particle field are going to be completed, please wait...");
 			
 		}
 		sfFactory.setPhysicalFieldStarted(1);

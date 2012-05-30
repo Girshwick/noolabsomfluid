@@ -37,10 +37,12 @@ public class DSomPerception extends
 		if (bmus!=null)bmus.clear() ;
 		
 		int mppLevel = sfProperties.getMultiProcessingLevel() ;
-		bmus = getBestMatchingNodes( dataRowIndex,
-								     profilevalues, 
-								     bmuListSize, 
-									 boundingIndexList, mppLevel) ;
+		if (profilevalues.size()>0){
+			bmus = getBestMatchingNodes( dataRowIndex,
+								      	 profilevalues, 
+								     	 bmuListSize, 
+								     	 boundingIndexList, mppLevel) ;
+		}
 		 
 	}
 

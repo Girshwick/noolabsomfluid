@@ -630,7 +630,7 @@ public class SomAppModelLoader {
 				   soappProperties.setRiskLevelByECR(v);
 
 			str =  xMsg.getSpecifiedConditionalInfo( rawXmlStr, "//somobjects/som", "index", ""+somObjIndex, 
-															    "/project/risk/requiredsupport", "value"); 	
+															    "/project/risk/support", "value"); 	
 				   int n = soappProperties.getRiskConfidenceByClusterSupport();
 				   if (n<0){
 					   n = 0;

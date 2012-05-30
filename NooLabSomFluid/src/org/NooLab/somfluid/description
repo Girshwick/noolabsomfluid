@@ -3,7 +3,7 @@
 A SomFluid is a module for a population of SOMs 
 
 SomFluid contains to very different SOM-engines:
-- the probabilistic SOM (prespecific storage), and 
+- the probabilistic SOM (pre-specific storage), and 
 - the deterministic SOM (modeling/classification)
 
 small, but important note:
@@ -44,29 +44,6 @@ The SomFluid uses the RepulsionField as its "physical" basis.
 
 
 
-
-msom = modular SOM
-
-An msom is a small module that is part of a population of SOM, which
-together build a self-organizing population (probabilistic meta 
-network, PMN [project: NooLabMetaNet]) of SOM.
-
-This PMN is an organizer that uses SOM to organize other SOM, mainly by
-some global monitoring.
-
-Most behaviors of PMN are, however, self-organized, i.e. organized in
-a bottom up fashion.
-
-an msom can grow itself in different modes;
-
-importantly, a message interface is needed on the level of
-SOM semantics, for passing around
-
-- vectors
-- tables
-- meta-control data
-- results
-- queries
 
 
 

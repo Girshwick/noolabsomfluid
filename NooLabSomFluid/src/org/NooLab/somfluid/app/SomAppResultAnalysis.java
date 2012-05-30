@@ -78,10 +78,10 @@ public class SomAppResultAnalysis 	implements 	Serializable,
 			reliability = 1.0 ;
 			nodesize = node.getExtensionality().getSupport() ;
 			
-			if (i<2){
+			if (i<1){
 				String outstr = "";
 				if (i==0){
-					outstr = "record index: \t"+workerindex + "\t  bmu: \t"+i +"\t node index: \t"+sbmuIndex+"   \tnodePpv = \t"+String.format("%.2f", nodePpv)+" \t"+cvalues.get(3) ;
+					outstr = "record index: \t"+workerindex + "\t  bmu: \t"+i +"\t node index: \t"+sbmuIndex+"   \tnodePpv = \t"+String.format("%.2f", nodePpv)+" \t"+cvalues.get(4) ;
 				}else{
 					outstr = ".             \t"+               "\t   bmu: \t"+i+"\t node index: \t"+sbmuIndex+"   \tnodePpv = \t"+String.format("%.2f", nodePpv)+"" ;
 				}

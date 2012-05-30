@@ -17,7 +17,7 @@ public class OptimizerSettings  implements Serializable{
 	double stopAtNormalizedQuality = 1.01 ;
 	
 	/** 
-	 * this creates a sample such that one pass of the optimizer lasts apprx. [n] millis;</br>
+	 * this creates a sample such that one pass of the optimizer lasts approx. [n] millis;</br>
 	 * the required number of cases is guaranteed though, so it may last longer, if adaptive sampling is not activated
 	 */
 	boolean activeTimeLimitation = false;
@@ -36,6 +36,8 @@ public class OptimizerSettings  implements Serializable{
 	double durationHours = 25.0;
 
 	boolean shortenedFirstCycleAllowed = true;
+
+	private boolean balancedEvolutionaryExploration = false;
 	
 	
 	// ========================================================================
@@ -96,7 +98,7 @@ public class OptimizerSettings  implements Serializable{
 	/**
 	 * @param atLeastWithoutChange the atLeastWithoutChange to set
 	 */
-	public void setAtLeastWithoutChange(int atLeastWithoutChange) {
+	public void setStepsAtLeastWithoutChange(int atLeastWithoutChange) {
 		this.atLeastWithoutChange = atLeastWithoutChange;
 	}
 
@@ -167,6 +169,16 @@ public class OptimizerSettings  implements Serializable{
 
 	public void setSamplesRatio(double samplesRatio) {
 		this.samplesRatio = samplesRatio;
+	}
+
+
+	public void setBalancedEvolutionaryExploration(boolean flag) {
+		balancedEvolutionaryExploration = flag ;		
+	}
+
+
+	public boolean isBalancedEvolutionaryExploration() {
+		return balancedEvolutionaryExploration;
 	}
 	
 	

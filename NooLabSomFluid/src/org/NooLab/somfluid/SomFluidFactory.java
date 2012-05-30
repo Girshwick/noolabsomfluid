@@ -79,7 +79,7 @@ public class SomFluidFactory  implements 	//
 	GlueBindings glueBindings;
 	
 	DFutils fileutil = new DFutils();
-	PrintLog out = new PrintLog(2, true);
+	PrintLog out = new PrintLog(2, true, "[SomFluid-factory]"); 
 	private Random random;
 	
 		
@@ -361,6 +361,7 @@ public class SomFluidFactory  implements 	//
 	public RepulsionFieldIntf createPhysicalField( RepulsionFieldEventsIntf eventSink, int initialNodeCount) { // 
 		RepulsionFieldIntf physicalField;
 		
+		out.setPrefix("[SomFluid-factory]") ;
 		out.print(2, "starting the physical particles field... ") ;  
 		
 		if (eventSink!=null){

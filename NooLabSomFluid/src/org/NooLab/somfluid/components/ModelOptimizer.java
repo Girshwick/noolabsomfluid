@@ -7,6 +7,7 @@ import java.util.Collections;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
+import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.*;
 
 import org.NooLab.somfluid.*;
@@ -145,6 +146,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		sfTask.setCompleted(false);
 		sfTask.setSomHost(modOpti) ;
 		modOpti = this;
+		sfTask.setTaskType( SomFluidTask._TASK_MODELING); // "M" 
 		
 		resumeMode = sfTask.getResumeMode() ;
 		
@@ -221,6 +223,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 				processes.add(process);
 			}
 
+			sfProperties.getOutputSettings().setLastResultLocation("");
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -240,6 +243,38 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 	}
 	 
 	
+	public void saveResults() {
+		OutputSettings outs = sfProperties.getOutputSettings();
+		
+		if (outs.writeResultFiles()){
+			
+			DFutils fileutil = new DFutils();
+			
+			boolean asHtmlTable= outs.isHtmlCompatible() ;
+			
+			String dir = sfProperties.getSystemRootDir();                        // D:/data/projects/
+			String prj = sfProperties.getPersistenceSettings().getProjectName(); // +"bank2" -> D:/data/projects/bank2/
+			
+			dir = DFutils.createPath(dir, prj);
+			
+			String xRootDir = fileutil.createEnumeratedSubDir( dir, "", 0, 19, -3 ); // 19 = maxCount, -3 = remove oldest by date, -2 = remove first by sort
+			
+			String srXstring = getOutResultsAsXml(asHtmlTable);
+			
+			String filename = DFutils.createPath(xRootDir, "somresults.xml");
+			fileutil.writeFileSimple(filename, srXstring);	
+			
+			if (fileutil.fileexists(filename)){
+				out.print(2, "results of model optimizing have been writte to file... \n"+
+							 "  "+filename+"\n") ;
+				sfProperties.getOutputSettings().setLastResultLocation(xRootDir);
+			}
+		}
+		
+	}
+
+
+
 	private int saveSingleSom( SimpleSingleModel singleSom ) {
 		// 
 		
@@ -315,11 +350,13 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		SomSprite dependencyCheck;
 		
 		SomScreening somScreening  =null;
+		int contributionCheckings=0;
 		
 		Thread moptiThrd;
 		ArrayList<Integer> variableSubsetIndexes ;
 		private ArrayList<String> currentVariableSelection = new ArrayList<String>() ;
 		private int lastCanonicalStepCount=0;
+		private boolean finalRefinement = false;
 		
 		
 		// --------------------------------------------------------------------
@@ -343,7 +380,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		public void optimizeOnVariableSubset(){
 			
 			// variableSubsetIndexes
-			boolean done=false, candidatesOK;
+			boolean done=false, breakLoop=false,candidatesOK, caredForEvoBalance=false;
 			int loopcount=0,  vn;
 			double _mScore1 = 9999.09, _mScore2=9999.09;
 			VirtualLattice somLattice ;
@@ -367,6 +404,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			
 			performInitialGuessOfWeights();
 			
+// ----------------------------------------------------------------------------------------------------
 			 
 			while ((done==false) && (somFluid.getUserbreak()==false)){
 				
@@ -394,19 +432,18 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 							}
 							resumeMode = 0;
 						}
-						//else
-						{
-						// size of var vector ?
-							somScreening = new SomScreening( moptiParent );
-							try {
-								somScreening.setInitialVariableSelection( currentVariableSelection,true  ) ;
-								
-							} catch (Exception e) {
-								e.printStackTrace();
-								break;
-							}
-						}	
-						// ? is not properly delivered, and init of powerset hangs 
+
+						somScreening = new SomScreening(moptiParent);
+						try {
+							somScreening.setInitialVariableSelection(currentVariableSelection, true);
+
+						} catch (Exception e) {
+							e.printStackTrace();
+							break;
+						}
+						
+						somScreening.setFinalRefinement(finalRefinement) ;
+						
 						 
 						// will be done inside there: somScreening.acquireMapTable( somProcess.getSomLattice().exportSomMapTable() );
 						 
@@ -511,14 +548,14 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 							candidatesOK = true;
 						}else{
 							// if no additional derived variables -> we may exit the L2-loop 
-							break;
+							breakLoop=true;;
 						}
 						
 						// send candidates into SomTransformer, they will be put just to a queue, 
 						// but NOTHING will be changed regarding the transformations...  
 						// implementation will be triggered by instances of SomHostIntf (such like ModelOptimizer)
 						// perceiveCandidateTransformations(candidates) ;
-						if (candidatesOK){
+						if ((candidatesOK) && (breakLoop==false)){
 							lastDependencyProposals = dependencyCheck.getProposedCandidates();
 							
 							somTransformer.implementWaitingTransformations(1);
@@ -572,7 +609,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 						// save SOM, such that a re-calculation will not be necessary if we want to export
 						
 						//
-						break;
+						breakLoop=true;
 						
 					} // getSpriteAssignateDerivation() ?
 					
@@ -583,16 +620,26 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 					_mozResults = null ; // -> checking whether evocounts are taken in/from previous run ?
 					
 					//
-					
-					somScreening.close();
-					somScreening = null;
-					System.gc() ;
+					if (breakLoop==false){
+						// only if we will repeat, we should clear that... we need it subsequently to the L2 loop!
+						somScreening.close();
+						somScreening = null;
+						System.gc() ;
+					}
 					
 											vn = somDataObj.variableLabels.size() ; 
 											out.print(4, "somDataObj, size of variableLabels (g) : "+vn);
 				    
-				} // getMaxL2LoopCount ?
-
+					
+				} // getMaxL2LoopCount > 0?
+				
+// ----------------------------------------------------------------------------------------------------
+				
+				if (breakLoop){
+					done=true;
+				}
+				loopcount++;
+				
 				if (modelingSettings.getPerformCanonicalExploration()){
 					// did we reach a minimum number of models so far?
 					// we demand a distance of 50 models, or the complete change of the top 5 (10) models
@@ -612,10 +659,45 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 					
 					lastCanonicalStepCount = evosteps ; 
 				} // PerformCanonicalExploration ?
+				
+				
+				
+				if ( (modelingSettings.getOptimizerSettings().isBalancedEvolutionaryExploration()) && 
+					 (caredForEvoBalance==false) &&
+					 (loopcount>1) && (loopcount == modelingSettings.getMaxL2LoopCount()-1)){
+					done = false;
+					caredForEvoBalance = true;
+					// explicitly care for balanced evolutionary counts, such that min count >= 8
+					// we already have a object for this that is working within process: "TaskRatedPressure"
+					// here we call an explicit strategy
+				}
+				// enforcing the exploration may lead to metrices with malicious variables, i.e. a negative predictive contribution
+				// these we have to check
+				if ((done) || (loopcount >= modelingSettings.getMaxL2LoopCount()-2 )){
+					
+					modelDescription = new SomModelDescription(moptiParent);
+					modelDescription.setInitialVariableSelection(currentVariableSelection);
+					modelDescription.calculate(1);
 
-				loopcount++;
+					ArrayList<String> removals = modelDescription.getNegativeContributionVar();
+	 
+	 
+					if ((removals.size() > 0) && (contributionCheckings <= 2)) {
+						contributionCheckings++;
+						int szb = currentVariableSelection.size();
+						currentVariableSelection = (ArrayList<String>) CollectionUtils.subtract( currentVariableSelection, removals);
+								
+						if (szb > currentVariableSelection.size()) {
+							done = false;
+							finalRefinement = true; 
+						}
+					}
+				}
 			}// main loop -> done ?
 			// ................................................................
+			if (modelDescription!=null){
+				modelDescription.clear(); modelDescription=null;
+			}
 			
 			if (modelingSettings.getPerformCanonicalExploration()){
 				int evosteps = moptiParent.evoMetrices.size();
@@ -630,11 +712,13 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 					// we pre-calc the model description already here, searching for variables which are
 					// contributing much, but of low contrast
 					// we fix all other variables as white list, and search for a replacement of that variable
-					// TODO
+					//  
 					modelDescription = new SomModelDescription( moptiParent );
 					modelDescription.setInitialVariableSelection( currentVariableSelection  ) ;
 					modelDescription.calculate() ;
-
+					
+					
+					
 					SynonymicalsIdentifier syd = new SynonymicalsIdentifier ( moptiParent, modelDescription ) ;
 				}
 				
@@ -649,7 +733,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			// on option: remove low-rated derived variables from tables and lists in SomDataObject
 			evoMetrices.close() ;
 			
-			evoMetrices = _evoMetrices;
+			evoMetrices = _evoMetrices; // ???
 			evoMetrices.prepare();
 											String str = arrutil.arr2text( evoMetrices.getBestResult().getVarIndexes());
 											// translate into variable names
@@ -781,12 +865,26 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			// release event message, better use an event listener instead of a direct callback
 			// at least an Observer ??
 			
+			
+			/*
+			 * Now, if we export the model, we should determine some important use parameters for the model,
+			 * and those should be saved into a section in som.xml
+			 * These parameters may differ from characteristics measured during modeling 
+			 * 
+			 * - characteristics of ppv (on nodes) -> tp rate, portion selected, post prediction risk, sensitivity, specificity  
+			 *  
+			 * 
+			 * 
+			 */
+			
+			
 			sfTask.setSomHost(modOpti) ;
 			sfTask.setCompleted(true);
 			somFluid.onTaskCompleted( sfTask );
 		}
 	  
 		
+		 
 		@SuppressWarnings("unchecked")
 		private SomProcessIntf actualizeByBestModel() {
 			
@@ -999,13 +1097,17 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 			
 			return currentVariableSelection;
 		}
+		
 		private void performSingleRun(int index, boolean collectresults){
+			
 		// the same "package" is running in SomScreening 
 			SomFluidTask _task = new SomFluidTask(sfTask);
 			_task.setNoHostInforming(true);
 			
 			SimpleSingleModel simo ;
 			ModelProperties somResults;
+			
+			_task.setCounter(index);
 			
 			simo = new SimpleSingleModel(somFluid , _task, sfFactory );
 			
@@ -1019,7 +1121,9 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 			
 			if (collectresults){
 				somResults = simo.getSomResults();
-				somResults.setIndex(index);
+				if (somResults!=null){
+					somResults.setIndex(index);
+				}
 			}
 			// simo.somProcess.getSomLattice();
 		}
@@ -1043,6 +1147,7 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 			SomTargetedModeling targetedModeling;
 			
 			sfTask.setCallerStatus(0) ;
+			sfTask.setCounter(z) ;
 			
 			targetedModeling = new SomTargetedModeling( modOpti, sfFactory, sfProperties, sfTask, serialID);
 			
@@ -1372,6 +1477,12 @@ if (bestHistoryIndex==0){
 
 	public PrintLog getOut() {
 		return out;
+	}
+
+
+
+	public SomModelDescription getModelDescription() {
+		return modelDescription;
 	}
 
 

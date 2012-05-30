@@ -25,6 +25,7 @@ import org.NooLab.somfluid.env.communication.*;
 import org.NooLab.somfluid.properties.ModelingSettings;
 
 import org.NooLab.somtransform.SomTransformer;
+import org.NooLab.utilities.logging.LogControl;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
 import org.NooLab.utilities.objects.StringedObjects;
@@ -162,6 +163,7 @@ public class SomTargetedModeling    extends
 		somBags = new SomBags(this, sfProperties) ;
 		 
 		out.setPrefix("[SomFluid-main]");
+		out.setShowTimeStamp(true);
 	}
 
 
@@ -172,15 +174,16 @@ public class SomTargetedModeling    extends
 	 * Note that the particles in the field are just containers! They are not identical to nodes.
 	 * Hence, our nodes need to be attached to the particles  
 	 */
-	private void createVirtualLattice( VirtualLattice somLattice, RepulsionFieldIntf particleField, int initialNodeCount) {
+	private void createVirtualLattice( VirtualLattice somLattice, RepulsionFieldIntf particleField, int initialNodeCount, boolean showNodeCount) {
 		
 		MetaNode mnode;
 		long idbase;
 		Particle particle;
 		
 		somDataObject = somHost.getSomDataObj() ;
-		 
-											out.print(2, "creating the logical som lattice for "+initialNodeCount+" nodes...");
+		 									if ((showNodeCount) || (somHost.getSfTask().getCounter()<=3)){ 
+		 										out.print(2, "creating the logical som lattice for "+initialNodeCount+" nodes...");
+		 									}
 		for (int i=0;i<initialNodeCount;i++){
 			
 			mnode = new MetaNode( somLattice, somDataObject  );
@@ -242,7 +245,9 @@ public class SomTargetedModeling    extends
 		somLattice = new VirtualLattice(this,latticeProperties,(int) (100+numericID));
 		  
 		// initStructures( somLattice );
-		createVirtualLattice( somLattice, particleField, initialNodeCount ); 
+	 
+		boolean displayNodeCount = sfTask.getCounter()<=0;
+		createVirtualLattice( somLattice, particleField, initialNodeCount , displayNodeCount); 
 	}
 	
 	
@@ -276,8 +281,11 @@ public class SomTargetedModeling    extends
 		if (somLattice==null){
 			return;
 		}
-		 
-											out.print(2, "loading data definitions to Som-Lattice (vector size: "+vars.size()+")..."); 
+											int outlevel=2;
+											if ((LogControl.Level>=2) && (somHost.getSfTask().getCounter()>3)){
+												outlevel=3;
+											}
+											out.print(outlevel, "loading data definitions to Som-Lattice (vector size: "+vars.size()+")..."); 
 											
 		// initialize feature vectors: ALL variables, WITHOUT id, tv !!!
 		// if we won't use all variables, the size of the vectors won't match (intensionality.profilevector.values)

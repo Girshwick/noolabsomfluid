@@ -406,7 +406,7 @@ class SomModuleInstance implements 	Runnable,
 		sfProperties.getModelingSettings().getOptimizerSettings().setMaxStepsAbsolute( 23 );     // only for testing, or initial exploration
 		sfProperties.getModelingSettings().getOptimizerSettings().setMaxAvgVariableVisits(21) ;  // required for comparing models across population regarding the variable selections 
 		sfProperties.getModelingSettings().getOptimizerSettings().setDurationHours(0.8) ;        // an absolute time limit in hours 
-		sfProperties.getModelingSettings().getOptimizerSettings().setAtLeastWithoutChange(300) ; // stop if there is no improvement for some time
+		sfProperties.getModelingSettings().getOptimizerSettings().setStepsAtLeastWithoutChange(300) ; // stop if there is no improvement for some time
 		
 		sfProperties.setDataUptakeControl(0);                              // if negative, the data won't load automatically into the SOM
 		

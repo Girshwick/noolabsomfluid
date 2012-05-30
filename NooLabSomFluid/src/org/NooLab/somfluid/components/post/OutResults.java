@@ -533,7 +533,7 @@ public class OutResults implements Serializable{
 			instr = strgutil.replaceAll( instr, "\n", "</row><row>");
 			instr = strgutil.replaceAll( instr, "</row><row>","</row>\n<row>");
 			instr = strgutil.replaceAll( instr, "\t", ";");
-			instr = "<table name=\""+label+"\">\n<tr>" + instr;
+			instr = "<table name=\""+label+"\">\n<row>" + instr;
 			instr = instr+ "</row>\n</table>" ;
 		}
 		tstr = str + "\n"+ instr ;

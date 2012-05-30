@@ -66,10 +66,11 @@ public class SimilarityCalculator{
 									 ArrayList<Double> vector2, ArrayList<Double> useIntensity) {
 		
 		if ( (vector1==null) || (vector2==null) || ((vector1.size() != vector2.size()))) {
-			System.out.println( "Error! vector1.length (" + vector1.size()+") "+
+			System.err.println( "Error! vector1.length (" + vector1.size()+") "+
 								"<> vectorsize (" + vector2.size() + ")");
-			return -1;
+			return -1; // advanced error handling is outside, on the level of bmuSearch or similar
 		}
+		
 		double c, d, d0, df, ic1 = 0, ic2 = 0, iq;
 		int i,u=0, z, distanceMeth, fvp=-1;
 		double ui,vv1,vv2 ;

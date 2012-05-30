@@ -7,6 +7,7 @@ import java.util.Vector;
 import org.NooLab.somfluid.components.ModelOptimizer;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
+import org.NooLab.somfluid.components.variables.VariableContributions;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurface;
@@ -44,6 +45,7 @@ public class SomContainer {
 	transient SomFluidProperties sfProperties;
 	transient ClassificationSettings cs;
 	
+	transient ArrUtilities arrutil = new ArrUtilities();
 	transient PrintLog out;
 	// ========================================================================
 	public SomContainer( SomObjects parent, SomHostIntf somhost, String guid) {
@@ -65,6 +67,7 @@ public class SomContainer {
 	
 	public XMLBuilder getSomProjectDescriptionXml(SomFluidXMLHelper xEngine) {
 
+		double v;
 		XMLBuilder  spbuilder = xEngine.getXmlBuilder( "project" );
 		String datestr, machineID="",engineID="",prjLabel="";
 		 
@@ -98,7 +101,7 @@ public class SomContainer {
 			spbuilder = spbuilder.e("context");
 
 				int somType = somHost.getSfProperties().getSomType() ;
-				int targetMode = cs.getTargetMode(); // like ClassificationSettings._TARGETMODE_SINGLE   ;
+				
 				 
 				
 				spbuilder = spbuilder.e("somtype")
@@ -106,10 +109,7 @@ public class SomContainer {
 										  .a("nested", "")
 										  .a("description", "");
 				
-						    if ((somType == SomFluidProperties._SOMTYPE_MONO) && 
-						    	(targetMode>=ClassificationSettings._TARGETMODE_SINGLE)){
-						    	spbuilder = spbuilder.a("targetmode", ""+targetMode);
-						    }
+						    
 				spbuilder = spbuilder.up();
 				// - - - - - - - - - - - - - - - - - -
 
@@ -122,7 +122,33 @@ public class SomContainer {
 				spbuilder = spbuilder.e("bags").a("count", "0");
 				spbuilder = spbuilder.up();
 				// - - - - - - - - - - - - - - - - - -
-				 
+							int tc=0,targetMode = cs.getTargetMode(); // like ClassificationSettings._TARGETMODE_SINGLE   ;
+					        String str ="0" ;
+							if ((somType == SomFluidProperties._SOMTYPE_MONO)  ){
+								str = ""+targetMode ;  //_TARGETMODE_SINGLE  _TARGETMODE_MULTI = 2, 
+							}
+							if (targetMode==1){
+								tc=1;
+							}else{
+								tc = cs.getTGdefinition().length ;
+							}
+							/*  there could be several groups !
+							 		TGdefinition[i][0] = min;
+									TGdefinition[i][1] = max; 
+							 
+							 */
+							String[] grouplabels = cs.getTGlabels() ;
+							String grouplabelStr = arrutil.arr2text(grouplabels, ";") ;
+				spbuilder = spbuilder.e("target")
+				                         .a("mode", ""+targetMode)
+				                         .e("groups").a("count", ""+tc);
+				                              for (int t=0;t<tc;t++){
+				                            	  spbuilder = spbuilder.e("range").a("index", ""+(t+1)).a("min", "").a("max", "").up() ;
+				                              }
+				                              spbuilder = spbuilder.up();
+				   spbuilder = spbuilder.e("labels").a("list", grouplabelStr).up();     
+				spbuilder = spbuilder.up();
+				// - - - - - - - - - - - - - - - - - -
 				
 			spbuilder = spbuilder.up();
 			
@@ -145,6 +171,31 @@ public class SomContainer {
 				spbuilder = spbuilder.e("optimizer").a("steps", ""+nEvoSteps );
 				spbuilder = spbuilder.up();
 				// - - - - - - - - - - - - - - - - - -
+				if (somHost instanceof ModelOptimizer){
+					moz = (ModelOptimizer)somHost ;
+					VariableContributions vcs = moz.getModelDescription().getVariableContributions() ;
+					
+					spbuilder = spbuilder.e("variables");
+						spbuilder = spbuilder.e("contributions");
+							int vn= vcs.getItems().size(); // used variables
+							double sum=0;
+							for (int i=0;i<vn;i++){
+								String vlabel = vcs.getItem(i).getVariableLabel();
+								v = vcs.getItem(i).getScoreDelta() ;
+								sum=sum+v;
+								str = String.format("%.3f", v) ;
+								spbuilder = spbuilder.e("variable").a("label", vlabel).a("value", str).up();
+							}
+						spbuilder = spbuilder.up();
+						if (vn>0){
+							v = sum/(double)vn ;
+							str = String.format("%.4f", v);
+							spbuilder = spbuilder.e("contribution").a("average", str).up();
+						}
+					spbuilder = spbuilder.up();
+
+				}
+				// - - - - - - - - - - - - - - - - - -
 				
 			spbuilder = spbuilder.up();
 			// ............................................
@@ -156,15 +207,29 @@ public class SomContainer {
 					score = moz.getOutresult().getBestMetric().getActualScore();					
 				}catch(Exception e){}
 				
-				String str = String.format("%.3f", score) ;
+				str = String.format("%.3f", score) ;
 				spbuilder = spbuilder.e("score").a("value", str);
 				spbuilder = spbuilder.up();
 				// - - - - - - - - - - - - - - - - - -
+				
 				
 				// validation data and robustness score 
 				
 			spbuilder = spbuilder.up();
 			// ............................................
+
+			spbuilder = spbuilder.e("risk");
+
+			             v = sfProperties.getModelingSettings().getClassifySettings().getEcr() ;
+			             str = String.format("%.3f", v) ;
+			spbuilder = spbuilder.e("ecr").a("value", str).up();      // 
+			spbuilder = spbuilder.e("support").a("value", "0").up();  // minimum size of cluster as defined for modeling  
+
+			spbuilder = spbuilder.up();
+
+			// ............................................
+			
+			// - - - - - - - - - - - - - - - - - -			
 		spbuilder = spbuilder.up();
 		
 		return spbuilder ;
@@ -199,7 +264,7 @@ public class SomContainer {
 		String xstr="",liststr;
 		
 		int f,nppvr,tvindex ;
-		double nppv,v ;
+		double nppv,v ,nnpv=-1.0;
 		String str ;
 		  
 		// all nodes without data, meta info on the level of lattice, 
@@ -259,10 +324,15 @@ public class SomContainer {
 					int nsz = extens.getCount();
 					nppv = extens.getPPV();
 					nppvr = extens.getPpvRank();
-					
+					nnpv = extens.getNPV() ;
 					str = String.format("%.7f", nppv) ;
+					
 					builder = builder.e("ppv").a("value",""+str).up();
 					builder = builder.e("ppvrank").a("value",""+nppvr).up();
+					
+					str = String.format("%.7f", nnpv) ;
+					builder = builder.e("npv").a("value",""+str).up();
+					
 					builder = builder.e("recordcount").a("value",""+nsz).up();
 					builder = builder.e("neighbors").a("items", ""+liststr).up() ;
 					
