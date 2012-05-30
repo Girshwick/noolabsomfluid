@@ -222,7 +222,7 @@ public class IndexedDistances implements Serializable{
 
 
 	public void addAll(IndexedDistances ixds) {
-		 
+		if (ixds==null)return; 
 		for (int i=0;i<ixds.size();i++){
 			items.add( (IndexDistance) ixds.getItem(i)) ;
 		}

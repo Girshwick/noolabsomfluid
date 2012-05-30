@@ -73,8 +73,21 @@ public class PrintLog {
 	private String collectedPrintOut = "";
 	
 	
-
+	// ========================================================================
 	public PrintLog( int printlevel, boolean showtimestamp ){
+		init( printlevel, showtimestamp ,"");
+	}
+	
+	public PrintLog(  int printlevel, boolean showtimestamp , String prefix) {
+		init( printlevel, showtimestamp , prefix);
+	}
+
+	public PrintLog(  int printlevel, String prefix) {
+		init( printlevel, false , prefix);
+	}
+	// ========================================================================
+	
+	private void init( int printlevel, boolean showtimestamp , String prefix ){
 		
 		printLevel = printlevel;
 		showTimeStamp = showtimestamp ;
@@ -85,10 +98,9 @@ public class PrintLog {
 		
 		logfilepath = filutil.getTempDir() ;
 		logfilename = filutil.createPath( logfilepath ,logfilename );
+		
 	}
-	
-
-	
+	// ------------------------------------------------------------------------
 	public void measureTime(){
 		measuredTime = System.currentTimeMillis();
 		initialTimeStamp = addTimeStamp("",2) ;
@@ -220,6 +232,16 @@ public class PrintLog {
 					msg = addTimeStamp(msg,2) ;
 				}
 			}
+			
+            if ((suppressPrefix==false) && (prefix.trim().length()>0)){
+            	String cr="";
+            	if (msg.startsWith("\n")){
+            		msg = msg.substring(1,msg.length());
+            		cr = "\n";
+            	}
+            	msg = cr + prefix+" "+msg;
+            }
+            
 			if (prnerr){
 				System.err.print(msg);
 				if (linefeed > 0) {
@@ -231,14 +253,7 @@ if ((msg==null) ){
 	 
 	return;
 }				
-                if ((suppressPrefix==false) && (prefix.trim().length()>0)){
-                	String cr="";
-                	if (msg.startsWith("\n")){
-                		msg = msg.substring(1,msg.length());
-                		cr = "\n";
-                	}
-                	msg = cr + prefix+" "+msg;
-                }
+
                 
                 if (filters.size()>0){
                 	// check the filters map for the prefix, remove if there is a match
