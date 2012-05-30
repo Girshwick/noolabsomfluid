@@ -437,6 +437,9 @@ class SomModuleInstanceA1 implements 	Runnable,
 		// soappProperties.setModelSelectionMode( SomAppProperties._MODELSELECT_VERSION,"0" ); 
 		soappProperties.setModelSelectionMode( SomAppProperties._MODELSELECT_LATEST );
 		soappProperties.setModelSelectionMode( SomAppProperties._MODELSELECT_BEST );
+		soappProperties.setModelSelectionCriteria( SomAppProperties._MODELSELECT_TARGETLABEL, "intermediate") ; 
+																	// if such a label can be found, it is used as a criterion 
+		
 		// alternatively, we set the active model to blank here, and provide the package name ;
 		// whenever the active model name is given (and existing) it will be preferred!
 		//    clappProperties.setActiveModel("");

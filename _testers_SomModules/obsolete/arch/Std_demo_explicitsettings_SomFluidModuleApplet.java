@@ -499,8 +499,7 @@ class SomModuleInstanceSD implements 	Runnable,
 																		   // the only effect will be a "nicer" final output
 		//sfProperties.getModelingSettings().setTvLabelAuto("TV") ;        // the syllable(s) that will be used to identify the target variable as soon as data are available
 																	       // allows a series of such identifiers
-		sfProperties.getModelingSettings().setExpectedVariety("*TV",3) ;   // this is important for adjusting the max number of rows for scanning  
-																		   // in this case, 3 different values are expected in the first variable which matches the wildcarded label (default: 2)
+
         sfProperties.getModelingSettings().setInitialAutoVariableSelection(1); // default=0==no; 1= by PCA, 2= by canonical KNN, 3= combined by PCA & KNN (not avail. yet)
         sfProperties.getModelingSettings().setInitialVariableSelection( new String[]{"Stammkapital","Bonitaet","Bisher","Branchenscore"});
         
@@ -558,7 +557,7 @@ class SomModuleInstanceSD implements 	Runnable,
 		
 		sfProperties.getModelingSettings().getOptimizerSettings().setMaxAvgVariableVisits(21) ;  // required for comparing models across population regarding the variable selections 
 		sfProperties.getModelingSettings().getOptimizerSettings().setDurationHours(0.8) ;        // an absolute time limit in hours 
-		sfProperties.getModelingSettings().getOptimizerSettings().setAtLeastWithoutChange(300) ; // stop if there is no improvement for some time
+		sfProperties.getModelingSettings().getOptimizerSettings().setStepsAtLeastWithoutChange(300) ; // stop if there is no improvement for some time
 		
 		sfProperties.setDataUptakeControl(0);                              // if negative, the data won't load automatically into the SOM
 		
@@ -632,7 +631,7 @@ class SomModuleInstanceSD implements 	Runnable,
 		 
 		sfProperties.getOutputSettings().setResultFilenames( _prepareResultFilesMap() ); // there is a default
 		sfProperties.getOutputSettings().setAsXml(false);                  // default = false
-		sfProperties.getOutputSettings().createZipPackage(true);           // default = true
+		sfProperties.getOutputSettings().createZipPackageFromResults(true);           // default = true
 		sfProperties.getOutputSettings().exportApplicationModel(true);     // exports the file package that is necessary for applying the data to new data
 		
 		// TODO:  
