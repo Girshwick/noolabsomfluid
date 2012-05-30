@@ -422,18 +422,7 @@ public class ArrUtilities {
 		return strval ;
 	}
 	
-	public double[] changeArrayStyle( ArrayList<Double> vvec ){
-		double[] strval ;
-		 
-		 
-		strval = new double[vvec.size()];
-		if (vvec.size() > 0) {
-			for (int k = 0; k < vvec.size(); k++) {
-				strval[k] = vvec.get(k);
-			}
-		}
-		return strval ;
-	}
+
 
 	public int[] changeArrayStyle( Vector<Integer> strvec, int i ){
 		int[] strval ;
@@ -1966,7 +1955,51 @@ public class ArrUtilities {
 		return outStr ;
 	}
 
-	
+	/**    */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static ArrayList  copyList(ArrayList<?> inList) {
+		 
+		if (inList ==null){
+			return null ;
+		}
+		if (inList.size() == 0){
+			return inList ;
+		}
+		
+		int clength = inList.size();
+		ArrayList gList = null;
+		String cname = inList.get(0).getClass().getSimpleName();
+		 	
+		
+		if (cname.toLowerCase().contains("doub")) {
+			 
+
+			gList = new ArrayList<Double>();
+			for (int i = 0; i < clength; i++) {
+				gList.add( inList.get(i) );
+			}
+		}
+		if (cname.toLowerCase().contains("int")) {
+	 
+			
+			gList = new ArrayList<Integer>();
+			for (int i = 0; i < clength; i++) {
+				gList.add(  inList.get(i) );
+			}
+		}
+		if (cname.toLowerCase().contains("str")) {
+			gList = new ArrayList<String>();
+  
+			for (int i = 0; i < clength; i++) {
+				gList.add(  inList.get(i) );
+			}
+		}
+
+		return gList;
+		 
+	}
+
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static void resetCollection( ArrayList gList, Object fillValue) {
 		
@@ -2151,9 +2184,78 @@ public class ArrUtilities {
 		return confirmedItems;
 	}
 
- 
+	@SuppressWarnings("rawtypes")
+	public static ArrayList clean( int index, ArrayList list) {
+		
+		if ((index>=0) && (index<list.size())){
+			if (list.get(index)==null){
+				list.remove(index);
+			}
+		}
+		return list;
+	}
+	@SuppressWarnings("rawtypes")
+	public static ArrayList clean( ArrayList list) {
+
+		int i=list.size()-1;
+		
+		while (i>=0){
+			list = clean(i,list);
+			i--;
+		}
+		return list;
+	}
 
 
+	public Object changeArrayStyle( ArrayList inList) {
+		 
+		Object objArray = null;
+		
+
+		if (inList ==null){
+			return null ;
+		}
+		if (inList.size() == 0){
+			return inList ;
+		}
+		
+		int clength = inList.size();
+		
+		String cname = inList.get(0).getClass().getSimpleName();
+		 	
+		
+		if (cname.toLowerCase().contains("doub")) {
+			double[] valArr  ;
+			valArr = new double[clength];
+			
+			for (int i = 0; i < clength; i++) {
+				valArr[i] = (Double) inList.get(i) ;
+			}
+			objArray = valArr;
+		}
+
+		if (cname.toLowerCase().contains("int")) {
+			int[] valArr  ;
+			valArr = new int[clength];
+			
+			for (int i = 0; i < clength; i++) {
+				valArr[i] = (int)((Integer) inList.get(i)) ;
+			}
+			objArray = valArr;
+		}
+		if (cname.toLowerCase().contains("str")) {
+			String[] valArr  ;
+			valArr = new String[clength];
+			
+			for (int i = 0; i < clength; i++) {
+				valArr[i] = (String) inList.get(i) ;
+			}
+			objArray = valArr;
+		}
+
+		return objArray;
+	}
+  
 	
 }
 
