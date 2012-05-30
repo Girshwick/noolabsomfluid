@@ -37,6 +37,8 @@ public class ModelOptimizerDigester  extends SomResultHandlerAbs {
 		out.print(2, en+ " models have been calculated."); // best one, coverage, non-linearity, comparison to PCA
 		// moz.getSpelaResults() ;
 		
+		
+		
 	}
 	
 	

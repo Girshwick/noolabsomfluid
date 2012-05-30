@@ -127,7 +127,26 @@ public class SomModelDescription implements Serializable{
 	// ========================================================================
 	
 	
-	
+	public void clear() {
+		variableContributions.getItems().clear();
+		variableContrasts.getItems().clear();
+		evometrices.reset();
+	}
+
+
+	public void calculate(int flavor) {
+		
+		if (flavor<=1){
+			contributionsChecking() ;
+		}
+		if (flavor==2){
+			linearityDescriptors() ;
+		}
+		if (flavor>2){
+			calculate()  ;
+		}
+		
+	}
 	public void calculate() {
 		// should start a thread and wait
 		contributionsChecking() ;
@@ -150,6 +169,27 @@ public class SomModelDescription implements Serializable{
 		currentVariableSelection.addAll(vs) ;
 		baseVariableSelection.addAll(vs) ; 
 	}
+	
+	
+	public ArrayList<String> getNegativeContributionVar() {
+		
+		ArrayList<String> problematicVarLabels = new ArrayList<String>(); 
+		VariableContribution vc;
+		
+		
+		for (int i=0;i<variableContributions.size();i++){
+		
+			vc = variableContributions.getItems().get(i) ;
+			if (vc.getScoreDelta()>0){
+				problematicVarLabels.add( vc.getVariableLabel() ) ;
+			}
+		}
+		
+		 
+		return problematicVarLabels;
+	}
+
+
 	private void linearityDescriptors() {
 		
 	
@@ -529,11 +569,11 @@ public class SomModelDescription implements Serializable{
 						}
 					} // r-> all data row values
 				
-					vc.getGroupedValues()[0] = arrutil.changeArrayStyle(tgValues) ;
-					vc.getGroupedValues()[1] = arrutil.changeArrayStyle(nonTgValues) ;
+					vc.getGroupedValues()[0] = (double[]) arrutil.changeArrayStyle(tgValues) ;
+					vc.getGroupedValues()[1] = (double[]) arrutil.changeArrayStyle(nonTgValues) ;
 					 
 					nonTgValues.addAll(tgValues);
-					vc.getGroupedValues()[2] = arrutil.changeArrayStyle(nonTgValues) ;
+					vc.getGroupedValues()[2] = (double[]) arrutil.changeArrayStyle(nonTgValues) ;
 					
 					nonTgValues.clear();
 					tgValues.clear();

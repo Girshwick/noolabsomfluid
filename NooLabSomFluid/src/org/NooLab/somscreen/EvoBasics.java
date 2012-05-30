@@ -198,12 +198,14 @@ if ( ems2.getBestResult()==null){
 		
 	}
 	
-	public ArrayList<Integer> getQuantilByWeight(double quantile, double loWeightLimit, double hiWeightLimit) {
+	public ArrayList<Integer> getQuantilByWeight(double quantile, double loWeightLimit, double hiWeightLimit, ArrayList<String> definitelyExcluded ) {
 		
-		return getQuantilByWeight( quantile, loWeightLimit, hiWeightLimit, false);
+		return getQuantilByWeight( quantile, loWeightLimit, hiWeightLimit, definitelyExcluded, false);
 	}
+	
 	public ArrayList<Integer> getQuantilByWeight( double quantile, 
 												  double loWeightLimit, double hiWeightLimit, 
+												  ArrayList<String> definitelyExcluded,
 												  boolean allowExtension) {
 		
 		IndexDistance ixd;
@@ -216,25 +218,29 @@ if ( ems2.getBestResult()==null){
 		if (hiWeightLimit>1.0)hiWeightLimit=1.0;
 		if (hiWeightLimit < loWeightLimit)hiWeightLimit = loWeightLimit+0.000001;
 		
-		
 		for (int i=0;i<this.evolutionaryWeights.size();i++){
 			ew = evolutionaryWeights.get(i);
-			if (minew<ew)minew=ew ;
-			if (maxew>ew)maxew=ew ;
+			if (minew>ew)minew=ew ;
+			if (maxew<ew)maxew=ew ;
 				
 			if ((ew>=loWeightLimit) && (ew<= hiWeightLimit)){
 				String varLabel = this.knownVariables.get(i);
-				ixd = new IndexDistance(i,ew,varLabel); 
+				ixd = new IndexDistance(i,ew,varLabel);
+				
+				if (definitelyExcluded.indexOf(varLabel)<0){
+					ixds.add(ixd);
+				}
 			}
-		}
+		} // i->
 		
 		if ((allowExtension) && (ixds.size()==0) && (maxew<loWeightLimit)){
-			selectedIndexes = getQuantilByWeight( quantile, loWeightLimit, 1.0, false);	
+			selectedIndexes = getQuantilByWeight( quantile, loWeightLimit*0.9, 1.0, definitelyExcluded,false);	
 		} else {
 
 			ixds.sort(-1);
-
-			for (int i = 0; i < ixds.size(); i++) {
+			int qn = (int)Math.round( (double)ixds.size()*quantile);
+			qn = Math.min( Math.max(qn,3), ixds.size());
+			for (int i = 0; i < qn; i++) {
 				selectedIndexes.add(ixds.getItem(i).getIndex());
 			}
 

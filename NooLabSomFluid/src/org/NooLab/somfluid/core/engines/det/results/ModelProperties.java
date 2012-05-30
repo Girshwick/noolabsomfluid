@@ -61,7 +61,6 @@ public class ModelProperties implements Serializable,
 	
 	
 	
-	
 	// ========================================================================
 	public ModelProperties(){
 		validationSamples = new ArrayList<ValidationSet>();

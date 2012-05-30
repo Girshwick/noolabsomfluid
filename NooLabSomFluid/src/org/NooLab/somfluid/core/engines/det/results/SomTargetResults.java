@@ -129,7 +129,12 @@ public class SomTargetResults {
 			 */
 			
 			if (dSom.getModelingSettings().getValidationActive()){
-										out.print(1, "performing validation...");
+										 
+										int outlevel=2;
+										if (dSom.getSomTask().getCounter()>3){
+											outlevel=3;
+										}
+										out.print(outlevel, "performing validation...");
 										
 				// not active so far ... :  this.performValidation( dataSampler.getValidationSet() );
 										
@@ -137,7 +142,7 @@ public class SomTargetResults {
 				
 				
 				prepare( DataSampler._SAMPLE_VALIDATION);
-										out.print(2, "performing validation done.");
+										out.print(outlevel, "performing validation done.");
 			}else{
 				
 			}

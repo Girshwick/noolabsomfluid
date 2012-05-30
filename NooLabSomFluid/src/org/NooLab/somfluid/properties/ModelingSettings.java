@@ -36,7 +36,14 @@ import com.jamesmurty.utils.XMLBuilder;
 public class ModelingSettings implements Serializable{
 
 	private static final long serialVersionUID = -464934381782562062L;
-	
+
+	/**  
+	 * codes for canonical exclusions of variables   
+	 */
+	public static final int _CANONIC_TOP    =  1;
+	public static final int _CANONIC_BOTTOM = -1;
+	public static final int _CANONIC_NONE   =  0;
+
 	/** 
 	 * the number of nodes remains constant, each split must be accompanied by a merge
 	 */
@@ -190,6 +197,7 @@ public class ModelingSettings implements Serializable{
 	/** 1=single winner, 2+ multiple winners (influence degrades) */
 	int winningNodesCount = 1; 
 	
+	// if node grow beyond that, they will be split; this could provoke bagging or growing, if allowed 
 	private int absoluteRecordLimit = -1;
 	// ................................
 	// constants ......................
@@ -211,7 +219,7 @@ public class ModelingSettings implements Serializable{
 	
 	private boolean contentSensitiveInfluence;
 	
-	transient public ArrUtilities arrutil = new ArrUtilities();
+	
 
 	private DataFilter dataFilter;
 
@@ -244,6 +252,8 @@ public class ModelingSettings implements Serializable{
 	private boolean evolutionaryAssignateSelection = false ;
 	private boolean spriteAssignateDerivation = false ;
 	
+	transient public ArrUtilities arrutil = new ArrUtilities();
+	
 	/** 
 	 * the level 2 loop in modeling is concerned about the selection of features;
 	 * we may use evolutionary optimization together with the derivation of additional assignates 
@@ -253,8 +263,6 @@ public class ModelingSettings implements Serializable{
 	 * further description are to be found here: 
 	 * http://theputnamprogram.wordpress.com/2011/12/21/technical-aspects-of-modeling/      
 	 */
-	
-	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 	public ModelingSettings(){
 		 
@@ -944,16 +952,14 @@ public class ModelingSettings implements Serializable{
 		initialVariableSelection.addAll(varitems);
 	}
 
-	public void setExpectedVariety(String varLabel, int nFreq) {
-		//  
-		
-	}
+ 
 
 	public boolean isExtendedDiagnosis() {
 		return isExtendedDiagnosis;
 	}
+	
 	/**
-	 * perfrms: </br>
+	 * performs: </br>
 	 * ParetoPopulationExplorer, SomModelDescription, Coarseness, MultiCrossValidation, MetricsStructure
 	 *  
 	 * @param flag
@@ -1006,6 +1012,22 @@ public class ModelingSettings implements Serializable{
 	public XMLBuilder exportPropertiesAsXBuilder(SettingsTransporter settingsTransporter) {
 		
 		return settingsTransporter.exportPropertiesAsXBuilder(this) ;
+	}
+
+	/**
+	 * 
+	 * @param mode , there are defined constants in SomFluidProperties:  _CANONIC_BOTTOM, _CANONIC_TOP
+	 * @param vn  removals from a given model, 
+	 * @param mcn canonic loops
+	 */
+	public void setCanonicalExploration(int canonicBottom, int vn, int mcn) {
+		// use a int[]
+		
+	}
+
+	public void setCanonicalReductionLimit(int preferredMinimumSize) {
+		//
+		
 	}
 	
 	

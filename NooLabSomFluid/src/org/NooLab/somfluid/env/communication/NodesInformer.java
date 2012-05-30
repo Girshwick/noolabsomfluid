@@ -173,14 +173,16 @@ public class NodesInformer {
 			}
 
 			
-			
 		}
 		 
 		public void handlingQueuedTask( QTask qTask){
 			
 			int startIndex , endIndex;
-			int taskID = qTask.task.taskID;
 			
+			if (qTask==null){
+				return;
+			}
+			int taskID = qTask.task.taskID;
 			
 			if (qTask.criterion==0){ // all nodes
 				 

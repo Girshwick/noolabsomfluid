@@ -47,6 +47,9 @@ public class SomAppProperties
 	public static final int _MODELSELECT_ROBUST      = 8;
 	public static final int _MODELSELECT_VERSION     = 16 ;
 	public static final int _MODELSELECT_STRUCPREF   = 100;
+
+
+	public static final int _MODELSELECT_TARGETLABEL = 65;
 	 
 	
 	static SomAppProperties sclappProperties ;
@@ -456,6 +459,14 @@ public class SomAppProperties
 	}
 	public void setRequiredConfidenceBySupport(int groupsupport) {
 		requiredSupport = groupsupport;
+	}
+
+	public void setModelSelectionCriteria(int semanticSelectCriterion, String targetlabel) {
+		
+		// use a simple obj structure 
+		// semanticSelectionCriterion = semanticSelectCriterion;
+		// semanticSelectionCriterion
+		
 	}
 
 	 

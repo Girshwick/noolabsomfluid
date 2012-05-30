@@ -31,11 +31,11 @@ import org.NooLab.utilities.logging.SerialGuid;
 public class SimpleSingleModel implements SomHostIntf, Serializable{
 
 	private static final long serialVersionUID = 2574222962733833955L;
-	
-	transient SomFluid somFluid;
+
 	SomFluidTask sfTask ;
-	transient SomFluidFactory sfFactory ;
-	
+
+	transient SomFluid somFluid;
+	transient SomFluidFactory sfFactory ;	
 	transient SomDataObject somDataObj ;
 	
 	transient SomFluidProperties sfProperties ;
@@ -284,6 +284,10 @@ public class SimpleSingleModel implements SomHostIntf, Serializable{
 		return results;
 	}
 
+	public void setResults(ModelProperties results) {
+		this.results = results;
+	}
+
 	public boolean isSaveOnCompletion() {
 		return saveOnCompletion;
 	}
@@ -306,6 +310,14 @@ public class SimpleSingleModel implements SomHostIntf, Serializable{
 
 	public void setUsedVariables(ArrayList<Integer> usedVariables) {
 		this.usedVariables = usedVariables;
+	}
+
+	public ModelingSettings getModelingSettings() {
+		return modelingSettings;
+	}
+
+	public void setModelingSettings(ModelingSettings modelingSettings) {
+		this.modelingSettings = modelingSettings;
 	}
  
 	

@@ -1130,6 +1130,7 @@ public class SomDataObject 	implements      Serializable,
 	public void setOut(PrintLog out) {
 		this.out = out;
 		out.setPrefix("[SomFluid-main]") ;
+		out.setShowTimeStamp(true);
 	}
 
 

@@ -2,7 +2,9 @@ package org.NooLab.somfluid.core.engines.det;
 
 import java.util.ArrayList;
 
+import org.NooLab.somfluid.SomFluidMonoTaskIntf;
 import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.SomFluidTask;
  
 import org.NooLab.somfluid.components.variables.SomVariableHandling;
 import org.NooLab.somfluid.core.SomProcessIntf;
@@ -48,6 +50,7 @@ public class DSomCore {
 	
 	SomProcessIntf somProcess;
 	SomFluidAppGeneralPropertiesIntf sfProperties ;
+	SomFluidMonoTaskIntf sfTask;
 	
 	ModelingSettings modset;
 	DataSampler dataSampler = new DataSampler();
@@ -73,6 +76,8 @@ public class DSomCore {
 	double timeConstant;
 	double learningRate, initialLearningRate;
 	
+	
+	
 	ModelingSettings modelingSettings ;  
 	ClassificationSettings  classifySettings ;
 	
@@ -86,7 +91,8 @@ public class DSomCore {
 	public DSomCore(DSom dsom) {
 		 
 		dSom = dsom;
-		
+		sfTask = dSom.somTask ; 
+		 
 		somProcess = dSom.getSomProcessParent() ;
 		sfProperties = somProcess.getSfProperties();
 		
@@ -115,6 +121,7 @@ public class DSomCore {
 	
 	public void perform() throws Exception {
 		 
+		sfTask = dSom.somTask ; 
 		dSom.inProcessWait = true;
 		
 		if (dSom.inProcessWait==false){
@@ -128,12 +135,13 @@ public class DSomCore {
 	// ========================================================================
 	
 	
-	// jst for starting in its own thread, but hiding the Runnable interface from/for the outside
+	// just for starting in its own thread, but hiding the Runnable interface from/for the outside
 	class DsomStarter implements Runnable{
 	
 		Thread dsomThrd;
 		
 		public DsomStarter(){
+			
 			
 			dsomThrd = new Thread(this,"dsomThrd");
 			dsomThrd.start();
@@ -141,6 +149,7 @@ public class DSomCore {
 		
 		@Override
 		public void run() {
+			sfTask = dSom.somTask ; 
 			
 			try {
 				
@@ -490,10 +499,14 @@ out.print(4, ".                        (sim) : "+str2);
 			}	
 			
 			
-			
-											if (displayProgress(0))
-											out.print(1, "Som learning is starting on "+dataSampler.getTrainingSet().size()+" records from training sample.");
-			
+											int outlevel=2;
+											if ((sfTask.getCounter()>3) && (dSom.volatileSampling==false)){
+												outlevel=3;
+											}
+											if (displayProgress(0)){
+												out.print(outlevel, "Som learning is starting on "+dataSampler.getTrainingSet().size()+" records from training sample.");
+											}
+											
 			while ((currentEpoch < somSteps) && (dSom.getUserbreak()==false)) {
 				 	/*
 				 	 _SOMDISPLAY_PROGRESS_NONE  = -1 ;
@@ -550,7 +563,9 @@ if (currentEpoch>=3){
 			result = -7 ;
 		}
 		if (result==0){
-			out.print(1, "Basic Som learning has been finished ("+result+").");
+			int outlevel=2;
+			if (sfTask.getCounter()>3)outlevel=3;
+			out.print(outlevel, "basic Som learning has been finished ("+result+").");
 		}
 		if (somDataPerception!=null){
 			somDataPerception.clear() ;

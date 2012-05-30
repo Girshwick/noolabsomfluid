@@ -40,7 +40,7 @@ public class EvoMetrices implements Serializable{
 	// transient DSom dSom;
 	transient SomHostIntf somHost ;
 
-	SomFluidFactory sfFactory;
+	transient SomFluidFactory sfFactory;
 	SomDataObject somData  ;
 
 	ModelingSettings modelingSettings;
@@ -49,6 +49,7 @@ public class EvoMetrices implements Serializable{
 	transient OutputSettings outsettings ; 
 	transient PowerSetSpringSource powerset;
 	
+
 	int tvIndex = -1;
 	
 	ArrayList<EvoMetrik> evmItems = new ArrayList<EvoMetrik>();  
@@ -68,7 +69,7 @@ public class EvoMetrices implements Serializable{
 	
 	// in...
 	ArrayList<Integer> suggestedVarIxes = new ArrayList<Integer>();
-	ArrayList<Integer> urgingVarIxes    = new ArrayList<Integer>();
+	 
 	
 	// out...
 	ArrayList<Integer> proposedVariableIndexes = new ArrayList<Integer>();
@@ -76,6 +77,7 @@ public class EvoMetrices implements Serializable{
 	IndexedDistances topSortedVariables = new IndexedDistances();
 	
 	ArrayList<ArrayList<Integer>> exploredMetrices = new ArrayList<ArrayList<Integer>>();
+	ArrayList<String> exploredMetricesStr = new ArrayList<String>();
 	
 	MetricsHistory  emHistory;
 	
@@ -112,8 +114,8 @@ public class EvoMetrices implements Serializable{
 		powerset.setBlacklistedVarLabels(somData.getVariables().getBlacklistLabels()) ;
 		
 		largePeriod = largeperiod;
-		
-		
+		 
+
 		
 		out = somData.getOut() ;
 	}
@@ -347,7 +349,7 @@ public class EvoMetrices implements Serializable{
 			bestResult.usageVector = new ArrayList<Double>(evoResultItem.usageVector) ;
 			bestResult.varIndexes = new ArrayList<Integer>(evoResultItem.varIndexes) ;
 			bestResult.index = evoResultItem.index ;
-											out.printErr(2, "first model score: "+String.format( "%.3f", bestResult.sqData.score));
+											out.printErr(1, "first model score: "+String.format( "%.3f", bestResult.sqData.score));
 			initializeEvoBasicsData();
 		}
 		 
@@ -447,7 +449,7 @@ public class EvoMetrices implements Serializable{
 		for (int i=0;i<addedVarIxes.size();i++){
 			
 			ix = addedVarIxes.get(i) ;
-			evoBasics.incEvolutionaryCount(ix) ;
+			evoBasics.incEvolutionaryCount(ix) ; // <<<<<------------------------------------------
 			ec = evoBasics.evolutionaryCounts.get(ix) ;
 if (ec<0){
 	ec=ec+1-1;
@@ -480,14 +482,17 @@ if (ec<0){
 			if (et!=null){
 				et.updateEvoTaskItem(varLabel, actionIndicator ) ;
 			}
-		}
-		
+	
+			//ec = evoBasics..
+		} // ->
+		ix=0;
 		// ------------------------------------------------
 		for (int i=0;i<removedVarIxes.size();i++){
 			
 			ix = removedVarIxes.get(i) ;
 			
-			evoBasics.incEvolutionaryCount(ix) ;
+			evoBasics.incEvolutionaryCount(ix) ; // <<<<<------------------------------------------
+			
 			ec = evoBasics.evolutionaryCounts.get(ix) ;
 			
 			ew = evoBasics.evolutionaryWeights.get(ix);
@@ -514,15 +519,21 @@ if (ec<0){
 			if (evoBasics.getEvoTasks()!=null){
 				evoBasics.getEvoTasks().updateEvoTaskItem(varLabel, -actionIndicator ) ; 
 			}
+			
 		}
 
 		if (evoBasics.getEvoTasks()!=null){
 			evoBasics.getEvoTasks().renormalizeParameters();
 		}
+		
+		// 
+		 
+		
 	}
 	
 	
-	
+ 
+
 	/**
 	 * here the EvoMetrices object acquires suggestions that mostly are taken from statistical methods;
 	 * yet, it may also be used by other evo-processes to exchange intermediate results.
@@ -799,7 +810,7 @@ if (zz>1000){
 	
 	
 	@SuppressWarnings("rawtypes")
-	private boolean proposedMetricIsUnexplored( ArrayList<Integer> proposedVariables) {
+	protected boolean proposedMetricIsUnexplored( ArrayList<Integer> proposedVariables) {
 		boolean rB=true;
 		ArrayList<Integer> metric;
 		Collection disJunction;
@@ -835,24 +846,6 @@ if (zz>1000){
 		
 		try{
 		
-			// TODO: also asking variables for participation
-			/*
-			 *  we already have a selection "suggestedVarIxes", which is derived from
-			 *  statistical tests.
-			 *  
-			 *  for these, we increase the selection probability by 20%
-			 *  
-			 *  This query is organized by the following class "TaskRatedPressure", which
-			 *  works on the list EvoBasics.evoTasks  ArrayList<EvoTaskOfVariable>
-			 */
-			
-			TaskRatedPressure trp = new TaskRatedPressure( somData , optimizerSettings , evoBasics) ;  
-			trp.determineUrgingVariables();
-			
-			urgingVarIxes = trp.getSuggestions(2);
-			// if (urgingVarIxes.size()>0)suggestedVarIxes.addAll(urgingVarIxes) ;
-			
-			
 			/* now we have the best metric and a list of suggested variables
 			   additionally, we have the evolutionary weights;
 			   
@@ -1006,87 +999,6 @@ if (zz>1000){
 	
 	
 	
-	@SuppressWarnings("unused")
-	private void _obs_prepareSmallSelectionChange( int z,int vChgCount) {
-		
-		double uv ; 
-		int n,d,k;
-											out.print(2, "prepareSmallSelectionChange(1) ...  ");
-		ArrayList<Integer> proposedVarIxes = new ArrayList<Integer>();
-		ArrayList<Integer> baseRVarIxes = new ArrayList<Integer>();
-
-		ArrayList<Integer> aCandidates, rCandidates ;
-		
-		TaskRatedPressure trp = new TaskRatedPressure( somData , optimizerSettings , evoBasics) ;  
-		trp.setpreferrables( suggestedVarIxes );
-		trp.determineUrgingVariables();
-		
-											out.print(2, "prepareSmallSelectionChange(2) ...  ");
-		urgingVarIxes = trp.getSuggestions(2);
-
-			
-		// n = bestResult.usageVector.size() ;
-		if ((currentBaseMetric==null) || (currentBaseMetric.usageVector.size()<=2)){
-			currentBaseMetric = bestResult; 
-		}
-		n = currentBaseMetric.usageVector.size() ;
-		
-		// translate it into index values
-		for (int i=0; i<n;i++ ){
-			uv = currentBaseMetric.usageVector.get(i) ;
-			if (uv>0){
-				baseRVarIxes.add(i);
-			} ;
-		}
-		
-											out.print(2, "prepareSmallSelectionChange(3) ...  ");
-		proposedVarIxes.addAll(baseRVarIxes) ;
-		
-		// sth removing or adding, dependent on probability...
-		// here: only removing 1 or 2 fields
-if (z==8){
-	z=8;
-}
-		int st=0; 
-		boolean selectionIsFirstTime = false;
-		
-		while (selectionIsFirstTime==false){
-			
-											out.print(2, "prepareSmallSelectionChange(4) ...  ");
-			// TODO from all available, we select also from urgingVarIxes
-											
-			if (proposedVarIxes.size()>3){
-				randomSubSelectionOfIndexes( proposedVarIxes, proposedVarIxes.size()-1, tvIndex) ;
-				
-				// based on prob., remove a further one
-				if (jrandom.nextDouble()>0.9){
-					randomSubSelectionOfIndexes( proposedVarIxes, proposedVarIxes.size()-1, tvIndex) ;
-				}
-			}
-			
-			
-			
-			selectionIsFirstTime = selectionIsFirstTime( proposedVarIxes );
-			
-			if (selectionIsFirstTime==false){
-				if ((st>0) && (st%2==0)){
-					// add one
-				}
-			}
-			if (st>5){
-				break;
-			}
-			st++;
-		} // ->
-		
-		
-		
-											out.print(2, "prepareSmallSelectionChange() finished.  ");
-		
-		proposedVariableIndexes = proposedVarIxes ;
-	}
-	
-	
 	
 	private void prepareIndependentSelectionChange(int z){
 
@@ -1107,32 +1019,7 @@ if (z==8){
 		
 		try {
 
-					// TODO: also asking variables for participation
-					/*
-					 *  we already have a selection "suggestedVarIxes", which is derived from
-					 *  statistical tests.
-					 *  
-					 *  for these, we increase the selection probability by 20%
-					 *  
-					 *  This query is organized by the following class "TaskRatedPressure", which
-					 *  works on the list EvoBasics.evoTasks  ArrayList<EvoTaskOfVariable>
-					 */
-					
-			TaskRatedPressure trp = new TaskRatedPressure(somData, optimizerSettings, evoBasics);
-			trp.determineUrgingVariables();
-
-			urgingVarIxes = trp.getSuggestions(2);
-			// if (urgingVarIxes.size()>0)suggestedVarIxes.addAll(urgingVarIxes)
-
-					
-					/* now we have the best metric and a list of suggested variables
-					   additionally, we have the evolutionary weights;
-					   
-					   all three sets we will now reflect in the selection probability, starting with evoweights
-					
-					   powerset.setSelectionProbability( "A",0.62 ); // for one individually
-					   
-					*/
+				 
 					
 			Variables variables = somData.getVariables();
 			n = bestResult.usageVector.size();
@@ -1202,25 +1089,7 @@ if (setItems.size()<=1){
 											}
 											out.print(3, "prepareLargeSelectionChange (1) ... ");
 			
-			
-			// TODO: also asking variables for participation
-			/*
-			 *  we already have a selection "suggestedVarIxes", which is derived from
-			 *  statistical tests.
-			 *  
-			 *  for these, we increase the selection probability by 20%
-			 *  
-			 *  This query is organized by the following class "TaskRatedPressure", which
-			 *  works on the list EvoBasics.evoTasks  ArrayList<EvoTaskOfVariable>
-			 */
-			
-			TaskRatedPressure trp = new TaskRatedPressure( somData , optimizerSettings , evoBasics) ;  
-			trp.determineUrgingVariables();
-			
-			urgingVarIxes = trp.getSuggestions(2);
-			// if (urgingVarIxes.size()>0)suggestedVarIxes.addAll(urgingVarIxes) ;
-			
-			
+ 			
 			/* now we have the best metric and a list of suggested variables
 			   additionally, we have the evolutionary weights;
 			   
@@ -1372,152 +1241,7 @@ if (setItems.size()<=1){
 		return items;
 	}
 	
-	
-	@SuppressWarnings({ "unchecked", "unused" })
-	private void _obs_prepareLargeSelectionChange( int z){	
-		double uv ; 
-		int n,d,k;
-		boolean selectionIsFirstTime;
-		
-		ArrayList<Integer> dIxes, iIxes, topIxes=null;
-		// is the new metric completely contained in the best one?
-		ArrayList<Integer> proposedVarIxes = new ArrayList<Integer>();
-		ArrayList<Integer> bestRVarIxes = new ArrayList<Integer>();
-		
-		ArrayList<Double> uvec ; 
-		
-		try{
-		
-			// TODO: also asking variables for participation
-			/*
-			 *  we already have a selection "suggestedVarIxes", which is derived from
-			 *  statistical tests.
-			 *  Yet, this would not lead to an exploration of the space
-			 *  
-			 *  so we ask the variables themselves for their internal "pressure" state
-			 *  preferring slightly the items listed in "suggestedVarIxes" 
-			 *  
-			 *  This query is organized by the following class "TaskRatedPressure", which
-			 *  works on the list EvoBasics.evoTasks  ArrayList<EvoTaskOfVariable>
-			 */
-			
-			TaskRatedPressure trp = new TaskRatedPressure( somData , optimizerSettings , evoBasics) ;  
-			trp.setpreferrables( suggestedVarIxes );
-			trp.determineUrgingVariables();
-			if (z<21){
-				urgingVarIxes = trp.getSuggestions(4);
-			} else {
-				urgingVarIxes = trp.getSuggestions(2);
-			}
-			
-			if (suggestedVarIxes.size()==0){
-				prepareSmallSelectionChange(z,1);
-				return;
-			}
-			// 
-			n = bestResult.usageVector.size() ;
-			
-			if (((z%10==0) || (z%3==0)) &&(urgingVarIxes.size()>0)){
-				if (urgingVarIxes.size()>0)suggestedVarIxes.addAll(urgingVarIxes) ;
-			}
-			
-			// translate it into index values
-			for (int i=0; i<n;i++ ){
-				uv = bestResult.usageVector.get(i) ;
-				if (uv>0){
-					bestRVarIxes.add(i);
-				} ;
-			}
-			bestRVarIxes.trimToSize() ;			
-if ((z%5==0) || (z==11)){
-	z=z+1-1;
-}
-			// now we have suggestedVarIxes, bestRVarIxes, from which we create a "mixture"
-			int st=0; 
-			selectionIsFirstTime = false;
-			while (selectionIsFirstTime==false){
-			
-				n = suggestedVarIxes.size();
-				if (n>=6){
-					d= Math.max(1, (int) Math.ceil(n*0.27) );
-					n=n-d;
-					randomSubSelectionOfIndexes( suggestedVarIxes, n, -3) ;
-				}
-				if (z>21){
-					topIxes = getTopEvoWeightVarIxes(3); // TODO parametrize that...
-				}
-				dIxes = (ArrayList<Integer>) CollectionUtils.disjunction(bestRVarIxes, suggestedVarIxes ) ;
-				n = dIxes.size();
-				
-				iIxes = (ArrayList<Integer>) CollectionUtils.intersection( bestRVarIxes,suggestedVarIxes );
-				k = iIxes.size();
-				
-				d = n-k;
-				
-				if ((k>=suggestedVarIxes.size()-1)){
-					// the size of the intersection is (almost) as large as "suggestedVarIxes"
-					proposedVarIxes = (ArrayList<Integer>) CollectionUtils.union( proposedVarIxes,suggestedVarIxes) ;
-				}else{
-					n = (int) Math.max(2,(double)dIxes.size() * 0.71);
-					randomSubSelectionOfIndexes( dIxes, n , tvIndex) ;
-					proposedVarIxes = (ArrayList<Integer>) CollectionUtils.union( proposedVarIxes,dIxes);
-				}
-				if (proposedVarIxes.size()<=3){ 
-					proposedVarIxes = (ArrayList<Integer>) CollectionUtils.union( proposedVarIxes,urgingVarIxes);
-					if (dIxes.size()>=8){
-						n = (int) Math.max(2,(double)dIxes.size() * 0.65);
-						randomSubSelectionOfIndexes( dIxes, n , tvIndex) ;
-					}
-					proposedVarIxes = (ArrayList<Integer>) CollectionUtils.union( proposedVarIxes,dIxes);
-					if ((topIxes!=null) && ( topIxes.size()>0)){
-						
-						proposedVarIxes = (ArrayList<Integer>) CollectionUtils.union( proposedVarIxes,topIxes);
-					}
-				}
-				
-				if ((tvIndex>=0) && (proposedVarIxes.indexOf(tvIndex)<0)){ 
-					proposedVarIxes.add(tvIndex );
-				}
-				
-				// alread seen? compare against "exploredMetrices"
-				// TODO: or if we have seen this selection already before...
-				selectionIsFirstTime = selectionIsFirstTime( proposedVarIxes );
-				
-				if (selectionIsFirstTime==false){
-					if (proposedVarIxes.size()>=6){
-						n = (int) Math.max(3,(double)proposedVarIxes.size() * 0.85);
-						randomSubSelectionOfIndexes( proposedVarIxes, n , tvIndex) ;
-					}
-					{	// add
-						urgingVarIxes = trp.getSuggestions(6+st);
-						randomSubSelectionOfIndexes( urgingVarIxes, 2 , tvIndex) ;
-						proposedVarIxes = (ArrayList<Integer>) CollectionUtils.union( proposedVarIxes,urgingVarIxes);
-					}
-				}
-					
-				
-				if (proposedVarIxes.size()<=1){
-					selectionIsFirstTime=false;
-				}
-				if (st>5){
-					break;
-				}
-				st++;
-			}
-			
-			uvec = deriveUseVector( proposedVarIxes ) ;
-			currentBaseMetric = evmItems.get(evmItems.size()-1);
-			currentBaseMetric.usageVector = uvec ; 
-			currentBaseMetricIndex = evmItems.size()-1 ;
-			
-		}catch(Exception e){
-			e.printStackTrace() ;
-		}
-				
-		
-		proposedVariableIndexes = proposedVarIxes ;
-	}
-	
+	 
 	
 	private boolean selectionIsFirstTime(ArrayList<Integer> indexes) {
 		boolean metricIsFresh = true;
@@ -1944,12 +1668,7 @@ if ((z%5==0) || (z==11)){
 		return bestResult;
 	}
 
-	/**
-	 * @return the urgingVarIxes
-	 */
-	public ArrayList<Integer> getUrgingVarIxes() {
-		return urgingVarIxes;
-	}
+ 
 
 	/**
 	 * @return the exploredMetrices
@@ -2031,12 +1750,7 @@ if ((z%5==0) || (z==11)){
 		}
 	}
 
-	/**
-	 * @param urgingVarIxes the urgingVarIxes to set
-	 */
-	public void setUrgingVarIxes(ArrayList<Integer> urgingVarIxes) {
-		this.urgingVarIxes = urgingVarIxes;
-	}
+ 
 
 	/**
 	 * @param exploredMetrices the exploredMetrices to set

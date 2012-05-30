@@ -1138,6 +1138,18 @@ public class Variables implements Serializable, VariablesIntf{
 		strgutil = new StringsUtil();
 	}
 
+	public ArrayList<String> collectAllNonCommons( ArrayList<String> addEx) {
+
+		ArrayList<String> dexList = new ArrayList<String>();
+		
+		dexList.addAll( getBlacklistLabels());
+		dexList.addAll( addEx ) ;
+		dexList.add( getTargetVariable().getLabel()) ;
+		dexList.add( getIdLabel()) ;
+	
+		return dexList;
+	}
+
 
 
 

@@ -421,7 +421,7 @@ public class SomTransformer
 		
 		varlabel = "";
 		
-		selectedModelVars.add("d1b_Stammkapital_Branchenscore");
+		// 
 		selectedModelVars.trimToSize();
 		
 		// in this way it should also work to create the roots representation

@@ -57,7 +57,7 @@ public class SomFluidTask 	implements
 
 	private boolean noHostInforming = false;
 
-	private SomResultDigesterIntf somResultHandler;
+	transient private SomResultDigesterIntf somResultHandler;
 
 	private int resumeMode=0;
 
@@ -66,6 +66,8 @@ public class SomFluidTask 	implements
 	boolean isCompleted=false;
 	int taskDispatched=0;
 	boolean isStandbyActive =false;
+
+	private int counter=-1;
  
 	 
 	
@@ -78,7 +80,9 @@ public class SomFluidTask 	implements
 		}
 		
 		this.somType = somType;
-		taskType = "M";  
+		if (somType > 0){
+			taskType = "M";  
+		}
 		opentime = System.currentTimeMillis();
 	}
 	// ========================================================================
@@ -86,6 +90,7 @@ public class SomFluidTask 	implements
 
 	
 	public SomFluidTask(SomFluidTask inTask) {
+		
 		guidID = inTask.guidID;
 		somType = inTask.somType;
 		
@@ -94,6 +99,23 @@ public class SomFluidTask 	implements
 		derivatesDepth = inTask.derivatesDepth ;
 		taskType = inTask.taskType;
 		opentime = System.currentTimeMillis();
+		
+		
+		description = inTask.description ;
+		
+		
+		startingMode = inTask.startingMode;
+		callerStatus = inTask.callerStatus;
+		transportedGuid = inTask.transportedGuid ;
+		 
+		 
+		somHost = inTask.somHost ;
+		noHostInforming = inTask.noHostInforming;
+		somResultHandler = inTask.somResultHandler;
+		resumeMode = inTask.resumeMode;
+		isExported = inTask.isExported;
+		
+		isStandbyActive = inTask.isStandbyActive;
 	}
 
 
@@ -492,6 +514,46 @@ public class SomFluidTask 	implements
 
 	public void setTaskDispatched(int taskDispatched) {
 		this.taskDispatched = taskDispatched;
+	}
+
+
+
+	public void setCounter(int value) {
+		
+		counter = value;
+	}
+
+
+
+	public int getCounter() {
+		return counter;
+	}
+
+
+
+	public static boolean taskIsModelOptimizer(SomFluidTask sfTask) {
+
+		boolean rB=false;
+		
+		if ((sfTask!=null) && (sfTask.somHost!=null)){
+			String cn = sfTask.somHost.getClass().getSimpleName() ;
+			rB = cn.toLowerCase().contains("modeloptimizer");
+		}
+		
+		return rB;
+	}
+
+
+	
+	public static boolean taskIsSomApplication(SomFluidTask sfTask) {
+		boolean rB=false;
+		
+		if ((sfTask!=null) && (sfTask.somHost!=null)){
+			String cn = sfTask.somHost.getClass().getSimpleName() ;
+			rB = cn.toLowerCase().contains("somapplication");
+		}
+		
+		return rB;
 	}
 	 
 }

@@ -84,9 +84,8 @@ public class DSom extends Observable implements DSomIntf{
 	
 	String activeTvLabel ="";
 	int activeTvIndex = -1;
+	boolean volatileSampling=false;
 	
-	
-	PrintLog out;
 
 	public boolean loweredPriority = false ;
 
@@ -102,8 +101,10 @@ public class DSom extends Observable implements DSomIntf{
 
 	private String instanceGuid;
 	
+	
+	transient PrintLog out;
 	// ------------------------------------------------------------------------
-	public DSom( SomProcessIntf processParent, SomDataObject sdo, VirtualLattice somlattice, SomFluidTask sfTask ) {
+	public DSom( SomProcessIntf processParent, SomDataObject sdo, VirtualLattice somlattice, SomFluidTask sftask ) {
 
 		
 		this.addObserver( (Observer) processParent );
@@ -112,6 +113,7 @@ public class DSom extends Observable implements DSomIntf{
 		sfProperties = somProcessParent.getSfProperties();
 		sfFactory = sfProperties.getSfFactory() ;
 		
+		somTask = sftask;
 		somData = sdo;
 		somLattice = somlattice ;
 		
@@ -339,6 +341,11 @@ public class DSom extends Observable implements DSomIntf{
 
 	public void setGuid(String instanceGuid) {
 		this.instanceGuid = instanceGuid;
+	}
+
+
+	public SomFluidMonoTaskIntf getSomTask() {
+		return  somTask;
 	}
 
  

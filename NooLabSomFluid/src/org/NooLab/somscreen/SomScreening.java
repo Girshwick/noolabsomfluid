@@ -105,9 +105,15 @@ public class SomScreening {
 	ArrayList<String> basicPowsetItems = new ArrayList<String>();;
 	
 	EvoBasics previousEvoBasics;
+	transient TaskRatedPressure evoPressures ;
 	
 	int totalSelectionSize;
 	int[] selectionMode;
+	
+	/** if a variable has been removed, e.g. due to negative contribution, we need not to run the whole loop size  */
+	private boolean finalRefinement;
+	int finalRefinementSteps = 5 ;
+
 	
 	// .... data ................................
 	
@@ -128,7 +134,7 @@ public class SomScreening {
 	double closeInspectionMultiple = 3.0;
 	
 	ArrUtilities arrutil = new ArrUtilities ();
-	PrintLog out = new PrintLog(2,true);
+	PrintLog out = new PrintLog(2,false);
 	private Random random;
 		
 	// ========================================================================
@@ -159,7 +165,7 @@ public class SomScreening {
 		
 		evoBasics.setKnownVariables( somData.getVariablesLabels() );
 		
-		
+		evoPressures = new TaskRatedPressure( somHost , evoMetrices , evoBasics) ; 
 		
 		out.setPrefix("[SomFluid-screen]") ;
 	}
@@ -414,9 +420,11 @@ public class SomScreening {
 		SomProcessIntf somprocess ;
 		SimpleSingleModel simo ;
 		ModelProperties somResults;
-		SomFluidTask _task = new SomFluidTask(sfTask);
-		_task.setNoHostInforming(true);
 		
+		SomFluidTask _task = new SomFluidTask(sfTask);
+		
+		_task.setNoHostInforming(true);
+		_task.setCounter(index) ;
 		if (somProcess!=null){
 			// clear the extensionality of the lattice
 		}
@@ -646,6 +654,9 @@ if (clearLattice==false){
 		int ix , bix;
 		String vlabel;
 		ArrayList<String> blacks = variables.getBlacklistLabels();
+		ArrayList<String> excludedVars = new ArrayList<String> ();
+		
+		excludedVars = sfProperties.getAbsoluteFieldExclusions() ;
 		
 		int i=selection.size()-1;
 		while (i>=0){
@@ -654,21 +665,26 @@ if (clearLattice==false){
 			vlabel = variables.getItem(ix).getLabel() ;
 			
 			
-			
 			bix = blacks.indexOf(vlabel);
 			if (bix>=0){
 				selection.remove(i);
+			}else{
+				bix = excludedVars.indexOf(vlabel);
+				if (bix>=0){
+					selection.remove(i);
+				}
 			}
-			
 			i--;
 		}
-			
-			
-		return selection;
+		return selection;	
 	}
+			
+			
+		
+	
 	
 	public void setModelResultSelection(int[] selectionmode) {
-		// TODO Auto-generated method stub
+	 
 		selectionMode = selectionmode ;
 	}
 
@@ -748,6 +764,7 @@ if (clearLattice==false){
 		private long timeSinceStart;
 		double hoursFraction ;
 		int loopCount;
+
 		
 		// --------------------------------------------------------------------
 		public EvolutionarySearch(int loopcount){
@@ -803,6 +820,9 @@ if ((specialInterestVariables!=null) &&
 					hoursFraction = (double)timeSinceStart/((double)(1000 *60 * 60) );
 					
 					if (hoursFraction>sfProperties.getModelingSettings().getOptimizerSettings().getDurationHours()){
+						stoppingCriteriaSatisfied = true;
+					}
+					if ((finalRefinement) && (z>=finalRefinementSteps)){
 						stoppingCriteriaSatisfied = true;
 					}
 					// TODO for time based maximum exploration
@@ -983,6 +1003,7 @@ if ((specialInterestVariables!=null) &&
 		
 		
 		
+		@SuppressWarnings("unchecked")
 		private int performEvoSearch(int z){
 			
 			int result = -1,smode=0;
@@ -1013,22 +1034,40 @@ if ((specialInterestVariables!=null) &&
 					// have much less columns than the original table
 					// applying PCA to a table with only very few columns is not reasonable 
 				}
-				
-				// these functions also apply linear methods like PCA to the somMapTable (NOT to the raw data!!!) 
-				if ((z% largePeriod == 0) || (z<=1)){
-					// ensure that changes are indeed large !!
-					proposedSelection = specifyLargeChange(z); modestr="large"; smode=1;
-					z++;
-				}else{
+				boolean selectionOk=false; int zs=0;
+				while ((selectionOk==false) && (zs<5)){
 					
-					proposedSelection = specifySmallChanges(z); modestr="small"; smode=2;
-				}
-				
-				proposedSelection = checkProposedSelectionForBlockedVariables( proposedSelection );
-				
-				if (proposedSelection.size()<=1){ // it includes the tv
-					proposedSelection = evoBasics.getQuantilByWeight(0.2, 0.45, 0.8 , true) ; // there are different versions of it 
-				} // whatever is met first: fraction of all, lo, hi value for weight
+					// these functions also apply linear methods like PCA to the somMapTable (NOT to the raw data!!!) 
+					if ((z% largePeriod == 0) || (z<=1)){
+						// ensure that changes are indeed large !!
+						proposedSelection = specifyLargeChange(z); 
+											modestr="large"; 
+											smode=1;
+											z++;
+					}else{
+						
+						proposedSelection = specifySmallChanges(z); 
+											modestr="small"; 
+											smode=2;
+					}
+					
+					proposedSelection = checkProposedSelectionForBlockedVariables( proposedSelection );
+					
+					int avn=0;
+					if (variables.size()-variables.getBlacklistLabels().size()-sfProperties.getAbsoluteFieldExclusions().size()>=5){
+						avn=1;
+					}
+					if (proposedSelection.size()<=1+avn){ // it includes the tv
+						ArrayList<String> definitelyExcluded = variables.collectAllNonCommons( sfProperties.getAbsoluteFieldExclusions() ); 
+						ArrayList<Integer> qselection = evoBasics.getQuantilByWeight(0.2, 0.45, 0.8 ,definitelyExcluded, true) ; // there are different versions of it
+						if ((qselection!=null) && (qselection.size()>0))
+							proposedSelection = (ArrayList<Integer>) CollectionUtils.union(proposedSelection ,qselection) ; 
+					} // whatever is met first: fraction of all, lo, hi value for weight
+	
+					selectionOk = proposedSelection.size()>1 ;
+					zs++;
+				}// selectionOk ?
+
 				if (modelingSettings.getTargetedModeling()){
 					
 					str = variables.getActiveTargetVariableLabel(); 
@@ -1040,11 +1079,32 @@ if ((specialInterestVariables!=null) &&
 				}
 				Collections.sort(proposedSelection) ;
 				
-											str = arrutil.arr2text(proposedSelection);
-											out.printErr(1, "proposed Selection: "+str+"\n") ;											
 				if (proposedSelection.size()==0){
 					return -3;
 				}
+				
+				
+				if (evoPressures.determineUrgingVariables()){
+					// 0 = random by coin; 1 = enforced ; optional second parameter as condition [0,1],n = if size<=n 
+					proposedSelection = evoPressures.considerUrgingVariables(proposedSelection,0) ;
+				}
+											str = arrutil.arr2text(proposedSelection);
+											out.printErr(1, "proposed Selection: "+str+"\n") ;											
+				
+				// TODO: also asking variables for participation
+				/*
+				 *  we already have a selection "suggestedVarIxes", which is derived from
+				 *  statistical tests.
+				 *  
+				 *  for these, we increase the selection probability by 20%
+				 *  
+				 *  This query is organized by the following class "TaskRatedPressure", which
+				 *  works on the list EvoBasics.evoTasks  ArrayList<EvoTaskOfVariable>
+				 */
+				
+				// urgingVarIxes = evoPressures.getSuggestions(2);
+				// if (urgingVarIxes.size()>0)suggestedVarIxes.addAll(urgingVarIxes) ;
+
 				uv = variables.deriveUsageVector( somMapTable.variables, proposedSelection ,0 ) ;
 				
 				// --------------------------------------------------
@@ -1095,7 +1155,8 @@ if (results.getTrainingSample().getRoc().getAuC()>0.86){
 				// for the respective variable index positions, then renormalizeParameters();
 				evoMetrices.registerMetricChangeEffects(av, rv, isNewBest);
 				
-											if (sfProperties.getShowSomProgressMode() == SomFluidProperties._SOMDISPLAY_PROGRESS_STEPS ){
+											if ((sfProperties.getShowSomProgressMode() == SomFluidProperties._SOMDISPLAY_PROGRESS_STEPS )){
+													// ||()){
 												String ewstr = ArrUtilities.arr2Text( evoMetrices.evoBasics.evolutionaryWeights, 2) ;
 												String ecstr = ArrUtilities.arr2Text( evoMetrices.evoBasics.evolutionaryCounts);
 												out.print(2,"\nevolutionary weights :  "+ewstr);
@@ -1110,6 +1171,7 @@ if (results.getTrainingSample().getRoc().getAuC()>0.86){
 					
 					currentBestHistoryIndex = z; // store best uv separately ???
 				}
+				
 				checkStoppingCriteria( somProcess, z-dedicatedChecks , currentBestHistoryIndex);
 				
 				if ( z % ((int)(((double)largePeriod) * closeInspectionMultiple )) ==0){
@@ -1183,6 +1245,7 @@ if (results.getTrainingSample().getRoc().getAuC()>0.86){
 				}
 			}
 			if ((hb==false) && (evoMetrices.getItems().size()>5)){
+				
 				ArrayList<EvoMetrik> eml = evoMetrices.getItems();
 				int cix = currentBestHistoryIndex-1;
 				
@@ -1250,10 +1313,14 @@ if (z==24){
 
 				// consider evoweights ...
 			}
-											out.print(2, "specifyLargeChange(), getNextVariableSelection calling ...");
+											int outlevel=2;
+											if (sfTask.getCounter()>3){
+												outlevel=3;
+											}
+											out.print(outlevel, "specifyLargeChange(), getNextVariableSelection calling ...");
 			// care about the indices over there !!! 
 			selection = evoMetrices.getNextVariableSelection(z, 1);
-											out.print(2, "specifyLargeChange(), getNextVariableSelection done.");
+											out.print(outlevel, "specifyLargeChange(), getNextVariableSelection done.");
 if (selection.size()<=1){
 	     // independent large change: evoMetrices + best + usageVector
 	        selection = evoMetrices.getNextVariableSelection(z, 3);
@@ -1341,7 +1408,11 @@ if (selection.size()<=1){
 			if (linearIndexSelection.size()>0){
 				linearIndexSelection = translateVariableIndexesToGlobal( linearIndexSelection ) ;
 			}
-											out.print(2, "linear index selections completed.");
+											int outlevel=2;
+											if (sfTask.getCounter()>3){
+												outlevel=3;
+											}
+											out.print(outlevel, "linear index selections completed.");
 		}
 
 		private ArrayList<Integer> decomposition(){
@@ -1431,6 +1502,9 @@ if (selection.size()<=1){
 
 
 
+		
+
+
 		public void start(){
 			evosearchThrd.start() ;
 		}
@@ -1500,6 +1574,15 @@ if (selection.size()<=1){
 
 	public void setEvoBasics(EvoBasics evoBasics) {
 		this.evoBasics = evoBasics;
+	}
+
+	
+	public boolean isFinalRefinement() {
+		return finalRefinement;
+	}
+
+	public void setFinalRefinement(boolean flag) {
+		this.finalRefinement = flag;
 	}
 
 

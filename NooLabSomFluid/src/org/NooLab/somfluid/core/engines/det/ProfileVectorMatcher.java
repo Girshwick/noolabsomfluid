@@ -44,7 +44,7 @@ public class ProfileVectorMatcher{
 	ArrayList<IndexDistanceIntf> bestMatchesCandidates = new ArrayList<IndexDistanceIntf> ();
 	ArrayList<Integer> boundingIndexList = new ArrayList<Integer>();
 	
-	ArrayList<Double> profileValues;
+	ArrayList<Double> dataProfileValues;
 	int bmuCount;
 	
 	int mode = 0;
@@ -106,7 +106,7 @@ public class ProfileVectorMatcher{
 	
 	public ProfileVectorMatcher setParameters( ArrayList<Double> profilevalues, int bmucount, ArrayList<Integer> boundingindexlist){
 		
-		profileValues = new ArrayList<Double> (profilevalues);
+		dataProfileValues = new ArrayList<Double> (profilevalues);
 		bmuCount = bmucount;
 		boundingIndexList =  new ArrayList<Integer>(boundingindexlist);
 		
@@ -156,7 +156,7 @@ public class ProfileVectorMatcher{
 									out.print(4,"similarity obj in node("+n+") = "+simIntf.toString());
 									
 		profile = node.getProfileVector();
-		dsq = node.getSimilarity().similarityWithinDomain( profile.getValues(), profileValues, suppressSQRT) ;
+		dsq = node.getSimilarity().similarityWithinDomain( profile.getValues(), dataProfileValues, suppressSQRT) ;
 		// dsq = getAdvancedDistanceMeasure(1, SOMnodes[n].dweights, values);
 		// node.getSimilarity.usageIndicationVector is wrong, hence profile.getValues() is also wrong
 									if (outMode==0){
@@ -167,7 +167,7 @@ public class ProfileVectorMatcher{
 
 		if (dsq < 0) {
 			out.printErr(2,"Problem in calculating distance, relative node index: "+n+" , dsq<0 = " + String.valueOf(dsq));
-			dsq = node.getSimilarity().similarityWithinDomain( profile.getValues(), profileValues, suppressSQRT) ; // XXX DEBUG ONLY
+			dsq = node.getSimilarity().similarityWithinDomain( profile.getValues(), dataProfileValues, suppressSQRT) ; // XXX DEBUG ONLY
 			return  ;
 		}
 		
@@ -223,6 +223,12 @@ public class ProfileVectorMatcher{
 		// comparing the imported values[] against all nodes in nodeCollection
 		// if (profileValues.size()==0){return;}
 		err = 1;
+		
+		if (dataProfileValues.size()==0){
+			bestMatchesCandidates.clear();
+			return  ;
+		}
+		
 		try {
 			// we should avoid to create the dispatcher for each record
 			// instead, it should be hosted one level higher in "DSomDataPerceptionAbstract{}" where 
@@ -248,12 +254,11 @@ public class ProfileVectorMatcher{
 					continue;
 				}
 	
-				
 											SimilarityIntf simIntf = node.getSimilarity();
 											out.print(4,"similarity obj in node("+n+") = "+simIntf.toString());
 											
 				profile = node.getProfileVector();
-				dsq = node.getSimilarity().similarityWithinDomain( profile.getValues(), profileValues, suppressSQRT) ;
+				dsq = node.getSimilarity().similarityWithinDomain( profile.getValues(), dataProfileValues, suppressSQRT) ;
 				// dsq = getAdvancedDistanceMeasure(1, SOMnodes[n].dweights, values);
 				// node.getSimilarity.usageIndicationVector is wrong, hence profile.getValues() is also wrong
 											if (outMode==0){
@@ -263,9 +268,11 @@ public class ProfileVectorMatcher{
 											}
 	
 				if (dsq < 0) {
+					// on option : throw exception
 					out.printErr(3,"Problem in calculating distance, relative node index: "+n+" , dsq<0 = " + String.valueOf(dsq));
-					dsq = node.getSimilarity().similarityWithinDomain( profile.getValues(), profileValues, suppressSQRT) ; 
+					// dsq = node.getSimilarity().similarityWithinDomain( profile.getValues(), profileValues, suppressSQRT) ; 
 					// XXX DEBUG ONLY
+					bestMatchesCandidates.clear();
 					return  ;
 				}
 				
@@ -290,7 +297,7 @@ public class ProfileVectorMatcher{
 			err = 9;
 	
 			for (int i=0;i<bestMatchesCandidates.size();i++){
-				bestMatches.add( bestMatchesCandidates.get(i).getIndex() ) ;
+				bestMatches.add( bestMatchesCandidates.get(i).getIndex() ) ; // ???
 			}
 			
 			err = 0;
@@ -323,7 +330,7 @@ public class ProfileVectorMatcher{
 				  
 				 					
 				
-				dsq = simIntf.similarityWithinDomain( profileValues, dValues, suppressSQRT) ;
+				dsq = simIntf.similarityWithinDomain( dataProfileValues, dValues, suppressSQRT) ;
 				// dsq = getAdvancedDistanceMeasure(1, SOMnodes[n].dweights, values);
 	
 	
@@ -377,9 +384,9 @@ public class ProfileVectorMatcher{
 		}else{
 			createListOfMatchingRecords(simIntf);
 		}
-		
-		
+		 
 	}
+	
 	// synchronized
 	 private boolean nodeIsCandidate( double distanceValue, ArrayList<IndexDistanceIntf> candidates, int bmuCount ){
 		boolean rB = false;

@@ -22,6 +22,7 @@ public class ClassificationSettings implements Serializable{
 	public static final int _TARGETMODE_NONE   = -3;
 	public static final int _TARGETMODE_NOTSET =  0;
 	
+	
 	/** 
 	 * just 1 class , often from binary criterion; use target groups to define one or 
 	 * several intervals that represent the desired outcome; as in case of any target modeling,
@@ -48,6 +49,11 @@ public class ClassificationSettings implements Serializable{
 	 *  then, the (linear? exponential?) regression from observed score to predicted score is being investigated 
 	 */
 	public static final int _TARGETMODE_REGR   =  9;
+	
+	
+	public static final int _TARGET_DEFLEVEL_RAW  = 1;
+	public static final int _TARGET_DEFLEVEL_NORM = 2;
+	
 	
 	/** provides the summarizing description of misclassifications */
 	public static final int _XREQ_MISCLASSIFICATIONS_STD  = 1 ;
@@ -129,6 +135,8 @@ public class ClassificationSettings implements Serializable{
 	
 	 
 	transient ArrUtilities arrutil = new ArrUtilities ();
+
+	private int targetGroupDefinitionLevel;
 	
 	// ========================================================================
 	public ClassificationSettings(ModelingSettings modelingSettings){
@@ -514,6 +522,25 @@ public class ClassificationSettings implements Serializable{
 	public XMLBuilder exportPropertiesAsXBuilder(SettingsTransporter settingsTransporter) {
 
 		return settingsTransporter.exportPropertiesAsXBuilder(this) ;
+	}
+
+
+
+
+	/**
+	 * 
+	 * @param defLevel raw=1, or norm=2
+	 */
+	public void setTargetGroupDefinitionLevel(int defLevel) {
+		targetGroupDefinitionLevel = defLevel;
+	}
+
+
+
+
+
+	public int getTargetGroupDefinitionLevel() {
+		return targetGroupDefinitionLevel;
 	}
  
 
