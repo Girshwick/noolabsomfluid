@@ -139,6 +139,24 @@ public class StackedTransformation  implements Serializable{
 
 
 
+	public void clearData() {
+
+		if (inData!=null)
+		for (int i=0;i<inData.size();i++){
+			inData.get(i).clear();
+		}
+
+		if (bufferedData!=null)
+		for (int i=0;i<inData.size();i++){
+			inData.get(i).clear();
+		}
+		inData.clear();
+		outData.clear() ;
+
+	}
+
+
+
 	public void update(){
 		
 	}

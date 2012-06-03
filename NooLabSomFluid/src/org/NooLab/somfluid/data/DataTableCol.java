@@ -39,10 +39,10 @@ public class DataTableCol implements Serializable,
 	 
 	private ColumnDerivations derivations;
 	
-	BasicStatisticalDescription statisticalDescription ;
+	transient BasicStatisticalDescription statisticalDescription ;
 	
 	// only for columns that contain normalized data, i.e. which are member of a normalized table
-	BasicStatisticalDescription rawDataStatistics ; 
+	transient BasicStatisticalDescription rawDataStatistics ; 
 	
 	transient MissingValues missingValues;
 	
@@ -69,7 +69,7 @@ public class DataTableCol implements Serializable,
 	
 	
 	// helper objects .................
-	transient StringsUtil strgutil = new StringsUtil();
+	transient StringsUtil strgutil ;
 	transient PrintLog out  ;
 
 	
@@ -79,8 +79,9 @@ public class DataTableCol implements Serializable,
 		
 		parentTable = parent;
 		out = parent.out ;
+		strgutil = parent.strgutil ;
 		
-		statisticalDescription = new BasicStatisticalDescription();
+		statisticalDescription = new BasicStatisticalDescription(true);
 		derivations = new ColumnDerivations ();
 		missingValues = parentTable.missingValues ;
 	}

@@ -186,7 +186,7 @@ public class MetaNode   extends
 		intensionality.clear(0) ;
 		variableLabels.clear() ;
 		*/
-		sobj = null;
+		 
 		sampler=null;
 	}
 	
@@ -560,7 +560,7 @@ if ((_new_w<0) || (_new_w>1.04)){
 				fieldStats = nodeStats.getFieldValues().get(w);
 				
 								if (nodeStats.getFieldValues().size()< w){
-									nodeStats.getFieldValues().add( new BasicStatisticalDescription()) ;
+									nodeStats.getFieldValues().add( new BasicStatisticalDescription(false)) ;
 								}
 											err = 5;
 				// work on the variable only if allowed
@@ -966,7 +966,7 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public void onDefiningFeatureSet(Object obj , DataHandlingPropertiesIntf obj2) {
+	public void onDefiningFeatureSet(Object obj, DataHandlingPropertiesIntf obj2) {
 		 
 		// ArrayList<String> varlabels;
 		Object dcobj = decodeMsgObject(obj);
@@ -1040,12 +1040,19 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 
 	@Override
 	public void onRequestForRandomInit(Object obj ) {
+
+		int mode = -1;
+		
+		if (obj!=null) {
+			mode = ((int)((Integer)obj)) ; // NodeTask._TASK_RNDINIT ;
+		}
+		
+		initializeSOMnode(mode);
 		 
-		initializeSOMnode();
-		 
+		if ((openLatticeFutureTask == NodeTask._TASK_RNDINIT)) {// || (((int)((Integer)obj)) == NodeTask._TASK_RNDINIT) 
 											out.print(4, "task _TASK_RNDINIT> received ...");
 				
-		if (openLatticeFutureTask == NodeTask._TASK_RNDINIT){
+			
 											out.print(4, "task identified as <_TASK_RNDINIT>, node now informing lattice about guid : "+openLatticeFutureGuid);
 			virtualLattice.nodeInformsAboutCompletedTask( openLatticeFutureGuid );
 		}

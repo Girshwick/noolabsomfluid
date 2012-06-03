@@ -99,7 +99,7 @@ public class VirtualLattice implements LatticeIntf{
 	StatisticSample statsSampler;
 	Random rndInstance = new Random();
 	
-	ArrUtilities arrutil = new ArrUtilities (); 
+	// ArrUtilities arrutil = new ArrUtilities (); 
 	PrintLog out = new PrintLog(2,true);
 
 	private double averagePhysicalDistance = 1.0;
@@ -662,7 +662,7 @@ public class VirtualLattice implements LatticeIntf{
 		if ((vlattProfile.getVariables()!=null) && (vlattProfile.getVariables().size()>0)){
 			vlattMasterAvailable=true;
 		}
-		            						String str = arrutil.arr2text(usagevector, 0);
+		            						String str = ArrUtilities.arr2Text(usagevector, 0);
 		            						out.printErr(4, "spreadVariableSettings(), usagevector : "+str) ;
 		//for (MetaNode node:nodes){
 		for (int i=0;i<nodes.size() ;i++){
@@ -760,6 +760,18 @@ public class VirtualLattice implements LatticeIntf{
 
 	// ..........................................
 	
+	public boolean setPreferredInitializationValues(ArrayList<String> pvars, ArrayList<Double> pvalues) {
+		boolean rB=false;
+		if ((pvars==null) || (pvars.size()<=1) || (pvalues==null) || (pvalues.size()<=1)){
+			return false;
+		}
+		
+		// else translate into preferred profile: default value =0.5, for pvar(i) take pvalue(i)
+		
+		
+		return rB;
+	}
+
 	public void reInitNodeData(){
 		MetaNode node;
 		selectionResultsQueueDigester.isRunning=false;

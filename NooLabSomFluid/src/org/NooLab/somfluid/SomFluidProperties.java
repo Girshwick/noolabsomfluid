@@ -197,6 +197,10 @@ public class SomFluidProperties
 	}
 	
 	public String getExportedXml(){
+		
+		if (currentSettingsXml.length() <= 10){
+			
+		}
 		return currentSettingsXml;
 	}
 	
@@ -231,6 +235,7 @@ public class SomFluidProperties
 			
 			storageDevice.storeObject( this,propertiesFileName) ;
 
+			DFutils.reduceFileFolderList( dir,1,".properties",20) ;
 		}
 	}
 

@@ -1,5 +1,9 @@
 package org.NooLab.somfluid;
 
+import java.io.IOException;
+
+import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
+
 
 
 
@@ -14,12 +18,18 @@ public interface SomFluidPropertiesHandlerIntf {
 	
 	
 	
-	
 	public void initializeDefaults( );
 
 	public void setAlgorithmsConfigPath( String pathToCatalogFolder ) throws Exception;
 
 	public void setInstance(String description, int ...nodecount );
+
+	/**
+	 * abc
+	 * @param type 0 = typology file in simple format based on [sections], 1 = textual description (background information)
+	 * @return
+	 */
+	public String checkForVariableDescriptionFile( int type);
 
 	public void initializeDefaultsFromFile( String inifilename);
 
@@ -59,7 +69,11 @@ public interface SomFluidPropertiesHandlerIntf {
  
 	public void exportVariableSettings( VariableSettingsHandlerIntf variableSettings, String xfilename);
 
-	public boolean loadVariableSettingsFromFile(String  filename);
+	public boolean loadVariableSettingsFromFile(String  filename) throws IOException;
+
+	public String getStartupTraceInfo();
+
+	public void publishApplicationPackage(boolean flag, String basepath);
 	
 
 }

@@ -17,7 +17,7 @@ public interface SomFluidFactoryClassifierIntf {
 	
 	
 	
-	void produce(Object sfTask);
+	void produce(Object sfTask)  throws Exception ;
 
 	public SomApplicationIntf createSomApplication( SomAppProperties properties) ;
 	

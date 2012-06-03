@@ -235,8 +235,7 @@ public abstract class SomTransformerAbstract implements SomTransformerIntf {
 	@Override
 	public int basicTransformToNumericalFormat(){
 			
-			int result = -1;
-			int cn,n,n1,n2 , recordCount=0;
+			int result = -1, cn,n,n1,n2 , recordCount=0;
 			boolean  copyIsMandatory;
 			int currentFormat;
 			String varLabel ;
@@ -267,21 +266,22 @@ public abstract class SomTransformerAbstract implements SomTransformerIntf {
 				recordCount = somData.getDataTable().getColumn(0).getRowcount() ;
 				// repeat until all stack positions have a defined outgoing data format = num
 				boolean numFormatsAvail=false;
-				
 				if (recordCount<=3){ return -107;}
+				cn = transformationModel.variableTransformations.size() ;
 				
+											int outlevel=3;
+											if (cn*recordCount>600000)outlevel=2;  out.print(outlevel, "transforming data to numerical format...");
+
 				while (numFormatsAvail==false){	
-					cn = transformationModel.variableTransformations.size() ;
 					
 					int i=-1;
-					
 					
 					// transformationModel.variableTransformations size remains 0 for raw variables ???
 					while (i<cn-1){
 						i++;
 											if (provideProgress(i,cn,recordCount)){
-												
-											}
+											}	
+											out.printprc(outlevel, i,cn, cn/20, "");
 											
 						varTStack = transformationModel.variableTransformations.get(i) ;
 						v = varTStack.baseVariable ;

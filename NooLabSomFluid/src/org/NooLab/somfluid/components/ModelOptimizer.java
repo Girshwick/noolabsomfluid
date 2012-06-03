@@ -28,10 +28,13 @@ import org.NooLab.somfluid.core.engines.det.*;
 import org.NooLab.somfluid.core.engines.det.results.*;
 
 import org.NooLab.somscreen.*;
+import org.NooLab.somscreen.linear.LinearStatsDescription;
 import org.NooLab.somsprite.*;
  
 import org.NooLab.somtransform.SomTransformer;
 import org.apache.commons.collections.CollectionUtils;
+import org.math.array.StatisticSample;
+import org.math.array.util.Random;
 
 
 
@@ -116,12 +119,15 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 
 	SpelaResults spelaResults ;
 	OutResults outresult;
-	
-	PrintLog out ; 
-	ArrUtilities arrutil = new ArrUtilities();
+
 	public ModelProperties mozResults;
 	ArrayList<Integer> freshlyAddedVariables = new ArrayList<Integer> ();
 	ArrayList<Integer> allAddedVariables = new ArrayList<Integer> ();
+
+	
+	transient StatisticSample sampler = new StatisticSample(172839);
+	transient PrintLog out ; 
+	transient ArrUtilities arrutil = new ArrUtilities();
 	
 	// ========================================================================
 	public ModelOptimizer(  SomFluid somfluid, 
@@ -256,17 +262,19 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			String prj = sfProperties.getPersistenceSettings().getProjectName(); // +"bank2" -> D:/data/projects/bank2/
 			
 			dir = DFutils.createPath(dir, prj);
+			dir = DFutils.createPath(dir, "export/results/");
 			
+			// 111  1000
 			String xRootDir = fileutil.createEnumeratedSubDir( dir, "", 0, 19, -3 ); // 19 = maxCount, -3 = remove oldest by date, -2 = remove first by sort
-			
+											//  basePath, subdirPrefix, startEnumValue , maxCount, removeMode){
 			String srXstring = getOutResultsAsXml(asHtmlTable);
 			
 			String filename = DFutils.createPath(xRootDir, "somresults.xml");
 			fileutil.writeFileSimple(filename, srXstring);	
 			
 			if (fileutil.fileexists(filename)){
-				out.print(2, "results of model optimizing have been writte to file... \n"+
-							 "  "+filename+"\n") ;
+				out.print(2, "results of model optimizing have been written to file... \n"+
+							 "                       "+filename ) ;
 				sfProperties.getOutputSettings().setLastResultLocation(xRootDir);
 			}
 		}
@@ -292,12 +300,14 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		// 
 		int tvindex=-1;
 		Variables variables;
-		String tvarLabel;
+		String tvarLabel="";
 		double score1,score2 ;
 		
 		variables = somDataObj.variables ;
 		tvindex = variables.getTvColumnIndex() ;
-		tvarLabel = variables.getItem(tvindex).getLabel() ;
+		if (tvindex>=0){
+			tvarLabel = variables.getItem(tvindex).getLabel() ;
+		}
 		ArrayList<Double> varColData = new ArrayList<Double>(); 
 		
 		
@@ -393,13 +403,29 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			
 			//PowerSetSpringSource pset;
 			currentVariableSelection = modelingSettings.getInitialVariableSelection() ;
- 
+			
+			currentVariableSelection = somDataObj.getVariables().confirmVariablesAvailability(currentVariableSelection);
+			
+			// sfProperties.getModelingSettings().
+			if (currentVariableSelection.size()<=1){
+				LinearStatsDescription lsd = new LinearStatsDescription( somDataObj.getNormalizedDataTable() );
+				lsd.setTargetVariable("");
+				lsd.setExcludedVariables( somDataObj.getVariables().getBlacklistLabels()) ;
+				currentVariableSelection = lsd.rankVariables( 1 , 4) ;
+				
+				if (currentVariableSelection.size()<=1){
+					currentVariableSelection = getRandomVarSelection(4);
+				}
+			}
 			// ................................................................
 			
 			
 			currentVariableSelection = prepareInitialVariableGuess( ) ;
 			
-			performSingleRun(loopcount, true);
+			int r = performSingleRun(loopcount, true);
+			if (r<0){
+				return;
+			}
 			somLattice = somProcess.getSomLattice();
 			
 			performInitialGuessOfWeights();
@@ -409,7 +435,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			while ((done==false) && (somFluid.getUserbreak()==false)){
 				
 				
-				// after any sprite+evo optimization, a further pair of sprite+evo opti may yield even better results 
+				// after any sprite+evo optimization, a further pair of sprite+evo optimization may yield even better results 
 				if (modelingSettings.getMaxL2LoopCount()>0){
 					
 											// out.print(2, "variables(a1) n = "+somDataObj.variables.size()	);
@@ -885,6 +911,38 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 	  
 		
 		 
+		private ArrayList<String> getRandomVarSelection( int varcount) {
+			
+			ArrayList<String> selection = new ArrayList<String>();
+			Variables variables = moptiParent.somDataObj.getVariables() ;
+			String vlabel;
+			
+			ArrayList<String> nonCommonVars = variables.collectAllNonCommons();
+			
+			int n =  variables.size() - nonCommonVars.size() ;
+			double rv,pr = (1.0*(double)varcount)/((double)n) ;
+			
+			
+			for (int i=1;i<n;i++){
+				vlabel = variables.getItem(i).getLabel() ;
+				if (nonCommonVars.indexOf(vlabel)<0){
+					
+					rv = sampler.getNextUniformRandom();
+					if (rv<=pr){
+						if (selection.indexOf(vlabel)<0){
+							selection.add(vlabel);
+						}
+					}
+					if ((selection.size()>=varcount) || (selection.size()==variables.size()-1)){
+						break ;
+					}
+				}
+			}
+			
+			return selection;
+		}
+		
+		
 		@SuppressWarnings("unchecked")
 		private SomProcessIntf actualizeByBestModel() {
 			
@@ -1098,7 +1156,7 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 			return currentVariableSelection;
 		}
 		
-		private void performSingleRun(int index, boolean collectresults){
+		private int performSingleRun(int index, boolean collectresults){
 			
 		// the same "package" is running in SomScreening 
 			SomFluidTask _task = new SomFluidTask(sfTask);
@@ -1113,6 +1171,8 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 			
 			simo.setDataObject(somDataObj);
 
+									double[] vv = somDataObj.normalizedSomData.getRowValues(10) ;
+									int n=vv.length;
 			simo.setInitialVariableSelection( currentVariableSelection  ) ;
 			
 			simo.perform();
@@ -1126,6 +1186,7 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 				}
 			}
 			// simo.somProcess.getSomLattice();
+			return simo.getLastState() ;
 		}
 		
 		@Override
@@ -1138,7 +1199,7 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 	} // ----------------------------------------------------------------------
 	
 	
-	private void singleRun(int z){
+	private void singleRun(int z) throws Exception{
 		
 			
 			long serialID=0;
@@ -1353,7 +1414,14 @@ if (bestHistoryIndex==0){
 			out.printErr(2, "------------ memory status change (step " + i + ") : " + 
 					        Memory.observe()+ "  still free : " + 
 					        Memory.currentFreeMemory(1));
-			singleRun(i);
+			try {
+				
+				singleRun(i);
+				
+			} catch (Exception e) {
+				
+				e.printStackTrace();
+			}
 			if ((i > 20) || (i % 10 == 0)) {
 				z = 0;
 			}

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- provides a global mapping of index values and names -->
+<somtransformer version="1.0">
+
+<structure>
+  <package path="org.NooLab.somtransform.algo"/>
+</structure>
+
+<!-- the index values are "numerical names" ! -->
+<algorithms>
+  <algorithm name="MissingValues" index ="1" active="1" group="base"/>
+  <algorithm name="StatisticalDescriptionStandard" index ="2" active="1" group="base"/>
+  <algorithm name="LinearNormalization" index ="3" active="1" group="base"/>
+  <algorithm name="CopyPlain" index ="4" active="1" group="base"/>
+  <algorithm name="AdaptiveLogShift" index ="5" active="1" abbrev="lg" group="base"/>
+  <algorithm name="ArithmetExpression" index ="6" active="1" abbrev="xf"  group="base"/>
+  <algorithm name="ZTransform" index ="7" active="1" abbrev="zt"  group="advnum"/>
+
+  <algorithm name="AdvNumericalAdjustments" index ="8"  active="0" group="advnum"/>
+
+  <algorithm name="Deciling" index ="20" active="0" abbrev="dc"  group="advnum"/>
+  <algorithm name="AdaptiveDeciling" index ="21"  active="0" abbrev="dc"  group="advnum"/>
+  <algorithm name="SemZeroDeciling" index ="22" active="0" abbrev="zdc"  group="advnum"/>
+  <algorithm name="AdaptiveDiscretization" index ="23" active="0" abbrev="bi" group="advnum" />
+  <algorithm name="AdaptiveOrdinalization" index ="24" active="0" abbrev="bo" group="advnum" />
+  <algorithm name="Binning" index ="25" active="0" abbrev="bi" group="advnum" />
+
+  <algorithm name="ResidualsByCorrelation" index ="30" active="0" relatestotv="1" abbrev="rsc" group="residuals" />
+  <algorithm name="ResidualsByLocation" index ="31" active="0" relatestotv="1" abbrev="rsl" group="residuals"/>
+  <algorithm name="ResidualsBySimpleCluster" index ="32" active="0" relatestotv="1" abbrev="rsk" group="residuals" />
+  <algorithm name="ResidualsBySOM" index ="33" active="0" relatestotv="1"  abbrev="rss" group="residuals" />
+
+  <algorithm name="NomValEnum" index ="40" active="1"  abbrev="nve" group="conversion" />
+  <algorithm name="OptimalScaling" index ="41" active="0" relatestotv="1" abbrev="osc" group="conversion" />
+
+  <algorithm name="DateConverter" index ="45" active="1" abbrev="dtc" group="conversion"/>
+  <!-- day of week, day of month, 
+       time related algorithms ("circular" distances !!) -->
+  
+  <algorithm name="ExtractDigits" index ="55" active="0"  abbrev="axd" group="" />
+  <algorithm name="StringsFromNum" index ="56" active="0" abbrev="ncs" group="" />
+  <algorithm name="StringExpression" index ="57" active="0"  abbrev="axf" group="" />
+  <algorithm name="StringExtractNums" index ="58" active="0"  abbrev="axn" group="" />
+  <algorithm name="StringRemoveAlpha" index ="59" active="0"  abbrev="ara" group="" />
+  <algorithm name="StringSplit" index ="60" active="0"  abbrev="asp" group="" />
+  <algorithm name="StringReplace" index ="51" active="0"  abbrev="arb" group="" />
+  <algorithm name="StringsGetMedianStr" index ="62" active="0"  abbrev="ams" group="" />
+  <algorithm name="StringsGetRelativizedDistance" index ="63" active="0"  abbrev="ardi" group="" />
+
+  <algorithm name="RunningMean" index ="70" active="0"  abbrev="trm" group="timeseries" />
+  <algorithm name="AutoCorr" index ="71" active="0" abbrev="tac" group="timeseries" />
+  <algorithm name="CrossCorr" index ="72" active="0"  relatesto="1"  abbrev="tcc" group="timeseries" />
+  <algorithm name="MarkovTransitions" index ="73" active="0" abbrev="tmt" group="timeseries" />
+  <algorithm name="FourierCoeff" index ="74" active="0"  abbrev="tfc" group="timeseries" />
+  <algorithm name="FourierResiduals" index ="75" active="0"  abbrev="tfr" group="timeseries" />
+  <algorithm name="WalshCoeff" index ="76" active="0"  abbrev="twc" group="timeseries" />
+  <algorithm name="WalshResiduals" index ="77" active="0" abbrev="twr" group="timeseries" />
+  <algorithm name="WaveletCoeff" index ="78" active="0" abbrev="twvc" group="timeseries" />
+  <algorithm name="WaveletResiduals" index ="79" active="0" abbrev="twvr" group="timeseries" />
+
+  <algorithm name="Surrogate1D" index ="90" active="0" group="sim"/>
+  <algorithm name="SurrogatedPair" index ="91" active="0" relatesto="1" group="sim"/>
+  <algorithm name="SurrogateCholT" index ="92" active="0"  relatesto="1" group="sim"/>
+  <algorithm name="SimulatedExpression" index ="93" active="0" relatesto="1" group="sim"/>
+
+  <algorithm name="ImgFilterX" index ="300" active="0" abbrev="ifx" group="image" />
+
+</algorithms>
+
+<connectors>
+  <connector name="RSystem" index ="201" active="0"/>
+  <connector name="MatLab" index ="202" active="0"/>
+  <connector name="SqlExpression" index ="303" active="0"  relatesto="1"/>
+</connectors>
+
+</somtransformer>

@@ -168,12 +168,15 @@ public class RawFileData {
 			fileReader = new FileReader(file);
 			reader = new BufferedReader(fileReader);
 			z = 0;
-			 
+			celldata = new String[0] ;
 											out.print(2, "reading " + linecount + " lines from file: "+filename );
 			
 			while ((text = reader.readLine()) != null) {
-				out.printprc(3, z, linecount, stepwidth, "");
-
+				//
+											if (((z>1) && (celldata.length *linecount>120000)) || 
+												((z<=1) && (celldata.length *linecount>120000))){
+												out.printprc(2, z, linecount, linecount/10, "of import");
+											}
 				return_value = -11;
 
 				celldata = text.split("\t");

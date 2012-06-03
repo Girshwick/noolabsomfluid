@@ -15,6 +15,6 @@ public interface SomAppFactoryClientIntf {
 
 	public <T> Object createTask(int instanceType);
 
-	public  void produce( Object sfTask ) ;
+	public  void produce( Object sfTask ) throws Exception ;
 	
 }

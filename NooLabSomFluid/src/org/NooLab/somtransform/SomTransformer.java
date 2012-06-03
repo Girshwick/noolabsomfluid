@@ -109,6 +109,7 @@ public class SomTransformer
 		fileutil = fileorg.getFileutil();
 		
 		out = somData.getOut() ;
+		out.setDisplayMemory(true);
 	}
 
  
@@ -213,7 +214,7 @@ public class SomTransformer
 		fileorg.careForArchive( FileOrganizer._TRANSFORMER, filepath );
 		
 		fileutil.writeFileSimple(filepath, xstr);
-		
+		System.gc(); out.delay(100);
 	} 
 
 	public void extractTransformationsXML(boolean embeddedObject ){
@@ -278,7 +279,7 @@ public class SomTransformer
 		transformationModel.setDerivedColumnHeaders( new ArrayList<String>( somData.getNormalizedDataTable().getColumnHeaders() )); 
 
 		
-		 
+		embeddedObject=true;
 		if (embeddedObject){
 			// ... transformationModel as serialized object
 			String serTModelObjStr = strobj.encode( transformationModel ) ;
@@ -315,10 +316,10 @@ public class SomTransformer
 			
 		}else{
 			// creating the XML String from transformations, add a chapter "transformations"
+											out.print(2,"extractTransformationsXML(), get xml of transformationModel... ");
 			transformationModel.getXML(builder);
 		}
 		
-  
 		xmlstr = xEngine.getXmlStr(builder, true);
 		
 		xmlstr = strgutils.replaceAll(xmlstr, "<parameters/>", "");
@@ -571,7 +572,6 @@ public class SomTransformer
 			advAutoTransformations = createDefaultListOfAdvancedTransforms();
 
 		} else {
-
 			advAutoTransformations.addItems(listOfPutativeTransforms);
 		}
 
@@ -579,10 +579,12 @@ public class SomTransformer
 				
 				dataTable = dataTableNormalized ;
 				int cn = transformationModel.variableTransformations.size() ;
-		
+											int outlevel=3;
+											if (cn* dataTable.getColumn(0).size()>200000){outlevel=2; }
+											//out.print(2,"");
 				// here we treat ONLY NUMERICAL COLUMNS !!!
 				for (int i=0;i<cn; i++){
-					
+											out.printprc(outlevel, i, cn, cn/10, "");
 					varTStack = transformationModel.variableTransformations.get(i) ;
 					variable = varTStack.baseVariable ;
 					
@@ -777,7 +779,7 @@ public class SomTransformer
 		}
 		k = 0; // in DataTable, -1 are replaced by 0 !!! see also writing the
 				// table...
-		}
+	}
 
 	/**
 	 * use this to provide candidate transformations; the "candidates" object

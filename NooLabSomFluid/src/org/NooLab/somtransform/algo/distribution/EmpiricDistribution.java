@@ -98,7 +98,7 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 	ArrayList<Integer> salientBins = new ArrayList<Integer>();
 	EmpiricDistribution dis;
 	
-	transient ArrUtilities arrutil = new ArrUtilities() ;
+	//transient ArrUtilities arrutil = new ArrUtilities() ;
 
 	private double negExpScore;
 	
@@ -176,7 +176,7 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 		n = salientBins.size() ;
 		 
 		if (count==0){
-			count = arrutil.arraySum(frequencies);
+			count = ArrUtilities.arraySum(frequencies);
 		}
 	 
 		 
@@ -223,8 +223,8 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 		histoStats.setModi( mxp.setData(frequencies).identifyModi( 0.27, 11 , 21 ) ) ; // parameters: contrast as a fraction of mean, window size, max n
 		histoStats.setMindi(mxp.setData(frequencies).identifyMindi(0.27, 11 , 21 ) ) ; // parameters: contrast as a fraction of mean, window size, max n
 		
-		histoStats.getSumOnSplit()[0] = arrutil.arraySum( frequencies, 0.0, 0.32 );
-		histoStats.getSumOnSplit()[1] = arrutil.arraySum( frequencies, 0.32, 1.0 );
+		histoStats.getSumOnSplit()[0] = ArrUtilities.arraySum( frequencies, 0.0, 0.32 );
+		histoStats.getSumOnSplit()[1] = ArrUtilities.arraySum( frequencies, 0.32, 1.0 );
 		
 		int runsum=0; medianPos=0;
 		for (int i=0;i<frequencies.length;i++){
@@ -500,11 +500,11 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 		if (dlist.size()>2){
 			// if large enough, we determine min, max, 
 			// if freq(min)>freq(max) we strip 1 instance of max, else 1 instance of min, before calculating avg distance
-			dpi = arrutil.arrayMin(dlist, -1);
-			dpx = arrutil.arrayMax(dlist, -1);
+			dpi = ArrUtilities.arrayMin(dlist, -1);
+			dpx = ArrUtilities.arrayMax(dlist, -1);
 			
-			dpif = arrutil.valueFrequency(dlist,dpi);
-			dpxf = arrutil.valueFrequency(dlist,dpx); 
+			dpif = ArrUtilities.valueFrequency(dlist,dpi);
+			dpxf = ArrUtilities.valueFrequency(dlist,dpx); 
 			p=-1; 
 			if (dpif>dpxf){
 				p= dlist.indexOf(dpx);
@@ -513,7 +513,7 @@ public class EmpiricDistribution  implements Serializable, EmpiricDistributionIn
 			} 
 			if (p>=0)dlist.remove(p) ;
 						
-			int dpsum= arrutil.arraySum( dlist );
+			int dpsum= ArrUtilities.arraySum( dlist );
 			dpr = (double)dpsum/(double)dlist.size();
 			
 			double avgd = (dpr - (double)Math.round(dpr));
@@ -1213,7 +1213,7 @@ class MultiFit{
 		try{
 		
 
-			int maxf = dis.arrutil.arrayMax( frequencies, 0);
+			int maxf = ArrUtilities.arrayMax( frequencies, 0);
 			
 			dataLen = endPos - startPos;
 			
@@ -1225,7 +1225,7 @@ class MultiFit{
 			_frequencies = getSplinedValues(_frequencies);
 			
 			
-			int maxf2 = dis.arrutil.arrayMax(_frequencies, 0) ;
+			int maxf2 = ArrUtilities.arrayMax(_frequencies, 0) ;
 			double maxr = (double)maxf/(double)maxf2 ;
 			
 			//_frequencies = dis.arrutil.arrScale( _frequencies, maxr);
@@ -1247,10 +1247,10 @@ class MultiFit{
 				w[i] = weight;
 			}
 			
-			double fmin = dis.arrutil.arrayMin( y, 0.00) ;
+			double fmin = ArrUtilities.arrayMin( y, 0.00) ;
 			while (fmin<0.00001){
-				p = dis.arrutil.arrayMinPos( y ) ;
-				fmin = dis.arrutil.arrayMin( y, 0.00) ;
+				p = ArrUtilities.arrayMinPos( y ) ;
+				fmin = ArrUtilities.arrayMin( y, 0.00) ;
 				if ((p>=0) &&(fmin<0.000000001)){
 					y[p] = 0.001 ;
 				}
@@ -1425,7 +1425,7 @@ class MultiFit{
 		int xp=-1,p;
 		// a bit of filtering
 		if (values.length>0){
-			avgPower = dis.arrutil.arraySum( values)/ (values.length);
+			avgPower = (double)ArrUtilities.arraySum( values)/ ((double)values.length);
 			for (int i=0;i<values.length;i++){
 				values[i] = Math.max( 0 ,values[i]- 2.0*avgPower);
 			}

@@ -103,7 +103,7 @@ public class NodeStatistics {
 		
 		if (vn>n){
 			for (int i=0;i<vn-n;i++){
-				fieldValues.add( new BasicStatisticalDescription() ) ;
+				fieldValues.add( new BasicStatisticalDescription(false) ) ;
 			}
 		}
 		if (vn<n){

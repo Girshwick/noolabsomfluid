@@ -115,6 +115,8 @@ public interface SomTransformerIntf {
 
 	public int getDerivationLevel();
 
+	public TransformationModel getTransformationModel();
+
 	// ......................
 	
 	

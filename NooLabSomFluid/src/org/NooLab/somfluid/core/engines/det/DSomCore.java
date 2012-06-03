@@ -32,6 +32,7 @@ import org.NooLab.somscreen.SomScreening;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
  
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.logging.LogControl;
 import org.NooLab.utilities.logging.PrintLog;
 
  
@@ -84,7 +85,7 @@ public class DSomCore {
 	SomTargetResults somResults;
 	
 	// ------------------------------------------
-	ArrUtilities arrutil = new ArrUtilities();
+	// ArrUtilities arrutil = new ArrUtilities();
 	PrintLog out;
 	
 	// ========================================================================
@@ -114,21 +115,24 @@ public class DSomCore {
 	// ========================================================================
 	public void close(){
 		
-		arrutil=null;
+		// arrutil=null;
 		if (sampleRecordIDs!=null)sampleRecordIDs.clear();
 		sampleRecordIDs=null;
 	}
 	
-	public void perform() throws Exception {
-		 
+	public int perform() throws Exception {
+		int result = -1;
+		
 		sfTask = dSom.somTask ; 
 		dSom.inProcessWait = true;
 		
 		if (dSom.inProcessWait==false){
 			new DsomStarter(); // ?? switched off only for DEBUG !!! abc124
+			result=0;
 		}else{
-			performDSom();
+			result = performDSom();
 		}
+		return result; 
 	}
 
 
@@ -411,10 +415,12 @@ public class DSomCore {
 		
 		resultCode = executeSOM() ; // >0 == ok 
 		 
-		
+		if (resultCode<0){
+			return resultCode;
+		}
 		//dSom.resultsRequested=false;
 		if (dSom.resultsRequested){
-			// this will put the results into the "som": the lattice will kow about the mode, 
+			// this will put the results into the "som": the lattice will know about the mode, 
 			// the TV and the TG, and the nodes will know
 			// about their ppv regarding those definitions
 			somResults = new SomTargetResults( dSom, dataSampler, dSom.somLattice , modelingSettings );
@@ -463,14 +469,13 @@ String str2 = ArrUtilities.arr2Text(uv2, 1);
 
 out.print(4, "execute SOM, use vectors (int) : "+str1);
 out.print(4, ".                        (sim) : "+str2);
-//UsageIndicationVector() is different from Similarity and Intensionality !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 			absoluteRecordCount = this.dataSampler.getSizeTrainingSet();
 			actualRecordCount =  absoluteRecordCount; // we ALWAYS have a training sample available! ;
 			
 			if (absoluteRecordCount<=1){
-				throw(new Exception("critical porblem: absoluteRecordCount = "+absoluteRecordCount));
+				throw(new Exception("critical problem: absoluteRecordCount = "+absoluteRecordCount));
 			}
 			
 			initialLearningRate = modset.getInitialLearningRate();
@@ -497,8 +502,8 @@ out.print(4, ".                        (sim) : "+str2);
 					dataSampler.setGlobalLimit(globalLimit);
 				}
 			}	
-			
-			
+											double[] vv = dSom.somData.getNormalizedSomData().getRowValues(10) ;
+											int n=vv.length;
 											int outlevel=2;
 											if ((sfTask.getCounter()>3) && (dSom.volatileSampling==false)){
 												outlevel=3;
@@ -559,7 +564,11 @@ if (currentEpoch>=3){
 			sampleRecordIDs=null;
 			
 		}catch(Exception e){
-			e.printStackTrace();
+			if (LogControl.Level >=3){
+				e.printStackTrace();
+			}else{
+				out.printErr(1, e.getMessage());
+			}
 			result = -7 ;
 		}
 		if (result==0){
@@ -616,7 +625,7 @@ if (currentEpoch>=3){
 		histUsagevector = evoMetrices.getBestResult().getUsageVector() ; 
 
 		indexes = evoMetrices.determineActiveIndexes(histUsagevector);
-		str = arrutil.arr2text(indexes) ;
+		str = ArrUtilities.arr2Text(indexes) ;
 										out.print(2,"restoring best model (history index :"+_bestHistoryIndex+"), variable indices : "+str);
 		
  

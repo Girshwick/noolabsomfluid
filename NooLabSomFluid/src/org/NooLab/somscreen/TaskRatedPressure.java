@@ -156,7 +156,7 @@ public class TaskRatedPressure {
 			evoBasics = evoMetrices.evoBasics ;
 			
 			int[] ecs = (int[]) ArrUtilities.changeArraystyle(evoBasics.evolutionaryCounts) ;
-			int ecsum = ArrUtilities.arraysum(ecs) ;
+			int ecsum = ArrUtilities.arraySum(ecs) ;
 			int ecmax = ArrUtilities.arraymax(ecs) ;
 			double avgEc = (double)ecsum / (double)activeVarCount ;
 			
@@ -255,7 +255,7 @@ public class TaskRatedPressure {
 			
 			
 			int[] ecs = (int[]) ArrUtilities.changeArraystyle(evoBasics.evolutionaryCounts) ;
-			int ecsum = ArrUtilities.arraysum(ecs) ;
+			int ecsum = ArrUtilities.arraySum(ecs) ;
 			int ecmax = ArrUtilities.arraymax(ecs) ;
 			double avgEc = (double)ecsum / (double)activeVarCount ;
 			
@@ -297,7 +297,7 @@ public class TaskRatedPressure {
 				c[4] = ((double)evt.collinearNeg     * evt.evotaskWeights[4] )/(1.0) ;
 				//tsc = evt. ;
 				
-				v = ArrUtilities.arraysum(c);
+				v = ArrUtilities.arraySum(c);
 				if (v>=0){
 					ixd = new IndexDistance( i, v, variable.getLabel() );
 					ixDists.add(ixd) ;

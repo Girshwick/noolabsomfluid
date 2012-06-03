@@ -74,7 +74,7 @@ public abstract class AbstractMetaNode  extends
 	
 	StatisticSample sampler;
 	Random nRandom ;
-	StringedObjects sobj = new StringedObjects();
+	
 	PrintLog out ;
 	
 	
@@ -145,6 +145,7 @@ public abstract class AbstractMetaNode  extends
 
 
 	protected Object decodeMsgObject( Object stringedObj){
+		StringedObjects sobj = new StringedObjects();
 		
 		String encObjStr = (String)stringedObj;
 		Object dcobj=null;
@@ -153,6 +154,7 @@ public abstract class AbstractMetaNode  extends
 			 dcobj = sobj.decode(encObjStr);
 		}
 		
+		sobj = null;
 		return dcobj ;
 	}
 
@@ -199,9 +201,12 @@ public abstract class AbstractMetaNode  extends
 
 
 
-	/** should be called in the name space of the node thread, so we need a private message queue here, too  */
-	@SuppressWarnings("unused")
-	public void initializeSOMnode() {
+	/**
+	 * if based on listener mechanism: then it should be called in the name space of the node thread, so we need a private message queue here, too  
+	 * 
+	 * @param asymmetryMode -1,0 = none, 1=values in direction a*b, 2 = values in direction a*b, and variances in direction b*c
+	 */
+	public void initializeSOMnode( int asymmetryMode ) {
 		
 		NodeStatistics nodeStats ;
 		
@@ -258,12 +263,16 @@ if (v0!=vv){
 			boolean isFreeDataValue = true;
 			
 			if (isFreeDataValue){
-				profileVector.getValues().add( vv ) ;
+				if (i>=profileVector.getValues().size()){
+					profileVector.getValues().add( vv ) ;
+				}else{
+					profileVector.getValues().set( i,vv ) ;
+				}
 			}else{
 
 			}
 			
-			nodeStats.getFieldValues().add( new BasicStatisticalDescription() ) ;
+			nodeStats.getFieldValues().add( new BasicStatisticalDescription(false) ) ;
 			nodeStats.setVariables(vars) ;
 		} // i-> all vector positions
 											out.print(4, "node <" + serialID + "> initialized.");

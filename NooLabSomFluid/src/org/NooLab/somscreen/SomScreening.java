@@ -229,7 +229,7 @@ public class SomScreening {
 			i--;
 		}
 		if (currentVariableSelection.size()<=1){
-			throw(new Exception("none of the requested variables are contained in the currently avaailable set of variables!"));
+			throw(new Exception("SomScreening(), none of the requested variables are contained in the currently available set of variables!"));
 		}
 	}
 

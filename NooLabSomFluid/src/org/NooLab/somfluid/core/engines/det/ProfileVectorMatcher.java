@@ -54,6 +54,8 @@ public class ProfileVectorMatcher{
 	int multiProcessingLevel;
 	
 	transient PrintLog out = new PrintLog(2,true);
+
+	int lastStatus = 0;
 	
 	// ..........................................................
 	public ProfileVectorMatcher(){
@@ -137,17 +139,20 @@ public class ProfileVectorMatcher{
 		 
 		
 		if ((n<0) || (n>nodeCollectionIndexes.size())){
+			lastStatus = -10 ;
 			return;
 		}
 		
 		nodix = nodeCollectionIndexes.get(n);
 		
 		if ((nodix<0) || (nodix>nodeCollection.size()-1)){
+			lastStatus = -11 ;
 			return; // continue ;
 		}
 		node = nodeCollection.get( nodix);
 		err = 3;
 		if ((node == null) || (node.getActivation() < 0)){
+			lastStatus = -15 ;
 			return ; // continue;
 		}
 
@@ -168,6 +173,7 @@ public class ProfileVectorMatcher{
 		if (dsq < 0) {
 			out.printErr(2,"Problem in calculating distance, relative node index: "+n+" , dsq<0 = " + String.valueOf(dsq));
 			dsq = node.getSimilarity().similarityWithinDomain( profile.getValues(), dataProfileValues, suppressSQRT) ; // XXX DEBUG ONLY
+			lastStatus = -17 ;
 			return  ;
 		}
 		
@@ -182,6 +188,7 @@ public class ProfileVectorMatcher{
 				}
 			}
 		}
+		lastStatus = 0 ;
 		if (hb == true) {
 
 			
@@ -258,6 +265,7 @@ public class ProfileVectorMatcher{
 											out.print(4,"similarity obj in node("+n+") = "+simIntf.toString());
 											
 				profile = node.getProfileVector();
+								
 				dsq = node.getSimilarity().similarityWithinDomain( profile.getValues(), dataProfileValues, suppressSQRT) ;
 				// dsq = getAdvancedDistanceMeasure(1, SOMnodes[n].dweights, values);
 				// node.getSimilarity.usageIndicationVector is wrong, hence profile.getValues() is also wrong
@@ -273,6 +281,7 @@ public class ProfileVectorMatcher{
 					// dsq = node.getSimilarity().similarityWithinDomain( profile.getValues(), profileValues, suppressSQRT) ; 
 					// XXX DEBUG ONLY
 					bestMatchesCandidates.clear();
+					lastStatus = -18 ;
 					return  ;
 				}
 				
@@ -295,7 +304,7 @@ public class ProfileVectorMatcher{
 				 
 			} // n->
 			err = 9;
-	
+			lastStatus = 0 ;
 			for (int i=0;i<bestMatchesCandidates.size();i++){
 				bestMatches.add( bestMatchesCandidates.get(i).getIndex() ) ; // ???
 			}

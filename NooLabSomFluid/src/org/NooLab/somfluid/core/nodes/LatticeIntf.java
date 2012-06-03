@@ -15,5 +15,7 @@ public interface LatticeIntf {
 	
 	public void spreadVariableSettings() ;
 	
+	public boolean setPreferredInitializationValues(ArrayList<String> pvars, ArrayList<Double> pvalues);
+	
 	
 }

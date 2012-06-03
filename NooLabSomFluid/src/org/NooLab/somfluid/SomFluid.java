@@ -114,12 +114,15 @@ public class SomFluid
 		if (sfFactory.preparePhysicalParticlesField>0){
 			prepareParticlesField( (RepulsionFieldEventsIntf)this);	
 		}
-		
+		cleanTmpFolders(); 
 	}
-	
 	 
-	
-	
+	private void cleanTmpFolders() {
+		String tmpdir = fileutil.getTempDir(); // fileutil.createTempDir(""); // createTempDir("");
+		// SomDataObject._TEMPDIR_PREFIX)
+		DFutils.reduceFolderListByAge( tmpdir,20, "~noo", 2.3) ; // 2.3 days 
+	}  
+
 	// ========================================================================
 	
 	 
@@ -444,26 +447,6 @@ public class SomFluid
 
 
 
-	// ========================================================================
-	public String addTask(SomFluidTask somFluidTask) {
-		 
-		somFluidTask.guidID = GUID.randomvalue() ;
-		somTasks.add(somFluidTask);
-		
-		somTasks.setSfFactory(sfFactory) ;
-		
-		 
-		out.setPrefix( "[SomFluid]") ; 
-		out.print(2, "...now there are "+somTasks.size()+" tasks in the SomFluid-queue...") ; out.delay(100) ;
-		
-		isActivated = true;
-		
-		return somFluidTask.guidID  ;
-	}
-
-
-
-
 	@Override
 	public void onTaskCompleted( SomFluidTask sfTask ) {
 		 
@@ -524,6 +507,26 @@ public class SomFluid
 			out.printErr(2,"\nThe following task has been finished and closed: "+sfTask.guidID+"\n");
 			
 		}  // completed "SomApplication"
+	}
+
+
+
+
+	// ========================================================================
+	public String addTask(SomFluidTask somFluidTask) {
+		 
+		somFluidTask.guidID = GUID.randomvalue() ;
+		somTasks.add(somFluidTask);
+		
+		somTasks.setSfFactory(sfFactory) ;
+		
+		 
+		out.setPrefix( "[SomFluid]") ; 
+		out.print(2, "...now there are "+somTasks.size()+" tasks in the SomFluid-queue...") ; out.delay(100) ;
+		
+		isActivated = true;
+		
+		return somFluidTask.guidID  ;
 	}
 
 
@@ -739,6 +742,8 @@ public class SomFluid
 		int result=-1;
 		String srcName ="";
 		String loadedsrc ;
+		
+		
 		//  
 		srcName = srcname;
 		if ((srcName.length()==0) || (DFutils.fileExists(srcName)==false)){

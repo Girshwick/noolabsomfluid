@@ -51,7 +51,7 @@ public class ContainerStorageDevice {
 		
 		
 		if (fileutil.fileexists(filename) ){
-			boolean hb = fileutil.manageBakFile( filename , 10, true, true);
+			boolean hb = fileutil.manageBakFile( filename , 100, true, true);
 		}
 
 			

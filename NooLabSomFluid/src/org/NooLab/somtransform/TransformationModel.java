@@ -84,11 +84,12 @@ public class TransformationModel implements Serializable{
         		  .up();
 		
 		for (int i=0;i<variableTransformations.size();i++){
-			
+											if ((i<=1) || (i%50==0) || (i>variableTransformations.size()-3)){
+												out.printprc(2, i, variableTransformations.size(), variableTransformations.size()/10 , " of transformation stacks visited") ;
+											}
 			tStack = variableTransformations.get(i);
 			
 			xstr = tStack.getXML(builder,i, false);
-
 			// xmlstr = xmlstr + xstr+"\n";
 		}
 		
@@ -137,6 +138,29 @@ public class TransformationModel implements Serializable{
 	
 	
 	
+	public void clearData() {
+
+		TransformationStack tstack = null, ts;
+		StackedTransformation st;
+		
+		for (int i=0;i< variableTransformations.size();i++){
+			
+			ts = variableTransformations.get(i);
+			for (int s=0;s< ts.getItems().size();s++){
+				
+				st = ts.getItems().get(s) ;
+				
+				st.clearData();
+								
+			}
+			if (tstack!=null){
+				break;
+			}
+		}
+		
+		
+	}
+
 	public ArrayList<String> extractRequiredChains() {
 		return extractRequiredChains(0);
 	}

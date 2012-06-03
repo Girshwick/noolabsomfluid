@@ -224,7 +224,12 @@ public class ModelingSettings implements Serializable{
 	private DataFilter dataFilter;
 
 	private ArrayList<String> blacklistedVariablesRequest = new ArrayList<String>();
-
+	private ArrayList<String> whitelistedVariablesRequest = new ArrayList<String>();
+	
+	private ArrayList<String> treatmentDesignVariablesRequest = new ArrayList<String>();
+	private ArrayList<String> groupDesignVariablesRequest = new ArrayList<String>();
+		
+	
 	private int initialAutoVariableSelection=0 ;
 	ArrayList<String> initialVariableSelection = new ArrayList<String>();
 
@@ -892,6 +897,47 @@ public class ModelingSettings implements Serializable{
 
 	public int getSomType() {
 		return somType;
+	}
+
+	    
+	
+	public void setTreatmentDesignVariablesByLabel(String[] strings) {
+		ArrayList<String> items = new ArrayList<String> ( Arrays.asList(strings)) ; 
+		treatmentDesignVariablesRequest.addAll(items) ;
+	}
+	public void setGroupDesignVariablesByLabel(String[] strings) {
+		ArrayList<String> items = new ArrayList<String> ( Arrays.asList(strings)) ; 
+		groupDesignVariablesRequest.addAll(items) ;
+	}
+	
+	
+	public void setRequestForWhitelistVariablesByLabel(String[] strings) {
+		ArrayList<String> items = new ArrayList<String> ( Arrays.asList(strings)) ; 
+		whitelistedVariablesRequest.addAll(items) ;
+	}
+
+	public ArrayList<String> getWhitelistedVariablesRequest() {
+		return whitelistedVariablesRequest;
+	}
+
+	public void setWhitelistedVariablesRequest(ArrayList<String> whitelistedVariablesRequest) {
+		this.whitelistedVariablesRequest = whitelistedVariablesRequest;
+	}
+
+	public ArrayList<String> getTreatmentDesignVariablesRequest() {
+		return treatmentDesignVariablesRequest;
+	}
+
+	public void setTreatmentDesignVariablesRequest(ArrayList<String> treatmentDesignVariablesRequest) {
+		this.treatmentDesignVariablesRequest = treatmentDesignVariablesRequest;
+	}
+
+	public ArrayList<String> getGroupDesignVariablesRequest() {
+		return groupDesignVariablesRequest;
+	}
+
+	public void setGroupDesignVariablesRequest(ArrayList<String> groupDesignVariablesRequest) {
+		this.groupDesignVariablesRequest = groupDesignVariablesRequest;
 	}
 
 	public void setRequestForBlacklistVariablesByLabel(String[] strings) {

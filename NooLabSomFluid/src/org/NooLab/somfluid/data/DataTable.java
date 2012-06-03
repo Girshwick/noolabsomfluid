@@ -18,6 +18,9 @@ import org.NooLab.somtransform.StackedTransformation;
 import org.NooLab.somtransform.TransformationStack;
 import org.NooLab.somtransform.algo.NomValEnum;
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.callback.ProcessFeedBackContainer;
+import org.NooLab.utilities.callback.ProcessFeedBackContainerIntf;
+import org.NooLab.utilities.callback.ProcessFeedBackIntf;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.strings.StringsUtil;
@@ -89,7 +92,7 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 	// our table consists of a list of columns
 	ArrayList<DataTableCol> dataTable = new ArrayList<DataTableCol>() ; 
 	
-	// the transposed table is always a numeric table, where previous columnheaders are replaced by enumeration 
+	// the transposed table is always a numeric table, where previous column headers are replaced by enumeration 
 	ArrayList<DataTableCol> transposedTable = new ArrayList<DataTableCol>() ;
 	
 	ArrayList< ArrayList<Double> > dataTableRows = new ArrayList< ArrayList<Double>>() ;
@@ -154,7 +157,7 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 	
 	// helper objects .................
 	transient StringsUtil strgutil ;
-	transient ArrUtilities arrutil ;
+	//transient ArrUtilities arrutil ;
 	transient DFutils  fileutil = new DFutils();
 	transient PrintLog out ;
 
@@ -178,7 +181,7 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 		missingValues = somData.getMissingValues() ;
 		
 		strgutil = new StringsUtil();
-		arrutil = new ArrUtilities ();
+		// arrutil = new ArrUtilities ();
 		
 		out = somData.getOut() ;
 		if (out==null){
@@ -202,7 +205,11 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 		int result=-1;
 		String xstr="", filepath , vstr="", filename = "";
 		PersistenceSettings ps;
-		 
+										    String tname="";
+										    if (this.tablename.length()>0){
+										    	tname="<"+tablename+"> " ;
+										    }
+		                                    out.print(2, "saving data table "+tname+"...");
 		FileOrganizer fileorg = somData.getTransformer().getFileorg() ;
 		
 		ps = fileorg.getPersistenceSettings() ;
@@ -220,13 +227,15 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 		
 		fileorg.careForArchive( FileOrganizer._TABLEOBJECT, filepath );
 		
-		storageDevice.storeObject( this, filepath) ;
-		
+		// storageDevice.storeObject( this, filepath) ;   // TODO XXX severe change: abc124
+					// we can't serialize the whole thing into 1 object due to heap space overflow... 
+					// we have to create our own storage procedure for tables, where columns and part tab
 		if (fileutil.fileexists(filepath)==false){
 			result=-3;
 		}else{
 			result =0;
 		}
+											out.print(2, "saving data table "+tname+" completed (code="+result+").");
 		return result;
 	}
 
@@ -248,7 +257,7 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 		
 		
 		strgutil = null;
-		arrutil = null;
+		//arrutil = null;
 		
 	}
 
@@ -366,7 +375,7 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 		 
 		if ((dataTableRows!=null) && (dataTableRows.size()>2) && (getTablename().contains("norm"))){
 			 
-			tablestr = arrutil.arr2text( columnHeaders, "\t") +"\n";
+			tablestr = ArrUtilities.arr2Text( columnHeaders, "\t") +"\n";
 			
 			for (int i=0;i<dataTableRows.size();i++){
 				
@@ -516,10 +525,12 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 			
 			// check format of columns
 															if (out!=null){ out.print(3,"\ncheck format of columns...");};
-			
+															int outlevel=3;
 			indexColPresent = false;												
 			for (i=0;i<n;i++){  // TODO make this multi-digested if there are many variables (n>80), and many rows, such that even scanrow is large...
-															if (out!=null){ out.printprc(3, i, n, n/10, "") ;};
+															
+															if (n>120)outlevel=2;
+															if (out!=null){ out.printprc(outlevel, i, n, n/10, "") ;};
 				column = importTable.getColumn(i) ;
 				column.setMaxScanRows( importTable.getMaxScanRows() );
 if (i>=9){
@@ -541,7 +552,7 @@ if (i>=9){
 				}
 			} // i->n all columns of import table
 			 
-															if (out!=null){ out.print(3,"\nimporting columns...");};
+															if (out!=null){ out.print(outlevel,"\nimporting columns...");};
 			// if necessary, apply nve
 			i=0;  
 			// TODO make this multidigested ...
@@ -552,7 +563,7 @@ if (i>=9){
 				// only if it is num?
 				// column = translateMvToNum(column); not necessary, will be accomplished elsewhere ("makeNumeric()")
 				column.dataFormat = formats[i]; 
-															if (out!=null){ out.printprc(3, i, n, n/5, "") ;};
+															if (out!=null){ out.printprc(outlevel, i, n, n/5, "") ;};
 														
 				if (formats[i]== DataTable.__FORMAT_ORGINT){
 					// sort the data, and check for "groups" within the organizational codes 
@@ -662,7 +673,7 @@ if (i>=9){
 				dataTable.add(0, synthIndexColumn) ; 
 				synthIndexColumn.index=0;
 				fillColumnAsIndex( synthIndexColumn , getColumn(1).size(), 0 , 1);
-				formats = arrutil.resizeArray(formats.length+1, formats);
+				formats = ArrUtilities.resizeArray(formats.length+1, formats);
 				
 				for (i=n;i>0;i--){
 					formats[i] = formats[i-1];  
@@ -685,7 +696,7 @@ if (i>=9){
 			
 			// determineVarietyOfColumnData();
 			
-			createRowOrientedTable();
+			// createRowOrientedTable(); not for raw data
 			
 			
 			
@@ -715,7 +726,7 @@ if (i>=9){
 	}
 
 	/**
-	 * clears any previous rpw perspective and creates a fresh one
+	 * clears any previous row perspective and creates a fresh one
 	 */
 	public void createRowOrientedTable(){
 		createRowOrientedTable(0);
@@ -743,7 +754,18 @@ if (getTablename().contains("normalized")){
 			rc = dataTable.get(0).getCellValues().size();
 			cc = dataTable.size();
 			
+			System.gc();
+			out.delay(50) ;
+											out.print(2, "creating row-oriented table, going to arrange "+rc+" normalized records into rows.") ;
+
+										 
+            						 
+            
+
 			for (int r=0;r<rc;r++){
+											int outlevel=3;
+											if (rc*cc>80000)outlevel=2;
+											out.printprc(outlevel, r, rc, rc/10, "");
 				ir=r;
 				rowdata = new ArrayList<Double>(); 
 
@@ -753,8 +775,6 @@ if (getTablename().contains("normalized")){
 					
 					useCol=true;
 					if (alignedByVariables>=1){
-						
-						
 					}
 
 					if (useCol) {
@@ -777,7 +797,10 @@ if (getTablename().contains("normalized")){
 
 					}// useCol ?
 				}
-
+if (r>rc-3){
+	int zz=0;
+	zz=1;
+}
 				dataTableRows.add(rowdata) ;
 			} // r ->
 			
@@ -786,6 +809,7 @@ if (getTablename().contains("normalized")){
 			out.printErr(1, "Critical error in <createRowOrientedTable()>, r,c: "+ir+","+ic+" ,  while max is: "+rc+", "+dataTable.size());
 			e.printStackTrace() ;
 		}
+	 
 		rc=0;
 	}
 	
@@ -908,19 +932,19 @@ if (getTablename().contains("normalized")){
 		 */
 		row = (ArrayList<String>)getRowValuesArrayList(0,String.class);
 		
-		dcs[0] = arrutil.checkTypeOfListItems( (Object)row, String.class, Double.class );
+		dcs[0] = ArrUtilities.checkTypeOfListItems( (Object)row, String.class, Double.class );
 		
 		for (int i=1;i<rowsToCheck;i++){
 			row = (ArrayList<String>)getRowValuesArrayList(i,String.class);
-			dcs[i] = arrutil.checkTypeOfListItems( (Object)row, String.class, Double.class);
+			dcs[i] = ArrUtilities.checkTypeOfListItems( (Object)row, String.class, Double.class);
 		}
 		int z=0;
-		int rowOfMaxConversionDenials = arrutil.arrayMaxPos(dcs);
+		int rowOfMaxConversionDenials = ArrUtilities.arrayMaxPos(dcs);
 		int firstRowDcs = dcs[0];
-		z = arrutil.arraySum(dcs) - dcs[0];
-		int pmi = arrutil.arrayMinPos(dcs);
+		z = ArrUtilities.arraySum(dcs) - dcs[0];
+		int pmi = ArrUtilities.arrayMinPos(dcs);
 		dcs[0] = 0;
-		int pmx = arrutil.arrayMaxPos(dcs); 
+		int pmx = ArrUtilities.arrayMaxPos(dcs); 
 		
 
 		double vmx = dcs[pmx]; // the max value of conversion denials across all rows
@@ -1172,6 +1196,10 @@ if (getTablename().contains("normalized")){
 	}
 	
 	
+	public ArrayList<ArrayList<Double>> getDataTableRows() {
+		return dataTableRows;
+	}
+
 	public double getTableCell( int column, int row ) {
 		double v=-1;
 		
@@ -1679,6 +1707,7 @@ if (getTablename().contains("normalized")){
 		 setTablename(tname); 
 	}
 
+ 
 	
 
 
