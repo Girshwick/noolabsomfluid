@@ -7,6 +7,7 @@ import java.util.Random;
  
 import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
 import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
+import org.NooLab.somfluid.app.IniProperties;
 import org.NooLab.somfluid.app.SomAppProperties;
 import org.NooLab.somfluid.app.SomAppUsageIntf;
 import org.NooLab.somfluid.app.SomAppValidationIntf;
@@ -23,6 +24,7 @@ import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.SomPersistence;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.resources.ResourceLoader;
 
 /**
  * 
@@ -128,8 +130,26 @@ public class SomFluidFactory  implements 	//
 			(new AlgorithmDeclarationsLoader(sfProperties)).load() ;
 			
 		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(-7);
+			out.printErr(1, e.getMessage()+"... trying to recover...");
+			
+			try {
+				// last minute check for resources
+				if (checkAlgorithmsConfigPath()) {
+
+					(new AlgorithmDeclarationsLoader(sfProperties)).load();
+
+				} else {
+					out.printErr(1, e.getMessage() + "attempt to recover failed, thus exiting...");
+					System.exit(-7);
+				}
+				
+			} catch (Exception e1) {
+				out.printErr(1, e.getMessage() + "attempt to recover failed, thus exiting...");
+				System.exit(-7);
+			}
+			String algorithmsConfigPath = sfProperties.getAlgorithmsConfigPath();
+			out.printErr(1, "The attempt to recover succeeded, folder for declaration files is now : "+algorithmsConfigPath);
+			
 		}
 		
 		if ((factorymode==SomFluidFactory._INSTANCE_TYPE_OPTIMIZER) ||
@@ -139,8 +159,11 @@ public class SomFluidFactory  implements 	//
 		}
 		// we need to create the SomFluid object in a rudimentary form right now,
 		// because we need it as a event sink for the "PhysicalFieldFactory()"
+		
 		somFluidModule = new SomFluid( this );
-		 
+		
+		prepareApplicationPublishing();
+		
 		random = new Random();
 		random.setSeed(192837465) ;
 		
@@ -148,6 +171,39 @@ public class SomFluidFactory  implements 	//
 	}
 	
 	 
+
+	private void prepareApplicationPublishing() {
+		 
+		OutputSettings outs = sfProperties.getOutputSettings() ;
+		
+		boolean appubb = ((factoryMode==SomFluidFactory._INSTANCE_TYPE_OPTIMIZER) ||
+						  (factoryMode==SomFluidFactory._INSTANCE_TYPE_SOM)) ;
+
+		// we only need a publishing dir if we are SOM or OPTIMIZER...
+		
+		if ((somAppProperties==null) && (appubb) && 
+			(sfProperties.getSomType()==2) &&  // _SOMTYPE_MONO (not: _SOMTYPE_PROB !) 
+			(outs.getAppPublishing().isActive()) ){
+				
+			String path = outs.getAppPublishing().getPublishingBasepath().trim() ;
+			if ((fileutil.direxists(path)==false) ){
+				if ((path.length()==0) || (path.indexOf("/")<0)){
+					path = sfProperties.getFileOrganizer().getProjectBaseDir() ;
+					path = fileutil.createpath( path, sfProperties.getFileOrganizer().getProjectDirName() );
+					path = fileutil.createpath( path, "export/application/");
+				}
+			}
+			outs.setAppPublishing( new SomAppPublishing( this, true, 
+															path, // "D:/data/projects/_classifierTesting", 
+															// name of package and dedicated version string
+															sfProperties.getPersistenceSettings().getProjectName(), "",        
+															SomAppPublishing._LOCATION_FILE) );
+
+		}
+		
+	}
+
+
 
 	public SomFluidFactory(SomAppProperties appProperties) {
 	 
@@ -312,6 +368,9 @@ public class SomFluidFactory  implements 	//
 		dir = fileorg.getObjectStoreDir();
 
 		dir = DFutils.createPath( dir, "task/"+stype+"/");
+		
+		DFutils.reduceFileFolderList( dir,1,20) ;
+		
 		fileName = DFutils.createPath( dir, SomFluidTask._TRACEFILE);
 		
 		
@@ -350,12 +409,14 @@ public class SomFluidFactory  implements 	//
 		fileName = DFutils.createPath( dir, SomFluidTask._TRACEFILE);
 		
 		
+		
 		// now loading the desired properties into a new object;
 		ContainerStorageDevice storageDevice ;
 		storageDevice = new ContainerStorageDevice();
 		
 		storageDevice.storeObject( sfTask, fileName) ;
 		
+		DFutils.reduceFileFolderList( dir,1,".trace",20) ;
 	}
 
 	public RepulsionFieldIntf createPhysicalField( RepulsionFieldEventsIntf eventSink, int initialNodeCount) { // 
@@ -544,12 +605,13 @@ public class SomFluidFactory  implements 	//
 	 * takes the task and produces the SOM, usually, if not set otherwise, 
 	 * it also will start the process
 	 * @return 
+	 * @throws Exception 
 	 */
-	public  void produce( Object sfTask ) {
+	public  void produce( Object sfTask ) throws Exception {
 	
 		SomFluidTask somFluidTask ;
 		
-		
+				
 		saveTaskTrace(sfTask);
 		
 		// First caring about the data, using the transformer module
@@ -576,6 +638,40 @@ public class SomFluidFactory  implements 	//
 				InternalSomFluidModuleStarter _starter = new InternalSomFluidModuleStarter( somFluidTask ); 
 			}
 		}
+	}
+
+	private boolean checkAlgorithmsConfigPath() throws Exception {
+		
+		boolean rB=false;
+		String outpath="";
+		// loading "builtinscatalog.xml" which is necessary for global indexing and activation of built-in algorithms
+		String algorithmsConfigPath  = sfProperties.getAlgorithmsConfigPath(); 
+		String bic = fileutil.createpath(algorithmsConfigPath , "builtinscatalog.xml"); 
+			
+			
+		if ((fileutil.direxists(algorithmsConfigPath )==false) || (fileutil.fileexists(bic)==false)){
+			ProjectSpaceMaintenance psm = new ProjectSpaceMaintenance();
+			
+			ResourceLoader rsrcLoader = new ResourceLoader();
+			rB = rsrcLoader.loadTextResource( this.getClass(), "org/NooLab/somtransform/resources/builtinscatalog-xml") ;
+			if (rB){
+				
+				// create a directory structure, create the file and adjust the settings
+				if (fileutil.direxists(algorithmsConfigPath )){
+					outpath = algorithmsConfigPath;
+				}else{
+					psm = new ProjectSpaceMaintenance();
+					psm.establishCatalogFolder();
+				}
+				
+				String filename = fileutil.createpath( outpath,"builtinscatalog.xml" );
+				
+				fileutil.writeFileSimple(filename, rsrcLoader.getTextResource()) ;
+				rB = fileutil.fileexists(filename) ;
+			}
+		}
+		
+		return rB;
 	}
 
 	class InternalSomFluidModuleStarter implements Runnable {
@@ -684,13 +780,15 @@ public class SomFluidFactory  implements 	//
 
 
 
-	public static boolean createProjectSpace(String psLabel) {
-		boolean projectSpaceOk = false;
+	public static int createProjectSpace(String psLabel) {
+		int projectSpaceOk = -1;
 		
 		try{
 		
 			// create directories, catalog files from resources 
 			// dir structure is also from resources
+			
+			
 			
 			// ... and ask for a data file to copy into the project space
 			
@@ -707,9 +805,59 @@ public class SomFluidFactory  implements 	//
 
 
 
-	public static void duplicateProject() {
+	public static void duplicateProject(int mode) {
 		//  SomFluidStartup && IniProperties provide the folder and prjLabel
+		ProjectSpaceMaintenance psm = new ProjectSpaceMaintenance();
+		psm.duplicateProject( SomFluidStartup.getProjectSpaceLabel() , mode) ;
+	}
+ 
+	 
+
+	public static boolean projectSpaceExists(String psLabel) {
+		boolean rB= true;
+		try {
 		
+			ProjectSpaceMaintenance psm = new ProjectSpaceMaintenance();
+			rB = psm.projectSpaceExists( psLabel ) >= 0;
+			
+			
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+		}
+		
+		return rB;
+	}
+
+
+
+	public static void completeProjectSpace() throws Exception {
+		 
+		 // SomFluidFactory.projectSpaceExists() 
+		String pslabel = IniProperties.lastProjectName;
+		
+		ProjectSpaceMaintenance psm = new ProjectSpaceMaintenance();
+		psm.completeProjectSpaceDirectories() ;
+
+	}
+
+
+
+	public static boolean organizeRawProjectData() {
+		//
+		String dataSourceFile = "" ;
+		boolean rB=false;
+		
+		ProjectSpaceMaintenance psm = new ProjectSpaceMaintenance();
+		psm.organizeRawProjectData();
+		
+		dataSourceFile = psm.getDataSourceFile();
+		
+		rB = DFutils.fileExists(dataSourceFile);
+		
+		if (rB){
+			IniProperties.dataSource = dataSourceFile;
+		}
+		return rB;
 	}
 
 

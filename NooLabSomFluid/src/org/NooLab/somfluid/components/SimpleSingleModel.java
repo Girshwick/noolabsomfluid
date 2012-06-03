@@ -17,6 +17,7 @@ import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.utilities.files.DFutils;
+import org.NooLab.utilities.logging.LogControl;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
 
@@ -49,6 +50,8 @@ public class SimpleSingleModel implements SomHostIntf, Serializable{
 	
 	transient PrintLog out ;
 	private ArrayList<Integer> usedVariables = new ArrayList<Integer>();
+
+	private int lastState;
 	
 	// ========================================================================  
 	public SimpleSingleModel( SomFluid somfluid, 
@@ -115,7 +118,7 @@ public class SimpleSingleModel implements SomHostIntf, Serializable{
 	
 	public void perform() {
  
-
+		SomTargetedModeling targetedModeling=null;
 		long serialID=0;
 		serialID = SerialGuid.numericalValue();
 
@@ -123,7 +126,7 @@ public class SimpleSingleModel implements SomHostIntf, Serializable{
 		try{
 			out.delay(50);
 
-			SomTargetedModeling targetedModeling;
+			
 			
 			sfTask.setCallerStatus(0) ;
 			
@@ -132,25 +135,48 @@ public class SimpleSingleModel implements SomHostIntf, Serializable{
 			somProcess = targetedModeling;
 			
 			targetedModeling.setSomDataObject(somDataObj);
-			 
-			targetedModeling.prepare( usedVariables );  // 
-
-// VirtualLattice _somLattice = this.somProcess.getSomLattice() ;
-// out.printErr(2, "lattice 5 "+_somLattice.toString());
-
-			String guid = targetedModeling.perform(0);
-			
-
-// _somLattice = this.somProcess.getSomLattice() ;
-// out.printErr(2, "lattice 6"+_somLattice.toString());
-
-			if (sfTask.isNoHostInforming()==false){
-				somFluid.onTaskCompleted( sfTask );
-			}
 			
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		
+		try {
+
+			targetedModeling.prepare(usedVariables); //
+
+			lastState = 2;
+		} catch (Exception e) {
+			
+			out.printErr(1, "A critical inconsistency has been detected while preparing the som: "+e.getMessage() ) ;
+			lastState = -7;
+			return ;
+		}
+// VirtualLattice _somLattice = this.somProcess.getSomLattice() ;
+// out.printErr(2, "lattice 5 "+_somLattice.toString());
+
+		try {
+			String guid = targetedModeling.perform(0);
+			
+			lastState = 0;
+		} catch (Exception e) {
+			lastState = -7;
+			if (LogControl.Level >=3){
+				e.printStackTrace();
+			}else{
+				out.printErr(1, e.getMessage());
+			}
+			 
+		}
+		
+
+// _somLattice = this.somProcess.getSomLattice() ;
+// out.printErr(2, "lattice 6"+_somLattice.toString());
+
+		if (sfTask.isNoHostInforming()==false){
+			somFluid.onTaskCompleted( sfTask );
+		}
+			
+
 		
 	}
   
@@ -269,6 +295,10 @@ public class SimpleSingleModel implements SomHostIntf, Serializable{
 	}
 
 	 
+
+	public int getLastState() {
+		return lastState;
+	}
 
 	@Override
 	public String getOutResultsAsXml(boolean asHtmlTable) {

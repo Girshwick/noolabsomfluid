@@ -73,6 +73,16 @@ public abstract class BasicNodeAbs implements
 		extensionality = importExtensionalityDynamics(serialID) ;
 	
 		profileVector = intensionality.getProfileVector(); 
+		
+		int nd=0;
+		for (int i=0;i<nd;i++){ 
+			
+			// profileVector.getValues().add(0.5) ;
+		
+			
+		}
+		
+		
 	}
 
 	public void setVariableLabels(ArrayList<String> varLabels) {

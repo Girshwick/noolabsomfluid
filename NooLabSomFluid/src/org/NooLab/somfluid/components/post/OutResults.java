@@ -42,7 +42,7 @@ public class OutResults implements Serializable{
 	EvoMetrik bestMetric;
 
 	
-	private String historyTableAsString="",contributionTableAsString="", contrastTableAsString="";
+	private String historyTableAsString="",contributionTableAsString="", selectionShortAsString="", contrastTableAsString="";
 	
 	
 	/** the combined xml string for all results across all available tables */
@@ -159,7 +159,15 @@ public class OutResults implements Serializable{
 		
 		ArrayList<String> initialVariableSelection = vcs.getBaseMetric() ;
 		 
+		vrow = new ArrayList<String>();
+		str = "selection\n"  ; vrow.add(str) ;
+		str = "best score : " + String.format("%.3f", vcs.getBaseScore() ) ; vrow.add(str) ;
+		str = arrutil.arr2text( initialVariableSelection, "; ") ; vrow.add(str+"\n") ; 
 		
+		selectionShortAsString = str;
+		vrows.add(vrow);
+		
+
 		// pre-amble
 		vrow = new ArrayList<String>();
 		str = "\ncontributions are measured as the effect provoked by removing a single variable+\n"+
@@ -168,8 +176,7 @@ public class OutResults implements Serializable{
 		vrows.add(vrow);
 		
 		vrow = new ArrayList<String>();
-		str = "best score : " + String.format("%.3f", vcs.getBaseScore() ) ; vrow.add(str) ;
-		str = arrutil.arr2text( initialVariableSelection, ", ") ; vrow.add(str+"\n") ; 
+		vrow.clear() ;
 		
 		vrows.add(vrow);
 		SomQualityData bsq = vcs.getBestSqData() ;
@@ -428,7 +435,7 @@ public class OutResults implements Serializable{
 	
 	public String createXmlResults( boolean asHtmlTable) {
 		
-		String tstr,xstr="",xostr="",xustr="",xhstr="" ;
+		String tstr,xstr="",xshd="", xostr="",xustr="",xhstr="" ;
 		XMLBuilder builder ;
 		
 		/* we just translate the existing tabulator separated tables into generic xml
@@ -447,6 +454,12 @@ public class OutResults implements Serializable{
 		
 		int c=0;
 		
+		if (selectionShortAsString.length()>10){
+			builder = builder.e("selection").t("##$shortmetric$##");
+			xshd = "         "+simpleTranslationTab2Xml(selectionShortAsString,"selection",asHtmlTable);
+			builder = builder.up() ;
+			c++;
+		}
 		if (historyTableAsString.length()>20){
 			builder = builder.e("history").t("##$history$##");
 			xhstr = "         "+simpleTranslationTab2Xml(historyTableAsString,"history",asHtmlTable);
@@ -514,11 +527,11 @@ public class OutResults implements Serializable{
 		
 		if (asHtmlCompatible){
 			
-
+			
 			instr = strgutil.replaceAll( instr, "\n", "</td></tr><tr><td>");
 			instr = strgutil.replaceAll( instr, "</tr><tr>","</tr>\n<tr>");
 			instr = strgutil.replaceAll( instr, "\t", "</td><td>");
-			instr = "<table name=\""+label+"\">\n<tr>" + instr;
+			instr = "<table name=\""+label+"\">\n<tr><td>" + instr;
 			
 			p = instr.trim().lastIndexOf("<tr/><tr>");
 

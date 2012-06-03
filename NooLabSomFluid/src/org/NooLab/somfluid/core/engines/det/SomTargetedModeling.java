@@ -24,7 +24,10 @@ import org.NooLab.somfluid.data.*;
 import org.NooLab.somfluid.env.communication.*;
 import org.NooLab.somfluid.properties.ModelingSettings;
 
+
+import org.NooLab.somscreen.linear.SimpleExplorationClustering;
 import org.NooLab.somtransform.SomTransformer;
+import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.LogControl;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
@@ -34,7 +37,7 @@ import org.NooLab.utilities.timing.DelayFor;
 
 
 /**
- * see for eventlisteners here:
+ * see for event listeners here:
  * 
  * http://www.javaworld.com/javaworld/jw-03-1999/jw-03-toolbox.html?page=6
  * http://stackoverflow.com/questions/1658702/how-do-i-make-a-class-extend-observable-when-it-has-extended-another-class-too
@@ -174,6 +177,7 @@ public class SomTargetedModeling    extends
 	 * Note that the particles in the field are just containers! They are not identical to nodes.
 	 * Hence, our nodes need to be attached to the particles  
 	 */
+	@SuppressWarnings("unchecked")
 	private void createVirtualLattice( VirtualLattice somLattice, RepulsionFieldIntf particleField, int initialNodeCount, boolean showNodeCount) {
 		
 		MetaNode mnode;
@@ -201,6 +205,8 @@ public class SomTargetedModeling    extends
 		
 				mnode.getExtensionality().getStatistics().setVariables(somDataObject.getVariableItems());
 				
+				ArrayList<Double> values = ArrUtilities.createCollection( vari.size(), 0.5) ;
+				pv.setValues(values);
 				
 				particle = particleField.getParticles().get(i);
 				particle.setIndexOfDataObject( mnode.getSerialID() );
@@ -264,7 +270,19 @@ public class SomTargetedModeling    extends
 		
 	}
 
-
+	protected void initializeNodeWithRandomValues( int nodeindex ){
+		
+		Variables variables = somDataObject.getVariables() ;
+		ArrayList<String> uv = variables.getLabelsForVariablesList(variables) ;	
+		
+    	somLattice.getNode(nodeindex).onDefiningFeatureSet( (Object)sob.encode( (Object)uv ),null);
+    	somLattice.getNode(nodeindex).onDefiningTargetVar( (Object)sob.encode( (Object)variables.getActiveTargetVariable()) );
+    	
+    	// we cold provide a mode for asymmetry, or later, a vector of preferred values
+    	somLattice.getNode(nodeindex).onRequestForRandomInit(null); 
+		
+	}
+	
 	protected void initializeNodesWithRandomvalues( Variables vars){
 	
 		NodeTask task;
@@ -286,11 +304,43 @@ public class SomTargetedModeling    extends
 												outlevel=3;
 											}
 											out.print(outlevel, "loading data definitions to Som-Lattice (vector size: "+vars.size()+")..."); 
+		
 											
 		// initialize feature vectors: ALL variables, WITHOUT id, tv !!!
 		// if we won't use all variables, the size of the vectors won't match (intensionality.profilevector.values)
-											
-		ArrayList<String> uv = vars.getLabelsForVariablesList(vars) ;
+		System.gc() ;									
+		ArrayList<String> uv = vars.getLabelsForVariablesList(vars) ;			
+	    int n = somLattice.getNodes().size() ;
+	    
+	    NodeTask initTask = new NodeTask( NodeTask._TASK_RNDINIT  );
+	    
+	    // in order to obtain suitable profiles for initialization, we could calculate a simple Knn++ for 4 clusters, 
+	    // using PCA variables and including TV into clustering, then providing those 4 cluster profiles to the lattice.
+	    // from there it would be taken by the nodes dependent on their relative position, and mixed with ranom values
+	    
+	    int cc = somDataObject.getNormalizedDataTable().getColcount();
+	    int rc = somDataObject.getNormalizedDataTable().getRowcount();
+	    // 
+	    // PCA pca; is in: import org.NooLab.somscreen.linear.PCA;
+	    SimpleExplorationClustering sec = new SimpleExplorationClustering( somDataObject.getNormalizedDataTable() ) ;
+	    sec.perform() ;
+	    ArrayList<Double> pvalues = sec.getProfiles();
+	    ArrayList<String> pvars = sec.getProfileVariables();
+	    somLattice.setPreferredInitializationValues( pvars,pvalues ); // nothing happens so far ... 
+	    
+	    // TODO: this could be done in parallel 
+	    
+	    									out.print(2, "initializing nodes (n="+n+")...");
+	    for (int i=0;i<n;i++){
+	    									if ((i>500) || ( (n*cc*rc)>5000000)){
+	    										out.printprc(2, i, n, n/10, "");
+	    									}
+	    	
+	    	initializeNodeWithRandomValues(i) ;
+	    }
+	    
+	    n=0;
+		/* later: a listening mechanism
 		
 		latticeFutureVisor = new LatticeFutureVisor(somLattice,  NodeTask._TASK_SETVAR );
 		 
@@ -324,12 +374,12 @@ public class SomTargetedModeling    extends
 		latticeFutureVisor.waitFor(); out.delay(100); 
 											out.print(3, "initialization of SomLattice done (vector size: "+uv.size()+"). ");
 											
-											
+		*/						
 	}
 
 
 	@SuppressWarnings("unchecked")
-	public void prepare( ArrayList<Integer> usedVariables){
+	public void prepare( ArrayList<Integer> usedVariables) throws Exception{
 		
 		int ix;
 		String tvlabel = null;
@@ -376,19 +426,26 @@ public class SomTargetedModeling    extends
 		if (v==null){ // setActiveTvLabel("*TV") 
 			
 			tvlabel = modelingSettings.getActiveTvLabel() ;
-			 
+			double uv = 1.0;
 			 
 			ix = variables.getIndexByLabel(tvlabel) ;
 			
 			if ((ix<0) && (tvlabel.indexOf("*")>=0)){
-				 
+				 // search the first matching one
 			}else{
-				v = variables.getItem(ix) ;
-				tvlabel = v.getLabel();
-				variables.setTargetVariable(v) ;
+				// might indeed not exist at all...
+				if (ix>=0){
+					v = variables.getItem(ix) ;
+					tvlabel = v.getLabel();
+					variables.setTargetVariable(v) ;
 				
+					uv = 1.0 ;
+					
+				}
 			}
-			usageVector.set(ix, 1.0);
+			if (ix>=0){
+				usageVector.set(ix, uv);
+			}
 		}
 		if ((v != null) && (v.getLabel().length()>0)){
 			vars.additem( v );
@@ -400,10 +457,14 @@ public class SomTargetedModeling    extends
 			// the desired variables
 			for (int i = 0; i < usedVariables.size(); i++) {
 				ix = usedVariables.get(i) ;
-				vars.additem(variables.getItem(ix));
+				if (ix>=0){
+					vars.additem(variables.getItem(ix));
+					variables.getUsageIndicationVector().set(ix, 1.0);
+					usageVector.set(ix, 1.0);
+				}else{
+					
+				}
 				
-				variables.getUsageIndicationVector().set(ix, 1.0);
-				usageVector.set(ix, 1.0);
 			}
 		}else{
 			for (int i = 0; i < somDataObject.getActiveVariables().size(); i++) {
@@ -429,6 +490,10 @@ public class SomTargetedModeling    extends
 		ProfileVectorIntf pv = somLattice.getNode(0).getIntensionality().getProfileVector();
 		varin = pv.getVariables() ;
 
+		if (variables.getTargetVariable()==null){
+			// change modeling mode !!
+			throw(new Exception("Requested modeling mode was <targeted>, but no target variable has been found."));
+		}
 		
 		
 											out.print(3, "lattice going to be configured : "+somLattice.toString());
@@ -490,6 +555,10 @@ public class SomTargetedModeling    extends
 		
 		activeTvLabel = sfProperties.getModelingSettings().getActiveTvLabel() ; // "TV"
 		// TargetVariable  targetVariable;
+		if (_vars.getIndexByLabel(activeTvLabel)<0){
+			activeTvLabel = "";
+			_vars.setTargetVariable(null);
+		}
 		
 		return this;
 	}
@@ -521,7 +590,7 @@ public class SomTargetedModeling    extends
 	}
 
 
-	public String perform( int callerState ) {
+	public String perform( int callerState ) throws Exception {
 		  
 		VirtualLattice somlattice;
 		
@@ -574,7 +643,11 @@ public class SomTargetedModeling    extends
 		// settings to be spreaded will be taken from : similarityConcepts.getUsageIndicationVector()
 		somlattice.spreadVariableSettings();
 		 
-		
+		// check initialization of profiles
+		MetaNode node0 = somlattice.getNode(0) ;
+		if (node0.getProfileVector().getValues().size() <=1) {
+			// should not happen... initialization of SomLattice failed?
+		}
 		
 		if (sfProperties.getModelingSettings().getSomBagSettings().getApplySomBags()){
 			

@@ -213,9 +213,9 @@ public class SomAssignatesDerivations  implements Serializable{
 		existentVariablesStr = variables.getLabelsForVariablesList(variables, 0); // 0=raw 1=derived 2=all
 		allVariablesStr = variables.getLabelsForVariablesList(variables, 2); // just for debug...
 		
-		
+											out.print(2,"creating derivation trees for variables...");
 		for (int i=0;i<derivationTrees.size();i++){ // should just contain the raw variables
-			
+											out.printprc(2, i, derivationTrees.size(), derivationTrees.size()/10, "");
 			derivTree = derivationTrees.get(i);
 			
 			guidBaseVar = derivTree.baseGuid ; // this is the guid of the transform stack, which is attached to the variable 
@@ -254,7 +254,7 @@ if ( (varlabel.toLowerCase().startsWith("xd")) ||
 
 		
 		for (int i=0;i<derivedVariablesStr.size();i++){
-			
+											out.printprc(3, i, derivedVariablesStr.size(), derivedVariablesStr.size()/10, "");
 			cvs = new ArrayList<CollectedVariable>();
 			
 			varlabel = derivedVariablesStr.get(i) ;

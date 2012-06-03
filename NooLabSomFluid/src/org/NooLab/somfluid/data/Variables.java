@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import org.NooLab.somsprite.AnalyticFunctionSpriteImprovement;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
+import org.apache.commons.collections.CollectionUtils;
 
  
 
@@ -29,6 +30,8 @@ public class Variables implements Serializable, VariablesIntf{
 	
 	Variable 			  targetVariable ;
 	String 				  idLabel;
+	
+	VariableSettingsHandlerIntf variableSettingsHandler;
 	
 	int tvColumnIndex = -1;
 	int idColumnIndex = -1;
@@ -155,6 +158,31 @@ public class Variables implements Serializable, VariablesIntf{
 	}
 
 	
+	@SuppressWarnings("unchecked")
+	public ArrayList<String> confirmVariablesAvailability(ArrayList<String> inList) {
+		
+		ArrayList<String> outList ;
+		ArrayList<String> knownList = getLabelsForVariablesList(this);
+		
+		ArrayList<String> aL = (ArrayList<String>) CollectionUtils.intersection(knownList, inList);
+		if ((aL!=null) || (aL.size()==inList.size())){
+			outList = inList;
+		}else{
+		
+			outList = new ArrayList<String> (inList);
+			int i= outList.size()-1;
+			while (i>=0){
+				
+				if (knownList.indexOf( outList.get(i))<0){
+					outList.remove(i) ;
+				}
+				i--;
+			}
+		}
+		
+		return outList;
+	}
+
 	public Variable getItem( int index ){
 		Variable v=null;
 		
@@ -483,6 +511,7 @@ public class Variables implements Serializable, VariablesIntf{
 	}
 
 	public ArrayList<Variable> getTargetedVariables() {
+		if (targetedVariables==null)targetedVariables = new ArrayList<Variable>(); 
 		return targetedVariables;
 	}
 	@Override
@@ -505,6 +534,7 @@ public class Variables implements Serializable, VariablesIntf{
 	}
 
 	public ArrayList<Variable> getIdVariables() {
+		if (idVariables==null)idVariables = new ArrayList<Variable> ();
 		if (idVariables.size()==0){
 			idVariables = getAllIndexVariables();
 		}
@@ -642,6 +672,7 @@ public class Variables implements Serializable, VariablesIntf{
 	}
 
 	public ArrayList<Variable> getBlackList() {
+		if (blackList==null)blackList = new ArrayList<Variable> (); 
 		return blackList;
 	}
 
@@ -674,9 +705,11 @@ public class Variables implements Serializable, VariablesIntf{
 		if (targetedVariables.contains(targetVariable)==false){
 			targetedVariables.add(targetVariable) ;
 		}
+		
 	}
 
 	public String getIdLabel() {
+		if (idLabel==null)idLabel="";
 		return idLabel;
 	}
 
@@ -1138,15 +1171,52 @@ public class Variables implements Serializable, VariablesIntf{
 		strgutil = new StringsUtil();
 	}
 
+	public ArrayList<String> collectAllNonCommons() {
+		return collectAllNonCommons(null) ;
+	}
+	
 	public ArrayList<String> collectAllNonCommons( ArrayList<String> addEx) {
 
 		ArrayList<String> dexList = new ArrayList<String>();
 		
-		dexList.addAll( getBlacklistLabels());
-		dexList.addAll( addEx ) ;
-		dexList.add( getTargetVariable().getLabel()) ;
-		dexList.add( getIdLabel()) ;
+		if (getBlacklistLabels().size()>0){
+			dexList.addAll( getBlacklistLabels());
+		}
+		if ((addEx!=null) && (addEx.size()>0)){
+			dexList.addAll( addEx ) ;
+		}
+		
+		
+		
+		if ((targetedVariables!=null) && (targetedVariables.size()>0)){
+			dexList.addAll( getLabelsForVariablesList(targetedVariables) ) ;
+		}
+		if ((idVariables!=null) && (idVariables.size()>0)){
+			dexList.addAll( getLabelsForVariablesList(idVariables) ) ;
+		}
+		
+		
+		if (targetVariable!=null){
+			dexList.add( getTargetVariable().getLabel() ) ;
+		}
+		
+		String label = getIdLabel();
+		if (label.length()>0){
+			dexList.add( label) ;
+		}
 	
+		// TODO: 
+		if (variableSettingsHandler != null){
+			VariableSettingsHandlerIntf vsh = variableSettingsHandler ;
+
+			if ((vsh.getGroupDesignVariables()!=null) && (vsh.getGroupDesignVariables().size()>0)){
+				dexList.addAll( vsh.getGroupDesignVariables() ) ;
+			}
+			if ((vsh.getTreatmentDesignListedVariables()!=null) && (vsh.getTreatmentDesignListedVariables().size()>0)){
+				dexList.addAll( vsh.getTreatmentDesignListedVariables() ) ;
+			}
+			
+		}
 		return dexList;
 	}
 

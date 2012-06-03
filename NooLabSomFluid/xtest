@@ -1,0 +1,25 @@
+[ID]
+id
+
+[IDS]
+
+
+
+[TV]
+Mahnung_TV
+
+[blacklist]
+
+Name
+KundenNr
+
+
+[whitelist]
+
+
+
+[absolute exclude]
+Name
+KundenNr
+Land
+Region

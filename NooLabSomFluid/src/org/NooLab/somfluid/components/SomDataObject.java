@@ -28,6 +28,7 @@ import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.PersistentAgentIntf;
 import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.somtransform.SomTransformerIntf;
+import org.NooLab.somtransform.TransformationModel;
 
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.files.DFutils;
@@ -81,7 +82,7 @@ public class SomDataObject 	implements      Serializable,
 	
 	transient DataFileReceptorIntf dataReceptor;
 	
-	DataTable profilesTable ;
+	DataTable profilesTable ; // for simulation mode
 	
 	boolean openChanges=false;
 	
@@ -114,7 +115,7 @@ public class SomDataObject 	implements      Serializable,
 	// helper objects .................
 	transient StringsUtil strgutil = new StringsUtil();
 	transient DFutils fileutil = new DFutils () ; 
-	transient ArrUtilities utils = new ArrUtilities();
+	//transient ArrUtilities utils = new ArrUtilities();
 	
 	transient PrintLog out = new PrintLog(2,true) ;
 		
@@ -148,7 +149,7 @@ public class SomDataObject 	implements      Serializable,
 		
 		strgutil = new StringsUtil();
 		fileutil = new DFutils () ; 
-		utils = new ArrUtilities();
+		// utils = new ArrUtilities();
 		variables.reestablishObjects();
 	}
 
@@ -161,7 +162,7 @@ public class SomDataObject 	implements      Serializable,
 		
 		strgutil = null;
 		fileutil = null; 
-		utils = null;
+		 
 		
 	}
 
@@ -586,6 +587,8 @@ public class SomDataObject 	implements      Serializable,
 		sdo.data.establishObjects(sdo, true);
 		sdo.normalizedSomData.establishObjects(sdo, true);
 		
+		DFutils.reduceFileFolderList( fileorg.getObjectStoreDir(),1,20) ;
+		
 		fileorg=null;
 		
 		return sdo;
@@ -644,7 +647,10 @@ public class SomDataObject 	implements      Serializable,
 		
 		fileorg.careForArchive( FileOrganizer._DATAOBJECT, filepath );
 		
-		storageDevice.storeObject( this, filepath) ;
+		// storageDevice.storeObject( this, filepath) ; // using a single object is not possible, we have to split it by a dedicated procedure and a dedicated format
+		// abc124 
+		
+		DFutils.reduceFileFolderList( fileorg.getObjectStoreDir(),1,".sdo",20) ;
 		
 		if (fileutil.fileexists(filepath)==false){
 			result=-3;
@@ -674,10 +680,10 @@ public class SomDataObject 	implements      Serializable,
 		int r=-1,ms=0;
 		String[] str = new String[]{"completed","did NOT complete"};
 		
-		if (data != null){
+		if ((data != null) && (data.getDataTable().size()>0)){
 			r = data.save();  
 		}
-		if (normalizedSomData != null){
+		if ((normalizedSomData != null) &&(normalizedSomData.getDataTable().size()>0)){
 			r = normalizedSomData.save();
 			
 		}
@@ -846,18 +852,19 @@ public class SomDataObject 	implements      Serializable,
 			// there is none, it will insert one as column 0
 											out.print(2, "importDataTable() into SomDataObject...");
 			data.importTable(datatable, importSettings);
-			 
+											out.print(2, "importDataTable() into SomDataObject done.");
 			vectorSize = variables.size() ;
 			
-			data.createRowOrientedTable() ;
+			// data.createRowOrientedTable() ; not for raw data ???
 			// TODO check here for buffered transformed data
 			
 			if (modelingSettings.getVariables()==null){
 				modelingSettings.setVariables(variables);
 			}
 			// creating variables objects, setting info about raw data format
+			// translating wildcards into full names to sets black,treat,group, set treatment, group to blacklist
 			actualizeVariables();
-			
+			vectorSize = variables.size() ;
 			// --- transforming data ------------------------------------------
 			
 			// this creates a clone of the DataTable !
@@ -865,10 +872,15 @@ public class SomDataObject 	implements      Serializable,
 			
  			// no transformations are applied here, just Transform.Stacks initialized, MV+StdStats prepared, 
  			// but no LinNorm ...  no NVE 
- 			somTransformerIntf.initializeTransformationModel();
+											int outlevel=3;
+											if (data.colcount()* data.getDataTable().size()>200000){outlevel=2; }
+											out.print(outlevel, "initializing the Transformation Model..."); // msg for large data !!;
  			
+ 			somTransformerIntf.initializeTransformationModel();
+ 			                                out.print(outlevel, "going to transform data into numerical form..."); // msg for large data !!;
+ 			                                  
  			somTransformerIntf.basicTransformToNumericalFormat(); 
- 			// XXX TODO ADDED COLs are shifted 1 pos to the top == 1 pos too short !!!!!!!!!!
+ 			//
  			
  			if (somTransformerIntf instanceof SomAppTransformer){
  				return;
@@ -885,7 +897,7 @@ public class SomDataObject 	implements      Serializable,
 			somTransformerIntf.normalizeData(); // just adding everywhere LinNorm, caring for output data
 			
 			// creating the usable table as an instance of DataTable
-			// should also be a clone? in order to decouple process interferences?
+			// creates columns by copying out-data from transformation stack into columns (list of columns = of DataTable)  
 			normalizedSomData = somTransformerIntf.writeNormalizedData() ; 
 			normalizedSomData.setName("normalized table");
 			
@@ -907,7 +919,24 @@ public class SomDataObject 	implements      Serializable,
 			
 			somTransformerIntf.createDataDescriptions();
 			
+			 
+			out.setDisplayMemory(true); 
+			out.print(2, "clearing memory ...");
+			
+			// clearDataFromTransformStack();
+			
+			// data.getDataTable().clear();
+			// data.getDataTableRows().clear() ;
+			System.gc();out.delay(200);
+			out.print(2, "clearing memory done.");
+			
+			// unloading raw data into a tmp binary... due to problems with heap space
+			// TODO XXX  YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+			
+			// OutOfMemoryError for large tables...
 			normalizedSomData.createRowOrientedTable( ) ;
+			
+			
 			
 			normalizedSomData.createIndexValueMap();
 			
@@ -917,8 +946,9 @@ public class SomDataObject 	implements      Serializable,
 			//       into a dedicated directory... 
 			//       this could be change to a zip/jar with add meta information, and the raw data
 			
+			out.print(2, "importing data to transformer and transforming data completed.");
 			
-			
+			out.setDisplayMemory(false);			
 			
 		}catch(Exception e){
 			e.printStackTrace();
@@ -926,6 +956,15 @@ public class SomDataObject 	implements      Serializable,
 	}
 
 	
+	private void clearDataFromTransformStack() {
+		 
+		TransformationModel tm = transformer.getTransformationModel();
+		
+		tm.clearData();
+	
+	}
+
+
 	public void introduceBlackList() {
 		ArrayList<String>  blacklist;
 		Variable variable;
@@ -1019,8 +1058,9 @@ public class SomDataObject 	implements      Serializable,
 	// ........................................................................
 	
 	/**
-	 * 
-	 * TODO: check whether format info is transferred ....
+	 * translating wildcards into full names to sets black,treat,group, set treatment, group to blacklist
+	 *  
+	 * TODO: also check whether format info is transferred ....
 	 * 
 	 */
 	private void actualizeVariables() throws Exception{

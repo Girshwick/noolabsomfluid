@@ -79,7 +79,7 @@ public class NumPropertiesChecker {
 
 	public void prepareStatisticalDescription(){
 		
-		statisticalDescription = new BasicStatisticalDescription();
+		statisticalDescription = new BasicStatisticalDescription(true);
 		statisticalDescription.introduceValues( datavalues );
 		// basic statistics (mean, var) is now available
 		

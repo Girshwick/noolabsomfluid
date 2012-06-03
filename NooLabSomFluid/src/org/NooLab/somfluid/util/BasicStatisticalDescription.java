@@ -30,6 +30,7 @@ public class BasicStatisticalDescription implements Serializable {
 	int polynomialFitDegree = 5;
 	
 	boolean  initialized = false;
+	boolean  includeHistogram = false;
 	
 	int      count, mvCount, x_counter;
 
@@ -58,7 +59,8 @@ public class BasicStatisticalDescription implements Serializable {
 
 	
 	// ========================================================================
-	public BasicStatisticalDescription(){
+	public BasicStatisticalDescription(boolean includeHisto){
+		includeHistogram = includeHisto;
 		reset();
 		bsd = this;
 	}
@@ -288,10 +290,10 @@ public class BasicStatisticalDescription implements Serializable {
 		modalPoints = new double[2];
 		modalPoints[0] = -1; modalPoints[1] = -1; 
 		
-		histogramValues = new double[3][100] ;
-
-		histogramPolyfitCoefficients = new double[20] ;
-		
+		if (includeHistogram ){
+			histogramValues = new double[3][100] ;
+			histogramPolyfitCoefficients = new double[20] ;
+		}
 		empiricDistribution = new EmpiricDistribution(); 
 		
 		invalues.clear();

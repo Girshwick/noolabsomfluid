@@ -1,9 +1,13 @@
 package org.NooLab.somfluid;
 
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
+import org.NooLab.somfluid.data.VariableSettingsHandler;
+import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.util.XmlStringHandling;
@@ -50,8 +54,11 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 	private int numberOfSimulatedRecords;
 
 	private int targetMode;
-
+	String startupTraceInfo ="" ; 
 	
+	private boolean publishAppActive = false;
+	private String  publishAppBasepath = "";
+
 	
 	// ---- some helpers ----
 	transient DFutils fileutil = new DFutils();
@@ -114,7 +121,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 																	// ParetoPopulationExplorer, SomModelDescription, Coarseness, MultiCrossValidation, MetricsStructure 
 
 		
-		sfProperties.setMaxL2LoopCount(5) ;							// if>1 invokes somsprite and somscreen for optimizing the feature vector
+		sfProperties.setMaxL2LoopCount(5) ;							// a supremum, if>1 invokes somsprite and somscreen for optimizing the feature vector
 		
 		sfProperties.setRestrictionForSelectionSize(678) ;			// no more than [N] nodes will be selected as neighborhood
 					// that means, if the SOM grows beyond a certain size, a symmetry break will occur in the map ;
@@ -150,7 +157,20 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		
 		assimilateVariableSettings();
 		
+		
+		
+		if (publishAppActive){
+			if ((publishAppBasepath.trim().length()==0) || (publishAppBasepath.indexOf("/")<0)){
+				// ???
+			}
+		}
+		sfProperties.getOutputSettings().publishApplicationPackage( publishAppActive );
+		sfProperties.getOutputSettings().setPublishingLocation( publishAppBasepath );
+
+		
 		sfProperties.setShowSomProgress( SomFluidProperties._SOMDISPLAY_PROGRESS_BASIC ) ;
+		
+		prepareStartupTraceInfo();
 	}
 	
 	
@@ -159,6 +179,408 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		// TODO Auto-generated method stub
 		
 	}
+	
+	
+	@Override
+	public String checkForVariableDescriptionFile(int type) {
+		
+		String availableDescrFile = "" ;
+		String datafolder ="" ;
+		boolean rB;
+		try {
+		
+			String filename ="", dfolder="",folder = SomFluidStartup.getProjectBasePath();
+			
+			folder = fileutil.createpath( folder, SomFluidStartup.lastProjectName ) ;
+			dfolder = fileutil.createpath( folder, "data/description");
+			
+			if (fileutil.direxists(dfolder)==false){
+				return "";
+			}
+		
+			filename = SomFluidStartup.getLastDataSet() ;
+			
+			if ((filename.indexOf("/")<0) && (filename.indexOf("\\")<0)){
+				datafolder = fileutil.createpath( folder, "data/raw");
+				filename = fileutil.createpath( datafolder, filename); 
+			}
+			if (fileutil.fileexists(filename)){
+				// bankn_d2-variables.txt
+				File f= new File(filename);
+				filename = f.getName();
+				String ext = StringsUtil.getExtensionFromFilename(filename,1); // 0 = without dot, 1 = with dot
+				int p = filename.lastIndexOf(ext) ;
+				if (p>0){
+					filename = filename.substring(0,p) ;
+				}
+				filename = filename+"-variables.txt" ;
+				
+				filename = fileutil.createpath( dfolder, filename);
+				
+				if (fileutil.fileexists(filename)){
+					
+					
+					String fc = fileutil.readFile2String( filename) ;
+					int n= strgutil.frequencyOfStrings(fc, new String[]{"[","]"}); 
+					if ((n>0) && (n%2==0)){
+						fc= fc.toLowerCase();
+						rB = fc.indexOf("[tv")>0;
+						if (rB){
+							rB = fc.indexOf("[id")>0;
+						}
+					} else{
+						// xml ?
+						rB = fc.indexOf( "<?xml version=\"1.0\" encoding=\"")>=0;
+						// any relevant content ? 
+					}
+					
+					availableDescrFile = filename;
+				}
+			}
+			
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		
+		
+		return availableDescrFile;
+	}
+
+	@Override
+	public boolean loadVariableSettingsFromFile(String  filename) throws IOException {
+		boolean rB=false;
+		
+		if (fileutil.fileexists(filename)==false){
+			return false;
+		}
+		
+		// check format
+		
+		// simplified [] format
+			
+		rB = loadVariableSettingsFromSimplifiedIniFile(filename);
+	
+		// rB = loadVariableSettingsFromXmlFile(filename);
+		
+		return rB ;
+	}
+	
+	
+	private boolean loadVariableSettingsFromSimplifiedIniFile(String  filename) {
+	
+		boolean loadingOk=false;
+		String str,section, rawXmlStr="" ;
+		String[] iniContent,sectionItems,lines ;
+		ArrayList<String> items ;
+		
+		
+		ModelingSettings ms = sfProperties.getModelingSettings();
+	
+		if (fileutil.fileexists(filename)==false){
+			return false;
+		}
+		try {
+		// check format
+		
+		// simplified [] format
+		
+		str = fileutil.readFile2String(filename) ;
+		
+		lines = str.split("\n");
+		for (int i=0;i<lines.length;i++){
+			if (lines[i].trim().indexOf(";")==0){
+				lines[i]="";
+			}
+		}
+		str = arrutil.arr2text(lines, " \n");
+		
+		str = strgutil.replaceAll(str, "[", "##[[");
+		iniContent = str.split("(##\\[)");
+		
+		if (iniContent.length<=1){
+			return false;
+		}
+		
+		variableSettings = getVariableSettingsHandler();
+		
+		for(int i=0;i<iniContent.length;i++){
+			str = iniContent[i].trim();
+			
+			if (str.length()==0){
+				continue;
+			}
+			str = str.replace("]", " "); str = str.replace("[", " ");
+			
+			sectionItems = str.split("\n");
+			
+			section = sectionItems[0].trim() ;
+			sectionItems[0] = "" ;
+			
+			//for (int s=1;s<sectionItems.length;s++)
+			{
+				// str = sectionItems[s];
+				
+				items = new ArrayList<String>( strgutil.changeArrayStyle(sectionItems) );
+				items = arrutil.removeempty(items) ;
+				
+				if (section.toLowerCase().contentEquals("id")){
+					
+					if (items.size()>0){
+						str = items.get(0) ;
+						variableSettings.setIdVariable( str ) ;  
+					}
+				}
+				if (section.toLowerCase().contentEquals("ids")){
+					if (items.size()>0){
+						variableSettings.setIdVariableCandidates( items );  
+					}
+				}
+				if (section.toLowerCase().contentEquals("tv")){
+					if (items.size()>0){
+						variableSettings.setTargetVariable( items.get(0)) ;  
+					}
+				}
+				if (section.toLowerCase().contentEquals("tvs")){
+					if (items.size()>0){
+						variableSettings.setTargetVariableCandidates( items );  
+					}
+				}
+				
+				if (section.toLowerCase().contentEquals("initial")){
+					if (items.size()>0){
+						variableSettings.setInitialSelection( items );
+					}
+				}
+				
+				if (section.toLowerCase().contentEquals("blacklist")){
+					if (items.size()>0){
+						variableSettings.setBlackListedVariables( items ) ;
+					}
+				}
+				if (section.toLowerCase().contentEquals("whitelist")){
+					if (items.size()>0){
+						variableSettings.setWhiteListedVariables( items ) ;
+					}
+				}
+				if (section.toLowerCase().contentEquals("absolute exclude")){
+					if (items.size()>0){
+						variableSettings.setAbsoluteExclusions( items , 1);
+					}
+				}
+				if (section.toLowerCase().contentEquals("treatment")){
+					if (items.size()>0){
+						variableSettings.setTreatmentDesignVariables( items ); 
+					}
+				}
+				if (section.toLowerCase().contentEquals("group")){
+					if (items.size()>0){
+						variableSettings.setGroupIndicatorDesignVariables( items ); 
+					}
+				}
+				if (section.toLowerCase().contentEquals("tgs")){
+					// target group ..
+					importingTargetGroupSettings( items );
+				}
+			}
+		} // i-> all sections in iniContent
+		
+		loadingOk = true;
+		
+		
+		} catch (IOException e) {
+			iniContent = new String[0];
+			e.printStackTrace();
+		}
+		
+		
+		return loadingOk;
+	}
+
+	
+	private void importingTargetGroupSettings(ArrayList<String> items) {
+		// variableSettings
+		String itemstr, groupdefStr,groupIndexLabel ;
+		int ix;
+
+		ix=0;
+		
+		//                              in "items" search from item 0 for "mode" where 1= <before> "=" // 2=after     
+		ix = arrutil.getListItemIndexByContent( items, 0,       // list, start index
+												"mode", 1, "=", // search for, 1=before, "="
+												0,0);           // relaxed, inverted
+		if (ix>=0){
+			itemstr = items.get(ix) ;
+			// mode = single
+			itemstr = itemstr.replace("mode","");
+			itemstr = itemstr.replace("=","").trim();
+			variableSettings.setSomModelingMode(itemstr);
+			 
+		} // "mode" defined ?
+		
+		// ................
+		ix = arrutil.getListItemIndexByContent( items, 0, "excludedvalues", 1, "=", 0,0);
+		if (ix>=0){
+			itemstr = items.get(ix) ;
+			// a list of doubles...
+			int p = itemstr.indexOf("=");
+			if ((itemstr.length()>0) && (p>0)){
+				itemstr = itemstr.substring( p+1, itemstr.length()).trim() ;
+				String[] valuesStrs = itemstr.split(";") ;
+				for (int n=0;n<valuesStrs.length;n++){
+					if (valuesStrs[n].length()>0){
+						double v = Double.parseDouble(valuesStrs[n]) ;
+					}
+				} // ->
+			}// ?
+			
+		} // "excludedvalues" defined ?
+		// ................
+
+		for (int i=0;i<items.size();i++){
+			itemstr = items.get(i) ;
+			if (itemstr.toLowerCase().trim().startsWith("group")){  // sth like: "group.1 = intermediate: 0.53;0.72"
+				String[] groupdefs =  itemstr.split("=");
+				groupIndexLabel = groupdefs[0].replace("group", "").trim();
+				if (groupIndexLabel.startsWith(".")){
+					groupIndexLabel=groupIndexLabel.substring(1,groupIndexLabel.length()) ;
+				}
+				groupdefStr = groupdefs[1];
+				// assimilate
+				assimilateTargetGroupDefItem( groupIndexLabel , groupdefStr);
+			}
+			
+		} // i-> all entries
+	}
+	
+	
+	private void assimilateTargetGroupDefItem(String groupIndexLabel, String groupdefStr) {
+	// for entry : group.1 = intermediate: 0.53;0.72 => we get:  1  ,  intermediate: 0.53;0.72
+		String tgLabel="";
+		double[] values = new double[2] ;
+		
+		groupdefStr = groupdefStr.trim() ;
+		int pdp = groupdefStr.indexOf(":");
+		if (pdp>0){
+			tgLabel = groupdefStr.substring(0,pdp);
+			tgLabel = tgLabel.replace(":", "");
+			groupdefStr = groupdefStr.substring(pdp+1,groupdefStr.length());
+		}else{
+			groupdefStr = groupdefStr.replace(":", "");
+		}
+		// now we have a pair of values: groupdefStr = 0.53;0.72
+		groupdefStr = groupdefStr.trim() ;
+		String[] valuesStrs = groupdefStr.split(";") ;
+		
+		if (valuesStrs[0].length()==0){
+			valuesStrs[0]="0.5";
+		}
+		if (valuesStrs[1].length()==0){
+			valuesStrs[1]="1.0";
+		}
+		
+		values[0] = Double.parseDouble( valuesStrs[0].trim());
+		values[1] = Double.parseDouble( valuesStrs[1].trim());
+		                                    // criterionLowerLimit,criterionUpperLimit, label
+		variableSettings.addSingleTargetGroupDefinition( values[0],values[1], tgLabel);
+		
+	}
+	
+	
+	
+	@SuppressWarnings("unused")
+	private boolean loadVariableSettingsFromXmlFile(String  filename) throws IOException {
+
+		boolean loadingOk=false;
+		String str, rawXmlStr="";
+		
+		 
+		
+		
+		rawXmlStr = fileutil.readFile2String(filename) ;
+	 
+		
+		if (rawXmlStr.length()==0){
+			return false;
+		}
+		
+		xMsg.clear() ;
+		xMsg.setContentRoot( "properties") ;
+		
+		str = xMsg.getSpecifiedInfo(rawXmlStr, "//properties", "target") ; // = "somfluid" ?
+		str = xMsg.getSpecifiedInfo(rawXmlStr, "//properties", "section") ;// = "variables" ?
+		
+		
+		
+		
+		// we provide a small interface for dealing with initial variable settings all at once
+		VariableSettingsHandlerIntf variableSettings = getVariableSettingsHandler();
+	
+		variableSettings.setInitialSelection( new String[]{"Stammkapital","Bonitaet","Bisher","Branchenscore"});
+		variableSettings.setBlackListedVariables( new String[]{"Name","KundenNr"} ) ;
+		variableSettings.setAbsoluteExclusions( new String[]{"Name","KundenNr","Land","Region"} , 1);
+	
+		variableSettings.setTargetVariables("*TV"); 		// of course only if instance = "som" (or transformer! for certain transformations)
+														// if wildcard is used, the first one found is used as active, unless defined otherwise
+														// by setActiveTargetVariable("")
+		
+		
+		sfProperties.getModelingSettings().setRequestForBlacklistVariablesByLabel( new String[]{"Name","KundenNr"}) ;
+	
+		
+																		  // these variables are excluded once and for all -> they won't get transformed either
+																		  // if mode 1+ then they even won't get imported
+		sfProperties.setAbsoluteFieldExclusions( new String[]{"Name","KundenNr","Land","Region"} , 1);
+	
+		ms.setActiveTvLabel("*TV") ;       								// the target variable; wildcarded templates like "*TV" are possible
+		ms.setTvGroupLabels("Label") ; 	   								// optional, if available this provides the label of the column that contains the labels for the target groups, if there are any
+																		// the only effect will be a "nicer" final output
+		//sfProperties.getModelingSettings().setTvLabelAuto("TV") ; 	// the syllable(s) that will be used to identify the target variable as soon as data are available
+																	    // allows a series of such identifiers
+	 	
+		ms.setInitialVariableSelection( new String[]{"Stammkapital","Bonitaet","Bisher","Branchenscore"});
+	    
+		loadingOk = true;
+		
+		
+		
+		return loadingOk;
+	}
+	
+	
+	@Override
+	public String getStartupTraceInfo() {
+		 
+		return startupTraceInfo;
+	}
+
+	
+	/**
+	 * 
+	 * called after all settings have been defined
+	 * creating a simple string that is used to create a "boot file": SomFluid then is able to know 
+	 * about the project of the last run, in case a "resume" is requested
+	 * 
+	 * @return
+	 */
+	private void prepareStartupTraceInfo() {
+		
+		String cfgroot, userdir, lastproject, infoStr="";
+		
+		
+		cfgroot =  sfProperties.getSystemRootDir() ;
+		lastproject = sfProperties.getPersistenceSettings().getProjectName() ;
+		
+		// TODO better -> several categories: load file, modify it, write it back
+		infoStr =  "cfgroot::"+cfgroot+"\n" +
+		           "project::"+lastproject+"\n" ;
+				                           	   
+
+		
+		startupTraceInfo = infoStr;
+	}
+
 	
 	
 	public void setPlugins( boolean loadNow){
@@ -183,7 +605,9 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 			loadNow=false;
 		}
 		String algofolder = sfProperties.getPluginSettings().getBaseFilePath();
+		
 		int n = fileutil.enumerateFiles( "", ".jar", algofolder) ;
+		
 		if ((fileutil.direxists( algofolder) ==false) || (n<=0)){
 			out.printErr(1, "Catalog file has been found, yet the expected folder  \n"+
 							"   "+ algofolder +"\n"+
@@ -413,7 +837,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		}
 		cs.setTargetGroupDefinitionLevel(defLevel) ;
 		
-		cs.setSingleTargetGroupDefinition( 0.1, 0.41,"intermediate");	// min max of the interval [0|1][ min|max] in case of _TARGETMODE_SINGLE, ineffective if _TARGETMODE_MULTI
+		cs.setSingleTargetGroupDefinition( criterionLowerLimit,criterionUpperLimit,"intermediate");	// min max of the interval [0|1][ min|max] in case of _TARGETMODE_SINGLE, ineffective if _TARGETMODE_MULTI
 		// the label is helpful for selecting models
 
 		/*
@@ -570,20 +994,38 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		if (variableSettings==null){
 			return;
 		}
-		
+		// TODO: group and treatment are missing ....
 		String[] strings ;
 		
-		strings = (String[]) arrutil.changeArrayStyle( variableSettings.getInitialSelection());
-		ms.setInitialVariableSelection( strings );
+		if (variableSettings.getInitialSelection().size()>0){
+			strings = (String[])(arrutil.changeArrayStyle( variableSettings.getInitialSelection()));
+			ms.setInitialVariableSelection( strings );
+		}
 		
-		strings = (String[]) arrutil.changeArrayStyle( variableSettings.getBlackListedVariables());
-		ms.setRequestForBlacklistVariablesByLabel( strings );
+		if(variableSettings.getBlackListedVariables().size()>0){
+			strings = (String[]) arrutil.changeArrayStyle( variableSettings.getBlackListedVariables());
+			ms.setRequestForBlacklistVariablesByLabel( strings );
+		}
 
-		strings = (String[]) arrutil.changeArrayStyle( variableSettings.getAbsoluteExclusions());
-		sfProperties.setAbsoluteFieldExclusions( strings , 1);
+		if(variableSettings.getWhiteListedVariables().size()>0){
+			strings = (String[]) arrutil.changeArrayStyle( variableSettings.getWhiteListedVariables());
+			ms.setRequestForWhitelistVariablesByLabel( strings );
+		}
 
-		ms.setActiveTvLabel( variableSettings.getTargetVariable() );// "*TV") ;       							
-		ms.setTvGroupLabels("Label") ; 
+		
+		if(variableSettings.getAbsoluteExclusions().size()>0){
+			strings = (String[]) arrutil.changeArrayStyle( variableSettings.getAbsoluteExclusions());
+			sfProperties.setAbsoluteFieldExclusions( strings , 1);
+		}
+		
+		if(variableSettings.getTargetVariable().length()==0){
+			ms.setActiveTvLabel( "*TV") ;
+		}else{
+			ms.setActiveTvLabel( variableSettings.getTargetVariable() );// "*TV") ;
+		}
+		// ms.setTvGroupLabels("Label") ;
+		
+		 
 		
 	}
 	
@@ -639,8 +1081,25 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 			
 			// ............................................
 
+			builder = builder.e("target");
+				strList = variableSettings.getTargetVariableCandidates() ;
+				str = xEngine.digestStringList( strList ) ; 
+				
+				builder = builder.e("variable")
+									.e("activetarget").a("label", variableSettings.getTargetVariable() ).up()
+									.e("candidates").a("label", str).up();
+				
+				builder = builder.up();
+				
+				strList = variableSettings.getTvGroupLabels() ;
+				str = xEngine.digestStringList( strList ) ; 
+				
+				builder = builder.e("groups")
+									.e("labels").a("label", str).up()
+									.e("values").a("separationvalues", "").up();
+				builder = builder.up();
 			
-			
+			builder = builder.up();
 			// ............................................
 
 			
@@ -666,64 +1125,10 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 	}
 
 	@Override
-	public boolean loadVariableSettingsFromFile(String  filename) {
-
-		boolean loadingOk=false;
-		String str, rawXmlStr="";
-		ModelingSettings ms = sfProperties.getModelingSettings();
-
+	public void publishApplicationPackage(boolean flag, String basepath) {
 		
-		
-		
-		if (rawXmlStr.length()==0){
-			return false;
-		}
-		
-		xMsg.clear() ;
-		xMsg.setContentRoot( "properties") ;
-		
-		str = xMsg.getSpecifiedInfo(rawXmlStr, "//properties", "target") ; // = "somfluid" ?
-		str = xMsg.getSpecifiedInfo(rawXmlStr, "//properties", "section") ;// = "variables" ?
-		
-		
-		
-		 
-		// note that the data are not loaded at that point,
-		// such it is only a request for blacklisting variables
-		// if any those variables do not exist, no error message will appear by default
-		
-		// we provide a small interface for dealing with initial variable settings all at once
-		VariableSettingsHandlerIntf variableSettings = getVariableSettingsHandler();
-
-		variableSettings.setInitialSelection( new String[]{"Stammkapital","Bonitaet","Bisher","Branchenscore"});
-		variableSettings.setBlackListedVariables( new String[]{"Name","KundenNr"} ) ;
-		variableSettings.setAbsoluteExclusions( new String[]{"Name","KundenNr","Land","Region"} , 1);
-
-		variableSettings.setTargetVariables("*TV"); 		// of course only if instance = "som" (or transformer! for certain transformations)
-														// if wildcard is used, the first one found is used as active, unless defined otherwise
-														// by setActiveTargetVariable("")
-		
-		
-		sfProperties.getModelingSettings().setRequestForBlacklistVariablesByLabel( new String[]{"Name","KundenNr"}) ;
-
-		
-																		  // these variables are excluded once and for all -> they won't get transformed either
-																		  // if mode 1+ then they even won't get imported
-		sfProperties.setAbsoluteFieldExclusions( new String[]{"Name","KundenNr","Land","Region"} , 1);
-
-		ms.setActiveTvLabel("*TV") ;       								// the target variable; wildcarded templates like "*TV" are possible
-		ms.setTvGroupLabels("Label") ; 	   								// optional, if available this provides the label of the column that contains the labels for the target groups, if there are any
-																		// the only effect will be a "nicer" final output
-		//sfProperties.getModelingSettings().setTvLabelAuto("TV") ; 	// the syllable(s) that will be used to identify the target variable as soon as data are available
-																	    // allows a series of such identifiers
-	 	
-		ms.setInitialVariableSelection( new String[]{"Stammkapital","Bonitaet","Bisher","Branchenscore"});
-        
-		loadingOk = true;
-		
-		
-		
-		return loadingOk;
+		publishAppActive = flag ;
+		publishAppBasepath = basepath ; 
 	}
 	
 

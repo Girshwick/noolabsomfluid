@@ -58,7 +58,7 @@ public class VariableContrast implements Serializable{
 
 		statisticalDescription = new BasicStatisticalDescription[3] ; 
 		for (int i=0;i<3;i++){
-			statisticalDescription[i] = new BasicStatisticalDescription(); 
+			statisticalDescription[i] = new BasicStatisticalDescription(true); 
 			pValueMWU[i] = 1.0 ;
 		}
 	}

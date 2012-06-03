@@ -74,5 +74,12 @@ public class SomAppNodes implements LatticeIntf{
 		// TODO Auto-generated method stub
 		
 	}
+
+
+	@Override
+	public boolean setPreferredInitializationValues(ArrayList<String> pvars, ArrayList<Double> pvalues) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 	
 }

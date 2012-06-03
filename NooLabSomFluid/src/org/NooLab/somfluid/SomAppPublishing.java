@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.StringsUtil;
 
 
 
@@ -137,6 +138,7 @@ public class SomAppPublishing implements Serializable{
 	}
 
 	public String getPublishingBasepath() {
+		publishingBasepath = StringsUtil.replaceall( publishingBasepath, "\\", "/");
 		return publishingBasepath;
 	}
 

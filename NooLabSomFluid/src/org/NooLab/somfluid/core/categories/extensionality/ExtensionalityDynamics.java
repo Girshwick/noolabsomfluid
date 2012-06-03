@@ -68,7 +68,7 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 		
 	}
 	
-	public ExtensionalityDynamics(ExtensionalityDynamics inExtensions) {
+	public ExtensionalityDynamics( ExtensionalityDynamics inExtensions) {
 		somData = inExtensions.somData;
 		statistics = inExtensions.statistics  ; 
 		

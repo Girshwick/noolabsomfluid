@@ -34,6 +34,8 @@ public class DSomDataPerceptionAbstract {
 	private ArrayList<Integer> nodeIndexCollection = new ArrayList<Integer>()  ;
 	private ProfileVectorMatcher bmuSearch;
 	NodeDigester nodeDigester;
+	
+	transient protected int errorsCount=0; 
 	transient PrintLog out;
 	
 	// ========================================================================
@@ -48,9 +50,11 @@ public class DSomDataPerceptionAbstract {
 		somLattice = parentSom.somLattice;
 		
 		sfProperties = parentSom.sfProperties ;
-		modelingSettings = sfProperties.getModelingSettings() ; 
-		out = dsom.out ;
+		modelingSettings = sfProperties.getModelingSettings() ;
 		
+		int errorsCount=0;
+		
+		out = dsom.out ;
 		if (sfProperties.getMultiProcessingLevel()>0){
 			prepareNodeDigester();
 		}
@@ -256,6 +260,14 @@ if (dataRowIndex>2){
 			
 			bestMatchesCandidates = bmuSearch.getList( -1 ) ;
 			
+			if ((bestMatchesCandidates==null) || (bestMatchesCandidates.size()==0)){
+				// actually, should be null only in case of serious problems
+				// get the state message and the last state flag
+				if (bmuSearch.lastStatus <0){
+					// count the errors;
+					errorsCount++;
+				}
+			}
 			/*
 			double cr = (((double)(currentEpoch))/(double)somSteps);
 			double rr = (((double)(sampleRecordIDs.size()))/(double)somData.getRecordCount() ) ;  

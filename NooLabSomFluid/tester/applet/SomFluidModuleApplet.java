@@ -517,19 +517,22 @@ class SomModuleInstance implements 	Runnable,
 		
 		
 		
-		sfFactory.produce( sfTask );          		// this produces the SomFluid and the requested som-type accoding to
-													// SomFluidProperties._SOMTYPE_MONO, refering implicitly to sfTask; 
-													//
-		
-	
+		try {
+			 
 		
 		sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( ); 
 		sfTask.setStartMode(1) ;  
 		sfTask.setContinuity(2,0,200);
 		
 		sfFactory.produce( sfTask );
+  					// this produces the SomFluid and the requested som-type according to
+					// SomFluidProperties._SOMTYPE_MONO, referring implicitly to sfTask; 
+					//
+
 		
-		
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		// if we like to have graphical output, then start the applet for displaying it and 
 		// define shake hands by means of GlueClients...
 		

@@ -86,12 +86,12 @@ public class DSomDataPerception
 	// ........................................................................
 	
 	// call from the outside
-	public void go() {
+	public void go() throws Exception {
 		go(0);
 	}
 	
 	// here we feed the data into the SOM 
-	private void go( int mode ) {
+	private void go( int mode ) throws Exception {
 		 
 		int recordsConsidered =0, currentRecordIndex;
 		int  f, winnerIndex;
@@ -111,6 +111,9 @@ public class DSomDataPerception
 		
 		
 		DataTable dtable = somData.getDataTable();
+		if (dtable.getColcount()<=1){
+			dtable = somData.getNormalizedDataTable() ;
+		}
 		f = dtable.getFirstIndexColumnCandidate();
 		Map<Double, Integer> ixValMap = dtable.getIndexValueMap() ;
 		
@@ -129,7 +132,7 @@ public class DSomDataPerception
 		 *   
 		 */
 		
-		
+		int missedSamplingReturn=0;
 		int currentSomSize = 1 ;
 		
 		recordsConsidered=0;
@@ -149,7 +152,13 @@ public class DSomDataPerception
 			}else{
 				currentRecordIndex = sampleRecordIDs.get( recordsConsidered);
 			}
-			recordsConsidered++;   
+				
+			
+			recordsConsidered++;
+			if (currentRecordIndex<0){
+				missedSamplingReturn++;
+				continue;
+			}
 											if (displayProgress(3)){
 												// display epoch and 10-percentage, and compound of it
 												// currentEpoch
@@ -195,7 +204,15 @@ public class DSomDataPerception
 			// getBestMatchingNodes() should respect minimum fill, if the winner is already filled well 
 			winningNodeIndexes = getBestMatchingNodes( currentRecordIndex, testrecord, 5, boundingIndexList,mppLevel);
 			                            
-				         				if ((winningNodeIndexes==null) || (winningNodeIndexes.size()==0))continue;
+				         				if ((winningNodeIndexes==null) || (winningNodeIndexes.size()==0)){
+				         					// should not happen, is it an error ? check and count
+				         					
+				         					if ((errorsCount> sampleRecordIDs.size()/3) || (errorsCount>50)){
+				         						throw(new Exception("too much structural errors (>50)... stopping everything...")) ;
+				         					}
+
+				         					continue;
+				         				}
 				         				out.print(4, "winning node index: "+ winningNodeIndexes.get(0).getIndex() );
 		        				
             // set calculateAllVariables = true; for all nodes in the last epoch
