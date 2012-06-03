@@ -12,7 +12,7 @@ import java.util.*;
 * quality of <CODE>Math.random()</CODE>, but I will warn the
 * reader that system-supplied
 * RNGs have a bad reputation;  <TT>RandomJava</TT> is <B>NOT</B>
-* reccomended for general use,  it has only been included as a
+* recommended for general use,  it has only been included as a
 * straightforward example of how to
 * build a <CODE>RandomElement</CODE> wrapper for an existing RNG.
 * The <TT>RANMAR</TT>, <TT>RANECU</TT> and <TT>RANLUX</TT>
