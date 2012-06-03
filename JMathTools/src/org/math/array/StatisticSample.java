@@ -10,6 +10,8 @@ public class StatisticSample extends DoubleArray {
     //random create methods
  
 	static Random random;
+	double rangeMin = 0.0; 
+	double rangeMax = 1.0;
 	
 	// ------------------------------------------------------------------------
 	public StatisticSample(){
@@ -20,6 +22,22 @@ public class StatisticSample extends DoubleArray {
 		random = new Random(seed);
 	}
 	// ------------------------------------------------------------------------
+	
+	public void setDistribution(int dcode){
+		
+	}
+	
+	public void setRange(double rmin ,double rmax ){
+	
+		rangeMin = rmin ;
+		rangeMax = rmax ;
+	}
+	
+	public double getNextUniformRandom(){
+		
+		 return Random.uniform( rangeMin, rangeMax);
+	}
+	
 	
 	/**
 	 * Create an m x n matrix of uniformly distributed random numbers between
