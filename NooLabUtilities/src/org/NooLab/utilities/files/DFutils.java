@@ -19,6 +19,8 @@ import java.util.*;
 
  
 
+import org.NooLab.utilities.datatypes.IndexDistance;
+import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.datetime.DateTimeValue;
 import org.NooLab.utilities.net.GUID;
 import org.NooLab.utilities.strings.*;
@@ -692,7 +694,8 @@ public class DFutils extends Thread{
 		int n = dirutil.enumerateFiles(namesfilter, extension, dirpath ) ;
 		return n;
 	}
-	
+
+	 
 	public String createEnumeratedFilename( String dirpath, String namesfilter, String extension, int len){
 		String namesnip, ext, enumstr, str, rStr="";
 	 	int n, t=0;
@@ -976,9 +979,50 @@ public class DFutils extends Thread{
 
 		
 	public String getTempFileJava(String namesnip){
+		
 		return "" ;
 	}
 	
+	/**
+	 * Create a new temporary directory. Use something like
+	 * {@link #recursiveDelete(File)} to clean this directory up since it isn't
+	 * deleted automatically
+	 * @return  the new directory
+	 * @throws IOException if there is an error creating the temporary directory
+	 */
+	public static File createTempDir(String prefix) throws IOException {
+		
+		final File sysTempDir = new File(System.getProperty("java.io.tmpdir"));
+		File newTempDir;
+		final int maxAttempts = 9;
+		
+		int attemptCount = 0;
+		
+		do {
+			attemptCount++;
+			if (attemptCount > maxAttempts) {
+				throw new IOException("The highly improbable has occurred! Failed to "
+						            + "create a unique temporary directory after " + maxAttempts + " attempts.");
+			}
+			
+			String dirName = UUID.randomUUID().toString();
+			newTempDir = new File( sysTempDir, prefix+"_"+dirName);
+		}
+		while (newTempDir.exists());
+	
+		if (newTempDir.mkdirs()) {
+			return newTempDir;
+		} else {
+			throw new IOException("Failed to create temp dir named " + newTempDir.getAbsolutePath());
+		}
+	}
+
+
+	public static File createTempdir(String prefix) throws IOException {
+		return createTempDir(prefix);
+	}
+
+
 	public boolean manageBakFile( String filename, boolean eraseAfterCopy ){
 		
 		return manageBakFile(filename,10,eraseAfterCopy,false);
@@ -1004,7 +1048,8 @@ public class DFutils extends Thread{
 	 * <br/>
 	 */
 	public boolean manageBakFile( String filename , int maxCopiesEnum, boolean eraseAfterCopy, boolean useDateStr){
-		String bakfilename,str ,directoryPath;
+		
+		String bakfilename,str ,directoryPath = "",extension="";
 		boolean rb = false;
 		DateTimeValue datecomposer = new DateTimeValue( 14,1);
 		String datestr = "";
@@ -1023,7 +1068,13 @@ public class DFutils extends Thread{
 			if (fil.exists() == false) {
 				return true;
 			}
-
+			if (fil.isFile()){
+				String fstr = fil.getName();
+				int p = fstr.lastIndexOf(".");
+				extension = "."+fstr.substring(p+1,fstr.length()) ;
+				extension = extension.replace("..", ".") ;
+			}
+			
 			bakfilename = filename + "-"+datestr+".bak";
 
 			/* 
@@ -1071,6 +1122,14 @@ public class DFutils extends Thread{
 				// rb = copyTxtFile(filename, bakfilename,1);
 			}
 			
+			if ((directoryPath.length()>0) && (direxists(directoryPath))){
+				
+				int n = dirutil.enumerateFiles(extension, directoryPath);
+				if ((n > maxCopiesEnum + 2) && (maxCopiesEnum>0)){
+					reduceFileFolderList( directoryPath,1, extension, maxCopiesEnum+1) ;
+				}
+			}
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -1080,43 +1139,185 @@ public class DFutils extends Thread{
 	
 	
 	/**
-	 * Create a new temporary directory. Use something like
-	 * {@link #recursiveDelete(File)} to clean this directory up since it isn't
-	 * deleted automatically
-	 * @return  the new directory
-	 * @throws IOException if there is an error creating the temporary directory
+	 * 
+	 * reduces the list of files or folders in a directory by deleting them, using age as the criterion
+	 * 
+	 * @param filfolders
+	 * @param maxCount
 	 */
-	public static File createTempDir(String prefix) throws IOException {
+	public void reduceFileFolderList(File[] filfolders,  int ftype, int maxCount) { 
 		
-		final File sysTempDir = new File(System.getProperty("java.io.tmpdir"));
-		File newTempDir;
-		final int maxAttempts = 9;
-		
-		int attemptCount = 0;
-		
-		do {
-			attemptCount++;
-			if (attemptCount > maxAttempts) {
-				throw new IOException("The highly improbable has occurred! Failed to "
-						            + "create a unique temporary directory after " + maxAttempts + " attempts.");
-			}
-			
-			String dirName = UUID.randomUUID().toString();
-			newTempDir = new File( sysTempDir, prefix+"_"+dirName);
-		}
-		while (newTempDir.exists());
 
-		if (newTempDir.mkdirs()) {
-			return newTempDir;
-		} else {
-			throw new IOException("Failed to create temp dir named " + newTempDir.getAbsolutePath());
+		IndexedDistances afx = DirectoryContent.createListByAge(filfolders,ftype,1);
+		int minn = 1;
+		String fname ;
+		if (maxCount>20){
+			minn = 3 ;
 		}
+		if ((ftype==2) || (ftype==3)){
+			int d = Math.max(afx.size()-maxCount,0);
+			if (maxCount>1)
+				for (int i=0;i<d;i++){
+					fname = afx.getItem(i).getGuidStr();
+					recursivedelete(fname);
+			}else{
+				recursivedelete(filfolders[0]);
+			}
+		} //folder, or both?
+
+
+		if ((ftype==1) || (ftype==3)){
+			
+			
+			minn = 1;
+			
+			if (maxCount>20){
+				minn = 3 ;
+			}
+			int d = Math.max(afx.size()-maxCount,0);
+			if ((maxCount>1) && (afx.size()>0)){
+				for (int i=0;i<d;i++){
+					fname = afx.getItem(i).getGuidStr();
+					File f = new File(fname);
+					f.delete() ;
+				}
+			} 
+			
+		} // files, or both ?
+				
 	}
 	
-	public static File createTempdir(String prefix) throws IOException {
-		return createTempDir(prefix);
+	
+	
+	public static void reduceFolderListByAge(String basepath, int maxRemainCount, String nameSnippet, double ageByDays) {
+		
+		String fname;
+		IndexedDistances afx, sftx;
+		IndexDistance sft;
+		
+		long td,foldertime,thresholdtime , now = System.currentTimeMillis();
+		thresholdtime = now - (long)(ageByDays*24*60*60*1000) ;
+		
+		// the complete list
+		
+		File[] folders = DirectoryContent.getSubFolders( nameSnippet, basepath) ;
+		afx = DirectoryContent.createListByAge(folders,2,1);
+		
+		if ((folders==null) || (folders.length==0)){
+			return;
+		}
+		
+		sftx = new IndexedDistances();
+		
+		for (int f=0;f<folders.length;f++){  
+		
+			fname = folders[f].getName() ;
+			// by date
+			foldertime = folders[f].lastModified() ;
+			
+			td = thresholdtime - foldertime;
+			if (td<0){
+				continue ;
+			}
+			
+			// create a structured list from those files
+			sftx.add( new IndexDistance(f,(1.0*(double)td), fname));
+			
+		} // ->
+
+		int minn = 1;
+
+		if (maxRemainCount > 0) {
+
+			if (maxRemainCount > 20) {
+				minn = 3;
+			}
+			int d = Math.max(sftx.size() - maxRemainCount, 0);
+
+			if ((maxRemainCount > 1) && (sftx.size() > 0)) {
+
+				for (int i = 0; i < d; i++) {
+					fname = sftx.getItem(i).getGuidStr();
+					// fname = createPath(basepath,fname);
+					// recursiveDelete(fname); not by name: this creates a new file variable, for which it will not be 
+					//                         possible to delete the file, since we have it opened here...
+					//                         
+					int f = sftx.getItem(i).getIndex();
+					recursiveDelete(folders[f]);
+				}
+			} else {
+				if (folders.length > 0) {
+					recursiveDelete(folders[0]);
+				}
+
+			}
+		} // all sub-folders in basepath
+		
+		fname = "" ;
 	}
 
+
+	public static void reduceFileFolderList(String basePath, int ftype, int maxCount) {	
+		reduceFileFolderList( basePath, ftype, "", maxCount) ;
+	}
+	
+	public static void reduceFileFolderList(String basePath, int ftype, String extension, int maxCount) {	
+		int z;
+		
+		
+		if ((ftype==2) || (ftype==3)){
+			File[] folders = DirectoryContent.getSubFolders( extension, basePath) ;
+			
+			for (int f=0;f<folders.length;f++){  
+			
+				// by date
+				
+				IndexedDistances afx = DirectoryContent.createListByAge(folders,2,1);
+				int minn = 1;
+				String fname ;
+				if (maxCount>20){
+					minn = 3 ;
+				}
+				int d = Math.max(afx.size()-maxCount,0);
+				if ((maxCount>1) && (afx.size()>0)){
+					for (int i=0;i<d;i++){
+						fname = afx.getItem(i).getGuidStr();
+						recursiveDelete(fname);
+					}
+				}else{
+					recursiveDelete(folders[0]);
+				}
+			}
+		} // folders, or both ?
+		
+		if ((ftype==1) || (ftype==3)){
+			
+
+			ArrayList<String> filenames = DirectoryContent.getFileList("", extension, basePath);
+			IndexedDistances afx = DirectoryContent.createListByAge(filenames,1,1);
+			
+			int minn = 1;
+			String fname ;
+			if (maxCount>20){
+				minn = 3 ;
+			}
+			int d = Math.max(afx.size()-maxCount,0);
+			if ((maxCount>1) && (afx.size()>0)){
+				for (int i=0;i<d;i++){
+					fname = afx.getItem(i).getGuidStr();
+					File f = new File( createPath(basePath,fname));
+					f.delete() ;
+				}
+			} 
+		} // files, or both ?
+		z=0;
+	}
+	
+	public static boolean recursiveDelete(String foldername) {
+		
+		File f = new File(foldername);
+		return recursiveDelete(f);
+	}
 	/**
 	 * Recursively delete file or directory
 	 * @param fileOrDir
@@ -1142,6 +1343,13 @@ public class DFutils extends Thread{
 	public boolean recursivedelete(File fileOrDir){
 		return recursiveDelete(fileOrDir);
 	}
+	public boolean recursivedelete(String fname) {
+		
+		File f = new File(fname);
+		return recursivedelete(f);
+	}
+
+
 	public void renameFile(String oldname,
 	                       String newname){
 		//Obtain the reference of the existing file
@@ -1845,14 +2053,21 @@ public class DFutils extends Thread{
 		 return rB;
 	}
 	
-	public boolean direxists(String filename){
+
+	
+	public boolean direxists(String foldername){	// 
+		
+		return folderExists(foldername);
+	} 
+	
+	public static boolean folderExists(String foldername) {
 		boolean rB=false;
 		
-		if ((filename==null) || (filename.length()==0)){
+		if ((foldername==null) || (foldername.length()==0)){
 			return rB;
 		}
 		
-		File file = new File(filename);
+		File file = new File(foldername);
 		
 		if (file.isDirectory()==false){
 			return false;
@@ -1862,7 +2077,7 @@ public class DFutils extends Thread{
 			// dir = new File (".");
 		    // currentDir =  dir.getCanonicalPath();
 			
-			File dir = new File(filename);
+			File dir = new File(foldername);
 		    
 		    File[] fils = dir.listFiles();
 		    
@@ -2652,6 +2867,8 @@ public class DFutils extends Thread{
 				for (int f=0;f<folders.length;f++){
 					if (removeMode == -3){ // by date
 						
+						reduceFileFolderList( folders, 2, maxCount);
+						
 					}
 					if (removeMode == -2){ // by sorting
 						
@@ -2708,44 +2925,7 @@ public class DFutils extends Thread{
 		return createdFolder;
 	}
 
-	/*
-	 
-		int dc = enumerateSubDir(basePath,"") ;
-		boolean dirOk=false;
 
-		while (dirOk == false) {
-			
-			if (packageName.trim().length() > 0) {
-				pkgsubdir = packageName;
-			} else {
-
-				String fname = DFutils.createPath(basePath, "" + dc);
-				while (direxists(fname)) {
-					dc++;
-					fname = DFutils.createPath(basePath, "" + dc);
-				}
-				pkgsubdir = "" + dc;
-
-			}
-
-			createdFolder = DFutils.createPath(basePath, pkgsubdir + "/");
-			// here we store all , ending with slash enforces physical creation of dir
-			// we do NOT need a temp dir like this ... : DFutils.createTempDir( SomDataObject._TEMPDIR_PREFIX);
-
-			if (direxists(createdFolder) == false) {
-				dirOk = false;
-				dc++;
-				packageName= packageName+dc;
-				 
-			} else {
-				dirOk = true;
-			}
-		}
-		
-	 */
-	
-	
-	
 }
 
 

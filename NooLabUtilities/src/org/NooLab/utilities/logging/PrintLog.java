@@ -71,6 +71,8 @@ public class PrintLog {
 	DFutils filutil = new DFutils();
 
 	private String collectedPrintOut = "";
+
+	private boolean displayMemory;
 	
 	
 	// ========================================================================
@@ -216,9 +218,12 @@ public class PrintLog {
 	public void print( int level, String msg, boolean showTime){
 		boolean goforit=true;
 		
-		if ((msg==null) || (msg.trim().length()==0)){
+		
+		if ((displayMemory ==false) && (msg==null) || (msg.trim().length()==0)){
 			return;
 		}
+		if (msg==null)msg="" ;
+		
 		if (LogControl.globeScope <= 1){
 			goforit = (level <= printLevel ) ;
 		}
@@ -227,11 +232,17 @@ public class PrintLog {
 		}
 			
 		if (goforit){
+			
+			long heapSize = Runtime.getRuntime().totalMemory()/(1024);
+			long heapFreeSize = Runtime.getRuntime().freeMemory()/(1024);
+
+			
 			if (showTimeStamp){
 				if (showTime==true){
 					msg = addTimeStamp(msg,2) ;
 				}
 			}
+			
 			
             if ((suppressPrefix==false) && (prefix.trim().length()>0)){
             	String cr="";
@@ -241,6 +252,11 @@ public class PrintLog {
             	}
             	msg = cr + prefix+" "+msg;
             }
+            
+            if (displayMemory){
+    			msg = msg  + "  (free mem: "+ heapFreeSize+" of "+heapSize+")  " ;
+    		}
+            
             
 			if (prnerr){
 				System.err.print(msg);
@@ -388,6 +404,10 @@ if ((msg==null) ){
 	 * @param addmsg
 	 */
 	public void printprc( int level, int incrCounter, int totalcount , int stepwidth , String addmsg){
+		printPrc( level, incrCounter, totalcount , stepwidth , addmsg);
+	}
+	
+	public static void printPrc( int level, int incrCounter, int totalcount , int stepwidth , String addmsg){
 		double perc ;
 		int fracdigits = 0;
 		String pstr, msg="";
@@ -399,7 +419,7 @@ if ((msg==null) ){
 
 			if ( ((incrCounter % stepwidth == 0) && (incrCounter > 10) && (totalcount > 0)) || 
 				 (stepwidth == 1) ||
-				 (incrCounter == 1) ) {
+				 (incrCounter <= 0) ) {
 
 				perc = (double) ((1.0 * (double) incrCounter) / (1.0 * (double) totalcount))
 						* ((double) 100.0);
@@ -408,10 +428,12 @@ if ((msg==null) ){
 
 				if ((addmsg.length() == 0)
 						|| (addmsg.trim().indexOf("[!]") != 0)) {
-					msg = "   " + pstr + "% completed ...";
-
+					msg = "   " + pstr + "% completed ";
+					if (addmsg.length()==0){
+						msg = msg + "..." ;
+					}
 					if (addmsg.trim().length() > 0) {
-						msg = msg + " ,  " + addmsg;
+						msg = msg + addmsg + " ...  ";
 					}
 
 				} else {
@@ -419,7 +441,10 @@ if ((msg==null) ){
 					msg = "   " + pstr + addmsg;
 				}
 
-				print(level, msg);
+				// print(level, msg);
+				if (level<= LogControl.Level){
+					System.out.println(msg);
+				}
 			}
 
 		}catch(Exception e){
@@ -620,5 +645,10 @@ if ((msg==null) ){
 	public String getPrintOutCollection() {
 		
 		return collectedPrintOut;
+	}
+
+	public void setDisplayMemory(boolean flag) {
+		
+		displayMemory = flag;
 	}
 }

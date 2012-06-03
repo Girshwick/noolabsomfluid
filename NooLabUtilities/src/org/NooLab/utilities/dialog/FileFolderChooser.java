@@ -113,11 +113,11 @@ public class FileFolderChooser {
 	}
   
 	
-	public String selectFolder(){
+	public String selectFolder() throws Exception{
 		return selectFolder("");
 	}
 	
-	public String selectFolder(String basedir){
+	public String selectFolder(String basedir) throws Exception{
 		
 		target= _FFC_FOLDER ;
 		
@@ -128,13 +128,13 @@ public class FileFolderChooser {
 		}
 		basePath = basedir;
 		
-		try { 
-			  UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); 
-			  
-			} catch (Exception e) { 
-			  e.printStackTrace();  
-			 
-			} 
+		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+
+		}
 			
 		if (isMacOS()){
 			return macOSXFolderSelection(basedir) ;
@@ -146,6 +146,7 @@ public class FileFolderChooser {
          
         if (basedir.length()>0){
         	String _bd = DFutils.createPath(basedir, "."); // if it does not exist, it will open the user's home dir
+        	_bd = basedir;
 			File baseFolder = new File(_bd);
 			folderselection.setCurrentDirectory(baseFolder);
 		}
@@ -171,11 +172,13 @@ public class FileFolderChooser {
             selectedFolder = StringsUtil.replaceall(selectedFolder, "\\", "/");
             selectedFolder = StringsUtil.replaceall(selectedFolder, "\\\\", "/");
             selectedFolder = StringsUtil.replaceall(selectedFolder, "//", "/");
-            System.out.println("selected path : " + selectedFolder);
+
+            // System.out.println("selected path : " + selectedFolder);
+            
         }
         if (result == JFileChooser.CANCEL_OPTION) {
-        	System.err.println("Folder selection dialog has been cancelled.");	
         	selectedFolder = "" ;
+        	throw(new Exception("Folder selection dialog has been cancelled."));
         }
         
         folderselection.setVisible(false);
@@ -292,7 +295,8 @@ public class FileFolderChooser {
 		  }
 		  
 		} else { 
-		  System.out.println("Open command cancelled by user."); 
+		  System.out.println("Open command cancelled by user.");
+		  selectedFilename = "" ;
 		}
 		return selectedFilename;
 	}

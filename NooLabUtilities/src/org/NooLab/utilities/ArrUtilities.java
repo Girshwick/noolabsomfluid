@@ -3,6 +3,8 @@ package org.NooLab.utilities;
  
 
 import org.apache.commons.lang3.*;
+
+import java.lang.reflect.Array;
 import java.util.Arrays;
 
 import java.util.ArrayList;
@@ -13,6 +15,7 @@ import java.util.TreeMap;
 import java.util.Vector;
 
 
+import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.strings.*;
 
 
@@ -174,23 +177,42 @@ public class ArrUtilities {
 		return arr2Text( vector, separator) ;
 	}	
 	
-	public static String arr2Text( ArrayList<String> vector,
-		    						String separator){
+	
+	public static String arr2Text( ArrayList<String> vector, String separator){
 	    String return_value="";
 		int i;
 		
 		if (separator.length()==0){
 			separator="\t";
 		}
+							
+		// needs a lot of memory...: return_value = StringUtils.join(vector.toArray(),"\t") ;
 		
+		StringBuilder sb = new StringBuilder();
+
+		int z=0; 
+		for (String s : vector) {
+											if (vector.size()>5000){
+												PrintLog.printPrc(2, z, vector.size(), vector.size()/20, " of transcribing vector");
+											}
+
+			sb.append(s);
+			sb.append("\t");
+			z++;
+		}
+
+		return_value = sb.toString() ;
+		/* this explicit loop will be very slow, because on each step a new instance of Java's StringBuilder will be created...
 		 for ( i = 0; i < vector.size(); i++) {
-			 
 			 return_value = return_value + vector.get(i);
 			 
 			 if (i<vector.size()-1){
 				 return_value = return_value + separator ;
 			 }
 		 }
+		 */
+		sb.trimToSize();
+		sb=null;
 		return return_value;
 
 	}
@@ -423,8 +445,10 @@ public class ArrUtilities {
 	}
 	
 
-
-	public int[] changeArrayStyle( Vector<Integer> strvec, int i ){
+	public int[] changeArraystyle( Vector<Integer> strvec, int i ){
+		return changeArrayStyle( strvec, i );
+	}
+	public static int[] changeArrayStyle( Vector<Integer> strvec, int i ){
 		int[] strval ;
 		 
 		strval = new int[strvec.size()];
@@ -667,8 +691,10 @@ public class ArrUtilities {
 		return position;
 	}
 
-	
-	public int arrValuePos( double[] valarr, double value){
+	public int arrValuepos( double[] valarr, double value){
+		return arrValuePos( valarr, value);
+	}
+	public static int arrValuePos( double[] valarr, double value){
 		
 		int pos=-1;
 		
@@ -683,10 +709,10 @@ public class ArrUtilities {
 		
 	}
 	
-	public int arrValuePos( int[] valarr, double value){
+	public int arrValuepos( int[] valarr, double value){
 		return arrValuepos(valarr, value);
 	}
-	public static int arrValuepos( int[] valarr, double value){
+	public static int arrValuePos( int[] valarr, double value){
 		
 		int pos=-1;
 		
@@ -792,8 +818,10 @@ public class ArrUtilities {
 		return minPos;
 	}
 
-
-	public double arrayMin( double[] valarr, double defaultValue){
+	public double arraymin( double[] valarr, double defaultValue){
+		return arrayMin( valarr, defaultValue);
+	}
+	public static double arrayMin( double[] valarr, double defaultValue){
 		double return_value=0.0, min =  9999999999.9;
 		int i;
 		
@@ -812,12 +840,16 @@ public class ArrUtilities {
 		
 		
 	}
-
-	public int arrayMin( int[] valarr ){
+	public int arraymin( int[] valarr ){
+		return arrayMin( valarr );
+	}
+	public static int arrayMin( int[] valarr ){
 		return arrayMin( valarr ,-1);
 	}
-
-	public int arrayMin( int[] valarr, int defaultValue){
+	public int arraymin( int[] valarr, int defaultValue){
+		return arrayMin( valarr, defaultValue);
+	}
+	public static int arrayMin( int[] valarr, int defaultValue){
 		int return_value = defaultValue, min =  999999999;
 		int i;
 		
@@ -856,7 +888,10 @@ public class ArrUtilities {
 	}
 
 
-	public int arrayMin( Vector<Integer> valarr, int defaultValue){
+	public int arraymin( Vector<Integer> valarr, int defaultValue){
+		return arrayMin( valarr, defaultValue);
+	}
+	public static int arrayMin( Vector<Integer> valarr, int defaultValue){
 		
 		if ((valarr==null) || (valarr.size()==0)){
 			return defaultValue;
@@ -896,7 +931,7 @@ public class ArrUtilities {
 	}
 
 	public static int arraymax( int[] valarr ){
-		return arraymax( valarr ,-1);
+		return arrayMax( valarr ,-1);
 	}
 	
 	public int arrayMax( int[] valarr ){
@@ -905,10 +940,10 @@ public class ArrUtilities {
 	
 
 
-	public int arrayMax( int[] valarr, int defaultValue){
-		return arraymax( valarr ,-1);
+	public int arraymax( int[] valarr, int defaultValue){
+		return arrayMax( valarr ,-1);
 	}
-	public static int arraymax( int[] valarr, int defaultValue){
+	public static int arrayMax( int[] valarr, int defaultValue){
 		int return_value = defaultValue, max =  -999999999;
 		int i;
 		
@@ -967,7 +1002,10 @@ public class ArrUtilities {
 		return arrayMax( varr, defaultValue) ;
 	}
 	
-	public int arrayMax( Vector<Integer> valarr, int defaultValue){
+	public int arraymax( Vector<Integer> valarr, int defaultValue){
+		return arrayMax( valarr, defaultValue);
+	}
+	public static int arrayMax( Vector<Integer> valarr, int defaultValue){
 		
 		if ((valarr==null) || (valarr.size()==0)){
 			return defaultValue;
@@ -975,7 +1013,7 @@ public class ArrUtilities {
 		 
 		int[] varr ;
 		
-		varr = this.changeArrayStyle(valarr, 0) ;
+		varr = changeArrayStyle(valarr, 0) ;
 		
 		return arrayMax( varr, defaultValue) ;
 	}
@@ -1042,7 +1080,7 @@ public class ArrUtilities {
 		return pos ;
 	}
 	
-	public static int arrayMaxpos( int[] valarr  ){
+	public static int arrayMaxPos( int[] valarr  ){
 		int pos =-1;
 		double maxval;
 		
@@ -1052,17 +1090,21 @@ public class ArrUtilities {
 		  
 		maxval = arraymax( valarr ) ;
 		
-		pos = arrValuepos( valarr, maxval);
+		pos = arrValuePos( valarr, maxval);
 		
 		return pos ;
 		
 	}
-	public int arrayMaxPos( int[] valarr  ){
+	public int arrayMaxpos( int[] valarr  ){
 		
-		return arrayMaxpos(valarr)  ;
+		return arrayMaxPos(valarr)  ;
 	}
 	
-	public int arrayMinPos( int[] valarr  ){
+	
+	public int arrayMinpos( int[] valarr  ){
+		return arrayMinPos( valarr );
+	}
+	public static int arrayMinPos( int[] valarr  ){
 		
 		int pos =-1;
 		double  maxval;
@@ -1078,7 +1120,10 @@ public class ArrUtilities {
 		return pos ;
 	}
 	
-	public int arrayMinPos( double[] valarr  ){
+	public int arrayMinpos( double[] valarr  ){
+		return arrayMinPos( valarr  );
+	}
+	public static int arrayMinPos( double[] valarr  ){
 		
 		int pos =-1;
 		double  maxval;
@@ -1094,7 +1139,7 @@ public class ArrUtilities {
 		return pos ;
 	}
 	
-	public static int arraysum(int[] values){
+	public static int arraySum(int[] values){
 		int return_value=0;
 		int i;
 		
@@ -1105,13 +1150,15 @@ public class ArrUtilities {
 		return return_value;		
 	}
 
-	public int arraySum(int[] values){
-		return arraysum(values) ;
+	public int arraysum(int[] values){
+		return arraySum(values) ;
 	}
 	
 	 
-	
-	public int arraySum(int[] values, double posLoP, double posHiP) {
+	public int arraysum(int[] values, double posLoP, double posHiP) {
+		return arraySum( values, posLoP, posHiP);
+	}
+	public static int arraySum(int[] values, double posLoP, double posHiP) {
 		
 		int[] xvalues ;
 		
@@ -1130,11 +1177,11 @@ public class ArrUtilities {
 	
 	
 
-	public double arraySum( double[] d_arr){
-		return arraysum(d_arr);
+	public double arraysum( double[] d_arr){
+		return arraySum(d_arr);
 	}
 
-	public static double arraysum( double[] d_arr){
+	public static double arraySum( double[] d_arr){
 
 		double return_value=0;
 		int i;
@@ -1148,7 +1195,10 @@ public class ArrUtilities {
 		
 	}
 	
-	public int arraySum( ArrayList<Integer> int_arr){
+	public int arraysum( ArrayList<Integer> int_arr){
+		return arraySum( int_arr);
+	}
+	public static int arraySum( ArrayList<Integer> int_arr){
 		int return_value=0;
 		int i;
 		
@@ -1159,7 +1209,10 @@ public class ArrUtilities {
 		return return_value;		
 	}
 	
-	public int arraySum( Vector<Integer> int_arr){
+	public int arraysum( Vector<Integer> int_arr){
+		return arraySum( int_arr);
+	}
+	public static int arraySum( Vector<Integer> int_arr){
 		int return_value=0;
 		int i;
 		ArrayList<Integer> int_arl = new ArrayList<Integer>(int_arr);
@@ -1167,8 +1220,10 @@ public class ArrUtilities {
 		return arraySum(int_arl);		
 	}
 
-	
-	public int valueFrequency( Vector<Integer> vilist, int dpi) {
+	public int valuefrequency( Vector<Integer> vilist, int dpi) {
+		return valueFrequency( vilist, dpi);
+	}
+	public static int valueFrequency( Vector<Integer> vilist, int dpi) {
 		int freq = 0;
 		
 		for (int i=0;i<vilist.size();i++){
@@ -1396,8 +1451,10 @@ public class ArrUtilities {
 		    return newArray;   
 	}
 
-	
-	public int[] resizeArray( int _new_size, int[] original) {
+	public int[] resizearray( int _new_size, int[] original) {
+		return resizeArray( _new_size, original);
+	}
+	public static int[] resizeArray( int _new_size, int[] original) {
 	    int length,p=0;
 	    int[] newArray;
 
@@ -1782,7 +1839,14 @@ public class ArrUtilities {
     	
     	return result;
     }
-    		
+
+	public  <T1,T2>  int checkTypeOfListitems(  Object arrObject, 
+			 									Class<T1> clazzFormatToCheckFor , 
+			 									Class<T2> clazzFormatToAvoid){
+		return checkTypeOfListItems( arrObject, clazzFormatToCheckFor , clazzFormatToAvoid) ;
+	}
+
+		
     /**
      * 
      * 
@@ -1793,9 +1857,9 @@ public class ArrUtilities {
      * @return
      */
 	@SuppressWarnings("unchecked")
-	public  <T1,T2>  int checkTypeOfListItems( Object arrObject, 
-											 Class<T1> clazzFormatToCheckFor , 
-											 Class<T2> clazzFormatToAvoid){
+	public static <T1,T2>  int checkTypeOfListItems(  Object arrObject, 
+											 	Class<T1> clazzFormatToCheckFor , 
+											 	Class<T2> clazzFormatToAvoid){
 												 
 
 		 
@@ -2184,10 +2248,13 @@ public class ArrUtilities {
 		return confirmedItems;
 	}
 
+	
 	@SuppressWarnings("rawtypes")
 	public static ArrayList clean( int index, ArrayList list) {
 		
+		
 		if ((index>=0) && (index<list.size())){
+			
 			if (list.get(index)==null){
 				list.remove(index);
 			}
@@ -2206,7 +2273,20 @@ public class ArrUtilities {
 		return list;
 	}
 
+	public ArrayList<String> removeempty( ArrayList<String> list) {
 
+		int i=list.size()-1;
+		
+		while (i>=0){
+			if ((list.get(i)==null) || (list.get(i).trim().length()==0)){
+				list.remove(i);
+			}
+			i--;
+		}
+		return list;
+	}
+
+	
 	public Object changeArrayStyle( ArrayList inList) {
 		 
 		Object objArray = null;
@@ -2216,7 +2296,12 @@ public class ArrUtilities {
 			return null ;
 		}
 		if (inList.size() == 0){
-			return inList ;
+			String cn ;
+			cn = inList.getClass().getCanonicalName();
+			cn = inList.getClass().getName();
+			int cm = inList.getClass().getModifiers();
+			
+			return (new String[0]) ;// we simply do not know anything about the type ;
 		}
 		
 		int clength = inList.size();
@@ -2254,6 +2339,75 @@ public class ArrUtilities {
 		}
 
 		return objArray;
+	}
+
+	/**
+	 *  in "items" search for "mode" where 1= <before> "=" // 2=after  
+	 *  
+	 * @param list
+	 * @param string
+	 * @param i
+	 * @param string2
+	 * @return
+	 */
+	public int getListItemIndexByContent( 	ArrayList<String> list, 
+											int startindex, String searchForThat, 
+											int relativePos, String snip,
+											int relaxed,
+											int inverted ) {
+		
+		int index=-1, ix,p,ps =-1;
+		String str,strp;
+		boolean found=false;
+		
+		if (relativePos<1) relativePos = 1;
+		if (relativePos>2) relativePos = 2;
+		
+		if (inverted>=1) inverted = 1;
+		if (inverted<=0) inverted = 0;
+
+		
+		if (relaxed>=1){
+			searchForThat = searchForThat.toLowerCase() ; 
+		}
+		
+		
+		for (int i=startindex;i<list.size();i++){
+			p=-1;
+			str = list.get(i).trim();
+			
+			if (relaxed<=0){
+				strp = str ;
+			}else{
+				strp = str.toLowerCase();
+			}
+			
+			if (inverted>=1){
+				p = searchForThat.indexOf(strp);
+			}else{
+				p = strp.indexOf(searchForThat);
+			}
+			
+			if ((snip.length()>0) && (p>=0)){
+				ps = str.indexOf(snip) ;
+				if (relativePos==1){
+					found = (ps>=0) && (p<ps);
+				}
+				if (relativePos==2){
+					found = (ps>=0) && (p>ps);
+				}
+			}else{
+				found = p>0;
+			}
+
+			if (found){
+				index=i;
+				break;
+			}
+		} // i-> all items
+		
+		
+		return index;
 	}
   
 	
