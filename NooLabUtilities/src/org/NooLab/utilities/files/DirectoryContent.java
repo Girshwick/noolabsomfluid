@@ -6,6 +6,8 @@ import java.io.*;
 import java.util.*;
 import java.util.zip.*;
 
+import org.NooLab.utilities.datatypes.IndexDistance;
+import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.strings.*;
  
 
@@ -98,11 +100,102 @@ public class DirectoryContent extends Observable  {
 	
 	public Vector<String> getFileList( String namefilter, String directoryPath) {
 		
-		return getFileList( namefilter, "", directoryPath);
+		return getListOfFileList( namefilter, "", directoryPath);
 	}
 	
 		
-	public Vector<String> getFileList( String namefilter, String extension, String directoryPath) {
+	public static ArrayList<String> getFileList( final String namefilter, final String extension, String directoryPath) {
+		String[] children;
+		
+		File tmpffil;
+		String filename, str ,fname, tmp ;
+		FilenameFilter filter ;
+		int k,p;
+		boolean hb;
+		ArrayList<String> filenames = new ArrayList<String>() ;
+		
+		directoryPath = StringsUtil.replaceall(directoryPath, "\\", "/")+"/";
+		directoryPath = StringsUtil.replaceall(directoryPath, "//", "/") ;
+		
+		filenames.clear() ;
+		
+		File dir = new File(directoryPath);
+		/*
+		children = dir.list();
+		if (children == null) {
+			// Either dir does not exist or is not a directory
+		} else {
+			
+			for (int i = 0; i < children.length; i++) {
+				// Get filename of file or directory
+				// filename = children[i];
+			}
+		}
+		 */
+		// It is also possible to filter the list of returned files.
+		// This example does not return any files that start with `.'.
+		filter = new FilenameFilter() {
+										 public boolean accept(File dir, String name) {
+											 boolean hb = true;
+											 	hb = !name.startsWith(".");
+											 	if ((hb) && (namefilter.length()>0)){ 
+											 		hb = name.contains(namefilter) ;  
+											 	}
+											 	if ((hb) && (extension.length()>0)){ 
+											 		hb = name.endsWith(extension) ;  
+											 	}
+											 	
+											 	
+											 	return hb ;
+										 }
+									  };
+									  
+       // filter = new FFilter( filfilter, dirfilter );
+        
+									 
+		children = dir.list(filter);
+		 
+		k = directoryPath.length();
+		if (k>1){
+			tmp = directoryPath.trim().substring(k - 1, k);
+
+			if (tmp.contentEquals("/")==false) {
+				directoryPath = directoryPath+"/" ;
+			}
+		}
+		
+		for (int i=0;i<children.length;i++){
+			// stuff path to the string
+			str = children[i] ;
+			
+			hb = str.toLowerCase().contains(extension.toLowerCase()) ;
+			if (hb){
+				str = directoryPath + str ;
+			} else{
+				str="";
+			}
+			children[i] = str;
+		}
+		
+		 
+		
+		if ((children!=null) && (children.length>0)){
+			filenames = new ArrayList<String>(Arrays.asList(children));
+		}
+		
+		
+		int i=filenames.size()-1 ;
+		while (i>=0){
+			
+			if ((filenames.get(i)==null) || (filenames.get(i).trim().length()==0)){
+				filenames.remove(i);
+			}
+			i--;
+		}
+	    return filenames;
+	}
+	
+	public Vector<String> getListOfFileList( String namefilter, String extension, String directoryPath) {
 		String[] children;
 		
 		File tmpffil;
@@ -168,48 +261,7 @@ public class DirectoryContent extends Observable  {
 			children[i] = str;
 		}
 		
-		/*
-		// The list of files can also be retrieved as File objects
-		files = dir.listFiles(filter);
-
 		 
-		filenames.setSize( files.length ) ;
-		
-		for (int i=0;i<files.length;i++){
-			if (files[i].isDirectory()==false){
-				str = files[i].getAbsolutePath();
-				
-				hb = true;
-				if (extension.length() > 0) {
-					p = (str.length() - extension.length());
-					k = str.lastIndexOf(".");
-					if (k == p) {
-
-						hb = (extension.length() > 0)
-								|| (str.toLowerCase().contains(extension.toLowerCase()));
-										
-					}
-				}
-				
-				if (hb == true){
-
-					tmpffil = new File(str);
-					fname = tmpffil.getName() ;  
-					hb = fname.toLowerCase().contains(namefilter.toLowerCase() ) ;
-					
-					if (hb==false){
-						// try regex 
-					}
-				}
-				if (hb == true) {
-
-					filenames.set(i, str);
-
-				}
-			}
-		}
-		 
-		*/
 		
 		if ((children!=null) && (children.length>0)){
 			filenames = new Vector<String>(Arrays.asList(children));
@@ -229,7 +281,57 @@ public class DirectoryContent extends Observable  {
 	    return filenames;
 	}
 	
+	public static File[] getSubFolders( String namefilter, String directoryPath) {
+		
+		String[] children;
+		FileFilter fileFilter;
+		
+		String filename;
+		final String filter= namefilter;
+		 
+		File[] subdirectories;
+		
+		File dir = new File(directoryPath);
 
+		children = dir.list();
+		if (children == null) {
+			// Either dir does not exist or is not a directory
+		} else {
+			for (int i = 0; i < children.length; i++) {
+				// Get filename of file or directory
+				filename = children[i];
+			}
+		}
+
+		 
+		
+		// This filter only returns directories
+		fileFilter = new FileFilter() {  
+													public boolean accept(File file) {
+														
+														boolean hb=false;
+														String _filter, pathname = file.getName();
+														// exclude path ... n.i.y.
+														_filter = filter;
+														
+														hb = file.isDirectory();
+														if (hb){
+															if (filter.contentEquals("*")){
+																_filter="";
+															}
+															if ((_filter.length()>0)){
+																hb = (pathname.indexOf(_filter)>=0);
+															}
+														}
+				
+														return hb ;
+													}
+								 
+												 };
+	    subdirectories = dir.listFiles(fileFilter);
+	    return subdirectories;
+	}
+	
 	public File[] getSubDirectories( String namefilter, String directoryPath) {
 		
 		String[] children;
@@ -737,7 +839,61 @@ if (name.contentEquals("_a")){
 		
 		return path ;
 	}
+
+	public IndexedDistances createlistbyage(File[] folders, int ftype ,int sortDirection) {
+		return createListByAge( folders,ftype, sortDirection);
+	}
+	
+	public static IndexedDistances createListByAge(File[] folders, int ftype , int sortDirection) {
+		
+		IndexedDistances ixds = new IndexedDistances();
+		IndexDistance ixd;
+		File f;
+		long lastModified;
+		
+		try{
+			
+			for (int i=0;i<folders.length;i++){
+				f = folders[i];
+				if ((ftype==1) && (f.isFile())){
+					lastModified = f.lastModified();
+					ixd = new IndexDistance(i, (double)(1.0*lastModified),f.getName());
+					ixds.add(ixd);
+				}else{
+					if ((ftype == 2) && (f.isDirectory())) {
+						lastModified = f.lastModified();
+						ixd = new IndexDistance(i, (double) (1.0 * lastModified), f.getName());
+						ixds.add(ixd);
+					}else{
+						if (ftype == 3) {
+							lastModified = f.lastModified();
+							ixd = new IndexDistance(i, (double) (1.0 * lastModified), f.getName());
+							ixds.add(ixd);
+						}
+					}
+				}
+			}
+			
+			ixds.sort(sortDirection) ;
+		}catch(Exception e){
+			
+		}
+		
+		return ixds;
+	}
+
+	public static IndexedDistances createListByAge(ArrayList<String> filenames, int ftype, int sortDirection) {
+		
+		File[] files = new File[filenames.size()] ;
+		for (int i=0;i<filenames.size();i++){
+			files[i] = new File(filenames.get(i)) ; 
+		}
+		
+		return createListByAge( files, ftype, sortDirection) ;
+	}
 	 
+	
+	
 }
 
 

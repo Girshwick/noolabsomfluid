@@ -1,4 +1,4 @@
-package org.NooLab.utilities.files;
+package org.NooLab.utilities.resources;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +31,7 @@ public class Resources {
 	   * @throws IOException 
 	   */
 	  String[] getResourceListing(Class clazz, String path) throws URISyntaxException, IOException {
+		  
 	      URL dirURL = clazz.getClassLoader().getResource(path);
 	      if (dirURL != null && dirURL.getProtocol().equals("file")) {
 	        /* A file path: easy enough */

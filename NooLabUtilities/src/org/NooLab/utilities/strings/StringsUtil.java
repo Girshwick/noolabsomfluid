@@ -3284,7 +3284,7 @@ if (str.contains("1. 5")){
 				 (str.length()>0)){
 				
 				int[] fop = frequenciesOfParticles(str, new String[]{".","-","/"});
-				int fopx = ArrUtilities.arrayMaxpos(fop);
+				int fopx = ArrUtilities.arrayMaxPos(fop);
 				if (fopx>=0){
 					int frqval = fop[fopx];
 					if (frqval==2){
@@ -4280,14 +4280,14 @@ if (str.contains("1. 5")){
 		}
 		int[] frq = new int[sepFreqs.length] ; System.arraycopy(sepFreqs , 0, frq, 0, frq.length) ;
 		Arrays.sort(frq) ; 
-		double sfm = ArrUtilities.arraysum(sepFreqs)/sepFreqs.length;
+		double sfm = ArrUtilities.arraySum(sepFreqs)/sepFreqs.length;
 		
 		for (int i=0;i<rows.length;i++){
 			 if (sepFreqs[i]<sfm)sepFreqs[i]=0;
 		}
 
 		int tr= -1;
-		int p = ArrUtilities.arrayMaxpos(sepFreqs) ;
+		int p = ArrUtilities.arrayMaxPos(sepFreqs) ;
 
 		// is either the value before or after equal to that at p?
 		// now: the first row with that value is our target
@@ -4316,6 +4316,43 @@ if (str.contains("1. 5")){
 			str="";
 		}
 		return str;
+	}
+
+	public static String getLastPartOfString(String string, String separator) {
+		
+		String extStr ="" ;
+		int p = -1;
+		if ((string!=null) && (string.length()>0)){
+			p = string.lastIndexOf(separator);
+		}
+		if (p>0){
+			extStr = string.substring(p, string.length());
+		}
+		
+		return extStr ;
+	}
+	
+	public static String getExtensionFromFilename(String filename) {
+		return getExtensionFromFilename(filename,1);
+	}
+	/**
+	 * 
+	 * @param filename
+	 * @param mode 0 = without dot, 1 = with dot
+	 * @return
+	 */
+	public static String getExtensionFromFilename(String filename, int mode) {
+		// 
+		String extStr="" ;
+		
+		extStr = getLastPartOfString(filename,".");
+		if (mode==0){
+			if (extStr.indexOf(".")==0){
+				extStr = extStr.substring(1,extStr.length()) ;
+			}
+		}
+		
+		return extStr;
 	}
 
 
