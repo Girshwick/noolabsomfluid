@@ -179,13 +179,21 @@ public class DSom extends Observable implements DSomIntf{
 
 	public void performTargetedModeling() throws Exception {
 		 
-		dSomCore = new DSomCore(this) ;
-		 
+		int r=-1;
+		try{
+			
+			dSomCore = new DSomCore(this) ;
+			r=0;
+			
+		}catch(Exception e){
+			e.printStackTrace();
+			throw(new Exception("Critical error while initializing dSomCore, stopping."));
+		}
 		
 		
 		// will run the som in a dedicated thread
 		 
-		int r = dSomCore.perform() ;
+		r = dSomCore.perform() ;
 			
 		if (r<0){
 			throw(new Exception("Critical error in dSomCore, stopping."));

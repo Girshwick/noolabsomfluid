@@ -13,6 +13,8 @@ import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somsprite.AnalyticFunctionTransformationsIntf;
 import org.NooLab.somtransform.SomTransformer.SomTransformerInitialization;
 import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
+import org.NooLab.somtransform.algo.intf.AlgorithmParameter;
+import org.NooLab.somtransform.algo.intf.AlgorithmParameters;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.files.DFutils;
@@ -442,15 +444,16 @@ if (varLabel.toLowerCase().contains("recht")){
 						
 						
 						// 
-						if ((v.getRawFormat() >= DataTable.__FORMAT_ID) && (v.getRawFormat() <= DataTable.__FORMAT_INT)){
+						if ((v.getRawFormat() >= DataTable.__FORMAT_ID) && (v.getRawFormat() <= DataTable.__FORMAT_BIN)){// __FORMAT_INT)){
 							
 							if (varTStack.items.size()==0){
-								
+								varTStack.firstFormat = v.getRawFormat() ;
+								// especially for non-target binary variables we will modify the linear normalization !!
 								sta = varTStack.introduceAlgorithmizedStackPosition("MissingValues") ;
 								      varTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
 							}
 							
-							sta = varTStack.getItems().get(0) ;
+							sta = varTStack.getItems().get(0) ;  
 							
 						if (sta.getInData().size() == 0) {
 							int ix = i;
@@ -953,9 +956,9 @@ if (varLabel.toLowerCase().contains("recht")){
 	 */
 	public void normalizeData() {
 
-		int cn, i, sn;
+		int cn, i, sn, tvindex=-1;
 		boolean hb;
-		String varLabel;
+		String varLabel,tvLabel;
 
 		TransformationStack varTStack;
 		Variable v;
@@ -963,12 +966,41 @@ if (varLabel.toLowerCase().contains("recht")){
 
 			try{
 				
+				variables = somData.getVariables() ;
+				
+				if (variables.size()<=1){
+					if (sfProperties.getModelingSettings().getVariables().size()>1){
+						
+						variables = sfProperties.getModelingSettings().getVariables() ; 
+						somData.setVariables(variables) ;
+						variables = somData.getVariables() ;
+					}
+				}
+				
+				tvindex = variables.getTvColumnIndex() ;
+				tvLabel = variables.getItem(tvindex).getLabel();
+				/*
+				if (variables.getTvColumnIndex()<0){
+					
+					if (variables.getTargetVariable()==null){
+					
+						if (.getTargetedModeling()){
+							if (sfProperties.getModelingSettings().getTargetVariableCandidates()){
+								
+							}
+						}
+					}
+					
+				}else{
+					
+				}
+				*/
 				/*
 				 *	the normalized table will still contain non-num columns,
 				 *  yet we will create an structural identifier, that contains only those headers which are numeric 
 				 */
 		
-				variables = somData.getVariables() ;
+				
 				
 				cn = transformationModel.variableTransformations.size() ;
 				i = -1;
@@ -982,7 +1014,7 @@ if (varLabel.toLowerCase().contains("recht")){
 					varLabel = v.getLabel() ;
 					variables.getAbsoluteAccessible().add(0) ;
 					
-					if (v.getRawFormat() > DataTable.__FORMAT_ORGINT){
+					if (v.getRawFormat() > DataTable.__FORMAT_BIN){// __FORMAT_ORGINT)
 						variables.getAbsoluteAccessible().set(i,0) ;
 						variables.addBlacklistLabel( v.getLabel() ) ;
 						continue;
@@ -1020,8 +1052,8 @@ if (varLabel.toLowerCase().contains("recht")){
 					variables.getAbsoluteAccessible().set(i,1) ;  
 					
 					// note that freshly added columns are automatically set to num
-					hb = (v.getRawFormat() > DataTable.__FORMAT_ID) && (v.getRawFormat() <= DataTable.__FORMAT_INT);
-					
+					hb = (v.getRawFormat() > DataTable.__FORMAT_ID) && (v.getRawFormat() <= DataTable.__FORMAT_BIN); // .__FORMAT_INT
+					// 
 					if (hb){
 						hb = (varTStack.items.size()>0) ;
 					}
@@ -1042,8 +1074,25 @@ if (varLabel.toLowerCase().contains("recht")){
 							hb = varTStack.algorithmIsLatest("LinearNormalization");
 							
 							if (hb==false){
-								varTStack.introduceAlgorithmizedStackPosition("LinearNormalization") ;
+								StackedTransformation sti;
+								sti = varTStack.introduceAlgorithmizedStackPosition("LinearNormalization") ;
+								// NOT for target variables !!!! or target variable candidates 
+								if ((variables.getIndexByLabel(varLabel)!=variables.getTvColumnIndex()) &&
+									(variables.isTargetVariableCandidate(v.getLabel(),1)==false) &&
+									(varTStack.firstFormat == DataTable.__FORMAT_BIN)){
+									sti.inFormat = DataTable.__FORMAT_BIN ;
+									
+									AlgorithmParameters algorithmParams = new AlgorithmParameters( (AlgorithmIntf)(sti.algorithm));
+									AlgorithmParameter algoparam = new AlgorithmParameter();
+									algoparam.setStrValue("bin");
+									algoparam.setIntValues( new int[]{1}) ; // intensity of "flattening" :1->[0.3,0.7] , 2->[0.4, 0.6]
+									algorithmParams.add(algoparam);
+									((AlgorithmIntf)(sti.algorithm)).setParameters(algorithmParams);
+								}else{
+									sti.inFormat = DataTable.__FORMAT_NUM ;
+								}
 							}
+								
 							varTStack.setFirstItemForUpdate( varTStack.items.size()-1);
 							varTStack.update();
 							

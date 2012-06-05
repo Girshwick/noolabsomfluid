@@ -8,6 +8,9 @@ import java.util.ArrayList;
 public interface VariablesIntf {
 
 	
+	public Variable getItem( int index );
+	public  ArrayList<Variable> getItems();
+	
 	public ArrayList<String> getVariableSelection( int[] useindicator) ;
 
 	public ArrayList<String> getVariableSelection( ArrayList<Double> usagevector) ;

@@ -23,6 +23,7 @@ import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 import org.NooLab.somfluid.core.engines.det.results.ModelOptimizerDigester;
 import org.NooLab.somfluid.core.engines.det.results.SimpleSingleModelDigester;
 import org.NooLab.somfluid.core.engines.det.results.SomResultDigesterIntf;
+import org.NooLab.somfluid.data.Variables;
   
 import org.NooLab.somfluid.env.data.*;
 import org.NooLab.somtransform.SomTransformer;
@@ -192,8 +193,9 @@ public class SomFluid
 	 * optimizes a single model, using evo-screener and sprite-derivation
 	 * 
 	 * @param sfTask
+	 * @throws Exception 
 	 */
-	private void performModelOptimizcreener(SomFluidTask sfTask) {
+	private void performModelOptimizcreener(SomFluidTask sfTask) throws Exception {
 		ModelOptimizer moz ;
 		ModelOptimizerDigester optimizerResultHandler ;
 		somDataObjects.clear();
@@ -207,6 +209,7 @@ public class SomFluid
 		optimizerResultHandler = new ModelOptimizerDigester( moz , sfFactory);
 		sfTask.setSomResultHandler( optimizerResultHandler ) ;
 		
+		moz.checkConsistencyOfRequest() ;
 		
 		moz.perform();
 		// will return in "onTaskCompleted()"
@@ -779,6 +782,8 @@ public class SomFluid
 		// establishes a "DataTable" from a physical source
 		dataReceptor.loadFromFile(srcName);
 	
+		Variables variables = somDataObject.getVariables() ;
+		
 		// imports the DataTable into the SomDataObject, and uses a SomTransformer instance 
 		// in order to provide a basic numeric version of the data by calling SomTransformer.basicTransformToNumericalFormat()
 		somDataObject.importDataTable( dataReceptor, 1 ); 
@@ -790,6 +795,15 @@ public class SomFluid
 		somDataObject.ensureTransformationsPersistence(0);
 											out.print(4, "somDataObject instance @ loadSource : "+somDataObject.toString()) ;
 								
+		 
+		
+ 
+		variables.setAbsoluteFieldExclusions( sfProperties.getAbsoluteFieldExclusions() );
+		
+		// translating wildcards into accurate labels
+		variables.explicateGenericVariableRequests();
+
+											
 		somDataObject.save();
 		
 		return somDataObject;
@@ -804,9 +818,6 @@ public class SomFluid
 		SomTransformer somTransformer;
 		 
 		somTransformer = somDataObj.getTransformer().getSelfReference();
-		
-		
-		
 		
 		return false;
 	}

@@ -46,7 +46,7 @@ public class DSomDataPerception
 	double    constStartLearningRate = 0.25 ;
 	int       learningRateFixationmode = 2 ;
 
-
+	
 
 	
 	
@@ -122,7 +122,7 @@ public class DSomDataPerception
 		}
 		
 		minFill = this.parentSom.modelingSettings.getMinimalSplitSize() ;
-		
+		ClassificationSettings cs = modelingSettings.getClassifySettings();
 		/*
 		 	multi-threading SOM (parallel processing)
 		 	
@@ -189,11 +189,13 @@ public class DSomDataPerception
 			testrecord = selectPreparePerceptDataRecord( currentRecordIndex, 2); // 2: normalized data
 			
 						 				if (testrecord == null){
-						 					
+						 					continue;
+						 				}
+						 				if (recordsTargetIsUndefined(currentRecordIndex, testrecord)){
 						 					continue;
 						 				}
 			// getBestMatchingNodes() is in abstract super() class... ... in producing progress here !!!!!!!
-			ClassificationSettings cs = modelingSettings.getClassifySettings();
+			
 				
 			// TODO: abc124  here we select the appropriate method for determining the Winner ...
 			// in case of non-target clustering mode, we will have a variance criterion
@@ -203,7 +205,14 @@ public class DSomDataPerception
 			int mppLevel = sfProperties.getMultiProcessingLevel() ;
 			// getBestMatchingNodes() should respect minimum fill, if the winner is already filled well 
 			winningNodeIndexes = getBestMatchingNodes( currentRecordIndex, testrecord, 5, boundingIndexList,mppLevel);
-			                            
+			
+										int wn ;
+										wn = winningNodeIndexes.size() ;
+										if (wn<=0){
+											out.printErr(2, "no bmu found for record <"+currentRecordIndex+">!");
+										}
+										
+										
 				         				if ((winningNodeIndexes==null) || (winningNodeIndexes.size()==0)){
 				         					// should not happen, is it an error ? check and count
 				         					
@@ -342,6 +351,43 @@ if ((currentEpoch+1)>=somSteps){
 		 
 		 
 	} // go()
+
+	/**
+	 * we exclude any record for which the target variable contains a value <0 = undefined
+	 * 
+	 * @param currentRecordIndex
+	 * @param testrecord
+	 * @return
+	 */
+	private boolean recordsTargetIsUndefined(int currentRecordIndex, ArrayList<Double> testrecord) {
+		 
+		boolean rB=false;
+		
+		try{
+			
+			if (parentSom.somProcessParent.getSfProperties().getSomType() == SomFluidProperties._SOMTYPE_MONO){
+				// with absolute excludes, this also could be a problem elsewhere !!
+				// we have to adjust the  TvColumnIndex in variables before starting modeling !!
+				int tvindex = parentSom.somData.getVariables().getTvColumnIndex() ; 
+				double v=0.0;
+				String tvStr = parentSom.somData.getVariables().getTargetVariable().getLabel();
+				
+				int colindex = parentSom.somData.getNormalizedDataTable().getColumnHeaders().indexOf(tvStr) ; 
+				
+				if (colindex>=0){
+					v = testrecord.get(tvindex);
+				}
+				if (v<0){
+					rB=true;
+				}
+			}
+			
+			
+		}catch(Exception e){
+		}
+		
+		return rB;
+	}
 
 	private ArrayList<Double> detailedAssignmentCheck( int winnerIndex,int newWinnerIndex, ArrayList<Double> testrecord) {
 		// 

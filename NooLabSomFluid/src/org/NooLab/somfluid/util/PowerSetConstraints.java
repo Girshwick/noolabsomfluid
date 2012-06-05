@@ -174,21 +174,29 @@ public class PowerSetConstraints {
 		}
 	}
 	
-	public void addMandatoryItem( String item) {
+	public void addMandatoryItem( String item) throws Exception {
 		item = item.trim();
 		int ival;
 		
-		// labelPositionMap, 
-		if ((item.length()>0) && (positionLabelMap!=null)){
-			ival = positionLabelMap.get(item) ;
-			if (mandatoryItems.indexOf(ival)<0){
-				mandatoryItems.add(ival);
+		try{
+
+			// labelPositionMap, 
+			if ((item.length()>0) && (positionLabelMap!=null)){
+				if (positionLabelMap.containsKey(item)){
+					ival = positionLabelMap.get(item);
+					if (mandatoryItems.indexOf(ival) < 0) {
+						mandatoryItems.add(ival);
+					}
+				}
 			}
+			Collections.sort( mandatoryItems);
+
+		}catch(Exception e){
+			throw(new Exception("addMandatoryItem(), item = <"+item+"> failed "));
 		}
-		Collections.sort( mandatoryItems);
 	}
 	
-	public void addMandatoryItems(ArrayList<String> items) {
+	public void addMandatoryItems(ArrayList<String> items) throws Exception {
 		
 		if ((items!=null) && (items.size()>0)){
 			for (String str:items){
@@ -196,13 +204,13 @@ public class PowerSetConstraints {
 			}
 		}
 	}
-	public void addMandatoryItems(String[] strings) {
+	public void addMandatoryItems(String[] strings) throws Exception {
 		ArrayList<String> items = new ArrayList<String>(Arrays.asList(strings));
 		if (items.size()>0){
 			addMandatoryItems(items);
 		}
 	}
-	public void setMandatoryItems(String[] strings) {
+	public void setMandatoryItems(String[] strings) throws Exception {
 		
 		ArrayList<String> mItems = new ArrayList<String>(Arrays.asList(strings));
 		addMandatoryItems(mItems) ;
@@ -211,8 +219,9 @@ public class PowerSetConstraints {
 	
 	/**
 	 * @param mandatoryItems the mandatoryItems to set
+	 * @throws Exception 
 	 */
-	public void setMandatoryItems(ArrayList<String> items) {
+	public void setMandatoryItems(ArrayList<String> items) throws Exception {
 		
 		mandatoryItems.clear();
 		if (items.size()>0){

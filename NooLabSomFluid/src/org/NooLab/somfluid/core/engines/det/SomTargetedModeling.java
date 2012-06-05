@@ -607,7 +607,7 @@ public class SomTargetedModeling    extends
 		dSom.setGuid(dsomGuid);
 		
 											String str = "Som is running, identifier: "+dsomGuid;
-											out.print(2, "Som is running...") ;
+											out.print(2, "Som running is going to be prepared...") ;
 		
 		somlattice = dSom.getSomLattice();
 											out.print(3, "dSom is working on lattice : "+somlattice.toString()) ;
@@ -661,7 +661,7 @@ public class SomTargetedModeling    extends
 			if (callerState>0){
 				dSom.inProcessWait = true ;
 			}
-			
+											out.print(2, "Som is running...") ;
 			dSom.performTargetedModeling();
 		}
 		 

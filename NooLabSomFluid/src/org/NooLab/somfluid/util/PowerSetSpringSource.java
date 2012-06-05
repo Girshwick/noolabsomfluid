@@ -275,7 +275,13 @@ if (z%100==0){
 		constraints.setMaximumLength(6) ;
 
 		constraints.setExcludingItems( new String[]{"C","F"}) ;
-		constraints.setMandatoryItems( new String[]{"B","D"}) ;
+		try {
+
+			constraints.setMandatoryItems( new String[]{"B","D"}) ;
+		
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
 		constraints.setAllowForPositionalNeighborhoods(1) ;
 

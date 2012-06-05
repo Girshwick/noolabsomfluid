@@ -98,14 +98,17 @@ public interface VariableSettingsHandlerIntf {
 
 	public String createXmlRepresenation();
 	
-	public String createSimplifiedIniRepresenation();
-
-
-	
+	public String createSimplifiedIniRepresenation() ;
 
 	
+	// === just for serialization =============================================
 	
+	
+	public String getSomModelingMode() ;
 
+	public ArrayList<String> getTreatmentDesignVariables() ;
+
+	public void setTvGroupIntervals(ArrayList<ValuePair> tvGroupIntervals) ;
 	
 	
 	

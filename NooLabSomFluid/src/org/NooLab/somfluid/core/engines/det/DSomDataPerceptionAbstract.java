@@ -77,7 +77,7 @@ public class DSomDataPerceptionAbstract {
 	public void prepareNodeDigester(){
 		
 		int n;
-		int threadcount = 7 ;
+		int threadcount = 4 ;
 		
 		
 		createNodeIndexCollection();

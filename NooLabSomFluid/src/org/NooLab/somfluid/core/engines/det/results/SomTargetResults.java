@@ -118,7 +118,7 @@ public class SomTargetResults {
 
 	
 	//  
-	public void prepare() {
+	public void prepare() throws Exception {
 		 
 
 		if ( (dSom.getSfProperties().getSomType()==SomFluidProperties._SOMTYPE_MONO) && 
@@ -186,10 +186,12 @@ public class SomTargetResults {
 	/**
 	 * this is being called e.g. by "executeSOM()" in class "DSomCore{}"
 	 * @param sampleTraining 
+	 * @throws Exception 
 	 * 
 	 */  
-	protected void prepare( int sampleIdentifier ) {
-		 
+	protected void prepare( int sampleIdentifier ) throws Exception {
+		int tm=-2;
+		
 		try{
 			// get actual sample through the samplesMapping of dataSampler
 			
@@ -204,7 +206,7 @@ public class SomTargetResults {
 				}
 			}
 			
-			int tm = classifySettings.getTargetMode();
+			tm = classifySettings.getTargetMode();
 			if (classifySettings==null){
 				
 			}
@@ -233,12 +235,13 @@ public class SomTargetResults {
 				validateRegressionClassTarget();
 				return;
 			}
-					
 			
 		}catch(Exception e){
 			
 		}
-		
+		if (tm<=0){
+			throw(new Exception("mode for identifying target (aka 'target mode') has not been defined, validation can't be performed"));
+		}
 		
 		
 	}
@@ -248,11 +251,11 @@ public class SomTargetResults {
 											out.print(3, "checking for results on SOM by assuming mode = _TARGETMODE_SINGLE");
 		try{
 			
-			
 			if (sampleIdentifier == DataSampler._SAMPLE_TRAINING){
 				majorities = new Majorities();	
 				
 				majorities.determineTargetGroups( somLattice );
+			
 				this.modelProperties.trainingSample = majorities.getTrainingSample();
 											out.print(3, "creating results : "+  this.toString()+"\n"+
 													 	 "for training sample of lattice : "+ somLattice.toString());
@@ -670,7 +673,7 @@ if (v>0.3){
 			
 			_ppv = _ppv+1-1;
 			// 
-			determineROCvalues(somLattice);
+			determineROCvalues(somLattice); // some values get negative
 			 
 			 
 			idxs.sort(-1) ; // large values first
@@ -979,7 +982,7 @@ if (v>0.3){
 			// now we are going to test that...
 			// the pseudoLattice contains 
 			majorities = new Majorities();	
-			majorities.determineTargetGroups( pseudoLattice );
+			majorities.determineTargetGroups( pseudoLattice ); // there could be a problem with TV values = -1 ...
 			
 			// now, the validation result data of the pseudo lattice are in the modelProperties.trainingSample
 			// we have to copy those result data to the modelProperties.validationSample of the main somLattice

@@ -18,21 +18,24 @@ public class Variables implements Serializable, VariablesIntf{
 	ArrayList<Variable>   items = new ArrayList<Variable>() ;
 	
 	// ---------------------------------------------------
-	ArrayList<Variable>   whiteLists = new ArrayList<Variable>() ; 
+	ArrayList<Variable>   whiteList = new ArrayList<Variable>() ; 
 	ArrayList<Variable>	  blackList = new ArrayList<Variable>() ;  
 	
 	ArrayList<String>	  whitelistLabels = new ArrayList<String>() ;
 	ArrayList<String> 	  blacklistLabels = new ArrayList<String>() ;
-
+	ArrayList<String> 	  absoluteFieldExclusions = new ArrayList<String>() ;
 	
 	ArrayList<Variable>   idVariables = new ArrayList<Variable>() ;
 	ArrayList<Variable>   targetedVariables = new ArrayList<Variable>() ;
 	
 	Variable 			  targetVariable ;
+	String 			  	  targetVariableLabel ;
 	String 				  idLabel;
 	
-	VariableSettingsHandlerIntf variableSettingsHandler;
-	
+	// is not serializable as interface...  
+	transient VariableSettingsHandlerIntf variableSettings; // TODO needs to be restored form ordinary settings...
+															//      or transferred to native structures here in variables
+															//      list for groups and treatments...
 	int tvColumnIndex = -1;
 	int idColumnIndex = -1;
 	
@@ -46,6 +49,10 @@ public class Variables implements Serializable, VariablesIntf{
 	ArrayList<Integer> 	  absoluteAccessible ;
 	
 	transient StringsUtil strgutil ;
+
+
+	
+
 	
 	// ========================================================================
 	public Variables(){
@@ -73,7 +80,7 @@ public class Variables implements Serializable, VariablesIntf{
 		idColumnIndex = vars.idColumnIndex ;          
 		idLabel = vars.idLabel  ;
 		
-		whiteLists = new ArrayList<Variable>( vars.whiteLists  ) ; 
+		whiteList = new ArrayList<Variable>( vars.whiteList  ) ; 
 		blackList = new ArrayList<Variable>( vars.blackList  ) ;  
 		
 		whitelistLabels = new ArrayList<String>( vars.whitelistLabels  ) ;
@@ -98,7 +105,7 @@ public class Variables implements Serializable, VariablesIntf{
 			return;
 		}
 		
-		whiteLists.clear();
+		whiteList.clear();
 		blackList.clear();  
 		
 		whitelistLabels.clear();
@@ -116,7 +123,7 @@ public class Variables implements Serializable, VariablesIntf{
 		items.clear();
 		initialUsedVariablesStr.clear(); 
 		idVariables.clear();
-		whiteLists.clear();
+		whiteList.clear();
 		blackList.clear();
 		whitelistLabels.clear();
 		blacklistLabels.clear();
@@ -183,6 +190,214 @@ public class Variables implements Serializable, VariablesIntf{
 		return outList;
 	}
 
+	public ArrayList<String> collectAllNonCommons() {
+		return collectAllNonCommons(null) ;
+	}
+	public ArrayList<String> collectAllNonCommons( ArrayList<String> addEx) {
+	
+		ArrayList<String> dexList = new ArrayList<String>();
+		
+		if (getBlacklistLabels().size()>0){
+			dexList = (ArrayList<String>) CollectionUtils.union(dexList, getBlacklistLabels());
+		}
+		if ((addEx!=null) && (addEx.size()>0)){
+			dexList = (ArrayList<String>) CollectionUtils.union(dexList,addEx ) ;
+		}
+		
+		
+		
+		if ((targetedVariables!=null) && (targetedVariables.size()>0)){
+			dexList = (ArrayList<String>) CollectionUtils.union(dexList, getLabelsForVariablesList(targetedVariables) ) ;
+		}
+		if ((idVariables!=null) && (idVariables.size()>0)){
+			dexList = (ArrayList<String>) CollectionUtils.union(dexList,getLabelsForVariablesList(idVariables) ) ;
+		}
+		
+		
+		if (targetVariable!=null){
+			dexList.add( getTargetVariable().getLabel() ) ;
+		}
+		
+		String label = getIdLabel();
+		if (label.length()>0){
+			dexList.add( label) ;
+		}
+	
+		// TODO: 
+		if (variableSettings != null){
+			VariableSettingsHandlerIntf vsh = variableSettings ;
+	
+			if ((vsh.getGroupDesignVariables()!=null) && (vsh.getGroupDesignVariables().size()>0)){
+				dexList = (ArrayList<String>) CollectionUtils.union(dexList,vsh.getGroupDesignVariables() ) ;
+			}
+			if ((vsh.getTreatmentDesignListedVariables()!=null) && (vsh.getTreatmentDesignListedVariables().size()>0)){
+				dexList = (ArrayList<String>) CollectionUtils.union(dexList,vsh.getTreatmentDesignListedVariables() ) ;
+			}
+			
+		}
+		return dexList;
+	}
+
+	
+	
+	
+	public void explicateGenericVariableRequests() {
+		 
+		String vlabel = "" ;
+		Variable variable;
+		ArrayList<String> explics,vlabels ;
+		
+		vlabel = ""; 
+		vlabels = getLabelsForVariablesList(this) ;
+		
+		for (int i=0; i< blacklistLabels.size();i++){
+			vlabel = blacklistLabels.get(i) ;
+			
+			if ((vlabel.startsWith("*")) || (vlabel.endsWith("*"))){
+				explics = explicateWildcardedLabel(vlabel);
+				if (explics.size()>0){
+					addBlacklistLabels( explics);
+				}
+				explics.clear(); explics=null;
+			} // contains * ?
+			else{
+				
+			}
+		} // i ->
+		
+		removeWildcardedLabels(blacklistLabels) ; //
+		
+		for (int i=0; i <whitelistLabels.size();i++){
+			vlabel = whitelistLabels.get(i) ;
+			if ((vlabel.startsWith("*")) || (vlabel.endsWith("*"))){
+				explics = explicateWildcardedLabel(vlabel);
+				if (explics.size()>0){
+					addWhitelistLabels( explics);
+				}
+				explics.clear(); explics=null;
+			} // contains * ?
+			else{
+				
+			}
+		} // i ->
+		removeWildcardedLabels(whitelistLabels) ; //
+		 
+		for (int i=0; i< absoluteFieldExclusions.size();i++){
+			vlabel = absoluteFieldExclusions.get(i) ;
+			if ((vlabel.startsWith("*")) || (vlabel.endsWith("*"))){
+				explics = explicateWildcardedLabel(vlabel);
+				if (explics.size()>0){
+					absoluteFieldExclusions.addAll(explics);
+				}
+				explics.clear(); explics=null;
+			} // contains * ?
+			else{
+				
+			}
+		} // i ->
+		removeWildcardedLabels(absoluteFieldExclusions) ; //
+		
+		for (int i=0; i< variableSettings.getTargetVariableCandidates().size();i++){
+			vlabel = variableSettings.getTargetVariableCandidates().get(i) ;
+			if ((vlabel.startsWith("*")) || (vlabel.endsWith("*"))){
+				explics = explicateWildcardedLabel(vlabel);
+				if (explics.size()>0){
+					 for (int k=0;k< explics.size(); k++){
+						 vlabel = explics.get(k) ;
+						 variable = getItemByLabel(vlabel);
+						 if ( targetedVariables.indexOf(variable)<0){
+							 targetedVariables.add(variable) ;
+						 }
+					 }
+				}
+				explics.clear(); explics=null;
+			} // contains * ?
+			else{
+				variable = getItemByLabel(vlabel);
+				if (targetedVariables.indexOf(variable) < 0) {
+					targetedVariables.add(variable);
+				}
+			}
+		} // i ->
+		 
+		if (getTvColumnIndex()<0){
+			if (getTargetVariable()==null){
+				int k;
+				k=0;
+			}else{
+				tvColumnIndex = getIndexByLabel( getTargetVariable().getLabel() );
+			}
+		}
+		targetVariableLabel = getTargetVariable().getLabel() ;
+		vlabel = "" ;
+		for (int i=0; i< variableSettings.getIdVariableCandidates().size();i++){
+			vlabel = variableSettings.getIdVariableCandidates().get(i) ;
+			if ((vlabel.startsWith("*")) || (vlabel.endsWith("*"))){
+				explics = explicateWildcardedLabel(vlabel);
+				if (explics.size()>0){
+					 for (int k=0;k< explics.size(); k++){
+						 vlabel = explics.get(k) ;
+						 variable = getItemByLabel(vlabel);
+						 if ( idVariables.indexOf(variable)<0){
+							 idVariables.add(variable) ;
+						 }
+					 }
+				}
+				explics.clear(); explics=null;
+			} // contains * ?
+			else {
+				variable = getItemByLabel(vlabel);
+				if (idVariables.indexOf(variable) < 0) {
+					idVariables.add(variable);
+				}
+			}
+		} // i ->
+		this.setIdLabel( variableSettings.getIdVariable() );
+		vlabel = "" ;
+	}
+	
+
+	private ArrayList<String> explicateWildcardedLabel(String vlabel ) {
+		ArrayList<String> explics = new ArrayList<String>(); 
+		boolean hb;
+		String varLabel;
+		 
+		
+		for (int i=0;i<items.size();i++){
+			
+			varLabel = items.get(i).getLabel() ;
+			String pL = vlabel.toLowerCase().replace("*", "");
+if (varLabel.contains(pL)){
+	hb=true;
+}
+			if ((vlabel.startsWith("*")) || (vlabel.endsWith("*"))){
+				hb = strgutil.matchSimpleWildcard( vlabel, varLabel ) ;
+				if (hb){
+					explics.add(varLabel) ;
+				}
+			}
+
+		} // i->
+		
+		return explics;
+	}
+	
+	
+	
+	private void removeWildcardedLabels(ArrayList<String> strList) {
+
+		int i=strList.size()-1;
+		
+		while (i>=0){
+			if ((strList.get(i).startsWith("*")) || (strList.get(i).endsWith("*"))){
+				strList.remove(i);
+			}
+			i--;
+		}
+		
+	}
+
+	
 	public Variable getItem( int index ){
 		Variable v=null;
 		
@@ -366,7 +581,9 @@ public class Variables implements Serializable, VariablesIntf{
 		
 		for (int i=0;i<vars.size();i++){
 			v=vars.get(i) ;
-			labels.add( v.getLabel()) ;
+			if (v!=null){
+				labels.add( v.getLabel()) ;
+			}
 		}
 		return labels;
 	}
@@ -477,13 +694,24 @@ public class Variables implements Serializable, VariablesIntf{
 		return activeTV;
 	}
 
-
+	public ArrayList<String> getAllTargetedVariablesStr() {
+		
+		ArrayList<Variable> vars = new ArrayList<Variable>();
+		ArrayList<String> vLabels= new ArrayList<String>();
+		
+		vars = getAllTargetedVariables(1);
+		
+		vLabels = this.getLabelsForVariablesList(vars) ;
+		
+		return vLabels;
+	}
 
 	@Override
 	public ArrayList<Variable> getAllTargetedVariables() {
 	
 		return  getAllTargetedVariables(1) ;
 	}
+	
 	//getLabelsForVariablesList
 	
 	public ArrayList<Variable> getAllTargetedVariables(int includingActiveTargetVariable) {
@@ -540,6 +768,21 @@ public class Variables implements Serializable, VariablesIntf{
 		}
 		return idVariables;
 	}
+	
+	public boolean isTargetVariableCandidate(String vlabel, int includeCurrTV) {
+		boolean rB=false;
+		
+		ArrayList<String> tvVarStr = getAllTargetedVariablesStr(); 
+		rB =tvVarStr.indexOf(vlabel)>=0;
+		
+		return rB;
+	}
+
+	public boolean isTargetVariableCandidate(Variable variable, int includeCurrTV) {
+		 
+		String vlabel = variable.getLabel() ;
+		return isTargetVariableCandidate(vlabel, includeCurrTV);
+	}
 
 	public ArrayList<Variable> getItems() {
 		return items;
@@ -549,12 +792,60 @@ public class Variables implements Serializable, VariablesIntf{
 		this.items = items;
 	}
 
-	public ArrayList<Variable> getWhitelists() {
-		return whiteLists;
+	public void setVariableSettings(VariableSettingsHandlerIntf variablesettings) {
+		
+		if (variablesettings==null){
+			return;
+		}
+		
+		variableSettings = variablesettings;
+	 
+		String str = variableSettings.getTargetVariable();
+		if (str.length()>0){
+			int ix = getIndexByLabel(str) ;
+			if (ix>=0){
+				tvColumnIndex = ix;
+				targetVariable = items.get(ix) ;
+			}
+			targetVariableLabel = str ;
+		}
+        if (blacklistLabels.size()==0){
+        	addBlacklistLabels( variableSettings.getBlackListedVariables() );
+        }
+        if (whitelistLabels.size()==0){
+        	addWhitelistLabels( variableSettings.getWhiteListedVariables() );
+        }
+        if (targetedVariables.size()==0){
+        	if (variableSettings.getTargetVariableCandidates().size()>0){
+        		addTargetedVariablesByLabels( variableSettings.getTargetVariableCandidates() );  
+        	}
+        }
 	}
 
-	public void setWhitelists(ArrayList<Variable> whitelists) {
-		this.whiteLists = whitelists;
+	public void addTargetedVariablesByLabels(ArrayList<String> vlabels) {
+	
+		if ((vlabels!=null) && (vlabels.size()>0)){
+			for (int i=0;i<vlabels.size();i++){
+
+				try{
+					addTargetedVariableByLabel( vlabels.get(i)) ;	
+				}catch(Exception e){ } // educated silence
+ 			} // i ->
+		}
+		
+	}
+	
+	
+	public VariableSettingsHandlerIntf getVariableSettings() {
+		return variableSettings;
+	}
+	
+	public ArrayList<Variable> getWhitelist() {
+		return whiteList;
+	}
+
+	public void setWhitelists(ArrayList<Variable> whitelist) {
+		this.whiteList = whitelist;
 	}
 
 	public void setWhitelistLabels(ArrayList<String> whitelistLabels) {
@@ -643,18 +934,77 @@ public class Variables implements Serializable, VariablesIntf{
 		addBlacklistLabels(bLabels) ;
 	}
 
+	public void addWhitelistLabels(ArrayList<String> vlabels) {
 	
+		String varLabelStr ;
+		int ix;
+		 
+		try{
+			
+			if (whitelistLabels==null){
+				whitelistLabels = new ArrayList<String>();
+			}
+			if (whiteList==null){
+				whiteList = new ArrayList<Variable>() ;
+			}
+
+			for (int i=0;i<whitelistLabels.size();i++){
+				
+				varLabelStr = whitelistLabels.get(i) ;  
+				ix = getIndexByLabel( varLabelStr );
+				
+				if (whitelistLabels.indexOf(varLabelStr)<0){
+					whitelistLabels.add(varLabelStr) ;
+					
+				}
+				if (ix>=0){
+					if (whiteList.contains( items.get(ix) )==false){
+						whiteList.add( items.get(ix) );
+					}
+				}
+			}
+
+		}catch(Exception e){
+			e.printStackTrace() ;
+		}
+		
+	}
 	
-	public ArrayList<Variable> getWhiteLists() {
-		return whiteLists;
+	public void addWhitelistLabel( String wlistlabel ) {
+		ArrayList<String> wLabels = new ArrayList<String>();
+		
+		if (whiteList==null){
+			whiteList = new ArrayList<Variable>() ;
+			whitelistLabels = new ArrayList<String>();
+		}
+		wLabels.add(wlistlabel) ;
+		addWhitelistLabels(wLabels) ;
+	}
+	
+	public ArrayList<Variable> getWhiteList() {
+		return whiteList;
+	}
+
+	public void setWhiteList(ArrayList<Variable> whiteList) {
+		this.whiteList = whiteList;
 	}
 
 	public ArrayList<String> getWhitelistLabels() {
 		return whitelistLabels;
 	}
 
-	public void setWhiteLists(ArrayList<Variable> whiteLists) {
-		this.whiteLists = whiteLists;
+	public void setWhiteLists(ArrayList<Variable> whitelist) {
+		whiteList = whitelist;
+	}
+
+	public void setAbsoluteFieldExclusions( ArrayList<String> exclLabels ){
+		if ((exclLabels!=null) && (exclLabels.size()>0)){
+			absoluteFieldExclusions = new ArrayList<String> (exclLabels);
+		}
+	}
+	
+	public ArrayList<String> getAbsoluteFieldExclusions() {
+		return absoluteFieldExclusions;
 	}
 
 	/**
@@ -713,8 +1063,9 @@ public class Variables implements Serializable, VariablesIntf{
 		return idLabel;
 	}
 
-	public void setIdLabel(String idLabel) {
-		this.idLabel = idLabel;
+	public void setIdLabel(String idlabel) {
+		idLabel = idlabel;
+		this.idColumnIndex = getIndexByLabel(idlabel) ;
 	}
 
 	public int getTvColumnIndex() {
@@ -1171,54 +1522,7 @@ public class Variables implements Serializable, VariablesIntf{
 		strgutil = new StringsUtil();
 	}
 
-	public ArrayList<String> collectAllNonCommons() {
-		return collectAllNonCommons(null) ;
-	}
-	
-	public ArrayList<String> collectAllNonCommons( ArrayList<String> addEx) {
 
-		ArrayList<String> dexList = new ArrayList<String>();
-		
-		if (getBlacklistLabels().size()>0){
-			dexList.addAll( getBlacklistLabels());
-		}
-		if ((addEx!=null) && (addEx.size()>0)){
-			dexList.addAll( addEx ) ;
-		}
-		
-		
-		
-		if ((targetedVariables!=null) && (targetedVariables.size()>0)){
-			dexList.addAll( getLabelsForVariablesList(targetedVariables) ) ;
-		}
-		if ((idVariables!=null) && (idVariables.size()>0)){
-			dexList.addAll( getLabelsForVariablesList(idVariables) ) ;
-		}
-		
-		
-		if (targetVariable!=null){
-			dexList.add( getTargetVariable().getLabel() ) ;
-		}
-		
-		String label = getIdLabel();
-		if (label.length()>0){
-			dexList.add( label) ;
-		}
-	
-		// TODO: 
-		if (variableSettingsHandler != null){
-			VariableSettingsHandlerIntf vsh = variableSettingsHandler ;
-
-			if ((vsh.getGroupDesignVariables()!=null) && (vsh.getGroupDesignVariables().size()>0)){
-				dexList.addAll( vsh.getGroupDesignVariables() ) ;
-			}
-			if ((vsh.getTreatmentDesignListedVariables()!=null) && (vsh.getTreatmentDesignListedVariables().size()>0)){
-				dexList.addAll( vsh.getTreatmentDesignListedVariables() ) ;
-			}
-			
-		}
-		return dexList;
-	}
 
 
 

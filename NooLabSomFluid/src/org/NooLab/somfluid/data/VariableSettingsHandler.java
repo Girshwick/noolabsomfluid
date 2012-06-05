@@ -346,8 +346,19 @@ public class VariableSettingsHandler implements VariableSettingsHandlerIntf{
 
 	@Override
 	public String createSimplifiedIniRepresenation() {
-		 
 		return "";
+	}
+
+	public String getSomModelingMode() {
+		return somModelingMode;
+	}
+
+	public ArrayList<String> getTreatmentDesignVariables() {
+		return treatmentDesignVariables;
+	}
+
+	public void setTvGroupIntervals(ArrayList<ValuePair> tvGroupIntervals) {
+		this.tvGroupIntervals = tvGroupIntervals;
 	}
 
 

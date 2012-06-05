@@ -164,8 +164,8 @@ public class ClassificationSettings implements Serializable{
 	}
 
 
-	public void setActiveTargetVariable(String activeTargetVariable) {
-		this.activeTargetVariable = activeTargetVariable;
+	public void setActiveTargetVariable(String targetVariable) {
+		activeTargetVariable = targetVariable;
 	}
 
 
@@ -328,12 +328,12 @@ public class ClassificationSettings implements Serializable{
 			tgLabel = TGlabels[p]+" <#>" ; 
 		}
 		if ( (tgLabel.contains("<#>"))){
-			int z=1;
+			int z= TGlabels.length;
 			tgLabel = tgLabel.replace("<#>", ""+z);
 		}
 		
 		newTgLabels = new String[TGlabels.length+1];
-		System.arraycopy(TGlabels, 0, newTgLabels,0, TGdefinition.length) ;
+		System.arraycopy(TGlabels, 0, newTgLabels,0, TGlabels.length) ;
 		
 		newTgLabels[newTgLabels.length-1] = tgLabel ;
 		TGlabels = null;

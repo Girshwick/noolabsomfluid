@@ -9,6 +9,7 @@ import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.*;
+import org.NooLab.utilities.nums.NumUtilities;
 
 import org.NooLab.somfluid.*;
 import org.NooLab.somfluid.properties.* ;
@@ -107,7 +108,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 	int numberOfRuns = -1, dependenciesDepth=-1 ;
 	
 	private ArrayList<Integer> usedVariables = new ArrayList<Integer>();
-	VariableSubsets subsets = new VariableSubsets();
+	VariableSubsets variablesPartition = new VariableSubsets();
 	ArrayList<OptimizerProcess> processes ;
 	
 	ModelOptimizer modOpti;
@@ -128,6 +129,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 	transient StatisticSample sampler = new StatisticSample(172839);
 	transient PrintLog out ; 
 	transient ArrUtilities arrutil = new ArrUtilities();
+	transient NumUtilities numutil= new NumUtilities ();
 	
 	// ========================================================================
 	public ModelOptimizer(  SomFluid somfluid, 
@@ -221,11 +223,13 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 				somTransformer.initializeTransformationModel();
 			}
 			
-			subsets.prepare(n) ;
+			preparePartitions();
+			
+			
 
 			// in principle we could send these tasks to different threads or machines
 			for (int i=0;i<n;i++){
-				process = new OptimizerProcess( this, subsets, i);
+				process = new OptimizerProcess( this, variablesPartition, i);
 				processes.add(process);
 			}
 
@@ -245,9 +249,50 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			// int activatedPix = 
 			process.start() ;
 		}
-		 	
+		 
+		// if we had several partitions, we must collect them into a single one...
+		
 	}
 	 
+
+	/**
+	 * if we have a large set of variables we create overlapping splits
+	 * 
+	 * 
+	 * @throws Exception
+	 */
+	private void preparePartitions() throws Exception{
+		int np=1,bnVar,nVar ;
+		String str;
+		ArrayList<String> currVariableSelection ; 
+		Variables variables = modOpti.somDataObj.variables ;
+		
+		nVar  = modOpti.somDataObj.getNormalizedDataTable().getColcount() ;
+		bnVar = variables.getBlacklistLabels().size() ;
+		
+		// this should be included everywhere
+		currVariableSelection = modelingSettings.getInitialVariableSelection() ;
+		if (currVariableSelection==null) currVariableSelection = new ArrayList<String>();
+		str = variables.getTargetVariable().getLabel() ;
+		if (str.length()>0) currVariableSelection.add( str ) ;
+		
+		variablesPartition.setSharedSet(currVariableSelection);
+		
+		str = variables.getIdLabel();
+		if (str.length()>0) currVariableSelection.add( str ) ;
+		
+		if (nVar-bnVar > 80){
+			nVar = nVar-bnVar;
+			
+		}else{
+			np=1;
+		}
+		
+		np=1;
+		variablesPartition.prepare(np) ;
+		// ;
+	}
+	
 	
 	public void saveResults() {
 		OutputSettings outs = sfProperties.getOutputSettings();
@@ -279,6 +324,113 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			}
 		}
 		
+	}
+
+
+
+	// should be done earlier... where moz is created in SomFluid 
+	public void checkConsistencyOfRequest() throws Exception {
+	
+		boolean requestIsOk = true;
+		DataTableCol tvcol = null;
+		String msgStr="" ,tvLabel="";
+		int tvindex = -1 ; 
+		ClassificationSettings cs ;
+		double[][] tgGroups ;
+		
+		
+		Variables variables =  somDataObj.getVariables() ;
+		DataTable ndatatable = somDataObj.getNormalizedDataTable() ;
+		cs = sfProperties.getModelingSettings().getClassifySettings();
+		tgGroups = cs.getTargetGroupDefinition();
+		
+		cs.setActiveTargetVariable( tvLabel = variables.getTargetVariable().getLabel() );
+		
+		// we have to check rather soon whether such values occur at all 
+		// in the TV column of the table: on data import, or reloading of the SomData 
+	
+		// sfPropertiesDefaults.setSingleTargetDefinition( "raw", 0.1, 0.41, "intermediate" ) ;
+		// the Single-Target-Mode can be defined with several non-contiguous intervals within [0..1] 
+	
+		// 1. do we work in somType = mono?
+		if (sfProperties.getSomType() == SomFluidProperties._SOMTYPE_PROB){
+			requestIsOk = false;
+			msgStr = "The type of som (associative storage) does not match the type of the process (Optimizer)." ;
+		}
+		if (requestIsOk){
+		// 2. does the target variable exist ? and are values >0 ? how many MV in TV column
+			tvindex = variables.getTvColumnIndex() ; 
+			tvLabel = variables.getTargetVariable().getLabel() ;
+			if (tvLabel==null)tvLabel="" ;
+			
+			if ((tvindex<0) && (tvLabel.length()==0)){
+				requestIsOk = false;
+				msgStr = "type of process is 'optimization', yet, no target variable definition could be found." ;
+			}
+		}
+		if (requestIsOk){
+			
+			if ((tvindex>=0) && (ndatatable.getColumnHeaders().indexOf(tvLabel)!=tvindex)){
+				requestIsOk = false;
+				msgStr = "mismatch in target veriable pointers.";
+			}
+		}
+	
+		if (requestIsOk){
+			tvcol = ndatatable.getColumn(tvindex) ;
+			
+			int nv = tvcol.getCellValues().size();
+			if (nv<3){
+				requestIsOk = false;
+				msgStr = "no data found in target column of table containing normalized data." ;
+			}
+		}
+		
+		if (requestIsOk){
+			if ((tgGroups==null) || (tgGroups.length==0)){
+				requestIsOk = false;
+				msgStr = "No target group has been defined, thus no modeling is possible." ;	
+			}
+		}
+		
+		if ((requestIsOk) && (tvcol!=null)){
+			int ix,mvc=0,tgx=0,tgc=0;
+			ix=0;
+			for (int i=0;i<tvcol.getCellValues().size();i++){
+				double v=tvcol.getCellValues().get(i);
+				
+				if (v<0){
+					mvc++;
+				}else{ 
+					ix = numutil.isWithInIntervals(tgGroups,v,1);
+					// tgGroups
+					// boolean hb = NumUtilities
+					if (ix<0){
+						tgx++;
+					}else{
+						tgc++;
+					}
+				}
+			} // i-> all values
+			if (tgc<=3){
+				requestIsOk = false;
+				msgStr = "The number of cases according to target group definition is too low (n="+tgc+"), no modeling is possible, thus stopping." ;
+			}
+			double mr = (double)mvc/(double)tvcol.getCellValues().size();
+			if ((requestIsOk) && ((mr>0.81) || ( tgc<=8))){
+				requestIsOk = false;
+				msgStr = "The number valid records (non-MV) and cases in the target column is preventing reasonable modeling";
+			}
+		}
+	
+		if (requestIsOk){
+		// 3. will the definition of the target groups yield any case count >3 
+		
+		}
+		
+		if (requestIsOk == false){
+			throw(new Exception("Request for running the Optimizer is not consistent: "+ msgStr));
+		}
 	}
 
 
@@ -411,10 +563,10 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 				LinearStatsDescription lsd = new LinearStatsDescription( somDataObj.getNormalizedDataTable() );
 				lsd.setTargetVariable("");
 				lsd.setExcludedVariables( somDataObj.getVariables().getBlacklistLabels()) ;
-				currentVariableSelection = lsd.rankVariables( 1 , 4) ;
+				currentVariableSelection = lsd.rankVariables( 1 , 5) ;
 				
 				if (currentVariableSelection.size()<=1){
-					currentVariableSelection = getRandomVarSelection(4);
+					currentVariableSelection = getRandomVarSelection(8);
 				}
 			}
 			// ................................................................
@@ -496,11 +648,16 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 							// adapt the values from previous loop, but not the original ones... reduced contrasts,
 	
 						} // loopcount > 0 ?
+						
+						try{
 											vn = somDataObj.variableLabels.size() ; 
 											out.print(4, "somDataObj, size of variableLabels (a) : "+vn);						
-						somScreening.startScreening(1,loopcount);
+							somScreening.startScreening(1,loopcount);
 						
-															
+						} catch (Exception e) {
+							e.printStackTrace();
+							break;
+						}								
 						// first getting it, we have to check whether the new results are better than the last one 
 											out.print(2, "SomScreening has been finished, re-establishing the best of the evaluated models...");
 											
@@ -909,8 +1066,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			somFluid.onTaskCompleted( sfTask );
 		}
 	  
-		
-		 
+
 		private ArrayList<String> getRandomVarSelection( int varcount) {
 			
 			ArrayList<String> selection = new ArrayList<String>();
@@ -922,21 +1078,26 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			int n =  variables.size() - nonCommonVars.size() ;
 			double rv,pr = (1.0*(double)varcount)/((double)n) ;
 			
+			boolean selected=false;
 			
-			for (int i=1;i<n;i++){
-				vlabel = variables.getItem(i).getLabel() ;
-				if (nonCommonVars.indexOf(vlabel)<0){
-					
-					rv = sampler.getNextUniformRandom();
-					if (rv<=pr){
-						if (selection.indexOf(vlabel)<0){
-							selection.add(vlabel);
+			while (selected==false){
+				for (int i=1;i<n;i++){
+					vlabel = variables.getItem(i).getLabel() ;
+					if (nonCommonVars.indexOf(vlabel)<0){
+						
+						rv = sampler.getNextUniformRandom();
+						if (rv<=pr){
+							if (selection.indexOf(vlabel)<0){
+								selection.add(vlabel);
+							}
+						}
+						if ((selection.size()>=varcount) || (selection.size()==variables.size()-1)){
+							selected=true;
+							break ;
 						}
 					}
-					if ((selection.size()>=varcount) || (selection.size()==variables.size()-1)){
-						break ;
-					}
 				}
+				
 			}
 			
 			return selection;
@@ -1192,7 +1353,16 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 		@Override
 		public void run() {
 			 
-			optimizeOnVariableSubset();
+			try {
+				
+				optimizeOnVariableSubset();
+				
+				
+			} catch (Exception e) {
+				out.printErr(2, e.getMessage() ) ;
+				// e.printStackTrace();
+			}
+			
 		}
 		
 		 
@@ -1296,6 +1466,10 @@ if (bestHistoryIndex==0){
 		
 		// ------------------------------------------------
 		public VariableSubsets(){
+			
+		}
+		public void setSharedSet(ArrayList<String> currVariableSelection) {
+			// TODO Auto-generated method stub
 			
 		}
 		// ------------------------------------------------
@@ -1403,29 +1577,6 @@ if (bestHistoryIndex==0){
 	public void processCompleted(Object processObj, Object msg) {
 		
 		out.printErr( 2, "processCompleted() for dependencycheck()");
-	}
-
-
-
-	public void test() {
-		int z;
-		// here we could run them in parallel if we would have several lattices
-		for (int i = 0; i < 100; i++) {
-			out.printErr(2, "------------ memory status change (step " + i + ") : " + 
-					        Memory.observe()+ "  still free : " + 
-					        Memory.currentFreeMemory(1));
-			try {
-				
-				singleRun(i);
-				
-			} catch (Exception e) {
-				
-				e.printStackTrace();
-			}
-			if ((i > 20) || (i % 10 == 0)) {
-				z = 0;
-			}
-		}
 	}
 
 
@@ -1578,6 +1729,29 @@ if (bestHistoryIndex==0){
 	 */
 	public SpelaResults getSpelaResults() {
 		return spelaResults;
+	}
+
+
+
+	public void test() {
+		int z;
+		// here we could run them in parallel if we would have several lattices
+		for (int i = 0; i < 100; i++) {
+			out.printErr(2, "------------ memory status change (step " + i + ") : " + 
+					        Memory.observe()+ "  still free : " + 
+					        Memory.currentFreeMemory(1));
+			try {
+				
+				singleRun(i);
+				
+			} catch (Exception e) {
+				
+				e.printStackTrace();
+			}
+			if ((i > 20) || (i % 10 == 0)) {
+				z = 0;
+			}
+		}
 	}
 
 	

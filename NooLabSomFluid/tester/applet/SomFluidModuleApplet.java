@@ -108,7 +108,13 @@ public class SomFluidModuleApplet extends PApplet{
 		
 		// this have to be changed to index positions
 		powerset.getConstraints().addExcludingItems(new String[]{"C","G","J"});
-		powerset.getConstraints().addMandatoryItems(new String[]{"B","E"});
+		try {
+		
+			powerset.getConstraints().addMandatoryItems(new String[]{"B","E"});
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		powerset.getConstraints().setMaximumLength(14);
 		powerset.getConstraints().setMinimumLength(3) ;
 		

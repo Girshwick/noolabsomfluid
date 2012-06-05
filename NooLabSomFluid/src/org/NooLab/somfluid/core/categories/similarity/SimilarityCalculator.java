@@ -84,6 +84,7 @@ public class SimilarityCalculator{
 		d0 = 0;
 		ui=-1.0;
 		
+		// TODO: we should use an array of indexes ... long vectors will be very slow this way
 		for (i = 0; i < vector2.size(); i++) {
 			 
 			if ((i < useIntensity.size()) ) {
@@ -96,6 +97,8 @@ public class SimilarityCalculator{
 					}
 				}
 			}
+			
+			
 			if (fvp<0){fvp=i;}
 			if ((vector1.get(i) < 0.0) || (vector2.get(i) < 0.0)) {
 				if ( (i != indexTargetVariable) && (vector1.get(i) > -4) && (vector2.get(i) > -4)

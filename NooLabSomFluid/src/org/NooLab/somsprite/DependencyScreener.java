@@ -104,10 +104,10 @@ public class DependencyScreener {
 	
 		double dr;
 		String str,varLabel;
-		int[] depVarIndex ;
+		int[] depVarIndex;
 		String[] depVar = new String[3];
 		double[][] depVarValues = new double[5][somMapTable.values.length];
-		int fix1,fix2,ix0,ix1;
+		int fix1,fix2,ix0,ix1, recn ;
 		
 		Variables variables;
 		ArrayList<int[]> depVarIndexes = new ArrayList<int[]>() ;
@@ -118,14 +118,12 @@ public class DependencyScreener {
 		
 		somData = somSprite.somData;
 		variables = somData.getVariables() ;
-		
+		recn = somData.getNormalizedDataTable().getColumn(0).size() ;
 		
 		// TODO first get known transformations and affected derived variables, such that we can 
 		//      prevent repeated suggestion of the same transformation 
-		
 		 
 		knownTransformations = variables.getKnownTransformations();
-		
 		
 		// 
 		int tvindex = somMapTable.tvIndex ;
@@ -151,26 +149,33 @@ public class DependencyScreener {
 					depVarIndex[1] = b;
 					depVarIndex[2] = somMapTable.tvIndex ; 
 					depVarIndexes.add(depVarIndex) ;
-					
 				} 
 			} // b->
-			
-			
-			// TODO: this could be multi-threaded easily...
+			ix0=0;
+			// TODO: this could be multi-threaded easily... steps are completely independent
+											out.print(2, "screening for dependencies (n="+depVarIndexes.size()+")..." );
+											int outlevel=3;
+											int dmode = somSprite.sfProperties.getShowSomProgressMode();
+											if (depVarIndexes.size()*recn>800000){
+												dmode = SomFluidProperties._SOMDISPLAY_PROGRESS_PERC;
+												outlevel=2;
+											}
+											long starttime = System.currentTimeMillis();
 			for (int i=0;i<depVarIndexes.size();i++){
-											
+				
 				depVarIndex = depVarIndexes.get(i) ;
 				
 				depVar[0] = somMapTable.variables[ depVarIndex[0] ];
 				depVar[1] = somMapTable.variables[ depVarIndex[1] ];
 											
-											if ((i==0) || (i%10==0)){
-												int dmode = somSprite.sfProperties.getShowSomProgressMode();
+											if ((i==0) || (i%10==0)){ // we also might display the time till completion
 												if (dmode >= SomFluidProperties._SOMDISPLAY_PROGRESS_PERC){
-													out.print(2, "screening for dependencies ("+(i)+" of "+depVarIndexes.size()+") in variables ("+depVarIndex[0]+","+depVarIndex[1]+")..." );
-												}else{
-													if (i==0){
-														out.print(2, "screening for dependencies (n="+depVarIndexes.size()+")..." );
+													//out.print(2, "screening for dependencies ("+(i)+" of "+depVarIndexes.size()+") in variables ("+depVarIndex[0]+","+depVarIndex[1]+")..." );
+													if ((depVarIndexes.size()*recn>2800000) && (i<((double)depVarIndexes.size()*0.051))){
+														out.printprc(outlevel, i, depVarIndexes.size(), depVarIndexes.size()/100, "");
+													}else{
+														out.printprc(outlevel, i, depVarIndexes.size(), depVarIndexes.size()/10, "");
+														out.printCompletionTime(outlevel, starttime,i,depVarIndexes.size() , "");
 													}
 												}
 											}
