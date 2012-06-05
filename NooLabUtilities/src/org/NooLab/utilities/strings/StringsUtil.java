@@ -1401,7 +1401,7 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		
 		if (compareThis.startsWith("*") ){
 			compareThis = compareThis.replace("*", "");
-			rB = toFullString.endsWith(compareThisSnip) ;
+			rB = toFullString.endsWith(compareThis) ;
 			return rB;
 		}
 		if (compareThis.endsWith("*")){

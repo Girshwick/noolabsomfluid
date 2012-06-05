@@ -393,6 +393,35 @@ if ((msg==null) ){
 		}
 	}
 	
+	public void printCompletionTime(int level, long starttime, int incrCounter, int totalcount, String addmsg) {
+		long dT,currtime = System.currentTimeMillis() ;
+		
+		dT = currtime-starttime;
+		if (dT<60000){
+			return ;
+		}
+		
+		int remainingSteps = totalcount-incrCounter;
+		double avgTimePerStep = (double)dT/((double)(incrCounter));
+		
+		long remainingTime = (long)Math.round( ((double)remainingSteps*avgTimePerStep));
+		
+		
+		int sec = (int) ((remainingTime / 1000) % 60);
+		int min = (int) ((remainingTime / (1000 * 60)) % 60);
+		int hours = (int) ((remainingTime / (1000 * 60 * 60)) % 24);
+		int days = (int) ((remainingTime / (1000 * 60 * 60 * 24)) % 7);
+		int weeks = (int) (remainingTime / (1000 * 60 * 60 * 24 * 7));
+		
+		String str="";
+		if (days>0){
+			str = days+" days, ";
+		}
+		str = str + hours+":"+min+":"+sec;
+		
+		println( level, str);
+	}
+	
 	/**
 	 * 
 	 * if additional message string begins with "[!]", then the built-in message will be completely overwritten
@@ -651,4 +680,6 @@ if ((msg==null) ){
 		
 		displayMemory = flag;
 	}
+
+
 }

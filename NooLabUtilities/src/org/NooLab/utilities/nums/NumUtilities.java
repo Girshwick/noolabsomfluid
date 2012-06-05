@@ -1,11 +1,45 @@
 package org.NooLab.utilities.nums;
 
+import java.util.Random;
+
 public class NumUtilities {
 
+	Random random=null;
+	
 	public NumUtilities(){
 		
 	}
 	
+	public int isWithInIntervals( double[][] intervals, double testvalue, int mode){
+		
+		boolean rB=false;
+		int result= -1;
+		double lower, upper ;
+		
+		try{
+			
+			for (int i=0;i<intervals.length;i++){
+			
+				result= -3;
+				lower = intervals[i][0]; 
+				upper = intervals[i][1];
+				
+				rB = isWithin( testvalue, lower, upper, mode) ;
+				if (rB){
+					result = i;
+					break;
+				}
+			} // i->
+			
+			
+			
+		}catch(Exception e){
+			result= -7;
+			rB=false;
+		}
+		
+		return result ;
+	}
 	/**
 	 * 
 	 * mode:
@@ -21,6 +55,10 @@ public class NumUtilities {
 	 * @return
 	 */
 	public boolean isWithin( int intval, int lower, int upper, int mode){
+		return isWithin( intval, (double)lower, (double)upper, mode) ;
+	}
+	
+	public boolean isWithin( double intval, double lower, double upper, int mode){
 		boolean rb=true;
 		
 		if (mode>=1){
@@ -87,7 +125,12 @@ public class NumUtilities {
 		return result;
 	}
 
+	// better use the stuff from org.jmath ...
 	public int randInRangeInc(int min, int max) {
-        return min + (int) (Math.random() * (max - min));
+		if (random==null){
+			 random = new Random();
+			 random.setSeed(453627) ;
+		}
+        return min + (int) (random.nextDouble() * (max - min));
 	}
 }
