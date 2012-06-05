@@ -1,6 +1,7 @@
 package org.NooLab.demoiinstances;
 
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -18,10 +19,10 @@ import org.NooLab.somfluid.SomFluidPropertiesHandlerIntf;
 import org.NooLab.somfluid.SomFluidStartup;
 import org.NooLab.somfluid.SomFluidTask;
 import org.NooLab.somfluid.SomProcessControlIntf;
-import org.NooLab.somfluid.VariableSettingsHandlerIntf;
 import org.NooLab.somfluid.app.IniProperties;
 import org.NooLab.somfluid.app.SomApplicationEventIntf;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
+import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
@@ -73,7 +74,7 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 	// note that this refers only to any single loop of exploration-by-selection, it is an infimum! 
 	// the actual number is approx+  5 * L2-loopcount (max 5) + (size of selection), 
 	// for serious modeling, an appropriate value here is always >20!   
-	int _numberOfExploredCombinations  = 5;
+	int _numberOfExploredCombinations  = 25;
 	
 	// further work....
 	// best model when using ALL data(limited exploration without cross-validation stability)
@@ -93,7 +94,13 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 		applet = this;
 		background( 208,188,188);
 		 
-		SomFluidStartup.setApplicationID("");
+		try {
+			SomFluidStartup.setApplicationID("");
+		
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+			return;
+		}
 		  
 		showKeyCommands();
 		
@@ -136,7 +143,12 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 		
 		// this have to be changed to index positions
 		powerset.getConstraints().addExcludingItems(new String[]{"C","G","J"});
-		powerset.getConstraints().addMandatoryItems(new String[]{"B","E"});
+		try {
+			powerset.getConstraints().addMandatoryItems(new String[]{"B","E"});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 		powerset.getConstraints().setMaximumLength(14);
 		powerset.getConstraints().setMinimumLength(3) ;
 		
@@ -232,7 +244,7 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 			this.loop() ;
 			
 			if (rB){
-				startEngines(1 ) ; // 1= optimizer, 0=simple som (not recommended for most tasks)
+				startEngines(1) ; // 1= optimizer, 0=simple som (not recommended for most tasks)
 			}
 		}
 		
@@ -240,8 +252,8 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 			resume(1) ;
 		}
 		
-		if (key=='t'){
-			// start the transformer, read data and export everything
+		if (key=='q'){
+			runQueries();
 			System.err.println("not implemented yet.") ;
 		}
 		
@@ -256,12 +268,14 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 			System.exit(0);
 		}
 		
-		if (key=='c'){ // duplicate project, just strip results, and exports
-			SomFluidFactory.duplicateProject();
+		if (key=='c'){ // duplicate project, just strip results and exports
+			SomFluidFactory.duplicateProject(0);
+			System.err.println("not implemented yet.") ;
 		}
 
 		if (key=='C'){ // duplicate project, to bare bones
 			System.err.println("not implemented yet.") ;
+			SomFluidFactory.duplicateProject(1);
 		}
 		
 		if (key=='d'){
@@ -282,32 +296,50 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 			openProject();
 		}
 		
-		if (key=='p'){ //select  a different base folder for projects
+		if (key=='p'){ //select a different base folder for projects
 			 
 			looping = false;
-			
-			String selectedFolder = SomFluidStartup.selectProjectHome();
-			System.err.println("Folder selected as project space : "+selectedFolder);
+			key=0;
+			String selectedFolder;
+			try {
+				selectedFolder = SomFluidStartup.selectProjectHome();
+
+			} catch (Exception e) {
+				System.err.println(e.getMessage());
+				return;
+			}
+			System.err.println("Folder selected as base folder for projects : "+selectedFolder);
 			
 			looping = true;
 			this.loop() ;
 		}
 		
-		if (key=='P'){
-			// create project space...
+		if (key=='P'){ // capital "P": // create project space...
 			
 			looping = false;
 			this.noLoop();
-			
+			key=0;
 			try {
 			
-				String psLabel = SomFluidStartup.getProjectSpaceLabel();
-				if (SomFluidFactory.createProjectSpace( psLabel )){
-					IniProperties.lastProjectName = psLabel;
+				String psLabel = SomFluidStartup.getNewProjectSpaceLabel();
+				
+				if (SomFluidFactory.projectSpaceExists(psLabel)){
+					return;
 				}
+
+				IniProperties.lastProjectName = psLabel ;
+				SomFluidFactory.completeProjectSpace();
+			 
+				System.err.println("Folder selected as new project space : "+SomFluidStartup.getProjectBasePath() + psLabel);
+				
+				// now we offer a file selection dialog, which will copy 
+				SomFluidFactory.organizeRawProjectData();
+					
+				
+				
 				
 			} catch (Exception e) {
-				e.printStackTrace();
+				System.err.println(e.getMessage());
 			}
 			
 			looping = true;
@@ -319,24 +351,6 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 	
 	 
 
-	private void openProject(){
-		
-		looping = false;
-		this.noLoop(); // that's mandatory, otherwise, the dialog won't be drawn
-		
-		try {
-		
-			SomFluidStartup.selectActiveProject();
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		 
-		looping = true;
-		this.loop() ;
-		// http://code.google.com/p/processing/source/checkout
-	}
-
 	private void showKeyCommands(){
 
 		println();
@@ -344,9 +358,10 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 		println("the following key commands are available for minimalistic user-based control...");
 		println();
 		println("   m  ->  start modeling, start from scratch by importing the data file ");
+		println("   M  ->  start modeling, reload previously prepared data ");
 		println("   r  ->  resume modeling, load persistent models, and continue modeling ");
 		
-		println("   t  ->  apply just and only the transformation model and export the transformed data ");
+		println("   q  ->  run some example queries towards the som ");
 		println();
 		println("   i  ->  activate the file listener, which digests new data from a directory ");
 		println();
@@ -363,9 +378,22 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 		println("   x  ->  exit");
 		println();
 		println("------------------------------------------------------------------");
-		
+		println();
+
+		_showCurrentInputSettings();
 	}
 	
+	private void _showCurrentInputSettings(){
+		String qs="";
+		if (SomFluidStartup.isDataSetAvailable()==false){
+			qs = "not " ;
+		}
+		println("current project : "+ SomFluidStartup.getLastProjectName()+ ",  data are "+qs+"available.");
+		if (qs.length()==0){
+		println("data source     : "+ SomFluidStartup.getLastDataSet() ) ;
+		}
+
+	}
 	/**
 	 * 
 	 * @param somtype 0=default: simple, single run; 1=som optimizer
@@ -389,6 +417,33 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 		somInstance.startInstance() ;
 	}
 	
+	private void openProject(){
+		
+		looping = false;
+		this.noLoop(); // that's mandatory, otherwise, the dialog won't be drawn
+		
+		try {
+		
+			SomFluidStartup.selectActiveProject();
+	
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		 
+		looping = true;
+		this.loop() ;
+		// http://code.google.com/p/processing/source/checkout
+	}
+
+	private void runQueries() {
+		 if (somInstance==null){
+			 return;
+		 }
+		
+		 somInstance.runDemoQueries();
+		 
+	}
+
 	private void resume(int somtype){
 		
 		if (somtype>=1){ 
@@ -429,7 +484,9 @@ class SomModuleInstanceM1 implements 	Runnable,
 	
 	SomFluidFactory sfFactory;
 	SomFluidProperties sfProperties;
-	SomFluidPropertiesHandlerIntf sfPropertiesDefaults; 
+	SomFluidPropertiesHandlerIntf sfPropertiesDefaults;
+	
+	SomFluidMonoTaskIntf sfTask;
 	SomFluidIntf somFluid;
 	SomProcessControlIntf somProcessControl ;
 	 
@@ -457,9 +514,6 @@ class SomModuleInstanceM1 implements 	Runnable,
 		
 		smiThrd = new Thread(this, "SomModuleInstance");
 	}
-	// ------------------------------------------------------------------------
-
-	
 	public void setResumeMode(boolean flag) {
 		//
 		resumeMode = flag;
@@ -473,6 +527,10 @@ class SomModuleInstanceM1 implements 	Runnable,
 		smiThrd.start();
 	}
 
+	public void runDemoQueries() {
+		// TODO Auto-generated method stub
+		
+	}
 	public void startInstance( ){
 		lastProjectName = IniProperties.lastProjectName ;
 		smiThrd.start();
@@ -494,6 +552,88 @@ class SomModuleInstanceM1 implements 	Runnable,
 	}
  
 	 
+	private void prepareSomOptimizer(){
+	
+		// loads an existing targeted SOM and starts/continues/repeats the optimizing according to the settings 
+		// results are saved or provided to the Glue, then the Som-layer stops / application exits
+	
+		
+		// this might be called with some URL or xml-string that represents the source containing the settings
+		// if this exists, it will be loaded
+		sourceForProperties = "" ;
+		sfProperties = SomFluidProperties.getInstance( sourceForProperties ); // not available
+		
+		// alternatively... load from /resources in jar ...
+		 
+		
+		if ((sourceForProperties.length()==0) || ( sfProperties.initializationOK()==false )){
+		
+			sfPropertiesDefaults = new SomFluidPropertiesHandler(sfProperties);
+		
+			explicitlySettingProperties();
+			 
+		}
+	
+		
+		sfFactory = SomFluidFactory.get(sfProperties);					   // creating the factory; calling without "factorymode" parameter, optimizer will be assumed	
+		 
+		 
+		
+		
+		sfFactory.saveStartupTrace( SomFluidFactory._INSTANCE_TYPE_SOM, 
+									sfPropertiesDefaults.getStartupTraceInfo() );
+		sfProperties.save();
+		sfProperties.exportXml();  					// String xstr = sfProperties.getExportedXml();
+		
+		
+		/*
+		 * everything is started by "SomFluid" through a queued task mechanism;
+		 * 
+		 * different application types use different perspectives onto the task
+		 * 
+		 */
+		
+		sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( SomFluidFactory._INSTANCE_TYPE_OPTIMIZER ); //  
+		 
+		
+		sfTask.setContinuity( 1,1) ;                // param1: Level of Spela looping: 1=simple model, 2=checking 
+													// param2: number of runs: (1,1) building a stable model, then stop 
+													//                         (2,500) including screening S1, S2, max 500 steps in S2
+													//                         (2,3,500) max 3 levels in S1
+													//      				   (2,0,500) no dependency screening, just evo-optimizing
+													//      
+		
+		sfTask.setStartMode(1) ;             		// default=1 == starting after producing the FluidSom
+										 			//        <1 == only preparing, incl. 1 elementary run to load the data, 
+		                                 			//              but not starting the modeling process (v switches in the middle between 3..100)
+										 			//        >100  minimum delay in millis
+		
+		
+		sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( ); 
+		sfTask.setStartMode(1) ;  
+		sfTask.setContinuity(2,0,200);
+		 
+		
+		
+		try {
+			
+			sfFactory.produce( sfTask );
+							// this produces the SomFluid and the requested som-type according to
+							// SomFluidProperties._SOMTYPE_MONO, referring implicitly to sfTask; 
+							
+		} catch (Exception e) {
+			e.printStackTrace();
+		}          		
+		
+	 	// if we like to have graphical output, then start the applet for displaying it and 
+		// define shake hands by means of GlueClients...
+		
+
+	}
+
+
+	
+	
 	private void explicitlySettingProperties(){
 		
 		ClassificationSettings cs;
@@ -529,14 +669,17 @@ class SomModuleInstanceM1 implements 	Runnable,
 				
 				/*
 				 * the "outcome" or target can be mapped onto a binary variable
-				 * level of definition parameters may be "raw" or "normalized"
+				 * level of definition parameters may be "raw" or "relative" (=normalized, hence expressing percentage quantiles)
+				 * 
+				 * will be overridden by settings from the optional description file about variable settings
 				 */
-				sfPropertiesDefaults.setSingleTargetDefinition( "raw", 0.1, 0.41, "intermediate" ) ;
+				// sfPropertiesDefaults.setSingleTargetDefinition( "raw", 0.1, 0.41, "intermediate" ) ;
 									// the Single-Target-Mode can be defined with several non-contiguous intervals within [0..1] 
 				
+									// we have to check rather soon whether such values occur at all 
+									// in the TV column of the table: on data import, or reloading of the SomData 
 				
 				sfPropertiesDefaults.activateGrowingOfSom( false, 300, 15.1) ; // n = max node size, averaged across the top 15% of nodes acc. to size
-				
 
 			}
 
@@ -561,8 +704,17 @@ class SomModuleInstanceM1 implements 	Runnable,
 			// optional, if there are indeed plugin files ...
 			sfPropertiesDefaults.setAlgorithmsConfigPath( "D:/dev/java/somfluid/plugins/" );
 			
+
+			sfPropertiesDefaults.publishApplicationPackage(true, "D:/data/projects/_classifierTesting");
+			
+			sfProperties.addFilter( "var",0.3,"<",1,1,true);       
+									// filter that act on the values of observations
+			   						// can be defined only with an existing factory since we need access to the data
+			   						// !! not yet functional
+
 			
 			sfPropertiesDefaults.initializeDefaults();
+			
 			
 			// controlling the granularity/verbosity of console messages 
 			if (LogControl.Level>2){
@@ -570,8 +722,12 @@ class SomModuleInstanceM1 implements 	Runnable,
 			}
 			sfProperties.setShowSomProgress( SomFluidProperties._SOMDISPLAY_PROGRESS_STEPS );
 			
+			sfProperties.setMultiProcessingLevel(0); 
+			
 		} catch (Exception e) {
 			e.printStackTrace();
+			System.err.println("The system will exit.");
+			System.exit(-7) ;
 		}
 		
 		// --- --- ---
@@ -628,16 +784,6 @@ class SomModuleInstanceM1 implements 	Runnable,
 		 
 		ClassificationSettings cs = sfProperties.getModelingSettings().getClassifySettings() ;
 
-		// put this to a condition...
-		if ((sfProperties.getSomType() == SomFluidProperties._SOMTYPE_MONO ) &&
-			(cs.getTargetMode() == ClassificationSettings._TARGETMODE_MULTI)){
-			
-			cs.setTargetGroupDefinition( new double[]{0.28, 0.62, 1.0});	// applies only to MULTI mode, at least 2 values are required (for 1 group interval)
-			cs.setTargetGroupDefinitionAuto(true);							//  - if [0,1] AND if _TARGETMODE_MULTI , then the target groups will be inferred from the data
-																			//  - TODO in this case, one should be able to provide a "nominal column" that indeed contains the "names"
-			cs.setTargetGroupDefinitionExclusions( new double[]{0.4} );		// these values are NOT recognized as belonging to any of the target groups, == singular dot-like holes in the intervals
-		
-		}
 		// the next 4 parameters form a group !! and make sense only for targeted SOM
 		
 		cs.setErrorCostRatioRiskPreference( 0.18 );                     // if the ECR is not met by the conditions of a node in a developed SOM, it will NOT be
@@ -662,17 +808,38 @@ class SomModuleInstanceM1 implements 	Runnable,
 	 * a small compartment, which optionally also may read the initial variable settings from a file
 	 * 
 	 * @param filename
+	 * @throws Exception 
 	 */
-	private void defineInitialVariableSettings( String ...filenames) {
+	private void defineInitialVariableSettings( String ...filenames) throws Exception {
 
+		boolean configByFileExcluded=false;
+		String[] filnames = new String[0];
+		
 		ModelingSettings ms = sfProperties.getModelingSettings();
 
-		if ((filenames!=null) && (filenames.length>0) && (DFutils.fileExists(filenames[0]))){
+		if ((filenames!=null) && (filenames.length>0)){
+			filnames = new String[ filenames.length];
+			System.arraycopy(filenames, 0, filnames, 0, filnames.length) ;
+		}
+		
+		if ((configByFileExcluded==false) && ((filenames==null) || (filenames.length==0) || (DFutils.fileExists(filenames[0])==false))){
+			String filename = sfPropertiesDefaults.checkForVariableDescriptionFile(0) ; // 0 = typology file, 1 = textual description (background information)
+			if (DFutils.fileExists(filename)){
+				filnames = new String[]{filename};
+			}
+		}
+		
+		if ((filnames!=null) && (filnames.length>0) && (DFutils.fileExists(filnames[0]))){
 			
-			if (sfPropertiesDefaults.loadVariableSettingsFromFile(filenames[0])){
+			if (sfPropertiesDefaults.loadVariableSettingsFromFile( filnames[0]) ){
+				// recognizes format by itself, if successful, we may return
 				return;
 			}
 		}
+		
+		// .................. do the following only if there was not a definition file
+		
+		
 		// note that the data are not loaded at that point,
 		// such it is only a request for blacklisting variables
 		// if any those variables do not exist, no error message will appear by default
@@ -689,8 +856,9 @@ class SomModuleInstanceM1 implements 	Runnable,
 		variableSettings.setTargetVariables("*TV"); 	// of course only if instance = "som" (or transformer! for certain transformations)
 		                    // sometimes, a file  contains several potential target variables, which would act as confounders if not excluded
 							// thus we can mark them all by wildcard... , or by list:
-		variableSettings.setTargetVariables("Mahnung_TV","*TV"); // in this format, the first item always denotes the active target variable 
+		// variableSettings.setTargetVariables("Mahnung_TV","*TV"); // in this format, the first item always denotes the active target variable 
 
+		// ===>>> any wildcards will be resolved during import of data
 		
 		// ms.setInitialVariableSelection( new String[]{"Stammkapital","Bonitaet","Bisher","Branchenscore"});
 		// sfProperties.getModelingSettings().setRequestForBlacklistVariablesByLabel( new String[]{"Name","KundenNr"}) ;
@@ -698,15 +866,29 @@ class SomModuleInstanceM1 implements 	Runnable,
 		
 																		  // these variables are excluded once and for all -> they won't get transformed either
 																		  // if mode 1+ then they even won't get imported
-		// sfProperties.setAbsoluteFieldExclusions( new String[]{"Name","KundenNr","Land","Region"} , 1);
-
+		//sfProperties.setAbsoluteFieldExclusions( new String[]{"Name","KundenNr","Land","Region"} , 1);
+ 
 		
 		variableSettings.setTvGroupLabels("Label") ;
 		// ms.setTvGroupLabels("Label") ; 	   							// optional, if available this provides the label of the column that contains the labels for the target groups, if there are any
 																		// the only effect will be a "nicer" final output
 		//sfProperties.getModelingSettings().setTvLabelAuto("TV") ; 	// the syllable(s) that will be used to identify the target variable as soon as data are available
 																	    // allows a series of such identifiers
- 	        
+ 	       
+		ClassificationSettings cs = sfProperties.getModelingSettings().getClassifySettings() ;
+		// 
+		if ((sfProperties.getSomType() == SomFluidProperties._SOMTYPE_MONO ) &&
+			(cs.getTargetMode() == ClassificationSettings._TARGETMODE_MULTI)){
+			
+			// may be defined also by file
+			if (cs.getTargetGroupDefinition().length==0){
+				cs.setTargetGroupDefinition( new double[]{0.28, 0.62, 1.0});	// applies only to MULTI mode, at least 2 values are required (for 1 group interval)
+				cs.setTargetGroupDefinitionAuto(true);							//  - if [0,1] AND if _TARGETMODE_MULTI , then the target groups will be inferred from the data
+																				//  - TODO in this case, one should be able to provide a "nominal column" that indeed contains the "names"
+				cs.setTargetGroupDefinitionExclusions( new double[]{0.4} );		// these values are NOT recognized as belonging to any of the target groups, == singular dot-like holes in the intervals
+			}
+		}
+
 	}
 
 	
@@ -774,7 +956,7 @@ class SomModuleInstanceM1 implements 	Runnable,
 				SomFluidMonoTaskIntf sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( ); 
 				sfTask.setContinuity( 1,1) ;                 
 				sfTask.setStartMode(1) ;
-
+	
 				sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( ); 
 				sfTask.setStartMode(1) ;  
 				sfTask.setContinuity(2,0,200);
@@ -799,132 +981,6 @@ class SomModuleInstanceM1 implements 	Runnable,
 		}
 		
 	}
-	
- 
-		
-	private void prepareSomOptimizer(){
-		// loads an existing targeted SOM and starts/continues/repeats the optimizing according to the settings 
-		// results are saved or provided to the Glue, then the Som-layer stops / application exits
-
-		
-		/* TODO 
-		 * - we need a similar persistence mechanism as for the glue stuff !!
-		 *   each SOM has a unique ID, like serial UID (via anonymous UID server)
-		 * 
-		 * - establish a glue connection if desired
-		 * 
-		 * - everything is handled by the factory
-		 */
-		
-		
-		
-		// this might be called with some URL or xml-string that represents the source containing the settings
-		// if this exists, it will be loaded
-		sfProperties = SomFluidProperties.getInstance( sourceForProperties );
-		
-		sfPropertiesDefaults = new SomFluidPropertiesHandler(sfProperties);
-		
-		// alternatively... load from /resources in jar ...
-		 
-		//
-		
-		if ((sourceForProperties.length()==0) || ( sfProperties.initializationOK()==false )){
-			 
-			explicitlySettingProperties();
-			 
-		}
-		
-		sfFactory = SomFluidFactory.get(sfProperties);					   // creating the factory; calling without "factorymode" parameter, optimizer will be assumed	
-		 
-		
-		
-		sfProperties.getOutputSettings().setAppPublishing( new SomAppPublishing( sfFactory, true, 
-																				 "D:/data/projects/_classifierTesting", 
-																				 sfProperties.getPersistenceSettings().getProjectName(), "",       // name of package and dedicated version string 
-																				 SomAppPublishing._LOCATION_FILE) );
-		// sfProperties.getOutputSettings().setPublishingLocation( "D:/data/projects/_classifierTesting" );
-		// sfProperties.getOutputSettings().publishApplicationPackage(true);
-		
-  
-		sfProperties.addFilter( "var",0.3,"<",1,1,true);        // filter that act on the values of observations
-		
-																		   // can be defined only with an existing factory since we need access to the data
-																		   // not yet functional
-		
-		sfFactory.saveStartupTrace(SomFluidFactory._INSTANCE_TYPE_SOM, _prepareStartupTraceInfo());
-		sfProperties.save();
-		sfProperties.exportXml();
-		String xstr = sfProperties.getExportedXml();
-		
-		SomFluidMonoTaskIntf sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( SomFluidFactory._INSTANCE_TYPE_OPTIMIZER ); //  
-		 
- 		
-		sfTask.setContinuity( 1,1) ;                 // param1: Level of Spela looping: 1=simple model, 2=checking 
-													// param2: number of runs: (1,1) building a stable model, then stop 
-													//                         (2,500) including screening S1, S2, max 500 steps in S2
-													//                         (2,3,500) max 3 levels in S1
-													//      				   (2,0,500) no dependency screening, just evo-optimizing
-													//      
-		
-		sfTask.setStartMode(1) ;             		// default=1 == starting after producing the FluidSom
-										 			//        <1 == only preparing, incl. 1 elementary run to load the data, 
-		                                 			//              but not starting the modeling process (v switches in the middle between 3..100)
-										 			//        >100  minimum delay in millis
-		
-		
-		sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( ); 
-		sfTask.setStartMode(1) ;  
-		sfTask.setContinuity(2,0,200);
-		 
-		
-		
-		sfFactory.produce( sfTask );          		// this produces the SomFluid and the requested som-type according to
-													// SomFluidProperties._SOMTYPE_MONO, referring implicitly to sfTask; 
-													//
-		
-	 	// if we like to have graphical output, then start the applet for displaying it and 
-		// define shake hands by means of GlueClients...
-		
-		
-		/*
-		 
-		...some important API stuff for a running system
-		 
-		sfFactory.getSomTransformer().introduceTransformation( );
-		sfFactory.getSomTransformer().introduceTransformations( filename );
-		sfFactory.getSomData().addObservations( ... );
-		sfFactory.getSomTransformer().reFreshCalculation( ); // e.g. after adding data
-		
-		*/
-	}
-
-	/**
-	 * 
-	 * called after all settings have been defined
-	 * creating a simple string that is used to create a "boot file": SomFluid then is able to know 
-	 * about the project of the last run, in case a "resume" is requested
-	 * 
-	 * @return
-	 */
-	private String _prepareStartupTraceInfo() {
-		
-		String cfgroot, userdir, lastproject, infoStr="";
-		
-		
-		cfgroot =  sfProperties.getSystemRootDir() ;
-		lastproject = sfProperties.getPersistenceSettings().getProjectName() ;
-		
-		// TODO better -> several categories: load file, modify it, write it back
-		infoStr =  "cfgroot::"+cfgroot+"\n" +
-		           "project::"+lastproject+"\n" ;
-				                           	   
-
-		
-		return infoStr;
-	}
-
-	
-	
 	public void importNewProperties( String xmlPropertiesSource){
 		
 		

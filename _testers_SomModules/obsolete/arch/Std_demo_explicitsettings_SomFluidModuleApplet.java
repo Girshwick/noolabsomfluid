@@ -115,7 +115,12 @@ public class Std_demo_explicitsettings_SomFluidModuleApplet extends PApplet{
 		
 		// this have to be changed to index positions
 		powerset.getConstraints().addExcludingItems(new String[]{"C","G","J"});
-		powerset.getConstraints().addMandatoryItems(new String[]{"B","E"});
+		try {
+			powerset.getConstraints().addMandatoryItems(new String[]{"B","E"});
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		powerset.getConstraints().setMaximumLength(14);
 		powerset.getConstraints().setMinimumLength(3) ;
 		
@@ -805,7 +810,12 @@ class SomModuleInstanceSD implements 	Runnable,
 		sfTask.setStartMode(1) ;  
 		sfTask.setContinuity(2,0,200);
 		
-		sfFactory.produce( sfTask );
+		try {
+			sfFactory.produce( sfTask );
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		// if we like to have graphical output, then start the applet for displaying it and 
 		// define shake hands by means of GlueClients...

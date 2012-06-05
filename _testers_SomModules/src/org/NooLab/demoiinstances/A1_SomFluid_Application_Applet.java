@@ -69,7 +69,13 @@ public class A1_SomFluid_Application_Applet extends PApplet{
 		draw();
 		 
 		// put this on top of any application: it cares for a well-defined base directory
-		SomFluidStartup.setApplicationID("soapp");
+		try {
+		
+			SomFluidStartup.setApplicationID("soapp");
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		
 		showKeyCommands();
 		
@@ -164,7 +170,13 @@ public class A1_SomFluid_Application_Applet extends PApplet{
 			looping = false;
 			this.noLoop();
 			
-			SomFluidStartup.selectProjectHome();
+			try {
+			
+				SomFluidStartup.selectProjectHome();
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			
 			looping = true;
 			this.loop() ;
