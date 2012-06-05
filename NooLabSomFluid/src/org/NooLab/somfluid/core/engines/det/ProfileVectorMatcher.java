@@ -161,6 +161,7 @@ public class ProfileVectorMatcher{
 									out.print(4,"similarity obj in node("+n+") = "+simIntf.toString());
 									
 		profile = node.getProfileVector();
+		                      // this should use indexes !!! otherwise we loop through the whole vector not accessing most of the items 
 		dsq = node.getSimilarity().similarityWithinDomain( profile.getValues(), dataProfileValues, suppressSQRT) ;
 		// dsq = getAdvancedDistanceMeasure(1, SOMnodes[n].dweights, values);
 		// node.getSimilarity.usageIndicationVector is wrong, hence profile.getValues() is also wrong

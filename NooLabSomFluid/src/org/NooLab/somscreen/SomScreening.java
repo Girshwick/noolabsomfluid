@@ -342,7 +342,7 @@ public class SomScreening {
 	}
 	
 	 
-	public void startScreening( int wait, int ithScreen) {
+	public void startScreening( int wait, int ithScreen) throws Exception {
 		
 		
 		EvolutionarySearch evoSearch ;
@@ -1130,7 +1130,9 @@ if ((specialInterestVariables!=null) &&
 				currentVariableSelection = variables.deriveVariableSelection( proposedSelection ,0 ) ; 
 				
 				// TODO this should use a copy of the original somlattice in order to make parallelization possible !!!
-				ModelProperties results = performSingleRun(z,true);
+				
+				ModelProperties results = performSingleRun(z,true); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+				
 				// ..................................................
 											//out.print(2, "lattice address : "+targetMod.getdSom().getSomLattice().toString());
 				// calculates "SomQuality2 and stores it in "evoResultItem" 
@@ -1276,7 +1278,7 @@ if (results.getTrainingSample().getRoc().getAuC()>0.86){
 			stoppingCriteriaSatisfied = hb ;
 		}
 
-		private ArrayList<Integer> specifySmallChanges(int z) {
+		private ArrayList<Integer> specifySmallChanges(int z) throws Exception {
 			
 			ArrayList<Integer> selection = new ArrayList<Integer>();
 			

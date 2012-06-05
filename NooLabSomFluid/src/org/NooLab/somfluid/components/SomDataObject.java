@@ -118,6 +118,9 @@ public class SomDataObject 	implements      Serializable,
 	//transient ArrUtilities utils = new ArrUtilities();
 	
 	transient PrintLog out = new PrintLog(2,true) ;
+
+
+	private SomFluidProperties sfProperties;
 		
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 	 
@@ -137,7 +140,7 @@ public class SomDataObject 	implements      Serializable,
 	public void setFactory(SomFluidFactory factory) {
 		sfFactory = factory;
 		
-		
+		sfProperties = sfFactory.getSfProperties() ;
 		modelingSettings = sfFactory.getSfProperties().getModelingSettings() ;
 		classifySettings = modelingSettings.getClassifySettings() ; 
 	}
@@ -647,7 +650,7 @@ public class SomDataObject 	implements      Serializable,
 		
 		fileorg.careForArchive( FileOrganizer._DATAOBJECT, filepath );
 		
-		// storageDevice.storeObject( this, filepath) ; // using a single object is not possible, we have to split it by a dedicated procedure and a dedicated format
+		storageDevice.storeObject( this, filepath) ; // using a single object is not possible, we have to split it by a dedicated procedure and a dedicated format
 		// abc124 
 		
 		DFutils.reduceFileFolderList( fileorg.getObjectStoreDir(),1,".sdo",20) ;
@@ -861,10 +864,13 @@ public class SomDataObject 	implements      Serializable,
 			if (modelingSettings.getVariables()==null){
 				modelingSettings.setVariables(variables);
 			}
+			
 			// creating variables objects, setting info about raw data format
 			// translating wildcards into full names to sets black,treat,group, set treatment, group to blacklist
 			actualizeVariables();
 			vectorSize = variables.size() ;
+			
+			variables.setVariableSettings( sfProperties.getVariableSettings() ); 
 			// --- transforming data ------------------------------------------
 			
 			// this creates a clone of the DataTable !
@@ -1039,21 +1045,8 @@ public class SomDataObject 	implements      Serializable,
 	}
 	// ------------------------------------------------------------------------
 	
-	public void determineActiveVariables() {
-
-		activeVariables = variables;
-		// TODO obviously stub...
-	}
 
 
-	public Variables getActiveVariables() {
-		 
-		if (activeVariables==null){
-			activeVariables = variables;
-		}
-		return activeVariables;
-	}
- 
 
 	// ........................................................................
 	
@@ -1127,6 +1120,24 @@ public class SomDataObject 	implements      Serializable,
 	}
 
 
+	public void determineActiveVariables() {
+
+		activeVariables = variables;
+		// TODO obviously stub...
+	}
+
+
+	public Variables getActiveVariables() {
+		 
+		if (activeVariables==null){
+			activeVariables = variables;
+		}
+		return activeVariables;
+	}
+ 
+
+	// ........................................................................
+	
 	public MissingValues getMissingValues() {
 		return missingValues;
 	}

@@ -14,6 +14,7 @@ import org.NooLab.somfluid.util.XmlStringHandling;
 import org.NooLab.somtransform.SomFluidXMLHelper;
 import org.NooLab.somtransform.algo.externals.AlgorithmPluginsLoader;
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.datatypes.ValuePair;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.strings.StringsUtil;
@@ -53,7 +54,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 	
 	private int numberOfSimulatedRecords;
 
-	private int targetMode;
+	private int targetMode = -1;
 	String startupTraceInfo ="" ; 
 	
 	private boolean publishAppActive = false;
@@ -117,6 +118,21 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		cs.addExtendedResultRequest( ClassificationSettings._XREQ_ROC_FULL) ;
 		cs.addExtendedResultRequest( ClassificationSettings._XREQ_OPTIMALCUTS,3, 0.95 ) ;
 		
+		ArrayList<ValuePair> tvgs = variableSettings.getTvGroupIntervals();
+		int n=tvgs.size();
+		ValuePair vp;
+		// [TGS] mode = single
+		// cs.setSomTargetMode(ClassificationSettings._TARGETMODE_SINGLE ) ; 
+		if (variableSettings.getSomModelingMode().toLowerCase().startsWith("single")){
+			for (int i = 0; i < n; i++) {
+				vp = tvgs.get(i);
+				// setSingleTargetDefinition("raw", 0.1, 0.41, "intermediate");
+				cs.addSingleTargetGroupDefinition( vp.getValue1(), vp.getValue2() );
+				
+			}
+		}
+		
+		
 		ms.setExtendedDiagnosis( true ) ;  							// activates some post-calculation investigations a la SPELA
 																	// ParetoPopulationExplorer, SomModelDescription, Coarseness, MultiCrossValidation, MetricsStructure 
 
@@ -143,7 +159,33 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 
 		sfProperties.setAbsoluteRecordLimit(-1); // 435
 		
+		// variableSettings.setSomModelingMode(itemstr);
+		String somTM = variableSettings.getSomModelingMode();
+		if (somTM==null)somTM="" ;
+		if (somTM.length()>0){
+			somTM = somTM.trim().toLowerCase();
+		}
+		if (somTM.startsWith("si")){
+			targetMode =  ClassificationSettings._TARGETMODE_SINGLE;
+		}
+		if (somTM.startsWith("mu")){
+			targetMode =  ClassificationSettings._TARGETMODE_MULTI ;
+		}
+		if ((somTM.startsWith("va")) || (somTM.startsWith("quant"))){ // variance or quantil = outliers 
+			targetMode =  ClassificationSettings._TARGETMODE_VARIANCE_QUANT ;
+		}
+		if (somTM.startsWith("reg")){ // regression : squared distances
+			targetMode =  ClassificationSettings._TARGETMODE_REGR ;
+		}
+	 
 		cs.setTargetMode(targetMode) ;
+		
+		/*
+		classifySettings.getTargetMode() <- 
+		((sfProperties.getSomType() == SomFluidProperties._SOMTYPE_MONO ) &&
+		sfProperties.getModelingSettings().setTvLabelAuto("TV") ;
+		 */
+
 		
 		
 		sfProperties.setGlueInstanceType(1);
@@ -324,11 +366,15 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 				
 				items = new ArrayList<String>( strgutil.changeArrayStyle(sectionItems) );
 				items = arrutil.removeempty(items) ;
-				
+				 
+				for (int k=0;k<items.size();k++){
+					str = items.get(k);
+					str = str.trim().replace("\r", "") ;
+					items.set(k,str);
+				}
 				if (section.toLowerCase().contentEquals("id")){
-					
 					if (items.size()>0){
-						str = items.get(0) ;
+						str = items.get(0).trim().replace("\r", "") ;
 						variableSettings.setIdVariable( str ) ;  
 					}
 				}
@@ -843,6 +889,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		/*
 		 * the "outcome" or target can be mapped onto a binary variable
 		 */
+		 
 		setSomTargetMode(ClassificationSettings._TARGETMODE_SINGLE ) ; 
 		// alternatively: ClassificationSettings._TARGETMODE_MULTI : simultaneous multi-class modeling
 		// the difference concerns the interpretation of the individual nodes
@@ -994,7 +1041,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		if (variableSettings==null){
 			return;
 		}
-		// TODO: group and treatment are missing ....
+		// 
 		String[] strings ;
 		
 		if (variableSettings.getInitialSelection().size()>0){
@@ -1002,10 +1049,6 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 			ms.setInitialVariableSelection( strings );
 		}
 		
-		if(variableSettings.getBlackListedVariables().size()>0){
-			strings = (String[]) arrutil.changeArrayStyle( variableSettings.getBlackListedVariables());
-			ms.setRequestForBlacklistVariablesByLabel( strings );
-		}
 
 		if(variableSettings.getWhiteListedVariables().size()>0){
 			strings = (String[]) arrutil.changeArrayStyle( variableSettings.getWhiteListedVariables());
@@ -1025,8 +1068,24 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		}
 		// ms.setTvGroupLabels("Label") ;
 		
-		 
 		
+		if (variableSettings.getGroupDesignVariables().size()>0){
+			variableSettings.getBlackListedVariables().addAll( variableSettings.getGroupDesignVariables() );
+			sfProperties.setGroupDesignVariables(variableSettings.getGroupDesignVariables());
+		}
+
+		if (variableSettings.getTreatmentDesignListedVariables().size()>0){
+			variableSettings.getBlackListedVariables().addAll( variableSettings.getTreatmentDesignListedVariables() );
+			sfProperties.setTreatmentDesignVariables(variableSettings.getTreatmentDesignListedVariables());
+		}
+		
+		if(variableSettings.getBlackListedVariables().size()>0){
+			strings = (String[]) arrutil.changeArrayStyle( variableSettings.getBlackListedVariables());
+			ms.setRequestForBlacklistVariablesByLabel( strings );
+			
+		}
+ 
+		sfProperties.setVariableSettings(variableSettings);
 	}
 	
 	@Override

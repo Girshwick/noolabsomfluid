@@ -755,8 +755,9 @@ if (ec<0){
 	 * 
 	 * @param mode  0=small change,  1=large change
 	 * @return 
+	 * @throws Exception 
 	 */
-	public ArrayList<Integer> getNextVariableSelection( int z, int mode) {
+	public ArrayList<Integer> getNextVariableSelection( int z, int mode) throws Exception {
 		
 		ArrayList<Integer> selection = new ArrayList<Integer>();
 		// TODO avoid suggesting KNOWN selections !!
@@ -791,7 +792,14 @@ if (zz>1000){
 			}
 			if (mode==0){
 				// bestSomQuality
-				prepareSmallSelectionChange(z,1); // 1 = max elements changed
+				int r = prepareSmallSelectionChange(z,1); // 1 = max elements changed
+				if (r<0){
+					String msgStr="Critical error. ";
+					if (r== -3){
+						msgStr = "Selection is empty, usage vector could not be prepared.";
+					}
+					throw(new Exception(msgStr)) ;
+				}
 			}
 		
 			if (averageCount<0.00001){
@@ -830,7 +838,8 @@ if (zz>1000){
 		return rB;
 	}
 	@SuppressWarnings("unchecked")
-	private void prepareSmallSelectionChange( int z,int vChgCount) {
+	private int prepareSmallSelectionChange( int z,int vChgCount) {
+		int result = -1;
 		double uv ,sprob; 
 		int n,vn, suggix;
 		
@@ -927,20 +936,26 @@ if (zz>1000){
 			proposedVarIxes = variables.getIndexesForLabelsList( setItems2 );
 			Collections.sort( proposedVarIxes );
 			
-			uvec = deriveUseVector( proposedVarIxes ) ;
-			currentBaseMetric = evmItems.get(evmItems.size()-1);
-			currentBaseMetric.usageVector = uvec ; 
-			currentBaseMetricIndex = evmItems.size()-1 ;
+			if ((proposedVarIxes!=null) && (proposedVarIxes.size()>0)){
+				uvec = deriveUseVector( proposedVarIxes ) ;
+				currentBaseMetric = evmItems.get(evmItems.size()-1);
+				currentBaseMetric.usageVector = uvec ; 
+				currentBaseMetricIndex = evmItems.size()-1 ;
+				
+				result = 0;
+			}else{
+				result = -3;
+			}
 			
 		}catch(Exception e){
 			String str= "vlabel " + vlabel;
-			out.print(2, str) ;
+			out.printErr(2, "" + str) ;
 			e.printStackTrace() ;
+			result = -7;
 		}
-				
 		
 		proposedVariableIndexes = proposedVarIxes ;
-		
+		return result;
 	}
 	
 	@SuppressWarnings("unchecked")

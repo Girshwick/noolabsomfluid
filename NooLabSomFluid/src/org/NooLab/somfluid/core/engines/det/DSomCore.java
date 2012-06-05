@@ -198,7 +198,7 @@ public class DSomCore {
 		}else{
 			int ix = variables.getTvColumnIndex() ;
 			if (ix<0){
-				
+				int st = dSom.sfProperties.getModelingSettings().getSomType() ; // == _SOMTYPE_MONO ? == NOT ok, == _SOMTYPE_PROB no tv required
 			}else{
 				tvColumnIndex=ix;
 			}
@@ -230,7 +230,7 @@ public class DSomCore {
 		if (tix>=0){
 			usagevector[tix]=-2;
 		}
-		// TODO XXX ALSO WRONG because it is GLOBAL
+		//  
 		blacklistPositions = getBlackListPositions(variables);
 		// TODO: whitelist ?
 		// ................................................
@@ -251,7 +251,7 @@ public class DSomCore {
 		}else{
 			dataSampler.createRecordIndexMasterList(absoluteRecordCount);
 		}
-		// also: wwe may split of an out of modeling sample
+		// also: we may split of an out of modeling sample
 		// also: bagging samples from remaining training set
 		
 		// ................................................
@@ -292,14 +292,23 @@ public class DSomCore {
 	private int[] getBlackListPositions(Variables variables) {
 		int[] blacklistPositions = new int[variables.size()] ;
 		ArrayList<String> blacks;
-		int ix;
+		int ix, notFound=0;
 		String blackvarLabel;
+		
 		blacks = variables.getBlacklistLabels() ;
 		
 		for (int i=0;i<blacks.size();i++){
+			
 			blackvarLabel = blacks.get(i) ;
 			ix = variables.getIndexByLabel(blackvarLabel) ;
-			blacklistPositions[ix] = 1;
+			// there could be wild cards
+			if (ix>=0){
+				if (ix<blacklistPositions.length){
+					blacklistPositions[ix] = 1;
+				}
+			}else{
+				notFound++;
+			}
 		}
 				
 		return blacklistPositions;

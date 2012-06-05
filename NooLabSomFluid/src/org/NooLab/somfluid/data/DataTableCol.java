@@ -3,6 +3,8 @@ package org.NooLab.somfluid.data;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import org.NooLab.utilities.datatypes.IndexDistance;
+import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.strings.StringsUtil;
 
@@ -210,14 +212,6 @@ public class DataTableCol implements Serializable,
 			}
 		} // i->
 		dv = 0.0;
-	}
-
-	public void recodeBinaryEntries(boolean tableHasHeader) {
-		 
-		// measure the entries into an array list, 
-		//   if num, take the smaller a 0 the larger as 1
-		//   if str, check for y,j,d,s <-> n, n->0, other as 1
-		
 	}
 
 	public void applyNveRecodeMap(NveMapping nveMap) {
@@ -454,6 +448,92 @@ public class DataTableCol implements Serializable,
 		return formatIndicator;
 	}
 
+ 
+	
+	/**
+	 * if successful, we change from  __FORMAT_BINSTR=13  to __FORMAT_BIN=5
+	 * if more than 2 entries, we change to ordinal __FORMAT_ORD=3
+	 * 
+	 * @param tableHasHeader
+	 */
+	public int recodeBinaryEntries( boolean tableHasHeader) {
+		int candidateFormat = -1;
+		
+		int cs,hoffset=0,ix,le;
+		String str ;
+		double v;
+		IndexedDistances ixds = new IndexedDistances ();
+		IndexDistance ixd; 
+		// measure the entries into an array list, 
+		//   if num, take the smaller a 0 the larger as 1
+		//   if str, check for y,j,d,s <-> n, n->0, other as 1
+		try{
+		
+			cs = cellValueStr.size();
+			if (tableHasHeader){
+				hoffset=1;
+			}
+			// first checking 
+			for (int i=0+hoffset;i<cs;i++){ // make multi-digest, if there are a lot of records (>1000)
+				
+				str = cellValueStr.get(i).trim() ;
+				if (str.length()>0){
+					ix = ixds.getIndexByStr(str);
+					if (ix<0){
+						ixd = new IndexDistance(i,1.0,str);
+					}else{
+						ixd = ixds.getItem(ix) ;
+						ixd.setDistance( ixd.getDistance() + 1.0);
+					}
+				}
+			} // i->
+			
+			ixds.sort(-1) ;
+			
+			if (ixds.size()==2){
+				candidateFormat = DataTable.__FORMAT_BIN;
+			}
+			if (ixds.size()>2){
+				candidateFormat = DataTable.__FORMAT_ORD;
+			}
+				
+			/*
+				if ( (int)Math.round(v) != v ){
+					v = ix;
+				}
+				
+			*/
+			
+			for (int i=0+hoffset;i<cs;i++){ // make multi-digest, if there are a lot of records (>1000)
+				
+				str = cellValueStr.get(i).trim() ;
+				if (str.length()>0){
+					ix = ixds.getIndexByStr(str) ;
+					if (ix>=0){
+						v = ixds.getItem(ix).getDistance();
+						
+					}else{
+						v=-1.0;
+					}
+				}else{
+					v=-1.0;
+				}
+				if (i-hoffset>=cellValues.size()){ 
+					cellValues.add(v);
+				}else{
+					setValue(i-hoffset,v) ;
+				}
+			} // ->
+
+			le = cellValues.size();
+
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
+		return candidateFormat ;
+	}
+
 	/**
 	 * 
 	 * translates a column of strings into a column of values;<br/>
@@ -463,7 +543,7 @@ public class DataTableCol implements Serializable,
 	 * 
 	 * @return
 	 */
-	public int makeNumeric( boolean hasHeader ){
+	public int makeNumeric( boolean hasHeader ){  
 		int i , r= -1,cs=-1 ;
 		String str ;
 		double val ;
@@ -855,6 +935,8 @@ public class DataTableCol implements Serializable,
 	public void setNveInstances(int nveInstances) {
 		this.nveInstances = nveInstances;
 	}
+
+
 
 	
 	

@@ -227,7 +227,7 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 		
 		fileorg.careForArchive( FileOrganizer._TABLEOBJECT, filepath );
 		
-		// storageDevice.storeObject( this, filepath) ;   // TODO XXX severe change: abc124
+		storageDevice.storeObject( this, filepath) ;   // ATTENTION: this requires a sufficiently large heap size for the JVM
 					// we can't serialize the whole thing into 1 object due to heap space overflow... 
 					// we have to create our own storage procedure for tables, where columns and part tab
 		if (fileutil.fileexists(filepath)==false){
@@ -571,7 +571,7 @@ if (i>=9){
 					/*
 					  	later in makenumeric(): 
 						some kind of semantic organization indicator, typically not nominal though,
-					   	but "grouped", so we could "nominalize" them (1.interperting as string, 2. nve)
+					   	but "grouped", so we could "nominalize" them (1.interpreting as string, 2. nve)
 
 							-> treat as strings, with constrained similarity from the beginning
 							-> try to split off first 4 or last 4 digits
@@ -611,31 +611,37 @@ if (i>=9){
 					}
 					
 					// if date, then serialize to start date
-
+					// date and time will be treated by algorithms as common transformation!!
 					if (formats[i] == DataTable.__FORMAT_DATE){  
 						// column.serializeDateEntries(tableHasHeader);
 						// we create new columns: inverse value = age, month, day of month, week, year
-						
 						// if date+time, create a new column for time serializing
 					}
-					
 					// if time, then serialize to nanos of day
 					if (formats[i] == DataTable.__FORMAT_TIME){  
-						
 					}
-					
-				 
 					
 					// if boolean, replace with 0 and 1
-					if ((formats[i] == __FORMAT_BIN) || (formats[i] == __FORMAT_BINSTR)){  
+					if ( (formats[i] == __FORMAT_BINSTR)){  
 						// it could be 1,0 yes/no true/false t/f  y/n, ja/nein j/n s/n o/n +/- 
-						column.recodeBinaryEntries(tableHasHeader);
+						int fc = column.recodeBinaryEntries(tableHasHeader);
+						// if successful, we change from  __FORMAT_BINSTR=13  to __FORMAT_BIN=5
+						// if more than 2 entries, we change to ordinal __FORMAT_ORD=3
+						if (fc>0){
+							formats[i] = fc ;	
+						}
+						
 					}
-					
 					
 				} // format not num ?
 				else{ // is num...
 					
+					// if boolean, replace with 0 and 1
+					if (formats[i] == __FORMAT_BIN ){  
+						// it could be 1,0 yes/no true/false t/f  y/n, ja/nein j/n s/n o/n +/- 
+						// nothing special ... we met 1,0 and perhaps missing values...
+						err=0;
+					}
 					
 				}
 				
@@ -647,21 +653,24 @@ if (i>=9){
 				// introduce into this table: structure is created, values copied
 				
 				// following the various conversions, all columns should contain numerical values
-				if (formats[i] <= __FORMAT_ORGINT){ column.isNumeric = true ; }
+				if (formats[i] <= __FORMAT_BIN){// || (formats[i] <= __FORMAT_ORGINT) 
+					column.isNumeric = true ; 
+				}
 				column.hasHeader = tableHasHeader;
-				this.getColumn(i).importColumn(column, 1) ;
+				getColumn(i).importColumn(column, 1) ;
 				
 				
 				
 				if (formats[i]==0){
 					this.getColumn(i).setAsIndexColumnCandidate(true);
 				}
-				if (formats[i]<=2){
+				if ((formats[i]<=2) || (formats[i]==5)){
 					getColumn(i).cellValueStr.clear();
 				}
 				colcount = i;
 				 
 			} // i-> all formats positions == all columns
+			// --------------------------------------------------------------------------------------------------------
 			
 			// translate
 			 

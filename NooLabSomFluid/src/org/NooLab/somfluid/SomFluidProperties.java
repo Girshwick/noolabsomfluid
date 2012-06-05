@@ -11,6 +11,7 @@ import org.NooLab.somfluid.components.DataFilter;
 import org.NooLab.somfluid.core.engines.det.ResultRequests;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
+import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
  
 import org.NooLab.somfluid.properties.DataUseSettings;
 import org.NooLab.somfluid.properties.ModelingSettings;
@@ -74,7 +75,8 @@ public class SomFluidProperties
 	// that is for _SOMTYPE_MONO only ! 
 	
 	DataUseSettings dataUseSettings = new DataUseSettings() ;
-		 
+	transient VariableSettingsHandlerIntf variableSettings; // TODO all getters and setters should be contained in interface... 
+ 
 	// lattice
 	int somType = -1; // mandatory 
 	int initialNodeCount = -1;
@@ -86,7 +88,9 @@ public class SomFluidProperties
 
 	private boolean extendingDataSourceEnabled;
 
-	private ArrayList<String> absoluteFieldExclusions;
+	ArrayList<String> absoluteFieldExclusions = new ArrayList<String>() ; 
+	ArrayList<String> treatmentDesignVariables = new ArrayList<String>() ;
+	ArrayList<String> groupDesignVariables = new ArrayList<String>() ;
 
 	private int absoluteFieldExclusionsMode;
 
@@ -99,18 +103,8 @@ public class SomFluidProperties
 	
 
 	private String systemRootDir;
-	
-	
-
 
 	transient private String currentSettingsXml="";
-
-	
-	
-	
-
-
-	
 	
 	// ========================================================================
 	public SomFluidProperties(){
@@ -836,6 +830,36 @@ public class SomFluidProperties
 	}
 
 
+	public void setVariableSettings(VariableSettingsHandlerIntf variablesettings) {
+		variableSettings = variablesettings;
+		
+	}
+
+
+	public VariableSettingsHandlerIntf getVariableSettings() {
+		return variableSettings;
+	}
+
+
+	public ArrayList<String> getTreatmentDesignVariables() {
+		return treatmentDesignVariables;
+	}
+	public void setTreatmentDesignVariables(ArrayList<String> list) {
+		if (list!=null){
+			treatmentDesignVariables = new ArrayList<String>(list);
+		}
+	}
+
+
+	public ArrayList<String> getGroupDesignVariables() {
+		 
+		return groupDesignVariables;
+	}
+	public void setGroupDesignVariables(ArrayList<String> list) {
+		if (list!=null){
+			groupDesignVariables = new ArrayList<String>(list);
+		}
+	}
 
 
 

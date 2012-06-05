@@ -218,6 +218,14 @@ abstract public class AlgoTransformationAbstract implements AlgoTransformationIn
 		
 		if (parametersNullCheck(algorithmparams)==false) return;
 		basicParametersAssimilation(algorithmparams) ;
+		
+		Class clzz = getClass().getMethod("setParameters").getDeclaringClass();
+		if (clzz != this.getClass()){
+			// of which interface?   C:\Programs\dev\eclipse\xlibs\reflection
+			Class[] intfaces = clzz.getInterfaces() ;
+			
+		}
+
 	}
 
 	

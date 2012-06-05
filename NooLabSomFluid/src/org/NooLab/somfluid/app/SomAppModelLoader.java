@@ -1241,7 +1241,7 @@ if (i==13){
 							
 
 							// dependent on data format, we have to introduce values differently
-							if (sT.getInFormat() > DataTable.__FORMAT_ORGINT) { 
+							if (sT.getInFormat() > DataTable.__FORMAT_BIN){// __FORMAT_ORGINT) { 
 								// text, string, dates are imported as strings
 								if (rvix >= 0) { 
 									ArrayList<String> cellvalueStr = somData.getDataTable().getColumn(rdix).getCellValueStr();

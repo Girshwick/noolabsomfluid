@@ -3,6 +3,8 @@ package org.NooLab.somtransform.algo;
 import java.util.ArrayList;
 
 import org.NooLab.somtransform.algo.intf.AlgoTransformationAbstract;
+import org.NooLab.somtransform.algo.intf.AlgorithmParameter;
+import org.NooLab.somtransform.algo.intf.AlgorithmParameters;
 
 
 /**
@@ -20,6 +22,9 @@ public class LinearNormalization extends AlgoTransformationAbstract {
 	
 	String versionStr = "1.00.01" ;
 	
+	/** if >=1 then [0..1] will be transformed into [0.3,0.7], or even [0.4 .. 0.6],
+	 * if scaleForBinary >=2   */
+	int scaleForBinary = -1;
 	
 	// ------------------------------------------------------------------------
 	public LinearNormalization(){
@@ -77,6 +82,9 @@ public class LinearNormalization extends AlgoTransformationAbstract {
 						// OR: -1.0 , according to the parameters
 					}
 					
+					if (scaleForBinary>=1){
+						vr = 0.3 + (vr * 0.4);
+					}
 					hb = setCalculationResultValue(i,vr) ;
 					// put value to outvalues<>
 				} else{
@@ -95,13 +103,28 @@ public class LinearNormalization extends AlgoTransformationAbstract {
 	}
 
 
- 
-
+	@Override
+	public void setParameters(AlgorithmParameters algorithmparams)  throws Exception{
+		
+		AlgorithmParameter ap = algorithmparams.getItem(0);
+		String apStr = ap.getStrValue() ;
+		if (apStr.length()>0){
+			if (apStr.toLowerCase().startsWith("bin")){
+				try{
+					scaleForBinary = ap.getIntValues()[0] ;
+				}catch(Exception e){
+					scaleForBinary = -1;
+				}
+			}
+		}
+	}
+	
 	@Override
 	public void setParameters(ArrayList<Object> params) throws Exception {
 		if ((params==null) || (params.size()==0)){
 			return;
 		}
+		Object p = params.get(0);
 	}
 	
 
