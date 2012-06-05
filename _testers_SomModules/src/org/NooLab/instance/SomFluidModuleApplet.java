@@ -115,7 +115,12 @@ public class SomFluidModuleApplet extends PApplet{
 		
 		// this have to be changed to index positions
 		powerset.getConstraints().addExcludingItems(new String[]{"C","G","J"});
-		powerset.getConstraints().addMandatoryItems(new String[]{"B","E"});
+		try {
+			powerset.getConstraints().addMandatoryItems(new String[]{"B","E"});
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		powerset.getConstraints().setMaximumLength(14);
 		powerset.getConstraints().setMinimumLength(3) ;
 		
@@ -577,7 +582,7 @@ class SomModuleInstance implements 	Runnable,
 		
 		
 		
-		sfFactory.produce( sfTask );          		// this produces the SomFluid and the requested som-type according to
+		               								// this produces the SomFluid and the requested som-type according to
 													// SomFluidProperties._SOMTYPE_MONO, referring implicitly to sfTask; 
 													//
 		
@@ -587,7 +592,12 @@ class SomModuleInstance implements 	Runnable,
 		sfTask.setStartMode(1) ;  
 		sfTask.setContinuity(2,0,200);
 		
-		sfFactory.produce( sfTask );
+		try {
+			sfFactory.produce( sfTask );
+		} catch (Exception e) {
+			 
+			e.printStackTrace();
+		}
 		
 		
 		// if we like to have graphical output, then start the applet for displaying it and 

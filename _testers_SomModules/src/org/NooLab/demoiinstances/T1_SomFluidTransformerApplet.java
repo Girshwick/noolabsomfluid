@@ -45,19 +45,20 @@ import org.NooLab.utilities.logging.LogControl;
 
 /**
  * 
- * Later: this applet should start the SomFluid as an application!!
+ * 
+ * 		
+		 
+		...some important API stuff for a running system
+		
+		sT = sfFactory.getSomTransformer(); 
+		sfFactory.getSomTransformer().introduceTransformation( );
+		sfFactory.getSomTransformer().introduceTransformations( filename );
+		sfFactory.getSomData().addObservations( ... );
+		sfFactory.getSomTransformer().reFreshCalculation( ); // explicit update through calculation, e.g. after adding data
+		
+		
  * Any communication should be performed through Glue
  * 
- * 
- * note that the SomFluid instance always contains the full spectrum of tools, yet,
- * it behaves as such or such (Som, Sprite, Optimizer, transformer), according to the request.
- * 
- * 
- * nice examples here:  http://technojeeves.com/
- * 
- * 
- * 
- * TODO: missing value portion in extensions update ... 
  * 
  */
 
@@ -115,7 +116,12 @@ public class T1_SomFluidTransformerApplet extends PApplet{
 		
 		// this have to be changed to index positions
 		powerset.getConstraints().addExcludingItems(new String[]{"C","G","J"});
-		powerset.getConstraints().addMandatoryItems(new String[]{"B","E"});
+		try {
+			powerset.getConstraints().addMandatoryItems(new String[]{"B","E"});
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		powerset.getConstraints().setMaximumLength(14);
 		powerset.getConstraints().setMinimumLength(3) ;
 		
@@ -799,7 +805,14 @@ class SomModuleInstanceT1 implements 	Runnable,
 		sfTask.setStartMode(1) ;  
 		sfTask.setContinuity(2,0,200);
 		
-		sfFactory.produce( sfTask );
+		try {
+			
+			sfFactory.produce( sfTask );
+			
+		} catch (Exception e) {
+			 
+			e.printStackTrace();
+		}
 		
 		// if we like to have graphical output, then start the applet for displaying it and 
 		// define shake hands by means of GlueClients...
