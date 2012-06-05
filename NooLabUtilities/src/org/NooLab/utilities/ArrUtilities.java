@@ -193,7 +193,7 @@ public class ArrUtilities {
 		int z=0; 
 		for (String s : vector) {
 											if (vector.size()>5000){
-												PrintLog.printPrc(2, z, vector.size(), vector.size()/20, " of transcribing vector");
+												PrintLog.printPrc(3, z, vector.size(), vector.size()/20, " of transcribing vector");
 											}
 
 			sb.append(s);
@@ -674,12 +674,18 @@ public class ArrUtilities {
 			max = intervals[i][kp];
 			
 			hb = false;
-			switch (borderMode) {
+			/* switch (borderMode) {
 				case 0: { hb = (value>=min) && ( value<=max ); }; 
 				case 1: { hb = (value> min) && ( value<=max ); };
 				case 2: { hb = (value>=min) && ( value< max ); };
 				case 3: { hb = (value> min) && ( value< max ); };
 			}
+			*/
+			if (borderMode==0) { hb = (value>=min) && ( value<=max ); }; 
+			if (borderMode==1) { hb = (value> min) && ( value<=max ); };
+			if (borderMode==2) { hb = (value>=min) && ( value< max ); };
+			if (borderMode==3) { hb = (value> min) && ( value< max ); };
+
 			
 			if (hb){
 				position = i;
