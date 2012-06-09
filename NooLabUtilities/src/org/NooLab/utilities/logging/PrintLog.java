@@ -393,7 +393,7 @@ if ((msg==null) ){
 		}
 	}
 	
-	public void printCompletionTime(int level, long starttime, int incrCounter, int totalcount, String addmsg) {
+	public void printCompletionTime(int level, long starttime, int incrCounter, int totalcount, int threadFactor, boolean displayPercentage, String addmsg) {
 		long dT,currtime = System.currentTimeMillis() ;
 		
 		dT = currtime-starttime;
@@ -404,7 +404,7 @@ if ((msg==null) ){
 		int remainingSteps = totalcount-incrCounter;
 		double avgTimePerStep = (double)dT/((double)(incrCounter));
 		
-		long remainingTime = (long)Math.round( ((double)remainingSteps*avgTimePerStep));
+		long remainingTime = (long)Math.round( ((double)remainingSteps*avgTimePerStep/(double)1));// threadFactor
 		
 		
 		int sec = (int) ((remainingTime / 1000) % 60);
@@ -417,8 +417,18 @@ if ((msg==null) ){
 		if (days>0){
 			str = days+" days, ";
 		}
-		str = str + hours+":"+min+":"+sec;
+		String hs,ms,st ;
 		
+		hs = ""+hours; if (hours<10)hs="0"+hs;
+		ms = ""+min;   if (min<10)  ms="0"+ms;
+		st = ""+sec;   if (sec<10)  st="0"+st;
+		
+		str = str + hs+":"+ms+":"+st;
+		
+		if (displayPercentage){
+			double prc = ((double)incrCounter/(double)totalcount)*100 ;
+			str = str + "  "+ String.format("%.1f", prc)+"% done (index:"+incrCounter+" of "+totalcount+")";
+		}
 		println( level, str);
 	}
 	
@@ -450,13 +460,12 @@ if ((msg==null) ){
 				 (stepwidth == 1) ||
 				 (incrCounter <= 0) ) {
 
-				perc = (double) ((1.0 * (double) incrCounter) / (1.0 * (double) totalcount))
-						* ((double) 100.0);
+				perc = (double) ((1.0 * (double) incrCounter) / (1.0 * (double) totalcount)) * ((double) 100.0);
 
 				pstr = String.format("%." + fracdigits + "f", perc);
 
-				if ((addmsg.length() == 0)
-						|| (addmsg.trim().indexOf("[!]") != 0)) {
+				if ((addmsg.length() == 0) || (addmsg.trim().indexOf("[!]") != 0)) {
+					
 					msg = "   " + pstr + "% completed ";
 					if (addmsg.length()==0){
 						msg = msg + "..." ;

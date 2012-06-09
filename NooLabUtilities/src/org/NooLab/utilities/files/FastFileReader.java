@@ -183,7 +183,7 @@ public class FastFileReader {
 	// ========================================================================
 	class ParseDigester implements IndexedItemsCallbackIntf{
 		 
-		MultiDigester digester ;
+		MultiDigester digester ; 
 		 
 		Vector<String>  rowText ;
 		
@@ -200,7 +200,7 @@ public class FastFileReader {
 			
 			// providing also right now the callback address (=this class)
 			// the interface contains just ONE routine: perform()
-			digester = new MultiDigester(threadcount, (IndexedItemsCallbackIntf)this ) ;
+			digester = new MultiDigester(threadcount, (IndexedItemsCallbackIntf)this ) ; 
 			 
 			rowText = rowtext ;
 			
