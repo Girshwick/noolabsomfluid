@@ -92,6 +92,20 @@ public class IndexedDistances implements Serializable{
 		Collections.sort(items, new ixdComparator(direction));
 	}
 	
+	// ------------------------------------------------------------------------
+	
+	/**
+	 * criterion : 1=distance, 2=index, 3=secondary index, 4=string
+	 * 
+	 * not functional yet !!!!!!!!
+	 * 
+	 */
+	public void sort(int criterion, int direction) {
+		// 
+		Collections.sort(items, new ixdComparator(direction));
+	}
+
+
 	public void sort(){
 		
 		// use: 
@@ -121,20 +135,6 @@ public class IndexedDistances implements Serializable{
 		} // done? ->
 	}
 	
-	// ------------------------------------------------------------------------
-	
-	/**
-	 * criterion : 1=distance, 2=index, 3=secondary index, 4=string
-	 * 
-	 * not functional yet !!!!!!!!
-	 * 
-	 */
-	public void sort(int criterion, int j) {
-		// TODO Auto-generated method stub
-		
-	}
-
-
 	public ArrayList<IndexDistance> getItems() {
 		return items;
 	}
@@ -243,25 +243,51 @@ public class IndexedDistances implements Serializable{
 
 	class ixdComparator implements Comparator{
 
+		int criterion;
 		int direction=0;
 		
+		/** 1 = smallest first, -1 = largest first*/
 		public ixdComparator(int dir){
 			direction = dir;
+			criterion = 1;
 		}
-
+		/** criterion : 1=distance, 2=index, 3=secondary index, 4=string */
+		public ixdComparator(int criterion, int dir){
+			direction = dir;
+			this.criterion = criterion;
+		}
 		
 		@Override
 		public int compare(Object obj1, Object obj2) {
 			
 			int result = 0;
 			IndexDistance ixd2,ixd1;
-			double v1,v2 ;
-			
+			double v1=0,v2=0 ;
+
 			ixd1 = (IndexDistance)obj1;
 			ixd2 = (IndexDistance)obj2;
+
+			if (criterion<=1){
+				v1 = ixd1.getDistance() ;
+				v2 = ixd2.getDistance() ;
+			}
+
+			if (criterion==2){
+				v1 = ixd1.getIndex() ;
+				v2 = ixd2.getIndex() ;
+			}
+			if (criterion==3){
+				v1 = ixd1.getIndex2() ;
+				v2 = ixd2.getIndex2() ;
+			}
+			if (criterion==4){
+				// translate string position-wise to number using ascii, bytecode, forming a number string
+				
+				// translating string to num value
+				
+				// comparing
+			}
 			
-			v1 = ixd1.getDistance() ;
-			v2 = ixd2.getDistance() ;
 			
 			if (direction>=0){
 				if (v1>v2){

@@ -506,6 +506,10 @@ public class ArrUtilities {
 	}
 	*/
 	
+	/**
+	 * takes an ArrayList containing primitives from {int, double, string} and turns it into an array prim[]
+	 * 
+	 */
 	@SuppressWarnings("rawtypes")
 	public static Object changeArraystyle( ArrayList<?> valuesObj) {
 		
@@ -540,6 +544,14 @@ public class ArrUtilities {
 			arrayObj = di;			
 		}
 		
+		if (cn.startsWith("string")){
+			String[] si = new String[valuesObj.size()];
+			
+			for(int i=0;i<si.length;i++){
+				si[i] =  ((String) valuesObj.get(i)) ;
+			}
+			arrayObj = si;			
+		}
 		return arrayObj;
 	}
 	
