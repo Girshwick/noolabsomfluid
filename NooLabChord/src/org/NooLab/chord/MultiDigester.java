@@ -1,9 +1,12 @@
 package org.NooLab.chord;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Vector;
 
 import org.NooLab.chord.util.ThrdUtilities;
+import org.apache.commons.collections.CollectionUtils;
  
    
 
@@ -41,11 +44,16 @@ import org.NooLab.chord.util.ThrdUtilities;
 @SuppressWarnings("static-access")
 public class MultiDigester   {
 
+	public static final int _PRIORITY_LO  = 3;
+	public static final int _PRIORITY_MID = 5;
+	public static final int _PRIORITY_HI  = 8;
+	
 	int threadcount; 
 	int threadPriority;
 	
 	ItemSet[] itemsubset  ;
 	int[] itemsIndex;
+	int itemCount=0;
 	
 	String[] debugStrings ;
 	int[] taskSizes = new int[0];
@@ -56,9 +64,11 @@ public class MultiDigester   {
 	int diagnosticPrintOut = 0;
 	int amorphousPill = 0;
 	
-	boolean autoStoponTaskDelay = false;
+	boolean autoStoponTaskDelay = false ;
+	boolean balancedExecution = false ;
+	boolean shuffledIndices = false ;
 	
-	// long autoStopDelay = 1000*60*10; // 10 minutes ....
+	
 	
 	// ..................................................
 	
@@ -114,7 +124,7 @@ public class MultiDigester   {
 		// creating n subsets, n = threadcount
 		initializeSubSets() ;
 		
-		reset();
+		reset(); // creates the threads via initializeThreads()
 		
 	}
 	 
@@ -124,6 +134,9 @@ public class MultiDigester   {
 		initializeThreads();
 	}
 	
+	public void close(){
+		amorphousPill = 1;
+	}
 	 
 	
 	protected void initializeSubSets(){
@@ -156,7 +169,7 @@ public class MultiDigester   {
 		// System.gc() ; 
 
 		try {
-			//Thread.sleep(5) ;
+			Thread.sleep(0,5) ;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -164,11 +177,22 @@ public class MultiDigester   {
 		workerThreads = new ThreadedDigester[threadcount];
 		
 		for (int i=0;i<threadcount;i++){
+			
 			workerThreads[i] = new ThreadedDigester(i);
+			
+			try {
+				Thread.sleep(2) ;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 		
 	}
 	
+	/**
+	 * 
+	 * @param there are constants "MultiDigester._PRIORITY_*"
+	 */
 	public void setPriority( int priority){
 		threadPriority=priority;
 		
@@ -194,6 +218,7 @@ public class MultiDigester   {
 		int n=0, id=0 ;
 		int item;
 
+		itemCount = itemcount;
 		itemsIndex = new int[itemcount] ;
 		
 		if (offset>0){
@@ -220,6 +245,15 @@ public class MultiDigester   {
 		 
 		}
 		n=0;
+		
+		if (shuffledIndices){
+			n=0;
+			for (int i=0;i<itemsubset.length;i++){
+				Collections.shuffle( itemsubset[i].items );
+				Collections.shuffle( itemsubset[i].items );
+			}
+		}
+		
 	}
 	
 	public void importDebugStrings( int[] tasksizes ){
@@ -304,7 +338,7 @@ public class MultiDigester   {
 			closedthreadSum = 0;
 			
 			// set all active
-			for (int i = 0; i < threadcount; i++) {
+			for (int i = 0; i < threadcount; i++) { 
 				
 				try {
 					// Thread.currentThread().sleep(1);
@@ -364,7 +398,7 @@ public class MultiDigester   {
 				
 				if (closedthreadSum < threadcount) {
 
-					Thread.currentThread().sleep(1);
+					Thread.currentThread().sleep(0,10);
 
 					if (diagnosticPrintOut>=4){
 						Thread.currentThread().sleep(1800);
@@ -432,6 +466,18 @@ public class MultiDigester   {
 	
 	
 	
+	public int getRunningThreadsCount() {
+		int c=0;
+		
+		for (int i=0;i<workerThreads.length;i++){
+			if (workerThreads[i].alive){
+				c++;
+			}
+		}
+		return c;
+	}
+
+
 	public void testCall( int id){
 		
 		
@@ -461,7 +507,7 @@ public class MultiDigester   {
 		// . . . . . . . . . . . . . . . . . . . . . . . . 
 		public ThreadedDigester(int ix){
 			index = ix;
-			thrdName = "mdthr-"+ix ;
+			thrdName = "multidigThr-"+ix ;
 			thrd = new Thread(this,thrdName) ;
 			
 			thrdName = thrd.getName() ;
@@ -502,7 +548,7 @@ public class MultiDigester   {
 				selectedIndexValue = -1;
 			
 			 
-				while ((alive) && (amorphousPill==0)) {
+				while ((alive) && (amorphousPill<=0)) {
 
 					if ( active == false ){
 						// thrd.sleep(100);
@@ -510,10 +556,10 @@ public class MultiDigester   {
 							amorphousPill = indexedItemsRoutine.getClosedStatus() ;
 							
 							if (diagnosticPrintOut >= 4){
-								Thread.currentThread().sleep(10);
+								Thread.currentThread().sleep(0,10);
 								System.out.println("thread ("+index+") is waiting...") ;
 							}else{
-								Thread.currentThread().sleep(2); // prevent processor activity 100%...
+								Thread.currentThread().sleep(0,2); // prevent processor activity 100%...
 							}
 							if (amorphousPill>0){
 								alive=false; active=false;
@@ -523,17 +569,30 @@ public class MultiDigester   {
 					} 
 					
 					if (active){
-						
+						if ((balancedExecution) && (itemindex==0)){
+							// we activate in the order of the threads == in the order of original indexes
+							while (earlierWorkerStarted(index)==false){
+								Thread.currentThread().sleep(0,10); 
+							}
+						}
 						if (itemindex < itemsubset[index].items.size() ){
 							
 							selectedIndexValue = itemsubset[index].items.get(itemindex) ;
 							
 							if (diagnosticPrintOut>=4){
-								Thread.currentThread().sleep(2);
+								Thread.currentThread().sleep(0,12);
 								System.out.println("thread ("+index+") is working on item : " + selectedIndexValue) ;
 							}
 							
 							performWork( index, selectedIndexValue ) ;
+							
+							if ((balancedExecution) && (itemindex<itemCount-threadcount-1)){
+								while (workerIsAhead(index, selectedIndexValue )){
+									Thread.currentThread().sleep(0,10); 
+									// waiting for the slowest worker
+								}
+								
+							}
 						}
 						
 					
@@ -558,6 +617,74 @@ public class MultiDigester   {
 			}
 		}
  
+		
+		/**
+		 * 
+		 * @param thrdIndex the index of the worker thread
+		 * @param itemIndex the index value of the item it has been working on
+		 * @return
+		 */
+		protected boolean workerIsAhead( int thrdIndex, int itemIndex ){
+			boolean rB = false;
+			ThreadedDigester worker;
+			int minW, minix=999999999;
+			
+			for (int i=0;i<workerThreads.length;i++){
+				worker = workerThreads[i];
+				if ((worker!=null) && (worker.alive)){
+					if (minix>worker.itemindex){
+						minix = worker.itemindex;
+						minW = i;
+					}
+				}
+			}
+			
+			if (minix < itemindex-(2.3*threadcount)){
+				rB=true;
+			}
+			return rB;
+		}
+		
+		/**
+		 * this checks whether a worker with a lower index value already worked on its first item
+		 * 
+		 * @param thrdIndex
+		 * @return
+		 */
+		protected boolean earlierWorkerStarted( int thrdIndex ){
+			boolean rB = false;
+			ThreadedDigester worker;
+			
+			if (thrdIndex==0){
+				if (itemindex==0){
+					return true;
+				}
+			}
+			if ((itemindex==1)&& (thrdIndex<threadcount)){
+				// we check for all workers that just started, whether there companions with higher index
+				// also have started, if not we return false, which means that his worker will wait a bit
+				rB=true;
+				for (int i=thrdIndex+1;i<workerThreads.length;i++){
+					worker = workerThreads[i];
+					if ((worker!=null) && (worker.alive)){
+						rB = worker.itemindex>0;
+					}
+					if (rB==false){
+						return false;
+					}
+				}
+			}
+			// for all workers with lower index we check if they have started at all
+			// if not this worker has to wait
+			for (int i=thrdIndex-1;i>=0;i--){
+				worker = workerThreads[i];
+				if ((worker!=null) && (worker.alive)){
+					rB = worker.itemindex>0;
+				}
+			}
+			
+			return rB;
+		}
 		
 	}
 
@@ -601,6 +728,22 @@ public class MultiDigester   {
 
 	public void setAutoStoponTaskDelay(boolean autoStoponTaskDelay) {
 		this.autoStoponTaskDelay = autoStoponTaskDelay;
+	}
+
+
+	public boolean isBalancedExecution() {
+		return balancedExecution;
+	}
+
+
+	public void setBalancedExecution(boolean flag) {
+		balancedExecution = flag;
+	}
+
+
+	public void setShuffledIndices(boolean flag) {
+		
+		shuffledIndices = flag;
 	}
 
 
