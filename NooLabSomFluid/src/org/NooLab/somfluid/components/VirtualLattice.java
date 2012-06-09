@@ -280,6 +280,38 @@ public class VirtualLattice implements LatticeIntf{
 	
 	
 	/**
+	 * this exports the profiles of all nodes, such that the profiles contain values </br> </br>
+	 * for all of the active variables : </br>
+	 * ...excluded: target variables, index variables, blacklist, absolutely excluded variables </br> </br>
+	 * 
+	 * for that, we will retrieve the indices of the records collected in the nodes (as extension)
+	 * 
+	 * @return SomMapTable
+	 */
+	public SomMapTable exportExtendedSomMapTable() {
+		 
+		SomMapTable  smt = new SomMapTable();
+	 
+		try{
+			// smt = exportSomMapTable(0) ; // 0 = include only the used variables
+			
+			// smt = exportSomMapTable(2) ; // 2 = only the TV column 
+
+			smt = exportSomMapTable(1) ; // 1 = include all "non-blacks", 
+		
+			// the not used variables may contain inadequate values  ....
+			
+		}catch(Exception e){
+			
+			e.printStackTrace();
+		}
+				
+		
+		
+		return  smt;
+	}
+
+	/**
 	 * 
 	 * extracting the profiles from the SomLattice into a simple table.
 	 * 
@@ -298,14 +330,14 @@ public class VirtualLattice implements LatticeIntf{
 	public SomMapTable exportSomMapTable(int modus) {
 		
 		SomMapTable smt = new SomMapTable();
-		/*
-		 	double[][] values = new double[0][0] ; 
-			String[]   variables = new String[0] ;
-		 */
 		
-		boolean hb, nodeIsApplicable;
-		String varLabel;
-		int refNodeCount=0, vix, tvindex=-1 ;
+		 	
+			
+		 
+		double profileValueForVar;
+		boolean hb, nodeIsApplicable,sorted=false;
+		String varLabel, variableLabel;
+		int refNodeCount=0, vix,err=0, tvindex=-1 ;
 		
 		// ArrayList<MetaNode> nodes;
 		MetaNode node;
@@ -317,7 +349,7 @@ public class VirtualLattice implements LatticeIntf{
 		Variables  variables;
 		Variable variable ;
 		
-		
+		ArrayList<String>  usedVarLabels;
 		ArrayList<String>  nodeVarStr ;// = new ArrayList<String>();
 		ArrayList<String>  activeVarStr = new ArrayList<String>();
 		ArrayList<String>  compoundVarStr = new ArrayList<String>();
@@ -330,22 +362,33 @@ public class VirtualLattice implements LatticeIntf{
 		
 		//ArrayList<Double> latticeuseIndicators = getSimilarityConcepts().getUsageIndicationVector() ;
 		
+		if (modus>=10){
+			modus= modus-10;
+			sorted=true;
+		}
+
 		/*
 		 * we need to (re)calculate the whole profile, non-used profile entries are 0.0 by default ! 
 		 */
-		if (modus>0){
+		if (modus==1){
+			//profileVector = nodes.get(5).getIntensionality().getProfileVector();
 			updateIntensionalProfiles( modus ) ;
+			
 		}
-		if (modus>1)modus=1;
+		// profileVector = nodes.get(5).getIntensionality().getProfileVector();
 		
 		/*
 		 * we need two loops, since compared/extracted nodes may be of different structure 
-		 * the first one finding the compound vector that can be used to describe all nodes,
-		 */
-		for (int i=0;i<nodes.size();i++){
+		 * the first one finding the compound vector that can be used to describe all nodes, */
+		int zn = Math.min( 3, nodes.size()) ; // actually, zn is dependent on the differential structure of nodes: are nodes different ?
+		for (int i=0;i<zn;i++){
+			
+			usedVarLabels = variables.getLabelsForUseIndicationVector(variables, useIndicators = nodes.get(0).getSimilarity().getUsageIndicationVector() ) ;	
+			
 			
 			node = nodes.get(i) ;
 			useIndicators = node.getSimilarity().getUsageIndicationVector();
+			
 			// ATTENTION this does NOT contain the target variable
 			// also: blacklist..., 
 			
@@ -364,32 +407,38 @@ public class VirtualLattice implements LatticeIntf{
 				if (vix<0){continue;}
 				
 				variable = variables.getItem(vix) ;
-				
-				 
+				  
 				hb = true;
-				
-				// hb =  variable.isTV(); // variable.isUsed() ||
-				{
-					if ((hb) || (variable.isTV() )){
-						hb = (variable.isIndexcandidate()==false) && (variable.isID()==false) && (variable.isTVcandidate()==false) ;	
-					}
-					if (hb==false){
-						continue;
-					}
+			  
+				variableLabel = variable.getLabel() ;
+				 
+				if (modus<=0){
+					hb = ( (variable.isTV() || (useIndicators.get(v)>0.0) || (useIndicators.get(v)==-2.0)))  && 
+					  	   (
+								(variable.isID()==false) && 
+								(variables.getBlacklistLabels().indexOf(varLabel)<0) && 
+								(variables.getAbsoluteFieldExclusions().indexOf(varLabel)<0 ) &&
+								(variable.isIndexcandidate()== false)
+						    );
 				}
-				
-				varLabel = variable.getLabel() ;
-				
-				if (hb){
-					hb = (useIndicators.get(v)>0.0) || (useIndicators.get(v)==-2.0) ;
-				}
-				if (modus>=1){
-					hb = ((useIndicators.get(v)>=0.0) || (useIndicators.get(v)==-2.0) )&& (variables.getBlacklistLabels().indexOf(varLabel)<0) ;
-				}
-				if (hb){
+				if (modus==1){
 					
+					hb = (variables.getBlacklistLabels().indexOf(varLabel)<0) && (variables.getAbsoluteFieldExclusions().indexOf(varLabel)<0 );
+					if (hb){
+					      hb = (variable.isIndexcandidate()== false) && (variable.isID()==false) ;
+					}
+					if (hb){
+						hb = (variable.isTV() ) || (variable.isTVcandidate() == false)  ;
+					}
+				}
+				if (modus>=2){
+					hb = variable.isTV() ;
+				}
+				
+				if (hb){
+					// adding to the list of variables of the SomMapTable 	
 					if (compoundVarStr.indexOf( varLabel )<0 ){
-						compoundVarStr.add( variable.getLabel() ) ;
+						compoundVarStr.add( variableLabel ) ;
 						if (variable.isTV()){
 							tvindex = v; 
 						}
@@ -402,7 +451,9 @@ public class VirtualLattice implements LatticeIntf{
 			refNodeCount++;
 			
 		} // i-> all nodes
-
+		
+		refNodeCount = nodes.size() ;
+		
 		if (compoundVarStr.size()==0){
 			return smt;
 		}
@@ -420,7 +471,7 @@ public class VirtualLattice implements LatticeIntf{
 		smt.variables = new String[ compoundVarStr.size()] ; 
 		// that would be wrong!
 		// smt.tvIndex = dSom.getSomData().getVariables().getTvColumnIndex() ;
-		smt.tvIndex = tvindex ; 
+		smt.tvIndex = compoundVarStr.indexOf(tvLabel) ; 
 		int rnc=0;
 		
 		// compoundVarStr could be in a different order as compared to the table,
@@ -441,37 +492,45 @@ public class VirtualLattice implements LatticeIntf{
 				if (nodeIsApplicable==false){
 					continue;
 				}
-				
+				int nodesize = node.getExtensionality().getListOfRecords().size();
 				profileVector = node.getIntensionality().getProfileVector();
 				
 				// we export used vars + TV
 				pValues = profileVector.getValues() ;
 				
 				// we do this for each node, though in most cases this is redundant, 
-				// et, nodes are NOT necessarily showing the same assignates/features !!
+				// e.g., nodes are NOT necessarily showing the same assignates/features !!
 				for (int v=0;v<variables.size();v++){
 					
 					variable = variables.getItem(v) ;
 					varLabel = variable.getLabel() ;
 					
+					/*
 					hb = (useIndicators.get(v)>0.0) || (variable.isTV());
 					if (hb){
 						hb = (variable.isIndexcandidate()==false) && (variable.isID()==false) ;	
 					}
+					*/
 					hb = compoundVarStr.indexOf(varLabel)>=0;
 					
 					if (hb){
 						
+						profileValueForVar = pValues.get(v);
 						
-						activeVarStr.add( varLabel ) ;
-						
+						if ((modus==1) && (profileValueForVar<=0.0)){
+							profileValueForVar = node.explicitReCalcOfProfilePosition(v) ;
+							pValues.set(v,profileValueForVar) ;
+						}
+						if (activeVarStr.indexOf(varLabel)<0){
+							activeVarStr.add( varLabel ) ;
+						}
 						// activeProfileValue = pValues.get(v) ;
 						// activeProfileValues.add(activeProfileValue) ;
 						
 						vix = compoundVarStr.indexOf(varLabel) ;
 						if (vix>=0){
 							smt.variables[vix] = varLabel;
-							smt.values[rnc][vix] = pValues.get(v);
+							smt.values[rnc][vix] = profileValueForVar;
 							if (variable.isTV()){
 								smt.tvIndex = vix;
 							}
@@ -484,16 +543,16 @@ public class VirtualLattice implements LatticeIntf{
 				
 			} // i-> all nodes
 	
-			
-			
+			vix=0;
 			
 		}catch(Exception e){
+			int rc=smt.values.length;
+			int cc=smt.values[0].length;
 			
+			out.printErr(2, "Error code = "+err+"\ntable dimensions, rows="+rc+", expected="+refNodeCount+" , columns="+cc+" , expected="+compoundVarStr.size()+" ") ;
 			e.printStackTrace();
 		}
 				
-		
-		
 		return smt;
 	}
 

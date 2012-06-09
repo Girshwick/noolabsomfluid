@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import org.NooLab.somsprite.AnalyticFunctionSpriteImprovement;
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.strings.StringsUtil;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -24,6 +25,23 @@ public class Variables implements Serializable, VariablesIntf{
 	ArrayList<String>	  whitelistLabels = new ArrayList<String>() ;
 	ArrayList<String> 	  blacklistLabels = new ArrayList<String>() ;
 	ArrayList<String> 	  absoluteFieldExclusions = new ArrayList<String>() ;
+	
+	/** 
+	 * these exclusions are regulated by the modeling process itself, the user can't access them;
+	 * they are of temporary character !
+	 * Usually, in the first step of the L2 loop, variables are excluded through collinearity reasoning
+	 * in order to speed up exploration  
+	 * 
+	 * index   : index of excluded variable, referring to "variables"
+	 * index2  : (optional) index of collinear variable that remains in the set of active variables
+	 * distance: (optional) Spearman correlation
+	 * string  : label of excluded variable
+	 * 
+	 */
+	IndexedDistances 	  inProcessExclusions = new IndexedDistances() ; // a small, sortable structure comprising 2 int, 1 double, 1 string
+	
+	/**  */
+	ArrayList<Double>     empiricalPropensities = new ArrayList<Double>() ; 	  
 	
 	ArrayList<Variable>   idVariables = new ArrayList<Variable>() ;
 	ArrayList<Variable>   targetedVariables = new ArrayList<Variable>() ;
@@ -139,6 +157,19 @@ public class Variables implements Serializable, VariablesIntf{
 		return knownTransforms;
 	}
 
+	public ArrayList<String> openForInspection(  ) {
+		
+		ArrayList<String> stritems = new ArrayList<String>();
+		
+		for (int i=0;i<items.size();i++){
+			
+			if (openForInspection(items.get(i))){
+				stritems.add( items.get(i).getLabel() ) ;
+			}
+		}
+		return stritems;
+	}
+	
 	public boolean openForInspection( Variable v ) {
 		boolean hb;
 		
@@ -150,6 +181,7 @@ public class Variables implements Serializable, VariablesIntf{
 		if (hb) hb = !v.isIndexcandidate(); 
 		if (hb) hb = !v.isTVcandidate(); 
 			
+		if (hb) hb = getAbsoluteFieldExclusions().indexOf(v.getLabel())<0 ;
 		for (int i=0;i<blacklistLabels.size();i++){
 			if (hb){
 				hb = (strgutil.matchSimpleWildcard( v.getLabel() , blacklistLabels.get(i)) ==false);
@@ -165,6 +197,26 @@ public class Variables implements Serializable, VariablesIntf{
 	}
 
 	
+	
+	public ArrayList<String> cleanListByinProcessExclusions(ArrayList<String> inList) {
+		
+		ArrayList<String> outList = new ArrayList<String> (inList);
+		String vlabel;
+		int ix;
+		
+		if (inProcessExclusions==null){inProcessExclusions = new IndexedDistances();}
+		
+		for (int i=0;i<inProcessExclusions.size();i++){
+			vlabel = inProcessExclusions.getItem(i).getGuidStr();
+			ix = outList.indexOf(vlabel); 
+			if (ix>=0){
+				outList.remove(ix) ;
+			}
+		}
+		return outList;
+	}
+	
+	
 	@SuppressWarnings("unchecked")
 	public ArrayList<String> confirmVariablesAvailability(ArrayList<String> inList) {
 		
@@ -172,7 +224,7 @@ public class Variables implements Serializable, VariablesIntf{
 		ArrayList<String> knownList = getLabelsForVariablesList(this);
 		
 		ArrayList<String> aL = (ArrayList<String>) CollectionUtils.intersection(knownList, inList);
-		if ((aL!=null) || (aL.size()==inList.size())){
+		if ((aL!=null) && (aL.size()==inList.size())){
 			outList = inList;
 		}else{
 		
@@ -190,9 +242,13 @@ public class Variables implements Serializable, VariablesIntf{
 		return outList;
 	}
 
+	
+	
 	public ArrayList<String> collectAllNonCommons() {
 		return collectAllNonCommons(null) ;
 	}
+	
+	@SuppressWarnings("unchecked")
 	public ArrayList<String> collectAllNonCommons( ArrayList<String> addEx) {
 	
 		ArrayList<String> dexList = new ArrayList<String>();
@@ -203,7 +259,6 @@ public class Variables implements Serializable, VariablesIntf{
 		if ((addEx!=null) && (addEx.size()>0)){
 			dexList = (ArrayList<String>) CollectionUtils.union(dexList,addEx ) ;
 		}
-		
 		
 		
 		if ((targetedVariables!=null) && (targetedVariables.size()>0)){
@@ -237,7 +292,6 @@ public class Variables implements Serializable, VariablesIntf{
 		}
 		return dexList;
 	}
-
 	
 	
 	
@@ -245,10 +299,10 @@ public class Variables implements Serializable, VariablesIntf{
 		 
 		String vlabel = "" ;
 		Variable variable;
-		ArrayList<String> explics,vlabels ;
+		ArrayList<String> explics ;
 		
 		vlabel = ""; 
-		vlabels = getLabelsForVariablesList(this) ;
+		// vlabels = getLabelsForVariablesList(this) ;
 		
 		for (int i=0; i< blacklistLabels.size();i++){
 			vlabel = blacklistLabels.get(i) ;
@@ -305,8 +359,9 @@ public class Variables implements Serializable, VariablesIntf{
 					 for (int k=0;k< explics.size(); k++){
 						 vlabel = explics.get(k) ;
 						 variable = getItemByLabel(vlabel);
-						 if ( targetedVariables.indexOf(variable)<0){
+						 if ((variable != null) && ( targetedVariables.indexOf(variable)<0)){
 							 targetedVariables.add(variable) ;
+							 variable.setTVcandidate(true);
 						 }
 					 }
 				}
@@ -314,24 +369,34 @@ public class Variables implements Serializable, VariablesIntf{
 			} // contains * ?
 			else{
 				variable = getItemByLabel(vlabel);
-				if (targetedVariables.indexOf(variable) < 0) {
-					targetedVariables.add(variable);
+				if (variable != null) {
+					if (targetedVariables.indexOf(variable) < 0) {
+						targetedVariables.add(variable);
+					}
+					variable.setTVcandidate(true);
 				}
 			}
 		} // i ->
 		 
 		if (getTvColumnIndex()<0){
 			if (getTargetVariable()==null){
-				int k;
-				k=0;
+				// int k=0;
 			}else{
 				tvColumnIndex = getIndexByLabel( getTargetVariable().getLabel() );
 			}
 		}
-		targetVariableLabel = getTargetVariable().getLabel() ;
+		if (getTargetVariable()==null){
+			if (tvColumnIndex>=0){
+				this.targetVariable = items.get(tvColumnIndex) ;
+			}
+		}
+		if (getTargetVariable()!=null){ targetVariableLabel = getTargetVariable().getLabel() ;}
+		
 		vlabel = "" ;
 		for (int i=0; i< variableSettings.getIdVariableCandidates().size();i++){
+			
 			vlabel = variableSettings.getIdVariableCandidates().get(i) ;
+			
 			if ((vlabel.startsWith("*")) || (vlabel.endsWith("*"))){
 				explics = explicateWildcardedLabel(vlabel);
 				if (explics.size()>0){
@@ -340,6 +405,7 @@ public class Variables implements Serializable, VariablesIntf{
 						 variable = getItemByLabel(vlabel);
 						 if ( idVariables.indexOf(variable)<0){
 							 idVariables.add(variable) ;
+							 variable.setIndexcandidate(true);
 						 }
 					 }
 				}
@@ -347,12 +413,26 @@ public class Variables implements Serializable, VariablesIntf{
 			} // contains * ?
 			else {
 				variable = getItemByLabel(vlabel);
-				if (idVariables.indexOf(variable) < 0) {
-					idVariables.add(variable);
+				if (variable != null) {
+					if (idVariables.indexOf(variable) < 0) {
+						idVariables.add(variable);
+					}
+					variable.setIndexcandidate(true);
+				} else {
+					vlabel = vlabel+"" ;
 				}
 			}
 		} // i ->
 		this.setIdLabel( variableSettings.getIdVariable() );
+		
+		ArrayList<String> targetedVariables = getAllTargetedVariablesStr();
+		for (int i=0;i<targetedVariables.size();i++){
+			int ix = this.getIndexByLabel( targetedVariables.get(i) );
+			if (ix>=0){
+				items.get(ix).setTVcandidate(true);
+			}
+		}
+		
 		vlabel = "" ;
 	}
 	
@@ -595,7 +675,7 @@ if (varLabel.contains(pL)){
 		ArrayList<Double> useIndicationVector = new ArrayList<Double>();
 		String vlabel;
 		double ui;
-		ArrayList<String> varLabels = getLabelsForVariablesList(items);
+		// ArrayList<String> varLabels = getLabelsForVariablesList(items);
 		
 		for (int i=0;i<items.size();i++){
 			ui=0.0;
@@ -615,13 +695,15 @@ if (varLabel.contains(pL)){
 	 */
 	public ArrayList<Integer> getIndexesForLabelsList(ArrayList<String> stringList) {
 		ArrayList<Integer> indexes = new ArrayList<Integer>();
-		String inlabel,label;
+		String inlabel ;
 		ArrayList<String> varLabels = getLabelsForVariablesList(items);
 		
 		for (int i=0;i<stringList.size();i++){
 			inlabel = stringList.get(i) ;
 			int p = varLabels.indexOf(inlabel) ;
-			indexes.add(p) ;
+			if (indexes.indexOf(p)<0){
+				indexes.add(p) ;
+			}
 		}
 		
 		return indexes;
@@ -648,7 +730,7 @@ if (varLabel.contains(pL)){
 		
 		ArrayList<String> activeVars = new ArrayList<String>(); 
 		boolean hb ;
-		String varLabel="", varstr;
+		String varLabel="";
 		
 		
 		for (int i=0;i<items.size();i++){
@@ -730,6 +812,9 @@ if (varLabel.contains(pL)){
 					hb=false;
 				}
 			}
+			if (hb==false){
+				hb = targetedVariables.indexOf(v)>=0;
+			}
 			if (hb){
 				atv.add(v) ;
 			}
@@ -791,7 +876,8 @@ if (varLabel.contains(pL)){
 	public void setItems(ArrayList<Variable> items) {
 		this.items = items;
 	}
-
+ 
+	
 	public void setVariableSettings(VariableSettingsHandlerIntf variablesettings) {
 		
 		if (variablesettings==null){
@@ -1021,6 +1107,42 @@ if (varLabel.contains(pL)){
 		this.absoluteAccessible = absoluteAccessible;
 	}
 
+	public IndexedDistances getInProcessExclusions() {
+		return inProcessExclusions;
+	}
+
+	public void setInProcessExclusions(IndexedDistances inProcessExclusions) {
+		this.inProcessExclusions = inProcessExclusions;
+	}
+
+	public ArrayList<Double> getEmpiricalPropensities() {
+		return empiricalPropensities;
+	}
+
+	public void setEmpiricalPropensities(ArrayList<Double> empiricalPropensities) {
+		this.empiricalPropensities = empiricalPropensities;
+	}
+
+	public String getTargetVariableLabel() {
+		return targetVariableLabel;
+	}
+
+	public void setTargetVariableLabel(String targetVariableLabel) {
+		this.targetVariableLabel = targetVariableLabel;
+	}
+
+	public ArrayList<String> getInitialUsedVariablesStr() {
+		return initialUsedVariablesStr;
+	}
+
+	public void setInitialUsedVariablesStr(ArrayList<String> initialUsedVariablesStr) {
+		this.initialUsedVariablesStr = initialUsedVariablesStr;
+	}
+
+	public void setUsageIndicationVector(ArrayList<Double> usageIndicationVector) {
+		this.usageIndicationVector = usageIndicationVector;
+	}
+
 	public ArrayList<Variable> getBlackList() {
 		if (blackList==null)blackList = new ArrayList<Variable> (); 
 		return blackList;
@@ -1139,13 +1261,16 @@ if (varLabel.contains(pL)){
 	public ArrayList<String> getInitialUsageVector() {
 		return initialUsedVariablesStr;
 	}
+	
+	
 	// public void setInitialUsageVector(ArrayList<String> initialUseVector) {
 	public void setInitialUsageVector(ArrayList<String> initialUseVector) {
-		int n;
+		
 		if ((initialUseVector==null) || (initialUseVector.size()<=1)){
-			n=0;
+			// int n=0;
 		}
 		this.initialUsedVariablesStr = new ArrayList<String>( initialUseVector ) ;
+		
 		// initialized as existing but empty list: ArrayList<Double> usageIndicationVector = new ArrayList<Double>() ;
 		if (usageIndicationVector.size() != items.size()){
 			for (int i=0;i<items.size();i++){
@@ -1156,7 +1281,7 @@ if (varLabel.contains(pL)){
 				}
 			}
 		}
-		n=0;
+		
 	}
 
 	public int[] getUseIndicatorArray() {
@@ -1219,9 +1344,13 @@ if (varLabel.contains(pL)){
 		boolean hb;
 		// items ArrayList<Variable>
 		Variable item;
-		String itemVLabel;
+		
+		
 		for (int i=0;i<items.size();i++){
-			item = items.get(i) ;  itemVLabel = item.getLabel() ;
+			
+			item = items.get(i) ;  
+			// String itemVLabel = item.getLabel() ;
+			
 			if ((item!=null) && (item.getLabel().contentEquals(varLabel))){
 				index=i;
 				break ;
@@ -1360,7 +1489,7 @@ if (varLabel.contains(pL)){
 		String varStr;
 		
 		//DataTable dtable;
-		Variables variables;
+		// Variables variables;
 		
 		double[] usevector ;
 		ArrayList<Double> usageVector = new ArrayList<Double>();
@@ -1387,7 +1516,7 @@ if (varLabel.contains(pL)){
 			if (varix<0){
 				//varix = dSom.getTargetVariableColumn() ;	
 				setTvColumnIndex(varix) ;
-				int n=10/0;
+				// int n=10/0;
 			}
 			if (varix<0){
 				return usageVector ; // it is still empty -> nothing will happen
@@ -1438,16 +1567,18 @@ if (varLabel.contains(pL)){
 	 * @param indications
 	 * @return
 	 */
+	@SuppressWarnings("rawtypes")
 	public Object transcribeUseIndications( ArrayList indications ) {
 		
 		return transcribeUseIndications( this, indications) ;
 	}
 	
+	@SuppressWarnings("rawtypes")
 	public Object transcribeUseIndications( Variables variables, ArrayList indications ) {
 		Object listobj = null;
 		ArrayList<Double> usageIndicationVector = new ArrayList<Double>();
 		ArrayList<Integer> usedVarIndexes = new ArrayList<Integer>();
-		ArrayList<String> varLabels = new ArrayList<String>();
+		// ArrayList<String> varLabels = new ArrayList<String>();
 		
 		Object listitem = indications.get(0);
 		
@@ -1521,6 +1652,8 @@ if (varLabel.contains(pL)){
 	 
 		strgutil = new StringsUtil();
 	}
+
+
 
 
 

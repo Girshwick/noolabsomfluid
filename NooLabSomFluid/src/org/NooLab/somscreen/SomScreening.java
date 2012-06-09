@@ -1,6 +1,7 @@
 package org.NooLab.somscreen;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Random;
 
@@ -16,6 +17,7 @@ import org.NooLab.utilities.logging.SerialGuid;
 
 import org.NooLab.somfluid.*;
 import org.NooLab.somfluid.components.*;
+import org.NooLab.somfluid.components.variables.VariableSubsets;
 import org.NooLab.somfluid.core.*;
 import org.NooLab.somfluid.core.engines.det.* ;
 import org.NooLab.somfluid.core.engines.det.results.*;
@@ -77,7 +79,12 @@ public class SomScreening {
 
 	public static final int _SEL_TOP = 1;
 	public static final int _SEL_DIVERSE = 2;
-
+	/**
+	 * this id equals the optimizerProcIndex , which is a list of processes created by the ModelOptimizer 
+	 * upon different partitions of the variable set
+	 */
+	int screenerId = -1;
+	
 	SomFluid somFluid;
 	SomHostIntf somHost ; 
 
@@ -91,6 +98,8 @@ public class SomScreening {
 	SomFluidProperties sfProperties ;
 	ModelingSettings modelingSettings;
 	OptimizerSettings optimizerSettings ;
+	
+	VariableSubsets variablesPartition=null; 
 	
 	SomProcessIntf somProcess;
 	
@@ -114,6 +123,9 @@ public class SomScreening {
 	private boolean finalRefinement;
 	int finalRefinementSteps = 5 ;
 
+	int stepsSinceLargeExplore =0;
+	int largeExplorationsDensity = 2;
+	int largeExplorationMode= 0;
 	
 	// .... data ................................
 	
@@ -138,8 +150,10 @@ public class SomScreening {
 	private Random random;
 		
 	// ========================================================================
-	public SomScreening( SomHostIntf somhost ) {
+	public SomScreening( SomHostIntf somhost , int screenId) {
 	
+		screenerId = screenId;
+		
 		somHost = somhost;
 		somFluid = somHost.getSomFluid() ;
 		sfProperties = somFluid.getSfProperties() ;
@@ -235,33 +249,69 @@ public class SomScreening {
 
 	public void setInitialRelevanciesOfVariables(EvoBasics evoBasics) {
 		// will be passed through to generation of powerset in "startScreening" 
-		int i;
+		int i, a=2;
 		double ew;
+		boolean vvis;
 		IndexDistance ixd;
 		IndexedDistances ixds = new IndexedDistances();
 		String varlabel ;
 		Variables variables;
-		ArrayList<String> blackliststr;
+		ArrayList<String> blackliststr,tvVarLabels, varPartition;
 		
 		basicPowsetItems.clear();
 		basicPowsetItems.addAll( somData.getNormalizedDataTable().getColumnHeaders() );
 		
 		variables = somData.getVariables() ;
 		blackliststr = variables.getBlacklistLabels() ;
+		tvVarLabels = variables.getLabelsForVariablesList( variables.getTargetedVariables() );
 		
-		if (blackliststr.size()>0){
-
+		varPartition = new ArrayList<String>();
+		if (variablesPartition != null){
+			ArrayList<Integer> partitionIndexes = variablesPartition.getSubset( screenerId ); 
+			varPartition = variables.getLabelsForIndexList(partitionIndexes);
+		}
+		
 			i=basicPowsetItems.size()-1;
 			
+			
+			a=17;
 			while (i>=0){
 				varlabel = basicPowsetItems.get(i) ;
-			
-				if (blackliststr.indexOf(varlabel)>=0){
+if (i<=a){
+	a=a+1-1;
+}				
+				vvis = blackliststr.indexOf(varlabel)<0;
+				
+				if (vvis){
+					vvis = (variables.isTargetVariableCandidate(varlabel, 0)==false) &&
+						   (tvVarLabels.indexOf(varlabel)<0);
+				}
+				if (vvis){
+					vvis = variables.getLabelsForVariablesList( variables.getIdVariables()).indexOf(varlabel)<0;
+				}
+				if (vvis){
+					vvis = variables.getAbsoluteFieldExclusions().indexOf(varlabel)<0;
+				}
+				if (vvis){
+					/*
+					 * each som screener may get a particular partition of the variables set,
+					 * which is created and transported through this object
+					 */
+					if ((varPartition != null) && (varPartition.size()>0)){
+						vvis = varPartition.indexOf(varlabel)<0 ;
+					}
+				}
+				if (vvis){
+					
+				}
+				
+				
+				if (vvis==false){
 					basicPowsetItems.remove(i);
 				}
 				i--;
 			}
-		} // any blacklisted variables ?
+		 
 
 		try{
 			
@@ -326,6 +376,11 @@ public class SomScreening {
 	
 	
 	
+
+	public void setVariablesPartition(VariableSubsets variablespartition) {
+		// 
+		variablesPartition = variablespartition;
+	}
 
 	public void establishFromStorage() throws Exception {
 		// 
@@ -416,7 +471,7 @@ public class SomScreening {
 	
 	// ========================================================================
 	
-	private ModelProperties performSingleRun(int index, boolean clearLattice){
+	protected ModelProperties performSingleRun(int index, boolean clearLattice){
 		SomProcessIntf somprocess ;
 		SimpleSingleModel simo ;
 		ModelProperties somResults;
@@ -469,7 +524,7 @@ if (clearLattice==false){
 		return somResults;
 	}
 		 
-	
+	/*
 	private SomTargetedModeling _singleRun(int z, ArrayList<Double> impUsagevector){
 		
 		SomTargetedModeling targetedModeling = null;
@@ -520,6 +575,10 @@ if (clearLattice==false){
 		return targetedModeling;
 		 
 	}
+	*/
+	
+	
+	
 	/**
 	 * in the basic variant "everything" remains the same, except the use vector
 	 * we also take a copy of the dsom, and of the initialized lattice
@@ -832,10 +891,13 @@ if ((specialInterestVariables!=null) &&
 											String str = evoMetrices.toString();
 											out.print(2, "explored metrices : \n"+str+"\n") ;
 
-											out.printErr(2,	"Looping for evolutionary search has been stopped "+
-													    	"(reason: "+r+
-													    	", stopping criteria: "+stoppingCriteriaSatisfied+
-													    	", user break: "+userBreak+").");
+									    	str = 	"(reason: "+r+
+									    			", stopping criteria: "+stoppingCriteriaSatisfied+
+									    			", user break: "+userBreak+").";
+									    	if ((r==0) && (stoppingCriteriaSatisfied) && (userBreak==false)){
+									    		str="" ;
+									    	}
+											out.printErr(2,	"Evolutionary screening has been stopped "+ str);
 											
 				// establish last known model
 				// evoMetrices ...
@@ -1006,7 +1068,7 @@ if ((specialInterestVariables!=null) &&
 		@SuppressWarnings("unchecked")
 		private int performEvoSearch(int z){
 			
-			int result = -1,smode=0;
+			int result = -1,smode=0, largeExplorations=0 ;
 			String str, modestr="";
 			boolean isNewBest ;
 			DSom _dSom;
@@ -1024,26 +1086,51 @@ if ((specialInterestVariables!=null) &&
 
 				isNewBest = false ;
 				
+				/*
+				 * if we had a large exploration in the last step, we now remove a 30% of the variables:
+				 * just those which do not separate well in terms of contrast between target group and non-target group
+				 * 
+				 */
+				
+				
 				// create new SomMapTable from last map ;
 				if (somProcess!=null){
 					// we have to export the whole table for the purpose of PCA, i.e. ALL fields
 					// TODO: alternatively, we use the top-60% quantil of all variables by evo weight
 					//       combined with all variables for which evoweight > 0.45;
 					somMapTable = somProcess.getSomLattice().exportSomMapTable();
-					// if we do not calculate all variables, i.e. also the non-used, the sommaptable will 
+					// if we do not calculate all variables, i.e. also the non-used, the SomMapTable will 
 					// have much less columns than the original table
 					// applying PCA to a table with only very few columns is not reasonable 
 				}
 				boolean selectionOk=false; int zs=0;
+				
 				while ((selectionOk==false) && (zs<5)){
 					
 					// these functions also apply linear methods like PCA to the somMapTable (NOT to the raw data!!!) 
-					if ((z% largePeriod == 0) || (z<=1)){
+					if (((z)% largePeriod == 0) || (z<=1)){ // z-largeExplorations
 						// ensure that changes are indeed large !!
 						proposedSelection = specifyLargeChange(z); 
 											modestr="large"; 
 											smode=1;
 											z++;
+						boolean hb=true;  
+						if ( (hb) ||((stepsSinceLargeExplore > largeExplorationsDensity) || (largeExplorationMode>0)) ){
+							
+							stepsSinceLargeExplore = 0;
+							largeExplorationMode++ ;
+							ArrayList<Integer> largeExploreSelection = specifyLargeExploration( proposedSelection ); 
+							
+							// based on correlation matrix from somMapTable
+							proposedSelection = (ArrayList<Integer>) CollectionUtils.union(proposedSelection, largeExploreSelection) ;
+							largeExplorations++;
+							if ((z>100) && (evoBasics.getAverageCount()>2)){
+								largeExplorationsDensity++;
+							}
+						}else{
+							largeExplorationMode = 0;
+							stepsSinceLargeExplore++;
+						}
 					}else{
 						
 						proposedSelection = specifySmallChanges(z); 
@@ -1077,12 +1164,12 @@ if ((specialInterestVariables!=null) &&
 						proposedSelection.add(tvix);
 					}
 				}
-				Collections.sort(proposedSelection) ;
 				
 				if (proposedSelection.size()==0){
 					return -3;
 				}
 				
+				Collections.sort(proposedSelection) ;
 				
 				if (evoPressures.determineUrgingVariables()){
 					// 0 = random by coin; 1 = enforced ; optional second parameter as condition [0,1],n = if size<=n 
@@ -1130,8 +1217,11 @@ if ((specialInterestVariables!=null) &&
 				currentVariableSelection = variables.deriveVariableSelection( proposedSelection ,0 ) ; 
 				
 				// TODO this should use a copy of the original somlattice in order to make parallelization possible !!!
-				
-				ModelProperties results = performSingleRun(z,true); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+				somProcess.clear();
+				 
+				// in principle this could call any classification mechanism, as long as  
+				// it returns results as an object instance of "ModelProperties"
+				ModelProperties results = performSingleRun(z,false); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 				
 				// ..................................................
 											//out.print(2, "lattice address : "+targetMod.getdSom().getSomLattice().toString());
@@ -1290,6 +1380,109 @@ if (results.getTrainingSample().getRoc().getAuC()>0.86){
 		}
 		
 		
+		/**
+		 *   3 different large extensions, based on pressure, random, 
+		 *   
+		 *   maintain correlation matrices from som-map, 
+		 *   exploring variables that are highly correlated to those in the metric
+		 *   if v size >40 then often add 2..5 of them to the basic large change
+		 *   
+		 *   based on correlation matrix calculated for data of extended somMapTable
+		 *   
+		 *   usually, somMapTable contains only values for those variables which are in use;
+		 *   in order to calculate the exploration we have to create an extended somMapTable which contains 
+		 *   the values for all variables 
+		 *    
+		 *   we also could transpose the somMap and cluster the variables using KNN
+		 * @return
+		 */
+		
+		private ArrayList<Integer> specifyLargeExploration( ArrayList<Integer> referenceIndexes){
+
+			String vlabel;
+			IndexedDistances topCorrelations ;
+			int varCount,ix,xix ;
+
+			ArrayList<Integer> selection = new ArrayList<Integer>();
+			ArrayList<Integer> smtIndexes, referenceItems = new ArrayList<Integer>();
+			ArrayList<String> smtVariables, refVarLabels, allVariables, selectedVarLabels;
+			
+			SomMapTable xSomMap = null ;
+			
+			try {
+											out.print(2, "exporting profiles of all nodes in current Som into a table, referring to all accessible variables...");
+				// this exports the profiles of all nodes, such that the profiles contain values
+				// for all of the active variables (excluded: target variables, index variables, blacklist, absolutely excluded variables) 
+				xSomMap = somProcess.getSomLattice().exportExtendedSomMapTable();
+			
+				varCount = 0;
+				int n = variables.openForInspection().size() ;
+				int xm = (int)(6.7739*Math.log( n) - 15) ;
+				
+				int rfz = referenceIndexes.size();
+				if (rfz>20){
+					// we add less than xm if rfz > 20, increasingly less so...
+					double rp = 1 - 20.0/(double)xm;
+					rp = Math.max(3, 25) ;
+					xm = (int) (xm - rp);
+					xm = Math.max(xm,3) ;
+				}
+				
+				
+				if ((xSomMap.values.length <=1) || (xm<=0)){
+					// import it again
+					return selection;
+				}
+				
+				smtVariables = new ArrayList<String>(Arrays.asList(xSomMap.variables));  
+				
+				
+				allVariables = variables.getLabelsForVariablesList(variables) ;
+				// smtIndexes = somMapTable.getTranslatedIndexValues(allVariables, SomMapTable._TRANSLATE_INTO_INDEX_IN_SMT );
+				
+				
+				for (int i=0;i<referenceIndexes.size();i++){
+					ix = referenceIndexes.get(i);
+					vlabel = variables.getItem(ix).getLabel() ;
+					xix = smtVariables.indexOf(vlabel);
+					if (xix>=0){
+						referenceItems.add(xix);
+					}
+				}
+											out.print(2, "calculating Spearman's correlations upon the exported table from Som map... ");
+				MapCorrelation mc = new MapCorrelation( somData,xSomMap);
+				
+				mc.setMissingValue(-1.0);
+				mc.calculateMatrix();
+					
+				
+				// referenceItems are those variables, to which we want to compare
+				// mc.setReferenceItems( referenceItems ) ;
+				String tvlabel = variables.getTargetVariable().getLabel();
+				mc.addReferenceItem( tvlabel ) ;
+				
+				topCorrelations = mc.getTop(2 + xm) ;
+				
+				// these are indices referring to somMap , we have to translate them 
+				// to the index values that are aligned to "variables"
+				refVarLabels = variables.getLabelsForIndexList(referenceIndexes); // just to avoid double entries
+				// labels for topN 
+				// refers to indices set by "setReferenceItems( referenceItems )" above !!!
+				selectedVarLabels = mc.getSelectionLabels( topCorrelations );
+				
+				// translate into indexes in variables
+				selection = variables.getIndexesForLabelsList(selectedVarLabels);
+				
+				// selection = (ArrayList<Integer>) CollectionUtils.union(referenceIndexes, selection ) ;
+				
+			} catch (Exception e) {
+				// do nothing ... 
+				e.printStackTrace();
+			}
+			
+			return selection;
+		}
+		
 		private ArrayList<Integer> specifyLargeChange( int z) throws Exception {
 			
 			double[] influencevector = new double[0];
@@ -1298,7 +1491,8 @@ if (results.getTrainingSample().getRoc().getAuC()>0.86){
 if (z==24){
 	z=24;
 }
-			// we have to use the sommap of the best model here, not the first one!
+
+			// we have to use the som-map of the best model here, not the first one!
 			calculateVariableStatus();
 			// TODO should not access String variables (scaling=8+)
 			// linearIndexSelection contains variable indices
@@ -1324,8 +1518,8 @@ if (z==24){
 			selection = evoMetrices.getNextVariableSelection(z, 1);
 											out.print(outlevel, "specifyLargeChange(), getNextVariableSelection done.");
 if (selection.size()<=1){
-	     // independent large change: evoMetrices + best + usageVector
-	        selection = evoMetrices.getNextVariableSelection(z, 3);
+	// independent large change: evoMetrices + best + usageVector
+	selection = evoMetrices.getNextVariableSelection(z, 3);
 }
 
  
@@ -1438,6 +1632,7 @@ if (selection.size()<=1){
 
 			IndexDistance ixd ;
 			// testing the pca:  pca = new PCA();
+											if (out==null){ out = new PrintLog(2,false);}
 											out.print(3,"evaluating principal components ...");
 			try{
 				if ((somMapTable==null) || (somMapTable.values.length<=5) || (somMapTable.variables.length<=3)){
@@ -1607,6 +1802,10 @@ if (selection.size()<=1){
 		this.screeningIsRunning = screeningIsRunning;
 	}
 
+	public int getScreenerId() {
+		return screenerId;
+	}
+ 
 	
 }
 

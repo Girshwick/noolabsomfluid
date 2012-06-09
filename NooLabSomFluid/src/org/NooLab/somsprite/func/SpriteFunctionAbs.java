@@ -419,8 +419,140 @@ if (formula.contains("k")){
 	
 	}
 
+	class Calculator{
+		double[] values;
+		
+		public Calculator(double... values){
+			this.values = values;
+		}
+		
+		public Object go() throws Exception{
+			
+			double a=0,b=0,cohortValue;
+			Object result = null, resultValueObj=null;
+			int p,z,vp,nv=0,cc;
+			boolean hb;
+			String str, varstr, dynparameterLabel,pvaluestr;
+			ArrayList<Double> cohortResults = null ;
+			
+			
+			
+			// set values of variable
+			nv = values.length ;
+			vp = 0;
+			if (cohortParameterSet!=null){
+				if (cohortParameterSet.getVarPLabel().length()>0){
+					vp = 1;// a = [2, 3, 10] 
+				}
+			}
+			if ((nv!=variables.size()-vp) && (allowVariablesCountMismatch==false)){
+				
+				throw(new Exception("wrong number of arguments for virtual function -> "+ funcName +" = "+ formula));
+			}
+			
+			Collections.sort(variables) ;
+			
+			// explicit assignment instead of implicit style that is jsut using the order
+			z=0;
+			for (int i=0;i<values.length;i++){
+				p = i;
+				
+				if (cohortParameterSet!=null){
+					varstr = "";
+					
+					while ((varstr.length()==0) || (varstr.contentEquals("k"))){
+						varstr = variables.get(p+z);
+						if (varstr.contentEquals( cohortParameterSet.getVarPLabel() )){
+							z++;
+						}
+					}
+					
+				}else{
+					varstr = variables.get(p);
+				}
+				
+				jep.setVarValue( varstr, values[i]);			
+			} // ->
+			
+
+			
+			
+			try { 
+	            /*
+	             * it is really bad: no vectors are allowed, at least not in this version;
+	             * any attempt to stuff a vector into "k" results in an exception "Invalid parameter type"
+	             * we should change the sources....
+	             * 
+	             * but for now, we do it manually 
+	             * 
+	             */
+				if (cohortParameterSet==null){
+					resultValueObj = jep.evaluate(jepNode) ;
+				}else{
+					
+					cohortResults = new ArrayList<Double>() ;
+					
+					SymbolTable  symtab = jep.getSymbolTable() ;
+					/*
+					cc = symtab.keySet().size();
+					pvaluestr = "";
+					
+					int z=0;
+					for (Object key: symtab.keySet()) {
+			        	// System.out.println("Key : " + key.toString()  + " Value : " + symtab.getValue(key));
+						varstr = key.toString() ;
+						if (varstr.contentEquals( cohortParameterSet.getVarPLabel() )){
+							pvaluestr = symtab.getValue(key).toString() ;
+							dynparameterLabel = cohortParameterSet.getVarPLabel();
+							break;
+							// or looping through variables??
+						}
+						z++;
+			        }
+					*/
+					// get position of dynparameterLabel
+					z = variables.indexOf( cohortParameterSet.getVarPLabel());
+					 
+					for (int i=0;i<cohortParameterSet.cohortValues.length;i++ ){
+					
+						cohortValue = cohortParameterSet.cohortValues[i] ;
+						jep.setVarValue( variables.get(z), cohortValue);
+						
+						result = jep.evaluate(jepNode) ;
+						cohortResults.add((Double)result);
+					}
+					resultValueObj =(Object)cohortResults ;
+					
+				}
+	             
+	            // Is the result ok?
+	            if (resultValueObj==null) {
+	            	resultValueObj = (Object)missingValue ;
+	            }
+	            
+	        } catch (Exception e) {
+	        	String estr = "Error while evaluating:\n"+e.getMessage() ;
+	        	System.err.println(estr);
+	        }
+	        
+	        if (throwExceptions){
+	        	if (resultValueObj==null){
+	        		String vstr= ArrUtilities.arr2Text(values,3);
+	        		String errStr = "failure in calculating expression <"+formula+"> for values:"+vstr ;
+	        		throw(new Exception(errStr));
+	        	} 
+	        }
+	 		return resultValueObj;
+		}
+	}
+	
 	@Override
 	public Object calculate(double... values) throws Exception{
+		// speedy departure into a private compartment for multi-threading
+		return ((new Calculator(values)).go());
+	}
+	
+	public Object _calculate(double... values) throws Exception{
 	// TODO XXX we need a map here, or String... containing sth like a:value	
 	// since the order of the variables is not guaranteed... often [b,a,k] instead of [a,b,k]
 		
@@ -443,7 +575,7 @@ if (formula.contains("k")){
 		}
 		if ((nv!=variables.size()-vp) && (allowVariablesCountMismatch==false)){
 			
-			throw(new Exception("wrong number of arguments for virtual function -> "+this.funcName +" = "+ this.formula));
+			throw(new Exception("wrong number of arguments for virtual function -> "+ funcName +" = "+ formula));
 		}
 		
 		Collections.sort(variables) ;

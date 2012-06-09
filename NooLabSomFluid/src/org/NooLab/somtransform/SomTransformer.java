@@ -5,6 +5,8 @@ import java.io.File;
 import java.util.*;
 
  
+import org.NooLab.somfluid.SomFluidFactory;
+import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.AlgorithmDeclarationsLoader;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.data.DataTable;
@@ -70,7 +72,7 @@ public class SomTransformer
 								extends	//	for SomTransformer used in modeling and SomAppTransformer, used in classification
 											SomTransformerAbstract 		
 								implements 
-											
+											SomTransformerClientIntf,
 											PersistentAgentIntf{
 
 	//SomFluidFactory sfFactory;
@@ -113,6 +115,11 @@ public class SomTransformer
 	}
 
  
+	public SomTransformer(SomFluidFactory factory, SomFluidProperties sfProperties) {
+		 							//        flavor: transformer properties
+	}
+
+
 	/**
 	 * creates the basic structures : 
 	 * for each of the variables a TransformationStack will be initialized;</br>
@@ -1460,6 +1467,35 @@ if (basevarLabel.contains("Bisher_c2")){
 	@Override
 	public SomTransformer getSelfReference() {
 		return this;
+	}
+
+	// ========= from SomTransformerClientIntf ================================
+	
+	@Override
+	public void introduceTransformation() {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void introduceTransformations(String filename) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void addObservations(ArrayList<String> colHeaders, ArrayList values) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void reFreshCalculation() {
+		// TODO Auto-generated method stub
+		
 	}
 	 
 }

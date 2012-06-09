@@ -151,7 +151,7 @@ public class RawFileData {
 
 			linecount = 0;
 			while ((text = reader0.readLine()) != null) {
-				linecount++;
+				linecount++; // note that these are rows except the header !!! total rowcount  = linecount + 1 !!!
 			}
 			stepwidth = 1 + (linecount / 10);
 
@@ -166,7 +166,7 @@ public class RawFileData {
 			fileReader.close();
 
 			fileReader = new FileReader(file);
-			reader = new BufferedReader(fileReader);
+			reader = new BufferedReader(fileReader); // creating a new reader in order to start from the beginning
 			z = 0;
 			celldata = new String[0] ;
 											out.print(2, "reading " + linecount + " lines from file: "+filename );

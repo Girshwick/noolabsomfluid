@@ -16,6 +16,7 @@ public interface SpriteFuncIntf {
 	public String getFormula();
 	
 	public Object calculate( double... values) throws Exception;
+	
 	public void allowVariablesCountMismatch(boolean flag);
 	
 	public FunctionCohortParameterSet getCohortParameterSet() ;

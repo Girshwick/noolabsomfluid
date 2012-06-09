@@ -22,6 +22,7 @@ import org.NooLab.somfluid.env.data.DataFileReceptorIntf;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.SomPersistence;
+import org.NooLab.somtransform.SomTransformerClientIntf;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.resources.ResourceLoader;
@@ -300,6 +301,24 @@ public class SomFluidFactory  implements 	//
 	}
 
 
+	public SomTransformerClientIntf getSomTransformer() {
+
+		
+		return null;
+	}
+	
+	public SomTransformerClientIntf createSomTransformerClient() {
+		
+		preparePhysicalParticlesField = 0;
+		
+		if (somFluidModule==null){
+			 
+			somFluidModule = new SomFluid(this);
+			
+		}
+		return somFluidModule.getSoappTransformer();
+	}
+	
 
 	protected SomFluidIntf getSomFluid( int preparePhysicalParticlesField ){
 		

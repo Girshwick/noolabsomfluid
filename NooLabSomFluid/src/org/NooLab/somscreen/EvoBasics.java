@@ -3,6 +3,7 @@ package org.NooLab.somscreen;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.apache.commons.collections.CollectionUtils;
@@ -183,6 +184,7 @@ if ( ems2.getBestResult()==null){
 		
 		for (int i=0;i<addedLabels.size();i++){
 			knownVariables.add( addedLabels.get(i) );
+			
 			n = knownVariables.size() ;
 			if (n>evolutionaryCounts.size()){
 				evolutionaryCounts.add(0) ;
@@ -192,6 +194,17 @@ if ( ems2.getBestResult()==null){
 			}
 		}
 
+	}
+
+	public double getAverageCount() {
+		double avgC = -1.0 ;
+		int ecs=0;
+		
+		if (evolutionaryCounts.size()>0){
+			ecs = ArrUtilities.arraySum(evolutionaryCounts);
+			avgC = (double)ecs/((double)evolutionaryCounts.size()) ;
+		}
+		return avgC;
 	}
 
 	public void setSelectionparameters(){
@@ -265,16 +278,21 @@ if ( ems2.getBestResult()==null){
 		return evolutionaryWeights;
 	}
 
-	public void setEvolutionaryWeights(ArrayList<Double> evolutionaryWeights) {
-		this.evolutionaryWeights = evolutionaryWeights;
+	@SuppressWarnings("unchecked")
+	public void setEvolutionaryWeights(ArrayList<Double> weights) {
+		
+		evolutionaryWeights = new ArrayList<Double>(weights);
+		if (evolutionaryCounts.size() != evolutionaryWeights.size()){
+			evolutionaryCounts = ArrUtilities.createCollection( evolutionaryWeights.size(), (int)0) ;
+		}
 	}
 
 	public ArrayList<Integer> getEvolutionaryCounts() {
 		return evolutionaryCounts;
 	}
 
-	public void setEvolutionaryCounts(ArrayList<Integer> evolutionaryCounts) {
-		this.evolutionaryCounts = evolutionaryCounts;
+	public void setEvolutionaryCounts(ArrayList<Integer> counts) {
+		evolutionaryCounts = counts;
 	}
 
 	public ArrayList<String> getKnownVariables() {

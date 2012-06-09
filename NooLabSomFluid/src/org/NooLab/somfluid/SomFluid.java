@@ -80,7 +80,7 @@ public class SomFluid
 	SomFluid sf ;
 	SomAppProperties soappProperties;
 	
-	
+	SomTransformer soappTransformer ;
 	SomApplicationDsom somApplication;
 	
 	boolean isActivated=false, isInitialized=false;
@@ -739,6 +739,11 @@ public class SomFluid
 	
 	}
 	
+	public SomDataObject loadSource( String srcname, SomTransformer transformer ) throws Exception{
+	
+		return null;
+	}
+	
 	public SomDataObject loadSource( String srcname ) throws Exception{
 		
 		SomDataObject somDataObject;
@@ -800,7 +805,7 @@ public class SomFluid
  
 		variables.setAbsoluteFieldExclusions( sfProperties.getAbsoluteFieldExclusions() );
 		
-		// translating wildcards into accurate labels
+		// translating wildcards into accurate labels, also sets id,tv indicators in variable items
 		variables.explicateGenericVariableRequests();
 
 											
@@ -889,6 +894,18 @@ public class SomFluid
 
 	// ------------------------------------------------------------------------
 	
+	public SomTransformer getSoappTransformer() {
+		
+		if (soappTransformer==null){
+			soappTransformer = new SomTransformer( sfFactory, sfProperties );
+		}
+		return soappTransformer;
+	}
+
+	public void setSoappTransformer(SomTransformer soappTransformer) {
+		this.soappTransformer = soappTransformer;
+	}
+
 	public PrintLog getOut() {
 		return out;
 	}

@@ -19,6 +19,7 @@ import org.NooLab.somfluid.core.categories.similarity.*;
 import org.NooLab.somfluid.core.engines.NodeStatistics;
 import org.NooLab.somfluid.core.engines.det.ProfileVectorMatcher;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
+import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.env.communication.*;
 
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
@@ -248,6 +249,42 @@ public class MetaNode   extends
 	}
 
 
+	public double explicitReCalcOfProfilePosition( int profileIndex ) {
+		
+		double profileValue=0.0;
+		int rn = extensionality.getListOfRecords().size();
+		int cdix;
+		double vc, pv, nv=0 , vs=0;
+		DataTableCol col ;
+		ArrayList<Double> colValues ;
+		
+		
+		
+		if (rn==0){
+			return -1.0;
+		}
+		
+		col = somData.getNormalizedDataTable().getColumn(profileIndex);
+		colValues = col.getCellValues() ;
+		
+		for (int i=0;i<rn;i++){
+			
+			cdix = extensionality.getListOfRecords().get(i) ;
+			double v = colValues.get(cdix);
+			if (v>=0){
+				vs = vs + v ;
+				nv++;
+			}
+			
+		}// i -> all records
+		
+		if (nv>0){
+			profileValue = vs/((double)nv) ;
+		}
+		return profileValue;
+	}
+
+	
 	// use it like so: (resource: http://tutorials.jenkov.com/java-generics/methods.html)
 	// WeightVector weightVector   = getInfoFromNode( WeightVector.class, 1);
 	@Override
@@ -394,7 +431,7 @@ public class MetaNode   extends
 						_LR = learningrate;
 
 						if ((recordcount + Math.log10(1 + virtualRecordCount) <= 2) && (!_blocked)) {
-							// also in the neighbourhood
+							// also in the neighborhood
 							// not used so far
 
 											err = 10;

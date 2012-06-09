@@ -1,8 +1,15 @@
 package org.NooLab.somfluid.components;
 
 import java.util.ArrayList;
+import java.util.Collection;
  
 import java.util.Collections;
+
+import org.apache.commons.collections.CollectionUtils;
+
+import org.math.array.StatisticSample;
+import org.math.array.util.Random;
+
 
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
@@ -11,6 +18,10 @@ import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.*;
 import org.NooLab.utilities.nums.NumUtilities;
 
+import org.NooLab.math3.exception.NoDataException;
+import org.NooLab.math3.exception.NullArgumentException;
+import org.NooLab.math3.stat.correlation.SpearmansCorrelation;
+import org.NooLab.math3.stat.inference.MannWhitneyUTest;
 import org.NooLab.somfluid.*;
 import org.NooLab.somfluid.properties.* ;
 
@@ -23,6 +34,7 @@ import org.NooLab.somfluid.components.post.ParetoPopulationExplorer;
 import org.NooLab.somfluid.components.post.RobustModelSelector;
 import org.NooLab.somfluid.components.post.SomOptimizerXmlReport;
 import org.NooLab.somfluid.components.post.SpelaResults;
+import org.NooLab.somfluid.components.variables.VariableSubsets;
 import org.NooLab.somfluid.core.SomProcessIntf;
 
 import org.NooLab.somfluid.core.engines.det.*;
@@ -30,12 +42,10 @@ import org.NooLab.somfluid.core.engines.det.results.*;
 
 import org.NooLab.somscreen.*;
 import org.NooLab.somscreen.linear.LinearStatsDescription;
+import org.NooLab.somscreen.linear.MapCorrelation;
 import org.NooLab.somsprite.*;
  
 import org.NooLab.somtransform.SomTransformer;
-import org.apache.commons.collections.CollectionUtils;
-import org.math.array.StatisticSample;
-import org.math.array.util.Random;
 
 
 
@@ -108,7 +118,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 	int numberOfRuns = -1, dependenciesDepth=-1 ;
 	
 	private ArrayList<Integer> usedVariables = new ArrayList<Integer>();
-	VariableSubsets variablesPartition = new VariableSubsets();
+	VariableSubsets variablesPartition ;
 	ArrayList<OptimizerProcess> processes ;
 	
 	ModelOptimizer modOpti;
@@ -162,10 +172,15 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		
 		xmlReport = new SomOptimizerXmlReport( this );
 		
-		if (sfProperties.getInitialNodeCount()>200){
+		if (sfProperties.getInitialNodeCount()>200){ // mpp for multidigester
 			sfProperties.setMultiProcessingLevel(1) ;
 		}
+		
+		
+		
 		prepare();
+		
+		
 	}
 	
 	
@@ -202,12 +217,6 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 					// source is also defined in properties
 				}
 			}
-			 
-			
-			processes = new ArrayList<OptimizerProcess>();
-			OptimizerProcess process;
-			int n = 1;
-
 			
 			somTransformer = somDataObj.getTransformer().getSelfReference();
 			// StackeTransformations still empty....  different somDataObj ???
@@ -222,11 +231,18 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 			if (transformerModelLoaded==false){
 				somTransformer.initializeTransformationModel();
 			}
-			
-			preparePartitions();
-			
-			
 
+			somDataObj.variableLabels = somDataObj.variables.getLabelsForVariablesList(somDataObj.variables) ;
+			
+			variablesPartition = new VariableSubsets(this);
+			
+			processes = new ArrayList<OptimizerProcess>();
+			OptimizerProcess process;
+			int n = 1;
+
+			n = preparePartitions();
+			n=1; 
+			
 			// in principle we could send these tasks to different threads or machines
 			for (int i=0;i<n;i++){
 				process = new OptimizerProcess( this, variablesPartition, i);
@@ -261,7 +277,9 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 	 * 
 	 * @throws Exception
 	 */
-	private void preparePartitions() throws Exception{
+	private int preparePartitions() throws Exception{
+		
+		int partCount=1;
 		int np=1,bnVar,nVar ;
 		String str;
 		ArrayList<String> currVariableSelection ; 
@@ -273,8 +291,12 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		// this should be included everywhere
 		currVariableSelection = modelingSettings.getInitialVariableSelection() ;
 		if (currVariableSelection==null) currVariableSelection = new ArrayList<String>();
-		str = variables.getTargetVariable().getLabel() ;
-		if (str.length()>0) currVariableSelection.add( str ) ;
+		
+		Variable tvar = variables.getTargetVariable();
+		if (tvar!=null){
+			str = tvar.getLabel() ;
+			if (str.length()>0) currVariableSelection.add( str ) ;
+		}
 		
 		variablesPartition.setSharedSet(currVariableSelection);
 		
@@ -290,7 +312,8 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		
 		np=1;
 		variablesPartition.prepare(np) ;
-		// ;
+		
+		return partCount;
 	}
 	
 	
@@ -433,7 +456,137 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		}
 	}
 
+	
+	public void detectCollinearVariables() {
+		
+		
+		ArrayList<String> vLabels;
+		Variables variables = somDataObj.variables;
+		Variable v;
+		
+		vLabels = variables.getLabelsForVariablesList(variables);
+		
+		
+		int i=vLabels.size()-1;
+		while (i>=0){
+			
+			String vlabel = vLabels.get(i);
+			v = variables.getItem(i) ;
+			if ( (variables.getBlacklistLabels().indexOf(vlabel)>=0) ||
+				 (variables.getAbsoluteFieldExclusions().indexOf(vlabel)>=0) ||
+				 (v.isIndexcandidate() || (v.isTVcandidate()) || (v.isID())|| (v.isTV()))
+			    ){
+				vLabels.remove(i) ;
+			}
+			
+			i--;
+		} // i->0
+		detectCollinearVariables(vLabels) ;
+	}
 
+	/**
+	 * it is assumed that any check on blacklisted etc has been accomplished in advance !
+	 * 
+	 * @param vLabels
+	 */
+	public void detectCollinearVariables( ArrayList<String> vLabels) {
+		
+		int ix,rc, cc;
+		String varLabel;
+		Variables variables = somDataObj.variables;
+		SomMapTable xSomMap = new SomMapTable();
+		IndexedDistances topCorrelations;
+		ArrayList<String> selectedVarLabels ;
+		ArrayList<Integer> topIxes, allCollinears = new ArrayList<Integer> ();
+		
+		DataTable ntable = somDataObj.getNormalizedDataTable()  ;
+		
+		if (ntable.colcount()==0){
+			return ;
+		}
+		
+		DataTableCol col = ntable.getColumn(0);
+		
+											out.print(2, "detecting collinearity among variables...");
+		try {
+			rc = 0;
+			cc = vLabels.size();
+			rc = col.getCellValues().size() ;
+			xSomMap.variables = (String[]) arrutil.changeArrayStyle( vLabels ) ;
+			xSomMap.values = new double[rc][cc] ;
+			
+			for (int i = 0; i < vLabels.size(); i++) {
+
+				varLabel = vLabels.get(i);
+				ix = variables.getIndexByLabel(varLabel);
+				ix = ntable.getColumnHeaders().indexOf(varLabel) ;
+				
+				if (ix>=0){
+					col = ntable.getColumn(ix) ;
+					int csz = col.getCellValues().size() ;
+					for (int z=0;z<csz;z++){
+						xSomMap.values[z][i] = col.getCellValues().get(i); 
+					}
+					
+				}else{}
+
+			} // i->
+
+			if ((xSomMap != null) && (xSomMap.variables.length >= 3)) {
+
+				MapCorrelation mc = new MapCorrelation(somDataObj, xSomMap);
+
+				mc.setMissingValue(-1.0);
+				mc.calculateMatrix();
+
+				ix=0;
+				// now we have to retrieve for each row the maximum values
+				double[][] rMatrix = mc.getMatrix() ;
+				
+				for (int i=0;i< rMatrix.length;i++){
+					
+					varLabel = xSomMap.variables[i] ;
+					
+					topIxes = mc.getMatrixRowTopValues(i, 0.85, 50.0) ; // 1st: corr coeff, 2nd: quantile as a max value 
+					
+					// we keep only variable i and remove topIxes
+					// yet, first we collect all indexes from xSomMap
+					if ((topIxes!=null) && (topIxes.size()>0)){
+						allCollinears.addAll(topIxes) ;
+						
+						for (int k=0;k<topIxes.size();k++){
+							int    vix  = variables.getIndexByLabel(varLabel) ;
+							       ix   = topIxes.get(k);
+							String vlabel = xSomMap.variables[ix] ;
+							int    cix  = variables.getIndexByLabel(vlabel) ;
+							double cv   = rMatrix[i][k] ;
+							if (vix != cix){
+								variables.getInProcessExclusions().add( new IndexDistance( cix,vix,cv,vlabel) ) ;
+							}
+						}
+					}
+					
+				} // i-> all rows
+				
+				// Collections.sort( allCollinears );
+				
+				// selectedVarLabels = mc.getSelectionLabels( allCollinears );
+				
+				
+				
+				
+			} // anything available
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+											out.print(2, "detecting collinearity among variables completed.");
+	}
+	
+	
+	
+	
+	
 
 	private int saveSingleSom( SimpleSingleModel singleSom ) {
 		// 
@@ -448,64 +601,124 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 	 * performing a heuristic that comprises pairwise correlation and pairwise MWU
 	 * 
 	 */
-	private void performInitialGuessOfWeights() {
-		// 
+	private ArrayList<Double> performInitialGuessOfWeights() {
+		
+		ArrayList<Double> guesses = new ArrayList<Double>();
 		int tvindex=-1;
 		Variables variables;
-		String tvarLabel="";
-		double score1,score2 ;
+		String tvarLabel="", varlabel ;
+		double score1,score2,gscore ,v,_max=-99999999.09, _min=99999999.09;
 		
 		variables = somDataObj.variables ;
 		tvindex = variables.getTvColumnIndex() ;
+		
 		if (tvindex>=0){
 			tvarLabel = variables.getItem(tvindex).getLabel() ;
 		}
-		ArrayList<Double> varColData = new ArrayList<Double>(); 
+		ArrayList<Double> tvColData, varColData = new ArrayList<Double>(); 
 		
 		
 		if ((tvindex <0) || (tvarLabel.length()==0)){
-			return;
+			return guesses;
 		}
 		
-		//ArrayList<Double> tvColData = somDataObj.normalizedSomData.getColumn(tvindex).getCellValues() ;
+		tvColData = somDataObj.normalizedSomData.getColumn(tvindex).getCellValues() ;
 		
+		MannWhitneyUTest mwu = new MannWhitneyUTest();
+		SpearmansCorrelation spc = new SpearmansCorrelation ();
+		
+		
+		mwu.setReferenceData( tvColData ) ;
+		spc.setReferenceData( tvColData ) ;
+											int outlevel=3;
+											if (variables.size()>100){
+												outlevel=2;
+											}
+											out.print(2, "calculating the initial guesses for weights based on raw data...");
 		for (int i=0;i<variables.size();i++){
+			
+											out.printprc(outlevel, i, variables.size(), variables.size()/10, "") ;
+			
+			varlabel = variables.getItem(i).getLabel();
 			varColData.clear();
-			if (variables.openForInspection( variables.getItem(i))){
-				varColData.addAll( somDataObj.normalizedSomData.getColumn(tvindex).getCellValues() ) ;
+			guesses.add(0.0) ;
+			
+			if ((variables.openForInspection( variables.getItem(i))) &&
+				(variables.isTargetVariableCandidate(varlabel, 0)==false) &&
+				(variables.getAbsoluteFieldExclusions().indexOf(varlabel)<0)){
+				varColData.addAll( somDataObj.normalizedSomData.getColumn(i).getCellValues() ) ;
+				
+				if (varColData.size()<tvColData.size()){
+					// should not happen anyway... 
+					for (int z=0;z<(tvColData.size()-varColData.size());z++){
+						varColData.add(-1.0);
+					}
+				}
+				try {
+					
+					double uValue = mwu.mannWhitneyU( varColData );
+					v = mwu.getpValue();
+					score1 = 0.5 + (1.0-v); // we hope for inseparability : lower scores if columns are different (= p-Value larger))
+				} catch (Exception e) {
+					score1 = 0.0;
+				} 
+
 				
 				// calculate abs(correlation) and its r^2 between those two columns
 				// we calculate score1 = (1+ m) * (1+r^2) ;
-
-				score1 = 1.0;
-				
-				// calculate significance of MWU between those two columns
-				// we calculate score2 = 1 + MWUsignificance/1.7 ;
-				
-				score2 = 1.0;
+				score2 = 0.0;
+				try {
+if (varlabel.toLowerCase().contains("_c")){
+	int kk;
+	kk=0;
+}
+					score2 = Math.abs( spc.correlation(varColData) ) ;
+					
+				} catch (Exception e) {
+					out.printErr(3, "problem in spc for variable <"+varlabel+">...") ;
+				} 
 				
 				// mix these results into an initial weight, which always is >=0.5 !!
 				// we calculate (score1 + score2)/2 or geometric mean ...
-				
-				score1 = (score1 + score2)/2.0;
-				
-				if (score1>1.4){
-					// -> evoweight = 0.5
-					
+				if (score2>=0.0){
+					gscore = (score1 + 2.0*score2)/3.0;
+					guesses.set(i,gscore);
+				}else{
+					gscore = -1.0;
+				}
+				if (gscore!=-1.0){
+					if (_max<gscore)_max=gscore;
+					if (_min>gscore)_min=gscore;
 				}
 			}
 			
 		} // i->
 		
+		for (int i=0;i<guesses.size();i++){
+			
+			v = guesses.get(i);
+			varlabel = variables.getItem(i).getLabel();
+			
+			if ((i!=tvindex) && (v>0.01)){
+				
+				gscore = 0.43 + Math.abs((v - _min)/(_max-_min) )/7.0;
+				guesses.set(i,gscore);
+			}else{
+				if (v!=0.0){
+					guesses.set(i,0.4);
+				}
+			}
+		}
 		
-		
+		varColData.clear();varColData=null;
+		return guesses;
 	}
 
 
 
 	class OptimizerProcess implements Runnable{
 		
-		int index;
+		int optimizerProcIndex;
 		ModelOptimizer moptiParent;
 		VariableSubsets variableSubsets;
 		
@@ -519,12 +732,13 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		private ArrayList<String> currentVariableSelection = new ArrayList<String>() ;
 		private int lastCanonicalStepCount=0;
 		private boolean finalRefinement = false;
+		private ArrayList<Double> initialweights;
 		
 		
 		// --------------------------------------------------------------------
 		public OptimizerProcess( ModelOptimizer mopti, VariableSubsets subsets, int index){
 			
-			this.index = index;
+			optimizerProcIndex = index;
 			this.moptiParent = mopti;
 			variableSubsets = subsets;
 			
@@ -535,7 +749,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		
 		public int start(){
 			moptiThrd.start();
-			return index;
+			return optimizerProcIndex;
 		}
 		
 		@SuppressWarnings("unchecked")
@@ -570,22 +784,40 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 				}
 			}
 			// ................................................................
+			 
+			// if there are >70 variables we try to find sets of collinear variables
+			// basically, we may apply Spearman or K++ clustering
+			// the resulting exclusions will be stored into the structured list "inProcessExclusions" (="IndexedDistances{}")
+			// this list will be "cleared" after the first step in the L2 loop, such that the 
+			// removed variable gets the same weight as the variable which has been used as prototype
+			
+			detectCollinearVariables();
 			
 			
+			// 
 			currentVariableSelection = prepareInitialVariableGuess( ) ;
 			
+			if ((currentVariableSelection.size()<=3) && (somDataObj.variables.size()>15)){
+				currentVariableSelection = (ArrayList<String>) CollectionUtils.union( currentVariableSelection, getRandomVariableSelection(3)) ;
+			}
 			int r = performSingleRun(loopcount, true);
 			if (r<0){
 				return;
 			}
 			somLattice = somProcess.getSomLattice();
 			
-			performInitialGuessOfWeights();
+			initialweights = performInitialGuessOfWeights();
+			_evoBasics = new EvoBasics();
+			_evoBasics.setKnownVariables( moptiParent.somDataObj.variableLabels );
+			_evoBasics.setEvolutionaryWeights(initialweights) ;
 			
+			// we need to get the target ratio : how many cases in the data?
+			// if the ratio is large enough, we need not to take all data !! (if option allows for it
+			
+			// in exploring the combinations, we sort along the evo weights 
 // ----------------------------------------------------------------------------------------------------
 			 
 			while ((done==false) && (somFluid.getUserbreak()==false)){
-				
 				
 				// after any sprite+evo optimization, a further pair of sprite+evo optimization may yield even better results 
 				if (modelingSettings.getMaxL2LoopCount()>0){
@@ -596,7 +828,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 						if ((loopcount==0) && (resumeMode>=1)){
 
 							// we load a simple som from archive and run it once
-							somscreener = new SomScreening( moptiParent );
+							somscreener = new SomScreening( moptiParent,optimizerProcIndex );
 							try {
 								
 								somscreener.establishFromStorage(); 
@@ -611,8 +843,9 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 							resumeMode = 0;
 						}
 
-						somScreening = new SomScreening(moptiParent);
+						somScreening = new SomScreening(moptiParent,optimizerProcIndex);
 						try {
+							if (variablesPartition.size()>1){ somScreening.setVariablesPartition(variablesPartition); }
 							somScreening.setInitialVariableSelection(currentVariableSelection, true);
 
 						} catch (Exception e) {
@@ -621,7 +854,6 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 						}
 						
 						somScreening.setFinalRefinement(finalRefinement) ;
-						
 						 
 						// will be done inside there: somScreening.acquireMapTable( somProcess.getSomLattice().exportSomMapTable() );
 						 
@@ -662,8 +894,8 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 											out.print(2, "SomScreening has been finished, re-establishing the best of the evaluated models...");
 											
 						_mozResults = restoreModelFromHistory( somScreening,  -1 ) ; 
-						 				
-						
+						somLattice = somProcess.getSomLattice() ;
+						                    out.print(2, "somLattice = "+somLattice.toString()) ;
 											out.print(2, "The best model has been re-established.");
 											
 						somScreening.getEvoBasics().getBestModelHistoryIndex();
@@ -701,6 +933,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 						
 					} // checking variable metrices ? == modelingSettings.getEvolutionaryAssignateSelection() ?
 					
+					// --------------------------------------------------------------------------------------------------
 					
 					int s1,s2 ;
 					boolean hb = ( (modelingSettings.getMaxL2LoopCount()> loopcount ) && (modelingSettings.getSpriteAssignateDerivation() )&& (somFluid.getUserbreak()==false));
@@ -713,10 +946,11 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 						
 						dependencyCheck = new SomSprite( somDataObj, somTransformer, sfProperties);
 						
-						// 
-						SomMapTable smt = somLattice.exportSomMapTable(11); // 1+10 = 11: sort mode 1,  
+						SomMapTable smt = somLattice.exportSomMapTable(1);
+
+						// is smt well-defined here ?? == somLattice NOT cleared ??
+						dependencyCheck.acquireMapTable( smt );
 						
-						dependencyCheck.acquireMapTable( smt ); 
 						if (lastDependencyProposals!=null){
 							dependencyCheck.addProposalsAsKnown( lastDependencyProposals.getItems()) ;
 						}else{
@@ -1067,6 +1301,43 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		}
 	  
 
+
+
+		private ArrayList<String> getRandomVariableSelection(int minSelSize) {
+			
+			String vlabel ;
+			
+			ArrayList<String> selection = new ArrayList<String> ();
+			ArrayList<Integer> selixes = new ArrayList<Integer> ();
+			Variables variables = somDataObj.variables ;
+			
+			ArrayList<String> notThose = variables.collectAllNonCommons();
+			
+			int xm =  (int)(1.4 *( 6.7739*Math.log( variables.size() ) - 15));
+			xm = (int) Math.min( xm, variables.size()*0.4) ;
+			
+			while (selixes.size()<xm){
+				int rix = (int) (variables.size() * sampler.getNextUniformRandom());
+				Variable v = variables.getItem(rix) ;
+				vlabel = v.getLabel() ;
+				
+				if ((v.isTV() ) || ((notThose.indexOf(vlabel)<0) && (v.isIndexcandidate()==false))){
+					selixes.add(rix) ;
+				}
+			}
+			
+			Collections.sort(selixes);
+			
+			for (int i=0;i<selixes.size();i++){
+				vlabel = variables.getItem(i).getLabel() ;
+				selection.add(vlabel);
+			}
+			
+			return selection;
+		}
+
+		
+		
 		private ArrayList<String> getRandomVarSelection( int varcount) {
 			
 			ArrayList<String> selection = new ArrayList<String>();
@@ -1197,6 +1468,7 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 		
 		@SuppressWarnings("unchecked")
 		private ArrayList<String> prepareInitialVariableGuess() {
+			
 			ArrayList<String> varSelection, previousVariableSelection;
 			int preSelectMode, vix;
 			
@@ -1206,18 +1478,20 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 			VirtualLattice somLattice ;
 			SomMapTable somMapTable;
 			SomScreening _somscreener ;
-			
+				
 			previousVariableSelection = new ArrayList<String>();  
 			previousVariableSelection.addAll(currentVariableSelection) ;
 			
 			preSelectMode = modelingSettings.getInitialAutoVariableSelection() ;
 			
 			if (( preSelectMode>0) || (currentVariableSelection.size()<=1)){
+											out.print(2, "prepare initial guess for variable selection ...");
+				preSelectMode = 2;
 				
 				ixds = new IndexedDistances() ;
 				variables = somDataObj.variables ;
 				
-				int recCount = somDataObj.normalizedSomData.getColumn(0).getSize() ;
+				int recCount = somDataObj.normalizedSomData.getColumn(0).getCellValues().size() ;
 				if (recCount<=3){
 					return currentVariableSelection;
 				}
@@ -1228,6 +1502,7 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 				
 				currentVariableSelection = variables.getLabelsForVariablesList(variables,true); 
 											// true: keep only the applicable ones by means of "openForInspection()"
+				currentVariableSelection = variables.cleanListByinProcessExclusions(currentVariableSelection) ;
 				
 				int s = currentVariableSelection.size()-1 ; 
 				while (s>=0){
@@ -1243,7 +1518,6 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 								ixds.add(ixd);
 								currentVariableSelection.remove(s) ;
 							}
-							
 						}
 					}
 					s--;
@@ -1256,21 +1530,22 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 							break;
 						}
 					}
+				}   
+				int xm =  4 + (int)(1.4 * 6.7739*Math.log( variables.size() ) - 15);
+				xm = (int) Math.min(Math.min( xm, variables.size()*0.4),21) ;
+
+				if (currentVariableSelection.size()>xm){
+					currentVariableSelection = ArrUtilities.pickRandomSelection( currentVariableSelection, xm);
 				}
-				
-				//limit to 50 variables by random
-				if (currentVariableSelection.size()>50){
-					currentVariableSelection = ArrUtilities.pickRandomSelection( currentVariableSelection, 50);
-				}
-				performSingleRun( 0, false); // false: no collecting of result
-				
-				
-				somLattice = somProcess.getSomLattice() ;
-				somMapTable = somLattice.exportSomMapTable() ;
-				_somscreener = new SomScreening( moptiParent );
-				
-				
+
 				if (preSelectMode==1){
+					//limit to max 21 variables by random
+					performSingleRun( 0, false); // false: no collecting of result
+					// we could apply biased sampling for faster execution here 
+				
+					somLattice = somProcess.getSomLattice() ;
+					somMapTable = somLattice.exportSomMapTable() ;
+					_somscreener = new SomScreening( moptiParent, optimizerProcIndex );
 					
 					varSelection = new ArrayList<String>();
 					ArrayList<Integer> varindexes = _somscreener.principalComponents( somMapTable);
@@ -1300,13 +1575,69 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 					varSelection.clear() ;
 					varindexes.clear();
 					
+					// is there a whitelist ?
+					
 					currentVariableSelection.clear() ;  
 					currentVariableSelection.addAll(previousVariableSelection) ;
 				}
 				
 				if (preSelectMode==2){
-					
+					//  we create a table in SomMapTable-format from the table (applying some sampling)
+					// then selection2 = principalComponents(somMapTable) ;
+					try{
+
+						somMapTable = somDataObj.extractSimpleTable( 0.25, 500, true) ;
+																	// true: remove any id, tv, black listed !		
+						if (somMapTable.values.length>1){
+
+							_somscreener = new SomScreening( moptiParent, optimizerProcIndex );
+							ArrayList<Integer> varindexes = _somscreener.principalComponents( somMapTable);
+							// these varindexes are NOT referring to variables !!! we have to translate them from "smt" to "variables"
+							varindexes = somMapTable.getTranslatedIndexValues( variables.getLabelsForVariablesList(variables), varindexes) ;
+							
+							// additionally to the PCA, we calculate a correlation matrix, selecting 
+
+							ArrayList<Double> weights = performInitialGuessOfWeights();
+							
+							ixds = new IndexedDistances (); 
+							for (int i=0;i<somDataObj.variables.size();i++){
+								ixds.add( new IndexDistance( i,weights.get(i), somDataObj.variables.getItem(i).getLabel()) ) ;	
+							}
+							
+							ixds.sort(-1) ; // sorting along the weights, largest first
+							while (ixds.getItem(0).getDistance()>0.98 ){
+								ixds.removeItem(0) ;
+							}
+							while (ixds.size()>10 ){
+								ixds.removeItem(10) ;
+							}
+							
+							ixds.sort( 2, 1); // sorting along the index, smallest first
+							
+							for (int i=0;i<5;i++){
+								String str = ixds.getItem(i).getGuidStr() ;
+								vix = ixds.getItem(i).getIndex() ;
+								if (varindexes.indexOf(vix)<0){
+									varindexes.add( vix) ;
+								}
+							}
+							
+							Collections.sort(varindexes) ;
+							
+							// is there a whitelist ?
+							if (varindexes.size()>=3){
+								currentVariableSelection.clear() ;  
+								currentVariableSelection = variables.getLabelsForIndexList(varindexes);
+								
+							}
+							
+						}
+
+					}catch(Exception e){
+						currentVariableSelection.clear();
+					}
 				}
+				
 				if (preSelectMode==3){
 					
 				}
@@ -1316,6 +1647,7 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 			
 			return currentVariableSelection;
 		}
+		
 		
 		private int performSingleRun(int index, boolean collectresults){
 			
@@ -1360,7 +1692,7 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 				
 			} catch (Exception e) {
 				out.printErr(2, e.getMessage() ) ;
-				// e.printStackTrace();
+				e.printStackTrace();
 			}
 			
 		}
@@ -1399,7 +1731,8 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 
 	
 
-	private ModelProperties restoreModelFromHistory( SomScreening somScreening, int bestHistoryIndex) {
+	private ModelProperties restoreModelFromHistory( SomScreening somScreening, 
+													 int bestHistoryIndex) {
 		
 		SimpleSingleModel simo ;
 		ModelProperties restoredResults;
@@ -1443,6 +1776,8 @@ if (bestHistoryIndex==0){
 		
 		simo.perform();
 		
+		somProcess = simo.getSomProcess();
+											out.print(2, "somLattice(0) = "+simo.getSomProcess().getSomLattice().toString()) ;
 		restoredResults = simo.getSomResults() ;
 		
 		restoredResults.setVariableSelection( varSelection ) ;
@@ -1459,104 +1794,6 @@ if (bestHistoryIndex==0){
 	
 
 
-
-	class VariableSubsets{
-		
-		ArrayList<ArrayList<Integer>> subsets = new ArrayList<ArrayList<Integer>>();
-		
-		// ------------------------------------------------
-		public VariableSubsets(){
-			
-		}
-		public void setSharedSet(ArrayList<String> currVariableSelection) {
-			// TODO Auto-generated method stub
-			
-		}
-		// ------------------------------------------------
-		
-		
-		public void prepare(int count){
-			
-			int nparts=1, nvtotal, nvwhite, nvblack,nvtv=1, nvix=1, availableVarsCount;
-			Variables vars;
-			String label;
-			
-			vars = somDataObj.getVariables();
-			
-			nvtotal = vars.size() ;
-			nvwhite = vars.getWhitelistLabels().size();
-			nvblack = vars.getBlackList().size() ;
-			nvtv =   vars.getAllTargetedVariables().size() ;
-			nvix =   vars.getAllIndexVariables().size() ;
-			
-			// subtract index var, target vars, whitelist, blacklist
-			availableVarsCount = nvtotal - nvwhite - nvblack - nvtv - nvix ;
-			
-			
-			
-			if (count>1){
-				nparts = (int) ((double)availableVarsCount/((double)count))*availableVarsCount;	
-			}else{
-				nparts =1;
-			}
-			
-			ArrayList<Integer> subset ;
-			subset = new ArrayList<Integer>();
-			int sizeOfSubsets = (int)Math.round( (double)availableVarsCount/(double)nparts );
-				
-			int allocated=0;
-			int setix=0;
-			for (int i=0;i<vars.size();i++){
-				
-				double fract = (double)allocated/(double)sizeOfSubsets ;
-				if((i>0) && (fract==0.0) && (setix<count)){
-					
-					subset = new ArrayList<Integer>();
-				}
-				
-				
-				Variable v = vars.getItem(i) ;
-				label = v.getLabel() ;
-				 
-				
-				if (variableIsAllocatable(vars,i)){
-					subset.add(i) ;
-				}
-				
-				
-			} // i-> all parts
-			
-		}
-		
-		private boolean variableIsAllocatable( Variables variables, int index ){
-			boolean rB=true;
-			Variable variable;
-			
-			variable = variables.getItem(index) ;
-			
-			if (rB){
-				rB = variable.isID()==false;
-			}
-			if (rB){
-				rB = variable.isTV()==false;
-			}
-			if (rB){
-				rB = variable.isTVcandidate()==false;
-			}
-			if (rB){
-				rB = variables.getBlackList().contains(variable)==false;
-			}
-			
-			return rB;
-		}
-		
-		public ArrayList<Integer> getSubset(int index){
-			ArrayList<Integer> subset = null;
-			
-			return subset;
-		}
-		
-	} // inner class VariableSubsets
 
 	
 	

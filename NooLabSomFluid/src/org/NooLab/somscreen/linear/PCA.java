@@ -70,11 +70,13 @@ public class PCA {
 		X = _X;
  
 		if (_X.length==0){
-			stdevX = new double[0]; meanX= new double[0];
+			stdevX = new double[0]; 
+			meanX= new double[0];
 			cov = new double[1][0];
 			Z = new double[1][0];
 			return;
 		}
+		
 		stdevX = stddeviation(X);
 		meanX = mean(X);
  

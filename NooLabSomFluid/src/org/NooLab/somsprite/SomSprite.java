@@ -66,7 +66,7 @@ public class SomSprite {
 	ArrayList<AnalyticFunctionSpriteImprovement> previousProposals = new ArrayList<AnalyticFunctionSpriteImprovement>();
 	
 	ArrUtilities arrutil = new ArrUtilities();
-	PrintLog out = new PrintLog(2,false) ;
+	PrintLog out = new PrintLog(2,true) ;
 	
 	// ========================================================================
 	public SomSprite( SomDataObject somDataObj, SomTransformer transformer, SomFluidProperties sfProperties ){
@@ -81,7 +81,7 @@ public class SomSprite {
 		spriteSettings = modelingSettings.getSpriteSettings() ;
 		
 		evaluator = new Evaluator(this);
-		createFunctions() ;
+		createFunctions(evaluator) ;
 		
 		spriteMain = this;
 		
@@ -94,11 +94,11 @@ public class SomSprite {
 		
 	}
 	
-	private void createFunctions(){
+	protected void createFunctions(Evaluator evaluator){
 		FunctionCohortParameters cohortParameters ;
 		
 		
-		// note tht simple univariate scaling is handled elsewhere !!!
+		// note that simple univariate scaling is handled elsewhere !!!
 		evaluator.createFunction("add",        "a+b") ;
 		evaluator.createFunction("mult",       "a*b") ;
 		evaluator.createFunction("safeDiv",    "(a+0.01)/(b+0.01)") ;
@@ -198,7 +198,7 @@ public class SomSprite {
 
 	public int startSpriteProcess(int wait) {
 		// will wait for completion
-		// start only if the tabe is ok
+		// start only if the table is ok
 		
 		if (spriteProcessIsRunning){
 			return -3;
@@ -277,6 +277,7 @@ public class SomSprite {
 				transformer.perceiveCandidateTransformations(candidates,1) ;
 				 
 			}
+			dScreener.close() ;
 		}
 		
 		@Override

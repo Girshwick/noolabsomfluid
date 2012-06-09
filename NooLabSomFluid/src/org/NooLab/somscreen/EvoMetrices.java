@@ -319,7 +319,13 @@ public class EvoMetrices implements Serializable{
 		// comparison only for z>1
 		if ((z>1) && (bestResult!=null) && (sq!=null)){
 			// compare sq to bestSomQuality
-			scoreDifference = sq.somQualityData.score - bestResult.sqData.score ;
+			double brScore = 0.0;
+			if (bestResult != null){
+				brScore = bestResult.sqData.score ;
+ 			}else{
+ 				brScore = 0.0;
+ 			}
+			scoreDifference = sq.somQualityData.score - brScore ;
 			improvement = scoreDifference<0;
 											out.printErr(1, "model score: "+String.format( "%.3f", sq.somQualityData.score)+", RoC-AuC: "+String.format( "%.3f", sq.somQualityData.rocAuC));
 		     								
@@ -1171,19 +1177,21 @@ if (setItems.size()<=1){
 			}
 			
 			 
-			
+			int xm =  (int)(0.4 *( 6.7739*Math.log( variables.size() ) - 15.0));
+			xm = (int) Math.min( xm, variables.size()*0.4) ;
+
 			// 
 			int lo,hi ;
 			lo=1;
-			hi=4;
+			hi=(int) (4+xm*0.5);
 			if ( z<=2){
 				lo=0;
-				hi=1;
+				hi=(int) (1+xm*0.5);
 			}
 			// largePeriod
 			if ( z%(3*largePeriod)==0){
 				lo=5;
-				hi=2;
+				hi=(int) (2+(xm*0.6));
 			}
 if (setItems.size()==0){
 	z=z+1-1;
@@ -1192,19 +1200,29 @@ if (setItems.size()==0){
 			setItems = powerset.getNextSimilar(setItems, lo,hi ); //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 			
 			proposedVarIxes = (variables.getIndexesForLabelsList( setItems ));
-			proposedVarIxes.trimToSize() ;
+			proposedVarIxes.trimToSize() ; 
 			// retrieving top weighted variables, this takes into account evocount, and will take
 			// next lower weighted vars  // TODO parameterize that...
-			topIxes = getTopEvoWeightVarIxes(4);
-			if ((topIxes!=null) && ( topIxes.size()>2)){
+			topIxes = getTopEvoWeightVarIxes(hi+proposedVarIxes.size());
+			// TODO: we have to avoid selecting all the time the best one... topIxes should be different from proposedVarIxes
+			
+			
+			
+			
+			if ((topIxes!=null) && ( topIxes.size()>6)){
 									// XXX change from 0
 				
 				randomSubSelectionOfIndexes( proposedVarIxes, proposedVarIxes.size()-1 , tvIndex) ;
-				randomSubSelectionOfIndexes( topIxes, 2 , tvIndex) ;
+				hi = Math.max(2,(int) ((double)hi/2.0 + ((jrandom.nextDouble())*(double)hi/2.0 ))) ;
+				randomSubSelectionOfIndexes( topIxes, hi , tvIndex) ;
 				
-				proposedVarIxes = (ArrayList<Integer>) CollectionUtils.union( proposedVarIxes,topIxes);
+				
+			}else{
+				proposedVarIxes = topIxes;
 			}
-
+			proposedVarIxes = (ArrayList<Integer>) CollectionUtils.union( proposedVarIxes,topIxes);
+			Collections.sort(proposedVarIxes) ;
+			
 			setItems = translateVariableIndexesToStrings(proposedVarIxes) ;
 			
 			if (setItems.size()>=5){
