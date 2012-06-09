@@ -12,6 +12,7 @@ import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.app.SomAppTransformer;
 import org.NooLab.somfluid.components.variables.SomVariableHandling;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
+import org.NooLab.somfluid.core.engines.det.SomMapTable;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
 
 import org.NooLab.somfluid.data.DataTable;
@@ -110,7 +111,7 @@ public class SomDataObject 	implements      Serializable,
 	int vectorSize;
 	
 	
-
+	
 
 	// helper objects .................
 	transient StringsUtil strgutil = new StringsUtil();
@@ -118,7 +119,7 @@ public class SomDataObject 	implements      Serializable,
 	//transient ArrUtilities utils = new ArrUtilities();
 	
 	transient PrintLog out = new PrintLog(2,true) ;
-
+	// transient arrutil
 
 	private SomFluidProperties sfProperties;
 		
@@ -558,14 +559,14 @@ public class SomDataObject 	implements      Serializable,
 
 	public static SomDataObject loadSomData( SomFluidProperties sfProperties ) throws Exception{
 		
-		DataHandlingPropertiesIntf datahandleProps = sfProperties;
-		// SomDataObject sdo = new SomDataObject( datahandleProps );
+		// DataHandlingPropertiesIntf datahandleProps = sfProperties;
+		// 
 		SomDataObject sdo=null;
 		
 		
 		// load parts...
-		int result=-1;
-		String xstr="", filepath , vstr="", filename = "";
+		
+		String  filepath , vstr="", filename = "";
 		PersistenceSettings ps;
 		 
 		FileOrganizer fileorg = new FileOrganizer(); 
@@ -633,7 +634,7 @@ public class SomDataObject 	implements      Serializable,
 	public int save() {
 		
 		int result=-1;
-		String xstr="", filepath , vstr="", filename = "";
+		String  filepath , vstr="", filename = "";
 		PersistenceSettings ps;
 		 
 		FileOrganizer fileorg = transformer.getFileorg() ;
@@ -732,7 +733,106 @@ public class SomDataObject 	implements      Serializable,
 		}
 		
 	}
-	
+	public SomMapTable extractSimpleTable() {
+		return extractSimpleTable( 1, -1, true) ;
+	}
+	public SomMapTable extractSimpleTable( double portion, int maxN, boolean disrespectBlacks) {
+		
+		int rc,cc, ix,cix = 0;
+		String varLabel;
+		double vv ;
+		SomMapTable smt = new SomMapTable();
+		ArrayList<String> smtVar = new ArrayList<String>();
+		ArrayList<Integer> indexValues = new ArrayList<Integer>();
+		ArrayList<Double> colValues = new ArrayList<Double>();
+		
+		try{
+			
+
+			rc = getNormalizedDataTable().getColumn(0).getCellValues().size() ;
+			if (maxN>1){
+				rc = (int) Math.min(maxN, rc*portion);
+			}
+			rc = Math.max(100, rc);
+			if (rc>getNormalizedDataTable().getColumn(0).getCellValues().size()){
+				rc=getNormalizedDataTable().getColumn(0).getCellValues().size();
+			}
+			cc = normalizedSomData.getColumnHeaders().size();
+			ArrayList<String> targetedVariables = variables.getAllTargetedVariablesStr();
+			
+			for (int i=0;i<cc;i++){
+				varLabel = normalizedSomData.getColumnHeaders().get(i) ;
+				Variable v = variables.getItemByLabel(varLabel);
+				if ((varLabel.contentEquals( variables.getActiveTargetVariableLabel()) ) || 
+						( (variables.getBlacklistLabels().indexOf(varLabel)<0) && 
+						  (variables.getAbsoluteFieldExclusions().indexOf(varLabel)<0) &&
+						  ( targetedVariables.indexOf(varLabel)<0) &&
+						  (v.isTVcandidate()==false) && (v.isIndexcandidate()==false)) 
+					){  
+					smtVar.add(varLabel);
+				}
+			}
+			cc = smtVar.size() ;
+			
+			smt.values = new double[rc][cc] ;
+			smt.variables = (String[]) ArrUtilities.changeArraystyle(smtVar) ;
+			
+			// create list of index values that determine the sample
+			int tsz = getNormalizedDataTable().getColumn(0).getCellValues().size() ;
+			double rr = (double)rc/(double)tsz;
+			
+			while (indexValues.size()<rc){
+				double pp = Math.random();
+				double sp = Math.random();
+				if (sp<rr){
+					ix = (int) (pp*tsz); 
+					if (indexValues.indexOf(ix)<0){
+						indexValues.add(ix) ;
+					}
+				}
+				
+			} // ->
+			
+			Collections.sort(indexValues) ;
+			for (int c=0;c<cc;c++){
+				// all columns
+				String varlabel = smtVar.get(c);
+				
+				cix = getNormalizedDataTable().getColumnHeaders().indexOf(varlabel) ;
+				colValues = getNormalizedDataTable().getColumn(cix).getCellValues() ;
+				if (colValues.size()<indexValues.get(indexValues.size()-1)){
+					// continue;
+				}
+				for (int i=0;i<indexValues.size();i++){
+				// all rows
+					ix = indexValues.get(i) ;
+					vv=-1.0;
+					if (ix<colValues.size()){
+						vv = colValues.get(ix );
+					}
+					if ((i<smt.values.length) && (c<smt.values[i].length)){
+						smt.values[i][c] = vv;
+					}
+					
+				}// all columns
+				
+			}// i-> all rows 
+			
+			
+			
+		}catch(Exception e){
+			rc = colValues.size() ;
+			String str = "col: "+cix+", column size: "+ rc;
+			out.printErr(2, "problem in extracting smt, "+str) ;
+			e.printStackTrace();
+			smt.values = new double[0][0] ;
+		}
+		
+		
+		return smt;
+	}
+
+
 	public void acquireInitialVariableSelection() {
 
 		String bstr;
@@ -858,8 +958,8 @@ public class SomDataObject 	implements      Serializable,
 											out.print(2, "importDataTable() into SomDataObject done.");
 			vectorSize = variables.size() ;
 			
-			// data.createRowOrientedTable() ; not for raw data ???
-			// TODO check here for buffered transformed data
+			data.createRowOrientedTable() ; // not for raw data ???
+			// TODO check against raw data whether string columns are correctly imported
 			
 			if (modelingSettings.getVariables()==null){
 				modelingSettings.setVariables(variables);
@@ -962,18 +1062,16 @@ public class SomDataObject 	implements      Serializable,
 	}
 
 	
-	private void clearDataFromTransformStack() {
+	public void clearDataFromTransformStack() {
 		 
 		TransformationModel tm = transformer.getTransformationModel();
-		
 		tm.clearData();
-	
 	}
 
 
 	public void introduceBlackList() {
 		ArrayList<String>  blacklist;
-		Variable variable;
+		 
 		String varLabel;
 		
 		blacklist = modelingSettings.getBlacklistedVariablesRequest() ;
@@ -988,8 +1086,6 @@ public class SomDataObject 	implements      Serializable,
 
 	/** prepares a transposed table for fast access  */
 	public void prepareTransposedTable() {
-		
-		DataTable table;
 		
 		try{
 		
@@ -1029,10 +1125,8 @@ public class SomDataObject 	implements      Serializable,
 	public void inferTargetGroups( ModelingSettings modset ) {
 
 		SomVariableHandling variableHandling;
-		ClassificationSettings cs;
-		String tvLabel ;
 		
-		tvLabel = modset.getActiveTvLabel() ;
+		// String tvLabel = modset.getActiveTvLabel() ;
 		
 		variableHandling = new SomVariableHandling( this, modset );
 		
@@ -1040,7 +1134,7 @@ public class SomDataObject 	implements      Serializable,
 		  
 		
 		double[][] tgdefinition = variableHandling.getTargetGroups();
-		this.classifySettings.setTGdefinition(tgdefinition);
+		classifySettings.setTGdefinition(tgdefinition);
 		
 	}
 	// ------------------------------------------------------------------------
@@ -1057,7 +1151,7 @@ public class SomDataObject 	implements      Serializable,
 	 * 
 	 */
 	private void actualizeVariables() throws Exception{
-		Variables vs;
+		
 		Variable v;
 		DataTableCol  column ;
 		int _format;

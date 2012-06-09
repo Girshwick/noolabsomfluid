@@ -30,10 +30,69 @@ public class Evaluator {
 	public Evaluator(SomSprite somsprite){
 		somSprite = somsprite;
 	}
+	
 	public Evaluator(){
 		
 	}
 	// ========================================================================
+	
+	public void clear(){
+		functions.clear() ;
+		expressions.clear() ;
+		xList.clear() ;
+		variables.clear() ;
+	}
+	// ------------------------------------------------------------------------
+	class Eval{
+		
+		SpriteFuncIntf func;
+		String expressionName;
+		double[] arguments ;
+		// ................................................
+		public Eval(String expressionName, double... arguments){
+			
+			this.expressionName = expressionName;
+			this.arguments = arguments;
+		}
+		// ................................................
+		
+		public Object go(){
+			Object resultObj = (Object)SpriteFuncIntf.__MISSING_VALUE;
+			
+			try{
+
+
+				func = (SpriteFuncIntf) functions.get(expressionName) ;
+				
+				if (func!=null){
+					resultObj = func.calculate(arguments) ;
+				}else{
+					resultObj = null;
+				}
+				
+			}catch(Exception e){
+				String estr = ""+e.getMessage();
+				if ((estr!=null) && (estr.contains("topNode parameter is null"))){
+					estr = estr+".\n"+"You may check syntax and brackets of the expression!";
+				}
+				System.err.println(estr+"\nin method <Evaluator.eval()> while calling func.calculate(expression:<"+expressionName+">)..."); // expressionName
+			}
+			
+			return resultObj;
+		}
+		
+		
+	} // inner class Eval
+	// ------------------------------------------------------------------------
+	/** 
+	 * essentially the same as "eval()", the difference being just that it is encapsulated into 
+	 * an object that is created adhoc: it is safer, but slower
+	 *  
+	 */
+	public Object evalByObj(String expressionName, double... arguments){
+		
+		return (new Eval(expressionName, arguments)).go();
+	}
 	
 	public Object eval(String expressionName, double... arguments){
 	

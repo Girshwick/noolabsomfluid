@@ -539,7 +539,7 @@ if (varLabel.contains("Rechtsform")){
 				
 				sti = items.get(i) ;
 				
-if (sti.getAlgorithmName().toLowerCase().contains("arith")){
+if (sti.getAlgorithmName().toLowerCase().contains("nomval")){
 	int k;
 	k=0;
 }				
@@ -616,7 +616,7 @@ if (sti.getAlgorithmName().toLowerCase().contains("arith")){
 					rc = 0;
 					rc = valgo.calculate() ; 
 					
-					if ((rc>=0 ) && (rc<10)){
+					if ((rc>=0 )){ // rc=0 -> ok, rc>0 it returns the number of records calculated
 						sti.createOutData(valgo.getValues(0));
 
 						if (valgo.hasParameters()) {

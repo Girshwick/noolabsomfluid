@@ -89,7 +89,24 @@ as a binary one, while the target group is dynamically assigned to the
 less frequently occurring group.
  
 
+the following section describes the optional possibility for a data filter (not implemented yet)
 
+[data filter]
+; these conditions apply as "OR", i.e. if any of them applies, then the record will be excluded
+; values are taken as raw or normalized (quantile) values, according to the setting, default is "raw"
+; if the 
+
+context = raw
+; or: context = norm
+
+; the format of the condition is : <label of variable>: <operator><filter value>
+: special filter values are NULL and MV (missing value)
+
+lost_to_follow_up: !=NULL
+
+; var0081: !=MV
+; malesex: =1
+; age >= 67
 
 
                 

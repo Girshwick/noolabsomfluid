@@ -283,14 +283,14 @@ public abstract class SomTransformerAbstract implements SomTransformerIntf {
 						i++;
 											if (provideProgress(i,cn,recordCount)){
 											}	
-											out.printprc(outlevel, i,cn, cn/20, "");
+											out.printprc(outlevel, i,cn, cn/5, "");
 											
 						varTStack = transformationModel.variableTransformations.get(i) ;
 						v = varTStack.baseVariable ;
 						
 						varLabel = v.getLabel() ;
 						
-if (varLabel.toLowerCase().contains("recht")){
+if (varLabel.toLowerCase().contains("_c")){
 	n=0;
 }
 						currentFormat = varTStack.getLatestFormat() ; // is a sibling of the call "varTStack.getFormatAtStackPos()" ;
@@ -372,8 +372,8 @@ if (varLabel.toLowerCase().contains("recht")){
 								  varTStack.introduceAlgorithmizedStackPosition("StatisticalDescriptionStandard") ;
 								  
 							dtc = somData.getDataTable().getColumn(i);
-							strvals = dtc.getCellValueStr() ;
-							st.getInData().add( strvals );
+							strvals = dtc.getCellValueStr(true) ; // here, we remove the header of string columns !!!
+							st.getInData().add( strvals );        // the algorithm and the stack do not know anything about "headers"
 							
 							varTStack.update();
 							
@@ -420,7 +420,7 @@ if (varLabel.toLowerCase().contains("recht")){
 							strvals = dtc.getCellValueStr() ;
 							st.getInData().add( strvals );
 							
-	if (varLabel.toLowerCase().contains("recht")){
+	if (varLabel.toLowerCase().contains("_c")){
 		n=0;
 	}
 							varTStack.update();
@@ -978,7 +978,12 @@ if (varLabel.toLowerCase().contains("recht")){
 				}
 				
 				tvindex = variables.getTvColumnIndex() ;
-				tvLabel = variables.getItem(tvindex).getLabel();
+				if (tvindex<0){
+					// ??? 
+					// after switching to another project...
+				}else{
+					tvLabel = variables.getItem(tvindex).getLabel();
+				}
 				/*
 				if (variables.getTvColumnIndex()<0){
 					

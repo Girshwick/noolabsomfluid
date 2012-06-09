@@ -115,14 +115,16 @@ public class DataTableCol implements Serializable,
 	
 	public void importColumn( DataTableCol inColumn, int mode ){
 		int i,n1,n2,nm=0 ;
+		String str ;
 		
-		this.dataFormat = inColumn.dataFormat;
-		this.isNumeric = inColumn.isNumeric ;
-		this.isIndexColumnCandidate = inColumn.isIndexColumnCandidate ;
-		// all the compund stuff too 
-		this.derivations = new ColumnDerivations(inColumn.derivations);
+		dataFormat = inColumn.dataFormat;
+		isNumeric = inColumn.isNumeric ;
+		isIndexColumnCandidate = inColumn.isIndexColumnCandidate ;
+		// all the compound stuff too 
+		derivations = new ColumnDerivations(inColumn.derivations);
+		hasHeader = inColumn.hasHeader ;
 		
-		n1 = inColumn.cellValues.size();
+		n1 = inColumn.cellValues.size(); 
 		if (n1==0){
 			n1 = inColumn.cellValueStr.size();
 		}
@@ -130,7 +132,7 @@ public class DataTableCol implements Serializable,
 		
 		nm = n2 ;
 		
-		if ((n1>0) && (n2==0) && (mode==1)){
+		if ((n1>0) && (n2<=0) && (mode==1)){
 			mode=2;
 		}
 		if (n1 != n2){
@@ -144,15 +146,36 @@ public class DataTableCol implements Serializable,
 				}
 			}
 		}
+		int strDataOffset=0; 
+		if (hasHeader){ strDataOffset=1;} ;
 		
 		i=0;
+		nm = (nm+strDataOffset);
+		
+		int spSize = inColumn.getCellValueStr(false).size() ;
+		int zpSize = inColumn.getCellValues().size() ;
+		
 		for (i=0;i<nm;i++){ // __FORMAT_TIME __FORMAT_DATETIME
+			
 			if (( isStringFormat(dataFormat)) || (isDateTimeFormat(dataFormat) ) || (inColumn.cellValues.size()==0)){
-				this.setValue(i, inColumn.getValue(i, "")) ; // str
+				
+if (i>=1385){
+	int zz;
+	zz=0;
+}
+				str="";
+				if (i< spSize){
+					str = inColumn.getValue(i, "");
+				}
+				setValue(i, str) ; // str
 			}
-			if (i< inColumn.getCellValues().size()){
-				this.setValue(i, inColumn.getValue(i)) ;     // num
+			
+			double v = -1.0;
+			if (i<zpSize ){  // num
+				v = inColumn.getValue(i) ;
+				setValue(i, v) ;
 			}
+			
 		} // i -> all cells of column
 		i=0;
 		if (cellValues.size()>0){
@@ -684,9 +707,10 @@ public class DataTableCol implements Serializable,
 		}
 		return val ;
 	}
+
  
+
 	public String getValue( int index , String str){
-		
 		return cellValueStr.get(index) ;
 	}
 	
@@ -743,7 +767,7 @@ public class DataTableCol implements Serializable,
 	
 	public void setSize( int size){
 		// cellValues.setSize( size) ;
-		rowcount = cellValues.size() ;
+		rowcount = cellValues.size() ; // ??? 
 	}	
 
 	public void setSize( int size, String str){
@@ -763,8 +787,8 @@ public class DataTableCol implements Serializable,
 		int n=-1;
 		if (isNumeric==true){
 			n = cellValues.size() ;
-		}else{
-			n = cellValueStr.size()-1; // ?????????????? if there is a header ... 
+		}else{  int offset=0; if (hasHeader)offset=1;
+			n = Math.max(0,cellValueStr.size()-offset); // ?????????????? if there is a header ... 
 		}
 		return n;
 	}
@@ -772,9 +796,9 @@ public class DataTableCol implements Serializable,
 	public int getSize( ){
 		int n=-1;
 		if (this.isNumeric){
-			cellValues.size() ;  
+			n = cellValues.size() ;  
 		}else{
-			cellValueStr.size() ;
+			n = cellValueStr.size() ;
 		}
 		return n;
 	}
@@ -854,11 +878,18 @@ public class DataTableCol implements Serializable,
 		this.recalculationIndicator = recalculationIndicator;
 	}
 
-	public ArrayList<String> getCellValueStr() {
+	public ArrayList<String> getCellValueStr( ) {
+		return getCellValueStr( false );
+	}
+	
+	public ArrayList<String> getCellValueStr(boolean removeHeader ) {
 		ArrayList<String> cvs = new ArrayList<String>();
+		
 		if ((cellValueStr!=null) && (cellValueStr.size()>0)){
 			cvs.addAll( cellValueStr) ;
-			cvs.remove(0) ;
+			if (removeHeader){
+				cvs.remove(0) ; cvs.trimToSize();
+			}
 		}
 		return cvs;
 	}

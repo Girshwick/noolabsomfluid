@@ -333,7 +333,7 @@ public class SomTargetedModeling    extends
 	    									out.print(2, "initializing nodes (n="+n+")...");
 	    for (int i=0;i<n;i++){
 	    									if ((i>500) || ( (n*cc*rc)>5000000)){
-	    										out.printprc(2, i, n, n/10, "");
+	    										out.printprc(2, i, n, n/5, "");
 	    									}
 	    	
 	    	initializeNodeWithRandomValues(i) ;

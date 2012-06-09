@@ -11,7 +11,8 @@ public class SomFluidTask 	implements
 										Serializable,
 										SomFluidMonoTaskIntf,
 										SomFluidProbTaskIntf,
-										SomFluidClassTaskIntf{
+										SomFluidClassTaskIntf,
+										SomFluidTransformTaskIntf{
 
 	private static final long serialVersionUID = -532876083346213662L;
 

@@ -553,9 +553,9 @@ if (i>=9){
 			} // i->n all columns of import table
 			 
 															if (out!=null){ out.print(outlevel,"\nimporting columns...");};
-			// if necessary, apply nve
+			// nve will be applied as a dedicated transformation algorithm
 			i=0;  
-			// TODO make this multidigested ...
+			// TODO make this multi-digested ... items are completely independent
 			
 			for (i=0;i<n;i++){ // -> all variables
 				
@@ -657,8 +657,8 @@ if (i>=9){
 					column.isNumeric = true ; 
 				}
 				column.hasHeader = tableHasHeader;
+				getColumn(i).hasHeader = tableHasHeader;
 				getColumn(i).importColumn(column, 1) ;
-				
 				
 				
 				if (formats[i]==0){

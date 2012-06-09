@@ -210,7 +210,7 @@ public class DSomDataPerceptionAbstract {
 			 */
 			
 			// for sufficiently developed maps, we store the last 2 or three BMU to the record (separate structure)
-			// from this then we can derive a surround, such that the search time remains alsmost constant (slow linear O(n)) 
+			// from this then we can derive a surround, such that the search time remains almost constant (slow linear O(n)) 
 			// even for large maps 
 			
 			bmuBufferAvailable=false ;

@@ -88,11 +88,15 @@ public class NomValEnum extends AlgoTransformationAbstract{
 				
 				str = (String)stringvalues.get(i); 
 				
-				if ((divItems.indexOf(str)<0) || (str.length()==0) || (str.toLowerCase().contentEquals("-m.v.") )){
+				if ((str==null) || (str.length()==0) || (str.toLowerCase().contentEquals("-m.v.") )){
 					v = -1.0 ;
 				}else{
 					ix = ixds.getIndexByStr(str) ;
-					ixd = ixds.getItem(ix) ;
+					if (ix>=0){
+						ixd = ixds.getItem(ix) ;
+					}else{
+						v=-1.0;
+					}
 					v = (double)ix + 1;
 				}
 				outvalues.add( v );

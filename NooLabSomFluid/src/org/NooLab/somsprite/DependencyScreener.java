@@ -15,6 +15,8 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.Vector;
 
+import org.NooLab.chord.IndexedItemsCallbackIntf;
+import org.NooLab.chord.MultiDigester;
 import org.NooLab.math3.stat.clustering.Cluster;
 import org.NooLab.math3.stat.clustering.EuclideanDoublePoint;
 import org.NooLab.math3.stat.clustering.EuclideanIntegerPoint;
@@ -29,6 +31,7 @@ import org.NooLab.somfluid.core.engines.det.SomMapTable;
 import org.NooLab.somfluid.core.nodes.ClusterNode;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somsprite.func.SpriteFuncIntf;
+import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
 import org.apache.commons.math.linear.EigenDecomposition;
@@ -72,19 +75,43 @@ public class DependencyScreener {
 	
 	SomMapTable somMapTable;
 	Evaluator evaluator;
+	DScreenerObserver screeningObserver ;
+	
+	// in case of multi-threading, we have to maintain separate evaluators for each thread, 
+	// since the Evaluator class is not thread-safe...
+	ArrayList<Evaluator> evaluators = new ArrayList<Evaluator>();
+	
 	
 	IndexedDistances ixdPair = new IndexedDistances();
 	
 	// this "EuclideanDoublePoint" knows by itself how to calculate the distance
 	KMeansPlusPlusClusterer<EuclideanDoublePoint> kMeans ;
-	// TODO: we use kmeans to estimate the match in multi-target case
+	// TODO: we use k-means to estimate the match in multi-target case
 	
+	ArrayList<ArrayList<AnalyticFunctionSpriteImprovement>> bestEstimatedUtilitiesList = new ArrayList<ArrayList<AnalyticFunctionSpriteImprovement>>();
 	ArrayList<AnalyticFunctionSpriteImprovement> bestEstimatedUtilities = new ArrayList<AnalyticFunctionSpriteImprovement>();
 	ArrayList<AnalyticFunctionSpriteImprovement> knownTransformations;
 	
-	int dCountThreshold = 5;
+	ArrayList<Integer> lastBeuCheckIndex = new ArrayList<Integer>();
+	ArrayList<Integer> beusBestN = new ArrayList<Integer>();
+	double maxEstimatedImprovement=0.0;
 	
-	PrintLog out ;
+	double thresholdEu = -1.0 ;
+	int dCountThreshold = 5;
+	int screeningListSize=0;
+	
+	boolean stopScreening=false;
+	DScreenerDigester dsd = null;
+	boolean multiParallel=true;
+	private int threadCount = 8;
+	
+	int[] processCallCounter = new int[1];
+	int lastMsgIndex=0;
+	private int displaymode ;
+	private long starttime =0;
+	private PrintLog out ;
+	private int outlevel=3;
+	long lastPrcTime = 0;
 	
 	// ========================================================================
 	public DependencyScreener(SomSprite somsprite, SomMapTable smt, Evaluator ev) {
@@ -98,22 +125,203 @@ public class DependencyScreener {
 		
 		out = somSprite.out;
 	}
+	public void close(){
+		
+		if (screeningObserver!=null){
+			screeningObserver.observerIsRunning = false;
+		}
+		
+		for (int i=0;i<evaluators.size();i++){
+			evaluators.get(i).clear();
+			evaluators.set(i,null);
+		}
+		evaluators.clear();
+		ixdPair.clear();
+		
+		for (int i=0;i<bestEstimatedUtilitiesList.size();i++){
+			bestEstimatedUtilitiesList.get(i).clear();	
+		}
+		bestEstimatedUtilitiesList.clear();
+		bestEstimatedUtilities.clear();
+		knownTransformations.clear();
+		
+	}
 	// ========================================================================	
+	
+	class DependencyChecker{
+		
+		int[] depVarIndex ; 
+		int index, processID;
+		
+		public DependencyChecker( int[] depVarIndex, int index, int processID ){
+			this.depVarIndex = depVarIndex; 
+			this.index = index;
+			this.processID = processID;
+		}
+		
+		private void _show_progress( int nthCheck, int recn){
+			
+			int index = nthCheck;
+			long dT,now = System.currentTimeMillis() ;
+			dT = now -lastPrcTime;
+			
+			if ((index<threadCount) || ((index%10==0) && (index<522)) || (index>=599)){ // we also might display the time till completion
+				if (displaymode >= SomFluidProperties._SOMDISPLAY_PROGRESS_PERC){
+					//out.print(2, "screening for dependencies ("+(i)+" of "+depVarIndexes.size()+") in variables ("+depVarIndex[0]+","+depVarIndex[1]+")..." );
+					if ((screeningListSize*recn>8000000) && ((index<((double)Math.max(screeningListSize*0.031,1499))) ) ){
+						if ((index-10<-threadCount+5) || (index<=1) || (index >= ((int)150*threadCount) )){
+							if (index>lastMsgIndex+threadCount+1){
+								out.printprc(outlevel, index, screeningListSize, (screeningListSize)/(150), "");
+								lastMsgIndex=index;
+								lastPrcTime = System.currentTimeMillis();
+							}
+						}
+					}else{
+						int f = 10;
+						if (screeningListSize>12000)f=20;
+						if (index % f ==0){
+							out.printprc(outlevel, index, screeningListSize, screeningListSize/f, "");
+						}else{
+							if ((f>3000) && (index % f < threadCount)){
+								out.printprc(outlevel, index, screeningListSize, 1, "");
+							}
+						}
+						
+						
+						int dm = index % (int)(200*threadCount);
+						if ( (screeningListSize*recn>8000000)  && ((Math.abs(index-100) < (threadCount-1)) || ( dm<=Math.max(0,(threadCount-1))))){
+							String str="";
+							if (index<1000){ str =" ...remaining" ; }
+							if (index>(lastMsgIndex+2*threadCount)){
+								out.printCompletionTime(outlevel, starttime,index,screeningListSize , threadCount, true, str);
+								lastMsgIndex=index;
+								lastPrcTime = System.currentTimeMillis();
+							}
+						}  
+					}
+				}
+			}else{
+				
+				if ((dT>1000*60*10) || ((lastPrcTime == 0) && (index>10))){
+					out.printprc(outlevel, index, screeningListSize, 1, "");
+					lastMsgIndex=index;
+					lastPrcTime = System.currentTimeMillis();
+				}
+			}
+			
+		}
+		
+		
+		public void check( ){
+			
+			ArrayList<AnalyticFunctionSpriteImprovement> beu;
+			ArrayList<AnalyticFunctionSpriteImprovement> estimatedUtils ;
+			
+			String[] depVar = new String[3];
+			double[][] depVarValues = new double[5][somMapTable.values.length];  // somMapTable.values.length == number of nodes in the SOM
+
+			depVar[0] = somMapTable.variables[ depVarIndex[0] ];
+			depVar[1] = somMapTable.variables[ depVarIndex[1] ];
+										
+			int recn = somMapTable.values[0].length ; 
+										if (processID==0){ // avoiding collisions
+											_show_progress( ArrUtilities.arraySum(processCallCounter), recn) ;
+										}
+			int va = depVarIndex[0];
+			int vb = depVarIndex[1];
+			
+			// get columns
+			for (int r=0;r<somMapTable.values.length;r++){
+				// get column a
+				depVarValues[0][r] = somMapTable.values[r][va] ;
+				// get column b
+				depVarValues[1][r] = somMapTable.values[r][vb] ;
+				// get column b
+				depVarValues[2][r] = somMapTable.values[r][somMapTable.tvIndex] ;
+				// TODO: we need also a binarized version of the TV, into 2 groups or n groups
+				
+			} // all rows in extracted columns
+			
+			// this returns a relative improvement of the association
+			AssociationDifferential ad = new AssociationDifferential();
+			estimatedUtils = ad.check(va,vb,depVarValues, evaluators.get(processID) );
+			
+			if ((estimatedUtils!=null) && (estimatedUtils.size()>0)){
+				
+				// bestEstimatedUtilities.addAll(estimatedUtils) ;
+				beu = bestEstimatedUtilitiesList.get(processID);
+				if (thresholdEu<0){
+					beu.addAll(estimatedUtils) ;
+				}else{
+					for (int k=0;k<estimatedUtils.size();k++){
+						if (estimatedUtils.get(k).estimatedImprovement > thresholdEu){
+							beu.add( estimatedUtils.get(k) ) ;
+						}
+						
+					}
+				}
+				 
+			}
+			estimatedUtils.clear() ;
+			processCallCounter[processID]++;
+		}
+		
+		
+	}
+	
+	                           
+	protected void checkDependencyIndex( int[] depVarIndex, int index, int processID){
+	
+		ArrayList<AnalyticFunctionSpriteImprovement> beu ;
+		
+		// we need to encapsulate it speedily in order to avoid collisions
+		(new DependencyChecker(depVarIndex, index, processID)).check();
+		
+		try{
+			
+
+			int bix = lastBeuCheckIndex.get(processID);
+			if ((index - bix )>1000){
+
+				beu = bestEstimatedUtilitiesList.get(processID);
+				if (beu.size()>0){
+					Collections.sort(beu, new euComparable(-1));
+					
+					int n = Math.min(20, beu.size());
+					beusBestN.set(processID ,0);
+					for (int i=0;i<n;i++){
+						if (beu.get(i).estimatedImprovement > 3){
+							beusBestN.set(processID, beusBestN.get(processID)+1);
+						}
+					}
+					maxEstimatedImprovement = Math.max( maxEstimatedImprovement, beu.get(0).estimatedImprovement) ;
+				} // anything collected so far
+				
+			} // > 1000 checks since last supervision ?
+			
+		}catch(Exception e){
+			
+		}
+		
+	}
+	
 	
 	public void go(){
 	
 		double dr;
 		String str,varLabel;
-		int[] depVarIndex;
+		
 		String[] depVar = new String[3];
 		double[][] depVarValues = new double[5][somMapTable.values.length];
 		int fix1,fix2,ix0,ix1, recn ;
+		
+		int[] depVarIndex;
 		
 		Variables variables;
 		ArrayList<int[]> depVarIndexes = new ArrayList<int[]>() ;
 		
 		AnalyticFunctionSpriteImprovement euItem;
-		ArrayList<AnalyticFunctionSpriteImprovement> estimatedUtils ;
+		
 		
 		
 		somData = somSprite.somData;
@@ -151,60 +359,79 @@ public class DependencyScreener {
 					depVarIndexes.add(depVarIndex) ;
 				} 
 			} // b->
-			ix0=0;
-			// TODO: this could be multi-threaded easily... steps are completely independent
-											out.print(2, "screening for dependencies (n="+depVarIndexes.size()+")..." );
-											int outlevel=3;
-											int dmode = somSprite.sfProperties.getShowSomProgressMode();
+			
+			screeningListSize = depVarIndexes.size() ;
+			starttime = System.currentTimeMillis();
+											displaymode = somSprite.sfProperties.getShowSomProgressMode();
 											if (depVarIndexes.size()*recn>800000){
-												dmode = SomFluidProperties._SOMDISPLAY_PROGRESS_PERC;
+												displaymode = SomFluidProperties._SOMDISPLAY_PROGRESS_PERC;
 												outlevel=2;
 											}
-											long starttime = System.currentTimeMillis();
-			for (int i=0;i<depVarIndexes.size();i++){
-				
-				depVarIndex = depVarIndexes.get(i) ;
-				
-				depVar[0] = somMapTable.variables[ depVarIndex[0] ];
-				depVar[1] = somMapTable.variables[ depVarIndex[1] ];
-											
-											if ((i==0) || (i%10==0)){ // we also might display the time till completion
-												if (dmode >= SomFluidProperties._SOMDISPLAY_PROGRESS_PERC){
-													//out.print(2, "screening for dependencies ("+(i)+" of "+depVarIndexes.size()+") in variables ("+depVarIndex[0]+","+depVarIndex[1]+")..." );
-													if ((depVarIndexes.size()*recn>2800000) && (i<((double)depVarIndexes.size()*0.051))){
-														out.printprc(outlevel, i, depVarIndexes.size(), depVarIndexes.size()/100, "");
-													}else{
-														out.printprc(outlevel, i, depVarIndexes.size(), depVarIndexes.size()/10, "");
-														out.printCompletionTime(outlevel, starttime,i,depVarIndexes.size() , "");
-													}
-												}
-											}
-				int va = depVarIndex[0];
-				int vb = depVarIndex[1];
-				
-				// get columns
-				for (int r=0;r<somMapTable.values.length;r++){
-					// get column a
-					depVarValues[0][r] = somMapTable.values[r][va] ;
-					// get column b
-					depVarValues[1][r] = somMapTable.values[r][vb] ;
-					// get column b
-					depVarValues[2][r] = somMapTable.values[r][somMapTable.tvIndex] ;
-					// TODO: we need also a binarized version of the TV, into 2 groups or n groups
+											out.print(2, "going to evaluate "+(depVarIndexes.size())+" explicit bi-variate functions...") ;
+			int a=0;								
+			// we could start a supervisor process, since we will implement anyway only 20..30 improvements
+			// (dependent on the number of variables) we need not calculate all of them
+			// scrambling the index arrays ensures that we visited all variables rather soon
+			screeningObserver = new DScreenerObserver();
+			screeningObserver.start();
+			
+			// maxEstimatedImprovement
+			
+		    if (depVarIndexes.size()<200){
+		    	multiParallel=false;
+		    }
+		    
+		    // multiParallel=false;
+			if (multiParallel){
+			
+				processCallCounter = new int[threadCount] ;
+				lastMsgIndex=0;
+				// we maintain a separate list for results for each of the threads, in order to avoid collisions
+				for (int i=0;i<threadCount;i++){
+					bestEstimatedUtilitiesList.add( new ArrayList<AnalyticFunctionSpriteImprovement>() );
 					
-				} // all rows in extracted columns
-				
-				// this returns a relative improvement of the association
-				AssociationDifferential ad = new AssociationDifferential();
-				estimatedUtils = ad.check(va,vb,depVarValues);
-				
-				if ((estimatedUtils!=null) && (estimatedUtils.size()>0)){
-					bestEstimatedUtilities.addAll(estimatedUtils) ;
+					evaluators.add( new Evaluator(somSprite) );
+					somSprite.createFunctions( evaluators.get(evaluators.size()-1)) ;
+					lastBeuCheckIndex.add(0) ;
+					beusBestN.add(0);
 				}
 				
-			} // i-> all pairs
+				dsd = new DScreenerDigester();
+				// dsd.balancedExecution = true;
+				dsd.shuffledIndices = true;
+				dsd.digestingDependencyItems(depVarIndexes, threadCount);
+				
+				
+				while (dsd.getClosedStatus() <= 0) {
+					out.delay(5);
+				}
+				
+				// combine the partial results
+				bestEstimatedUtilities.clear();
+				for (int i=0;i<threadCount;i++){
+					bestEstimatedUtilities.addAll( bestEstimatedUtilitiesList.get(i) );
+				}
+				
+			}else{
+				
+				ix0=0;
+				// we have just the default evaluator in this list...
+				evaluators.add( evaluator );
+				// TODO: this could be multi-threaded easily (??)... steps are completely independent
+											out.print(2, "screening for dependencies (n="+depVarIndexes.size()+")..." );
 											
-											
+				for (int i = 0; i < depVarIndexes.size(); i++) {
+
+					depVarIndex = depVarIndexes.get(i);
+					checkDependencyIndex(depVarIndex, i, 0);
+
+				} // i-> all pairs
+				
+				bestEstimatedUtilities.addAll( bestEstimatedUtilitiesList.get(0) );
+			}							
+			
+			screeningObserver.observerIsRunning = false;							
+			
 			Collections.sort(bestEstimatedUtilities, new euComparable(-1));
 			
 			// remove known ones
@@ -300,6 +527,186 @@ public class DependencyScreener {
 		dr=0; 
 	}
 
+	// ========================================================================
+	class DScreenerObserver implements Runnable{
+
+		Thread screenobsThrd ;
+		boolean observerIsRunning = false;
+		
+		// ................................................
+		public DScreenerObserver(){
+		
+			screenobsThrd = new Thread(this, "screenobsThrd"); 
+		}
+		// ................................................
+		
+		public void start(){
+			screenobsThrd.start() ;
+		}
+		@Override
+		public void run() {
+			perform();
+		}
+		
+		private void perform(){
+			observerIsRunning = true;
+			
+			ArrayList<AnalyticFunctionSpriteImprovement> cbeusList = new ArrayList<AnalyticFunctionSpriteImprovement>();
+			ArrayList<AnalyticFunctionSpriteImprovement> beus; 
+			AnalyticFunctionSpriteImprovement funcImp ;
+			
+			try{
+				
+				while (observerIsRunning) {
+					int z=0;
+					try {
+						// z=3000 = waiting 5 minutes, which roughly means 3-5000 checks
+						while ((z<1000) && (observerIsRunning) && (stopScreening==false)){
+							Thread.sleep(100); z++;
+						}
+					} catch (Exception e) {
+						continue;
+					}
+
+					if (observerIsRunning==false){
+						break;
+					}
+					if (bestEstimatedUtilitiesList.size() > 0) {
+						if (bestEstimatedUtilitiesList.get(0).size() > 100) {
+							// maxEstimatedImprovement
+ 
+							cbeusList.clear() ;
+							for (int i=0;i<bestEstimatedUtilitiesList.size();i++){
+								beus = bestEstimatedUtilitiesList.get(i);
+								cbeusList.addAll( beus );
+							}
+
+							Collections.sort(cbeusList, new euComparable(-1));
+							if (cbeusList.size()>0){
+								funcImp = cbeusList.get(0);
+								double eu = funcImp.estimatedImprovement ;
+								out.print(2, "observing screening, best expected estimated improvement : "+String.format("%.3f", eu)) ;
+								
+								if (cbeusList.size()>500){
+									int k = Math.min(cbeusList.size()/10, 1000);
+									thresholdEu = cbeusList.get(k).estimatedImprovement ;
+								}
+							}
+							
+if (cbeusList.size()>10000){
+	stopScreening = true;
+}
+							if (stopScreening){
+								if (dsd!=null){
+									dsd.closed=1; // this will close all internal threads
+									dsd.digester.close(); // throws a poison pill into the processes
+								}
+								out.delay(500);
+								
+								
+								while (dsd.digester.getRunningThreadsCount()>0){
+									out.delay(100);
+									dsd.digester.stopAll();
+								}
+								
+								observerIsRunning=false;
+							}
+						} // anything registered
+					} // anything calculated ?
+				} // observerIsRunning -> 
+				
+				
+				
+			}catch(Exception e){
+			} // try
+			
+		} // run
+		
+		
+	}
+	// ========================================================================
+	class DScreenerDigester implements IndexedItemsCallbackIntf{
+		 
+		MultiDigester digester ;
+		ArrayList<int[]> list;
+		int closed=-1;
+		boolean balancedExecution=false, shuffledIndices=false ;
+		int _id0=1998, _id1 = 2211;
+		boolean diagnosisConsole = false;
+		
+		// ................................................
+		public DScreenerDigester(){
+		}
+		// ................................................
+		
+		protected void digestingDependencyItems( ArrayList<int[]> list, int threadcount){ 
+			 
+			this.list = list; 
+			// providing also right now the callback address (=this class)
+			// the interface contains just ONE routine: perform()
+			digester = new MultiDigester(threadcount, (IndexedItemsCallbackIntf)this ) ;
+			// threads are created already by creating the multi object! they are then in wait state 
+			
+			digester.setDiagnosticPrintOut(2); 
+			digester.setBalancedExecution( balancedExecution); 
+			digester.setShuffledIndices(shuffledIndices) ; // before preparing calling "prepareItemSubSets()" !! 
+			digester.setPriority( MultiDigester._PRIORITY_HI ) ;
+			
+			// note, that the digester need not to know "anything" about our items, just the amount of items
+			// we would like to work on.
+			// the digester then creates simply an array of indices, which then point to the actual items,
+			// which are treated anyway here (below) !
+			int itemCount = list.size() ;
+			digester.prepareItemSubSets( itemCount,0 );
+			 
+			digester.execute() ;
+			
+			// the digester itself waits until all threads have been completed
+			closed = 1;
+			out.delay(100);
+			
+			digester = null;
+		}
+		
+		
+		/**
+		 * this is called from the MultiDigester via the callback interface
+		 */
+		@Override
+		public void perform(int processID, int id) {
+			// 
+			int[] dvxItem;
+			
+			
+			dvxItem = list.get(id) ;
+			 
+			// System.out.print("called back to <extracting> document, id ="+id ) ;
+			
+			
+			// thats the call out to the parent class
+			if ( dvxItem != null){
+				
+				checkDependencyIndex( dvxItem, id , processID) ;
+				
+				if ((diagnosisConsole) && ((id<52) || ((id>_id0) && (id<_id1)) || ((id>16092) && (id<16211)))){
+					out.print(2, "process : "+processID+", item : "+id) ;
+				}
+			}
+			
+		}
+
+		@Override
+		public int getClosedStatus() {
+			 
+			return closed;
+		}
+		
+		
+		
+	} // DScreenerDigester
+	// ========================================================================
+	
+	
 	
 	private void removeKnownpreviousProposals() {
 		 
@@ -475,11 +882,12 @@ public class DependencyScreener {
 		
 		public AssociationDifferential(){
 			
-			
 		}
 		
 		@SuppressWarnings("unchecked")
-		public ArrayList<AnalyticFunctionSpriteImprovement> check( int v1index, int v2index, double[][] depVarValues ){ 
+		public ArrayList<AnalyticFunctionSpriteImprovement> check( 	int v1index, int v2index, 
+																	double[][] depVarValues, 
+																	Evaluator evaluator ){ 
 			
 			double v1,v2,fv,fmax ,fmin , vesti;
 			int nex , knnClusterCount = 2,targetMode,k;
@@ -489,6 +897,7 @@ public class DependencyScreener {
 			Object resultObj;
 			ArrayList<Double> fvalues = new ArrayList<Double> ();
 			ArrayList<ArrayList<Double>> resultVectors = new ArrayList<ArrayList<Double>>();
+			ArrayList<Double> rvec ;
 			
 			ArrayList<IndexTuple> candidateImprovements = new ArrayList<IndexTuple> ();
 			IndexTuple ixtup;
@@ -579,7 +988,6 @@ if ((expressionName.contains("logist2x")) ||
 							System.err.println(emsg); // in AssociationDifferential.check()
 							e.printStackTrace();
 						}
-
 					
 					}
 					 
@@ -602,14 +1010,20 @@ if ((expressionName.contains("logist2x")) ||
 					// for col v of the table "resultVectors", we refill depVarValues[3] with the respective values
 					for (int rv=0;rv<resultVectors.size();rv++){
 						
-						fv = resultVectors.get(rv).get(v) ;
-						
-						depVarValues[3][rv] = fv ;
-						if (fv != SpriteFuncIntf.__MISSING_VALUE){
-							if (fmax<fv )fmax = fv;
-							if (fmin>fv )fmin = fv;
+						rvec = resultVectors.get(rv);
+						if (v<rvec.size()){
+							fv = rvec.get(v);
+							if (fv > 0) {
+								depVarValues[3][rv] = fv;
+								if (fv != SpriteFuncIntf.__MISSING_VALUE) {
+									if (fmax < fv) fmax = fv;
+									if (fmin > fv) fmin = fv;
+								}
+							}
+						}else{
+							// mv condition... no result vector for this cluster in this function
+							// out.print(2, "disregarded: V1: "+v1index+", V2: "+v2index+" ,  result vector rv: a"+rv+", item v: "+v);
 						}
-						
 					} // rv->
 					if ((fmax==fmin) || (fmax<=0.0) || (fmax-fmin==0.0)){
 						continue;
@@ -646,7 +1060,7 @@ if ((expressionName.contains("logist2x")) ||
 					if (targetMode == ClassificationSettings._TARGETMODE_MULTI){
 						// in this case, the improvement of the association needs to be measured by 
 						// means of bivariate clustering; the improvement measure reflects the change 
-						// of the ratio of variance intera vs inter (center) vs total  
+						// of the ratio of variance intra vs inter (center) vs total  
 						// we use simple knn, controlled by numbers of cluster from TV (or reasonably chosen
 						
 						// cluster count = group count 
