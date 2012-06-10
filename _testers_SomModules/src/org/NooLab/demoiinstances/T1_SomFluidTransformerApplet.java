@@ -20,6 +20,7 @@ import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidResultsIntf;
 import org.NooLab.somfluid.SomFluidStateDescriptionIntf;
 import org.NooLab.somfluid.SomFluidTask;
+import org.NooLab.somfluid.SomFluidTransformTaskIntf;
 import org.NooLab.somfluid.SomProcessControlIntf;
 import org.NooLab.somfluid.app.SomAppUsageIntf;
 import org.NooLab.somfluid.app.SomApplicationEventIntf;
@@ -31,6 +32,7 @@ import org.NooLab.somfluid.properties.ValidationSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.util.PowerSetSpringSource;
+import org.NooLab.somtransform.SomTransformerClientIntf;
 import org.NooLab.somtransform.algo.externals.AlgorithmPluginsLoader;
 import org.NooLab.utilities.callback.ProcessFeedBackContainerIntf;
 import org.NooLab.utilities.datatypes.IndexDistance;
@@ -48,16 +50,20 @@ import org.NooLab.utilities.logging.LogControl;
  * 
  * 		
 		 
-		...some important API stuff for a running system
+		...some important API stuff for a system running in transformer mode
 		
-		sT = sfFactory.getSomTransformer(); 
-		sfFactory.getSomTransformer().introduceTransformation( );
-		sfFactory.getSomTransformer().introduceTransformations( filename );
-		sfFactory.getSomData().addObservations( ... );
-		sfFactory.getSomTransformer().reFreshCalculation( ); // explicit update through calculation, e.g. after adding data
+		// returns the interface towards the use client
+		sT = sfFactory.createSomTransformerClient()
+		
+		through SomTransformerClientIntf ...
+		
+		sT.introduceTransformation( );
+		sT.introduceTransformations( filename );
+		sT.addObservations( ... );
+		sT.reFreshCalculation( ); // explicit update through calculation, e.g. after adding data
 		
 		
- * Any communication should be performed through Glue
+ *  
  * 
  * 
  */
@@ -89,97 +95,7 @@ public class T1_SomFluidTransformerApplet extends PApplet{
 		// testPowerSet();
 		
 	}
-	
-	@SuppressWarnings("unused")
-	private void testPowerSet(){
-	
-		PowerSetSpringSource powerset;
-		String[] itemsarr = new String[]{"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R"}; 
-		ArrayList<String> items = new ArrayList<String>(Arrays.asList(itemsarr)); 
-		// Id, Name, KundenNr, SalesOrg, Region, Land, intern_Rating, Bonitaet, Bisher, Kunde_seit, Stammkapital, Gründungsdatum, Anzahl_Mitarbeiter, Rechtsform, Branchenscore, Mahnung_TV]
-		// this array has to have the same dimension and the same order as the string array continaing 
-		// the items, if we want to set them all at once; yet, there is also the possibility to use
-		// powerset.setSelectionProbability("A", 0.12)
-		
-		double[] selectionProbs = new double[]{0.28,1.0,0.98,0.699,1.0,0.6,0.68,0.78,0.54,0.64,0.67,0.89,0.81,0.71,0.74,0.75,0.93,0.77}; 
-		
-		powerset = new PowerSetSpringSource(items);
-		
-		powerset.setPreferredSizeLimit(6) ;
-		
-		
-		powerset.setSelectionProbabilities( 0.52 ); // for all the same
-		powerset.setSelectionProbability( "A",0.62 ); // for one individually
-		powerset.setSelectionProbabilities(selectionProbs ); // for all individually at once
-		 
-		powerset.setMaxSelectionCounts(3) ;
-		
-		// this have to be changed to index positions
-		powerset.getConstraints().addExcludingItems(new String[]{"C","G","J"});
-		try {
-			powerset.getConstraints().addMandatoryItems(new String[]{"B","E"});
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		powerset.getConstraints().setMaximumLength(14);
-		powerset.getConstraints().setMinimumLength(3) ;
-		
-		powerset.activateConstraints(1);
-		
-		// powerset.printAll() ;
-		
-		ArrayList<String> setItems = null;
-		int i=1;
-		boolean selectSimilar=false;
-		
-		System.out.println();
-		
-		while (true){
-			
-			if (selectSimilar){
-				setItems = powerset.getNextSimilar(setItems, 1,3 );
-				//
-			}else{
-				// setItems = powerset.getNextRandom();
-				int lo; 
-				int hi;
-				if ((setItems!=null) && (setItems.size()>0)){
-					lo = 4;
-					hi = 8;
-					if (i%3!=0){
-						setItems = powerset.getNextSimilar(setItems, lo,hi );
-					}else{
-						setItems = powerset.getNextByLength(4, 3,4);
-					}
-				}else{
-					setItems = powerset.getNextRandom();
-				}
-				
-			}
-			
-			if (setItems.size()>0){
-				String str = setItems.toString() ;
-				System.out.println(i+"  "+str);
-			}else{
-				if (i>2){
-					break;
-				}
-			}
-			
-			if ((setItems.size()>4) && (selectSimilar==false)){
-				selectSimilar=true;
-				
-			}else{
-				selectSimilar=false;
-			}
-			i++;
-			if (i>2000){
-				break;
-			}
-		}
-	}
-	
+	 
 	
 	public void draw(){
 		background( 208,188,188);
@@ -188,19 +104,31 @@ public class T1_SomFluidTransformerApplet extends PApplet{
 
 	public void keyPressed() {
 
-		if (key=='c'){
-			// somInstance.classifyData();
-		}
-		
-		if (key=='m'){
-			startEngines() ;
+		if (key=='t'){
+			startEngines() ;  
 		}
 		
 		if (key=='r'){
-			resume() ;
+			
 		}
 		
-		if (key=='t'){
+		if (key=='o'){
+			
+		}
+		
+		if (key=='d'){
+			 
+		}
+		
+		if (key=='D'){
+			
+		}
+		
+		if (key=='p'){
+			
+		}
+
+		if (key=='P'){
 			
 		}
 		
@@ -210,7 +138,7 @@ public class T1_SomFluidTransformerApplet extends PApplet{
 
 		
 		if (key=='x'){
-			// somInstance. ...
+			//  
 			System.exit(0);
 		}
 	}
@@ -222,20 +150,17 @@ public class T1_SomFluidTransformerApplet extends PApplet{
 		println("Welcome to FluidSom!\n");
 		println("the following key commands are available for minimalistic user-based control...");
 		println();
-		println("   m  ->  start modeling, start from scratch by importing the data file ");
-		println("   r  ->  resume modeling, load persistent models, and continue modeling ");
-		
-		println("   t  ->  apply just and only the transformation model and export the transformed data ");
+		println("   t  ->  start transforming from scratch by importing the raw data file ");
+		println("   r  ->  resume : load previous transformation project ");
 		println();
-		println("   c  ->  apply a previously exported model to new data = perform the classification task ");
-		println("   i  ->  activate the file listener, which digests new data from a directory ");
+		println("   d  ->  open another data set ");
+		println("   D  ->  open another data set of the same structure as the previous/current one");
 		println();
-		println("   d  ->  duplicate project except exports and results ");
-		println("   D  ->  duplicate project, but remove everything except the data file and the transformation rules ");
+		println("   o  ->  open another project ");
+		println("   p  ->  select a different base folder (=project space) for all projects ");
+		println("   P  ->  create a new project in the project space, the data file must exist somewhere to copy from! ");
 		println();
-		println("   p  ->  create a new project in the project space, the data file must exist somewhere to copy from! ");
 		println("   z  ->  interrupt the current process, export current results and write persistent models ");
-		
 		println("   x  ->  exit");
 		println();
 		println("------------------------------------------------------------------");
@@ -315,21 +240,6 @@ class SomModuleInstanceT1 implements 	Runnable,
 	public void setResumeMode(boolean flag) {
 		//
 		resumeMode = flag;
-	}
-
-	public void classifyDataApplyModel() {
-		SomAppUsageIntf somApp ;
-		double[] data = new double[5] ;
-		String idStr;
-		SomApplicationResults somResult;
-		
-		somApp = sfFactory.getSomApplication();
-		somApp.waitForResults(true) ; // no decoupling, direct return of results
-		
-		// if wait, provide the callback:  idStr = somApp.classify((SomApplicationEventIntf)this,)
-		somResult = somApp.classify(  null, data ); // double[], ArrayList<Double>
-		
-		// put this idStr to a map, but let the SomApp do that
 	}
 
 	public void resume() {
@@ -708,7 +618,8 @@ class SomModuleInstanceT1 implements 	Runnable,
 			
 			sfProperties.setFileOrganizer(fileorg) ;
 			
-			sfFactory = SomFluidFactory.get(sfProperties);	
+			sfFactory = SomFluidFactory.get(sfProperties);
+			
 			somProcessControl = sfFactory.getSomProcessControl() ; // sending messages into the SomProcess, like interrupt, injecting new best metric, changing properties and threshold on the fly ...
 											sfFactory.getOut().print(2, "loading description of previous task ...");
 			// loading the task and starting it (file = SomFluidTask.trace)
@@ -772,6 +683,11 @@ class SomModuleInstanceT1 implements 	Runnable,
 		 
 		sfFactory = SomFluidFactory.get(sfProperties);					   // creating the factory	
 		
+		SomTransformerClientIntf sT = sfFactory.getSomTransformer() ;
+		
+		// we need the algorithms, the data and the project structure, but little else...
+		
+		// we start it through a SomFluid Task, as the som- & app- stuff
 		  
 		sfProperties.addFilter( "var",0.3,"<",1,1,true);        // filter that act on the values of observations
 																		   // can be defined only with an existing factory since we need access to the data
@@ -780,17 +696,10 @@ class SomModuleInstanceT1 implements 	Runnable,
 		sfFactory.saveStartupTrace(SomFluidFactory._INSTANCE_TYPE_SOM, _prepareStartupTraceInfo());
 		sfProperties.save();
 		
-		SomFluidMonoTaskIntf sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( ); //  
-		 
- 		
-		sfTask.setContinuity( 1,1) ;                 // param1: Level of Spela looping: 1=simple model, 2=checking 
-													// param2: number of runs: (1,1) building a stable model, then stop 
-													//                         (2,500) including screening S1, S2, max 500 steps in S2
-													//                         (2,3,500) max 3 levels in S1
-													//      				   (2,0,500) no dependency screening, just evo-optimizing
-													//      
+		SomFluidTransformTaskIntf sfTask = (SomFluidTransformTaskIntf)sfFactory.createTask( ); //  
+		  
 		
-		sfTask.setStartMode(1) ;             		// default=1 == starting after producing the FluidSom
+		// sfTask.setStartMode(1) ;             		// default=1 == starting after producing the FluidSom
 										 			//        <1 == only preparing, incl. 1 elementary run to load the data, 
 		                                 			//              but not starting the modeling process (v switches in the middle between 3..100)
 										 			//        >100  minimum delay in millis
@@ -800,11 +709,11 @@ class SomModuleInstanceT1 implements 	Runnable,
 		// sfFactory.produce( sfTask );          	// this produces the SomFluid and the requested som-type according to
 													// SomFluidProperties._SOMTYPE_MONO, referring implicitly to sfTask; 
 													//
-	
-		sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( ); 
+		/*
+		sfTask = (SomFluidTransformTaskIntf)sfFactory.createTask( ); 
 		sfTask.setStartMode(1) ;  
 		sfTask.setContinuity(2,0,200);
-		
+		*/
 		try {
 			
 			sfFactory.produce( sfTask );
