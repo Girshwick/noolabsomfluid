@@ -491,13 +491,14 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 	 */
 	public void detectCollinearVariables( ArrayList<String> vLabels) {
 		
-		int ix,rc, cc;
+		int ix,rc, cc, nc = 0;
 		String varLabel;
 		Variables variables = somDataObj.variables;
 		SomMapTable xSomMap = new SomMapTable();
 		IndexedDistances topCorrelations;
 		ArrayList<String> selectedVarLabels ;
 		ArrayList<Integer> topIxes, allCollinears = new ArrayList<Integer> ();
+		IndexedDistances ixds = new IndexedDistances ();
 		
 		DataTable ntable = somDataObj.getNormalizedDataTable()  ;
 		
@@ -525,7 +526,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 					col = ntable.getColumn(ix) ;
 					int csz = col.getCellValues().size() ;
 					for (int z=0;z<csz;z++){
-						xSomMap.values[z][i] = col.getCellValues().get(i); 
+						xSomMap.values[z][i] = col.getCellValues().get(z); 
 					}
 					
 				}else{}
@@ -547,11 +548,16 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 					
 					varLabel = xSomMap.variables[i] ;
 					
-					topIxes = mc.getMatrixRowTopValues(i, 0.85, 50.0) ; // 1st: corr coeff, 2nd: quantile as a max value 
+					topIxes = mc.getMatrixRowTopValues(i, 0.81, 0.999, 50.0) ; // 1st: corr coeff, 2nd: quantile as a max value 
 					
 					// we keep only variable i and remove topIxes
 					// yet, first we collect all indexes from xSomMap
-					if ((topIxes!=null) && (topIxes.size()>0)){
+					if ((topIxes!=null) && (topIxes.size()>0) ){
+						
+						double v = xSomMap.values[i][ topIxes.get(0)];
+						if ((v<0.8) || (v==1.0)){
+							continue;
+						}
 						allCollinears.addAll(topIxes) ;
 						
 						for (int k=0;k<topIxes.size();k++){
@@ -559,28 +565,36 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 							       ix   = topIxes.get(k);
 							String vlabel = xSomMap.variables[ix] ;
 							int    cix  = variables.getIndexByLabel(vlabel) ;
-							double cv   = rMatrix[i][k] ;
+							double cv   = rMatrix[i][ix] ;
 							if (vix != cix){
-								variables.getInProcessExclusions().add( new IndexDistance( cix,vix,cv,vlabel) ) ;
-							}
-						}
+								ixds.add( new IndexDistance( cix,vix,cv,vlabel) ) ;
+							} // probably a dedicated list dealing with collinearity ?
+						}     // we could need the getInProcessExclusions for more short-living moves...
 					}
-					
+					ix=0;
 				} // i-> all rows
 				
 				// Collections.sort( allCollinears );
 				
 				// selectedVarLabels = mc.getSelectionLabels( allCollinears );
 				
-				
+				ix=0;
 				
 				
 			} // anything available
 
+		 
+			if ((ixds.size() > ((double)vLabels.size()/10.0)) || (ixds.size()>20)){
+				variables.getInProcessExclusions().addAll(ixds) ;
+				nc = ixds.size();
+			}else{
+				nc=0;
+			}
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-											out.print(2, "detecting collinearity among variables completed.");
+											out.print(2, "detecting collinearity among variables completed, "+nc+" collinear items found.");
 	}
 	
 	
@@ -791,7 +805,8 @@ if (varlabel.toLowerCase().contains("_c")){
 			// this list will be "cleared" after the first step in the L2 loop, such that the 
 			// removed variable gets the same weight as the variable which has been used as prototype
 			
-			detectCollinearVariables();
+			// detectCollinearVariables();  // TODO:  upon option
+			
 			
 			
 			// 

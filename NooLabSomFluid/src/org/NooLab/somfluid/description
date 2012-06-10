@@ -1,4 +1,21 @@
 
+Technical remark:
+it is very important to start the JVM with the following parameters !!
+-Xmx640m
+-XX:+ExplicitGCInvokesConcurrent
+-XX:+UseConcMarkSweepGC
+
+-------------------------------------------------------------------------------
+
+#!/bin/sh
+CLASSPATH=foo.jar:bar.jar
+JVMARGS=-some_arg
+MYAPP_ARGS=-some_args -for -my -app
+
+java $JVMARGS -classpath $CLASSPATH com.my.domain.myapp $MYAPP_ARGS
+
+-------------------------------------------------------------------------------
+
 
 A SomFluid is a module for a population of SOMs 
 

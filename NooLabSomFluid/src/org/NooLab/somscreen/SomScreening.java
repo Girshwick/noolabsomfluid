@@ -1319,7 +1319,7 @@ if (results.getTrainingSample().getRoc().getAuC()>0.86){
 			maxs = maxs + dedicatedChecks;
 			
 			if (evoMetrices.evmItems.size()>=maxs){
-				out.print(2, ""+(evoMetrices.evmItems.size())+" steps have been performed by optimizer, now stopping because it reached the <MaxStepsAbsolute="+maxs+"> ");
+				out.print(2, ""+(evoMetrices.evmItems.size())+" steps have been performed by the optimizer, now stopping because it reached the <MaxStepsAbsolute="+maxs+"> ");
 				hb = true;
 			}
 			
@@ -1331,7 +1331,7 @@ if (results.getTrainingSample().getRoc().getAuC()>0.86){
 			if (hb==false){
 				int maxnis = optimizerSettings.getAtLeastWithoutChange() ;
 				if (z-bestItemStep>maxnis){
-					out.print(2, ""+(evoMetrices.evmItems.size())+" steps have been performed by optimizer, while last "+(z-bestItemStep)+" steps have been without improvement, "+
+					out.print(2, ""+(evoMetrices.evmItems.size())+" steps have been performed by the optimizer, while last "+(z-bestItemStep)+" steps have been without improvement, "+
 								 "now stopping because it eceeded the threshold <AtLeastWithoutChange="+maxnis+"> ");
 					hb = true;
 				}
@@ -1354,7 +1354,7 @@ if (results.getTrainingSample().getRoc().getAuC()>0.86){
 							qvalue = em.mainScore;
 							double smq = optimizerSettings.getStopAtNormalizedQuality();
 							if ((qvalue>=0.0001) &&(qvalue < smq)){
-								out.print(2, ""+z+" steps have been performed by optimizer, "+
+								out.print(2, ""+z+" steps have been performed by the optimizer, "+
 											 "now stopping because achieved model quality is better than request (t="+String.format("%.3f", smq)+") ");
 								hb = true;
 							} // em
