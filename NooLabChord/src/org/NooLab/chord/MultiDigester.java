@@ -169,7 +169,7 @@ public class MultiDigester   {
 		// System.gc() ; 
 
 		try {
-			Thread.sleep(0,5) ;
+			// Thread.sleep(0,5) ;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -395,13 +395,13 @@ public class MultiDigester   {
 					
 					// firstFinishnanoTime == now
 				}
+
+				Thread.currentThread().sleep(10);
 				
 				if (closedthreadSum < threadcount) {
 
-					Thread.currentThread().sleep(0,10);
-
 					if (diagnosticPrintOut>=4){
-						Thread.currentThread().sleep(1800);
+						Thread.currentThread().sleep(10);
 						System.out.println("  unfinished threads : " + notFinished);
 
 						if ((diagnosticPrintOut>=2) && (threadcount -closedthreadSum <= 2)){
@@ -538,7 +538,7 @@ public class MultiDigester   {
 		
 		 
 		public void run() {
-			
+			int z=0;
 			try {
 				
 				loopFinished=false;
@@ -551,15 +551,19 @@ public class MultiDigester   {
 				while ((alive) && (amorphousPill<=0)) {
 
 					if ( active == false ){
-						// thrd.sleep(100);
+						
+						z++;
 						try{
 							amorphousPill = indexedItemsRoutine.getClosedStatus() ;
 							
 							if (diagnosticPrintOut >= 4){
-								Thread.currentThread().sleep(0,10);
+								Thread.currentThread().sleep(1);
 								System.out.println("thread ("+index+") is waiting...") ;
 							}else{
-								Thread.currentThread().sleep(0,2); // prevent processor activity 100%...
+								//if (z>10000)
+								{
+								Thread.currentThread().sleep(1); // prevent processor activity 100%...
+								}
 							}
 							if (amorphousPill>0){
 								alive=false; active=false;
@@ -569,10 +573,11 @@ public class MultiDigester   {
 					} 
 					
 					if (active){
+						z=0;
 						if ((balancedExecution) && (itemindex==0)){
 							// we activate in the order of the threads == in the order of original indexes
 							while (earlierWorkerStarted(index)==false){
-								Thread.currentThread().sleep(0,10); 
+								Thread.currentThread().sleep(1); 
 							}
 						}
 						if (itemindex < itemsubset[index].items.size() ){
@@ -580,19 +585,21 @@ public class MultiDigester   {
 							selectedIndexValue = itemsubset[index].items.get(itemindex) ;
 							
 							if (diagnosticPrintOut>=4){
-								Thread.currentThread().sleep(0,12);
+								Thread.currentThread().sleep(1);
 								System.out.println("thread ("+index+") is working on item : " + selectedIndexValue) ;
 							}
 							
 							performWork( index, selectedIndexValue ) ;
 							
+							/*
 							if ((balancedExecution) && (itemindex<itemCount-threadcount-1)){
 								while (workerIsAhead(index, selectedIndexValue )){
-									Thread.currentThread().sleep(0,10); 
+									Thread.currentThread().sleep(1); 
 									// waiting for the slowest worker
 								}
 								
 							}
+							*/
 						}
 						
 					
