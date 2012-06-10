@@ -35,10 +35,18 @@ import org.NooLab.utilities.logging.LogControl;
    
 /**
  * 
+ * Technical remark:
+ * it is very important to start the JVM with the following parameters !!
+ * 
+ * -Xmx640m
+ * -XX:+ExplicitGCInvokesConcurrent
+ * -XX:+UseConcMarkSweepGC
+
+
  * TODO Roc-AuC is too optimistic (not cut at sensitivity=100)  
  *      TV columns need complete scan for values ...
- *  
- * 
+ *  	if the last column has only empty cells from row n until last row, cellvalues will be too short
+ *      -> correct this through homogenizing the col length, stuffing mv into it... "m.v." as string
  * Later: this applet should start the SomFluid as an external application!!
  * 	      Any communication should be performed through Glue, or "wirelessly" through TCP
  * 
@@ -74,7 +82,7 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 	// note that this refers only to any single loop of exploration-by-selection, it is an infimum! 
 	// the actual number is approx+  5 * L2-loopcount (max 5) + (size of selection), 
 	// for serious modeling, an appropriate value here is always >20!   
-	int _numberOfExploredCombinations  = 25;
+	int _numberOfExploredCombinations  = 31;
 	
 	// further work....
 	// best model when using ALL data(limited exploration without cross-validation stability)
@@ -830,7 +838,7 @@ class SomModuleInstanceM1 implements 	Runnable,
 		}
 		
 		if ((filnames!=null) && (filnames.length>0) && (DFutils.fileExists(filnames[0]))){
-			
+			 
 			if (sfPropertiesDefaults.loadVariableSettingsFromFile( filnames[0]) ){
 				// recognizes format by itself, if successful, we may return
 				return;
