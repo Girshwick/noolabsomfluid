@@ -6,14 +6,17 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.NooLab.math3.exception.MathInternalError;
+import org.NooLab.math3.random.RandomData;
+import org.NooLab.math3.random.RandomDataImpl;
+import org.NooLab.math3.random.RandomGenerator;
 import org.NooLab.math3.stat.MissingValueIntf;
 import org.NooLab.math3.util.FastMath;
-import org.apache.commons.math.random.RandomData;
-import org.apache.commons.math.random.RandomDataImpl;
-import org.apache.commons.math.random.RandomGenerator;
+
+//import org.apache.commons.math.random.RandomData;
+// import org.apache.commons.math.random.RandomDataImpl;
+// import org.apache.commons.math.random.RandomGenerator;
 import org.apache.commons.math.stat.ranking.NaNStrategy;
-import org.apache.commons.math.stat.ranking.RankingAlgorithm;
-import org.apache.commons.math.stat.ranking.TiesStrategy;
+  
 
 
 /**
@@ -72,7 +75,10 @@ public class NaturalRanking implements RankingAlgorithm {
     /** Source of random data - used only when ties strategy is RANDOM */
     private final RandomData randomData;
 
-    MissingValueIntf missingValues ; 
+    MissingValueIntf missingValues ;
+
+	private boolean mvActivated;
+	private double mvValue; 
     
     // ========================================================================
     /**
@@ -121,7 +127,13 @@ public class NaturalRanking implements RankingAlgorithm {
         this.tiesStrategy = tiesStrategy;
         randomData = new RandomDataImpl();
     }
-
+    public NaturalRanking(NaNStrategy nanStrategy, TiesStrategy tiesStrategy, RandomDataImpl randomdata) {
+        super();
+        this.nanStrategy = nanStrategy;
+        this.tiesStrategy = tiesStrategy;
+        randomData = randomdata;
+    }
+    
     /**
      * Create a NaturalRanking with TiesStrategy.RANDOM and the given
      * RandomGenerator as the source of random data.
@@ -152,7 +164,9 @@ public class NaturalRanking implements RankingAlgorithm {
     // ========================================================================
 
     
-    /**
+ 
+
+	/**
      * Return the NaNStrategy
      *
      * @return returns the NaNStrategy
@@ -187,10 +201,16 @@ public class NaturalRanking implements RankingAlgorithm {
     	ArrayList<Double> checkedData = new ArrayList<Double> (); 	
     	
     	for (int i = 0; i < data.length; i++) {
+    		
     		boolean consider = true;
         	if ((missingValues!=null ) && (missingValues.isActive() )){
         		// there might be more values, thus we should test over there...
         		consider = missingValues.isMissingValue( data[i] );	
+        	}else{
+        		// single simple adhoc 
+        		if (mvActivated){
+        			consider = data[i] != mvValue;
+        		}
         	}
         	if (consider){
         		checkedData.add( data[i]) ;		
@@ -473,5 +493,16 @@ public class NaturalRanking implements RankingAlgorithm {
 	public void importMissingValueDefinition(MissingValueIntf mv) {
 		missingValues = mv;
 		
+	}
+
+	@Override
+	public void activateMissingValueCheck(double mvValue) {
+		this.mvValue = mvValue ;
+		mvActivated = true;		
+	}
+
+	@Override
+	public void deactivateMissingValueCheck() {
+		mvActivated = false;
 	}
 }

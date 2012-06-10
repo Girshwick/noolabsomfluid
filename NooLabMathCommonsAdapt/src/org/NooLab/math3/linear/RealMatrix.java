@@ -69,9 +69,9 @@ public interface RealMatrix extends AnyMatrix {
     RealMatrix scalarMultiply(double d);
 
     /**
-     * Returns the result of postmultiplying this by m.
+     * Returns the result of post-multiplying this by m.
      *
-     * @param m    matrix to postmultiply by
+     * @param m    matrix to post-multiply by
      * @return     this * m
      * @throws     IllegalArgumentException
      *             if columnDimension(this) != rowDimension(m)
@@ -79,8 +79,8 @@ public interface RealMatrix extends AnyMatrix {
     RealMatrix multiply(RealMatrix m);
 
     /**
-     * Returns the result premultiplying this by <code>m</code>.
-     * @param m    matrix to premultiply by
+     * Returns the result pre-multiplying this by <code>m</code>.
+     * @param m    matrix to pre-multiply by
      * @return     m * this
      * @throws     IllegalArgumentException
      *             if rowDimension(this) != columnDimension(m)
