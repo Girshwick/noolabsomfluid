@@ -546,13 +546,14 @@ if (formula.contains("k")){
 		}
 	}
 	
-	@Override
-	public Object calculate(double... values) throws Exception{
-		// speedy departure into a private compartment for multi-threading
-		return ((new Calculator(values)).go());
+	
+	public Object calculateByObj(double... values) throws Exception{
+		// speedy departure into a private compartment for multi-threading ??? 
+		return ((new Calculator(values)).go());  // is very costly ...
 	}
 	
-	public Object _calculate(double... values) throws Exception{
+	@Override
+	public Object calculate(double... values) throws Exception{
 	// TODO XXX we need a map here, or String... containing sth like a:value	
 	// since the order of the variables is not guaranteed... often [b,a,k] instead of [a,b,k]
 		

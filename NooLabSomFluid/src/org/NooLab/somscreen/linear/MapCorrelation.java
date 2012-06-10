@@ -194,9 +194,10 @@ public class MapCorrelation {
 	 * @param rowindex index of the row to visit
 	 * @param corrCoeff threshold of the correlation value, only column indices that contain a larger value will be returned
 	 * @param quantile the maximum quantile percentage that will be returned as a percentage of row size, values have to be in [0.0 .. 100.0] 
+	 * @param d 
 	 * @return
 	 */
-	public ArrayList<Integer> getMatrixRowTopValues(int rowindex, double corrCoeff, double quantile) {
+	public ArrayList<Integer> getMatrixRowTopValues(int rowindex, double corrCoeffLo, double corrCoeffHi, double quantile) {
 		
 		ArrayList<Integer> columnIndexes = new ArrayList<Integer>();
 		IndexedDistances ixds = new IndexedDistances ();
@@ -219,7 +220,7 @@ public class MapCorrelation {
 			}
 			for (int i=0;i<maxz;i++){
 				cc = ixds.getItem(i).getDistance() ;
-				if (cc>corrCoeff){
+				if ((cc>corrCoeffLo) && (cc<=corrCoeffHi)){
 					ix = ixds.getItem(i).getIndex() ;
 					columnIndexes.add(ix) ;
 				} // > corrCoeff ?

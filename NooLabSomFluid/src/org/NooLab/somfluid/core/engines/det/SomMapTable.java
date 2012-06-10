@@ -83,8 +83,8 @@ public class SomMapTable {
 
 		return indexes;
 	}
-	
-	
+
+
 	
 	
 	

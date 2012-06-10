@@ -30,6 +30,17 @@ import org.NooLab.utilities.resources.ResourceLoader;
 /**
  * 
  * required heap size for the package is 500Mb
+ * use the following parameters to start the JVM !!!
+ * 
+ * -Xmx640m
+ * -XX:+ExplicitGCInvokesConcurrent
+ * -XX:+UseConcMarkSweepGC
+ * 
+ * the "GC" parameters are important & needed for concurrent garbage collection
+ * see package utilities.vm for creating shell-specific startup scripts
+ * 
+ *  
+ * 
  * in Eclipse, there are 2 possibilities 
  * 1- go to Windows > preferences > Java > installed JREs : select one > Edit > defualt VM arguments  "-Xmx640m"  
  * 2- run > run configurations : select the application/applet > arguments > VM arguments : "-Xmx640m"

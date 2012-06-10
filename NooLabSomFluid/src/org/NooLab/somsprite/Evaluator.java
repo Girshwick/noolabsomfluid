@@ -147,8 +147,20 @@ public class Evaluator {
 		
 		return expr ;
 	}
+
+
 	
 	public String  getExpression(int index){
+		
+		String xname ="", expr="";
+		
+		xname = xList.get(index);
+		expr = expressions.get(xname) ;
+		
+		return expr;
+	}
+	
+	public String  getExpressionName(int index){
 		
 		String xname ="";
 		
@@ -156,7 +168,6 @@ public class Evaluator {
 		
 		return xname;
 	}
-	
 	/*
 	
 	
