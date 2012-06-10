@@ -2,10 +2,12 @@ package org.NooLab.utilities.logging;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Date;
+
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Vector;
+
+
 
 import org.NooLab.utilities.datetime.DateTimeValue;
 import org.NooLab.utilities.files.DFutils;
@@ -73,6 +75,12 @@ public class PrintLog {
 	private String collectedPrintOut = "";
 
 	private boolean displayMemory;
+
+	private boolean timeThresholding = false;
+	private int delayThresholdingValue = 0;
+	private long lastMeasuredTime = 0, dT=0;;
+
+	private TimeAnchorIntf timeAnchor = null;
 	
 	
 	// ========================================================================
@@ -283,6 +291,22 @@ if ((msg==null) ){
 				}
 			}
 			log2file(msg);
+		} // goforit ?
+		
+		if ((timeThresholding) && (delayThresholdingValue>5) ){
+			timeThresholding = false; // prevent nested re-entry
+			now = System.currentTimeMillis() ;
+			dT = now - lastMeasuredTime;
+			
+			if ((dT > delayThresholdingValue) & (dT<133000000)){
+				
+				if ((timeAnchor!=null) && (lastMeasuredTime>0)){
+					timeAnchor.redirection(dT) ;
+				} 
+			}
+			lastMeasuredTime = now ;
+			dT=0;
+			timeThresholding = true;
 		}
 	}
 	
@@ -688,6 +712,21 @@ if ((msg==null) ){
 	public void setDisplayMemory(boolean flag) {
 		
 		displayMemory = flag;
+	}
+
+	public void setTimeThresholdingAnchor(TimeAnchorIntf callbackClass) {
+		//  
+		timeAnchor =  callbackClass ;
+	}
+
+	public void setTimeThresholding( boolean flag, int delayValue) {
+		lastMeasuredTime = 0;
+		timeThresholding = flag;
+		delayThresholdingValue = delayValue ;
+	}
+
+	public void resetTimeThresholding() {
+		lastMeasuredTime = System.currentTimeMillis() ;
 	}
 
 

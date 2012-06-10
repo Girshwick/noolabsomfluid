@@ -142,7 +142,7 @@ public class Watch{
 						Thread.sleep(0, 10) ;
 					}
 					if (isActive==false){
-						Thread.sleep(100) ;
+						Thread.sleep(10) ;
 					}
 					 
 				}
