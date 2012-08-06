@@ -116,8 +116,13 @@ public class PrintLog {
 		initialTimeStamp = addTimeStamp("",2) ;
  	}
 
-	@SuppressWarnings("static-access")
+	
 	public void delay(int millis){
+		Delay(millis) ;
+	}
+	
+	@SuppressWarnings("static-access")
+	public static void Delay(int millis) {
 		try {
 			Thread.currentThread().yield();
 			if (millis>0){
@@ -127,8 +132,7 @@ public class PrintLog {
 			}
 		} catch (Exception e) {}
 	}
-	
-	
+
 	private void calc_elapsed_time(){
 		long now;
 		

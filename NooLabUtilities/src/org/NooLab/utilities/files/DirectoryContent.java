@@ -28,6 +28,7 @@ public class DirectoryContent extends Observable  {
 	File[] files ;
 	File[] subdirectories ;
 	 
+	int depth=-1;
 	int limitCount = -1;
 	
 	String descriptionFile = "";
@@ -103,14 +104,20 @@ public class DirectoryContent extends Observable  {
 		return getListOfFileList( namefilter, "", directoryPath);
 	}
 	
-		
+	/**
+	 * 
+	 * @param namefilter   * or any snip
+	 * @param extension    like ".jar" -> including the dot as pos 0 !!
+	 * @param directoryPath
+	 * @return
+	 */
 	public static ArrayList<String> getFileList( final String namefilter, final String extension, String directoryPath) {
 		String[] children;
 		
 		File tmpffil;
 		String filename, str ,fname, tmp ;
 		FilenameFilter filter ;
-		int k,p;
+		int n = 0,k,p;
 		boolean hb;
 		ArrayList<String> filenames = new ArrayList<String>() ;
 		
@@ -120,6 +127,9 @@ public class DirectoryContent extends Observable  {
 		filenames.clear() ;
 		
 		File dir = new File(directoryPath);
+		if (dir.exists() && dir.canRead() ){
+			n = dir.list().length;
+		}  n= n+1-1;
 		/*
 		children = dir.list();
 		if (children == null) {
@@ -137,12 +147,27 @@ public class DirectoryContent extends Observable  {
 		filter = new FilenameFilter() {
 										 public boolean accept(File dir, String name) {
 											 boolean hb = true;
+											    name = name.trim() ;
 											 	hb = !name.startsWith(".");
+											 	if (!hb){
+											 		
+											 	}
 											 	if ((hb) && (namefilter.length()>0)){ 
-											 		hb = name.contains(namefilter) ;  
+											 		hb = (namefilter.contentEquals("*"));
+											 		if (namefilter.contains("*")){
+											 			hb = StringsUtil.matchSimpleWildCard( namefilter, name);
+											 		}
+											 		if (!hb){
+											 			hb = name.contains(namefilter) ;
+											 		}
 											 	}
 											 	if ((hb) && (extension.length()>0)){ 
-											 		hb = name.endsWith(extension) ;  
+											 		hb = (name.endsWith(extension)) || (extension.contentEquals("*")) ;
+											 		if (extension.contains("*")){
+											 			String ext = StringsUtil.getExtensionFromFilename(name);
+											 			hb = StringsUtil.matchSimpleWildCard( extension, ext);
+											 		}
+											 		   
 											 	}
 											 	
 											 	
@@ -153,7 +178,7 @@ public class DirectoryContent extends Observable  {
        // filter = new FFilter( filfilter, dirfilter );
         
 									 
-		children = dir.list(filter);
+		children = dir.list(filter); 
 		 
 		k = directoryPath.length();
 		if (k>1){
@@ -163,12 +188,24 @@ public class DirectoryContent extends Observable  {
 				directoryPath = directoryPath+"/" ;
 			}
 		}
-		
+		k=0;
 		for (int i=0;i<children.length;i++){
 			// stuff path to the string
 			str = children[i] ;
 			
-			hb = str.toLowerCase().contains(extension.toLowerCase()) ;
+			hb = DFutils.isFolder(directoryPath + str )==false ;
+			if (hb==false){
+				hb = DFutils.isFile(directoryPath + str );
+			}
+			if (hb){
+				hb = str.toLowerCase().contains(extension.toLowerCase()) || (extension.contentEquals("*")) || (extension.length()==0) ;
+			}
+			if (hb==false){
+		 		if (extension.contains("*")){
+		 			String ext = StringsUtil.getExtensionFromFilename(str);
+		 			hb = StringsUtil.matchSimpleWildCard( extension, ext);
+		 		}
+			}
 			if (hb){
 				str = directoryPath + str ;
 			} else{
@@ -331,9 +368,31 @@ public class DirectoryContent extends Observable  {
 	    subdirectories = dir.listFiles(fileFilter);
 	    return subdirectories;
 	}
+
 	
 	public File[] getSubDirectories( String namefilter, String directoryPath) {
+		return getSubDirectories( namefilter, directoryPath, false, -1) ;
+	}
+
+	public File[] getSubDirectories( String namefilter, String directoryPath, boolean recursive) {
+		return getSubDirectories( namefilter, directoryPath, recursive, -1) ;
+	}
+	public File[] getSubDirectories( String namefilter, String directoryPath, boolean recursive, int depth) {
+		ArrayList<File> _files = _getSubDirectories( namefilter, directoryPath, recursive, -1) ;
+		File[] fils = new File[0];
 		
+		if (_files.size()>0){
+			fils = new File[_files.size()];
+			for (int i=0;i<_files.size();i++){
+				fils[i] = _files.get(i) ;
+			}
+		}
+		return fils; 
+	}
+	
+	private ArrayList<File> _getSubDirectories( String namefilter, String directoryPath, boolean recursive, int _depth) {
+		
+		depth = _depth;
 		String[] children;
 		FileFilter fileFilter;
 		
@@ -352,7 +411,6 @@ public class DirectoryContent extends Observable  {
 				filename = children[i];
 			}
 		}
-
 		 
 		
 		// This filter only returns directories
@@ -370,7 +428,11 @@ public class DirectoryContent extends Observable  {
 																_filter="";
 															}
 															if ((_filter.length()>0)){
-																hb = (pathname.indexOf(_filter)>0);
+																if (filter.contains("*")){
+																	// very crude....
+																	_filter = StringsUtil.replaceall(_filter, "*", "");
+																}
+																hb = (pathname.toLowerCase().indexOf(_filter.toLowerCase())>0);
 															}
 														}
 				
@@ -378,8 +440,32 @@ public class DirectoryContent extends Observable  {
 													}
 								 
 												 };
-	    subdirectories = dir.listFiles(fileFilter);
-	    return subdirectories;
+		File[] _subdirs = dir.listFiles(fileFilter);
+		ArrayList<File> _subdirectories = new ArrayList<File>(), sd, sdc = new ArrayList<File>();
+		
+		if (_subdirs!=null){
+			for (int i=0;i<_subdirs.length;i++){
+				sdc.add( _subdirs[i]) ;
+			}
+		} 
+		if (recursive){
+		    for (int i=0;i<sdc.size();i++){
+		    	String subdirName = sdc.get(i).getAbsolutePath() ;
+		    	int d = -1;
+		    	if (depth>1){
+		    		d = depth+1; 
+		    	}
+		    	sd = _getSubDirectories( namefilter, subdirName, recursive, d);
+		    	if ((sd!=null) && (sd.size()>0)){
+		    		_subdirectories.addAll( sd ) ;
+		    	}else{
+		    		_subdirectories.add( sdc.get(i) );
+		    	}
+		    }
+		}// recursive?
+	    	
+		 ;
+	    return _subdirectories;
 	}
 	
 	public String getDescriptionFile() {

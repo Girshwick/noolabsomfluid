@@ -14,7 +14,6 @@
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xalan/xalan-j_2_7_1/xalan.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xalan/xalan-j_2_7_1/xercesImpl.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xalan/xalan-j_2_7_1/xml-apis.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/textworx/tika/tika-app-0.9.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/xml/xmlbuilder/java-xmlbuilder-0.4.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/httpc/htmlparse/tidy/jtidy-r938.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/uuid-3.2.jar"/>
@@ -26,5 +25,6 @@
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/nets/nat/jNAT-PMPlib.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/NooLabChord"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/processing/core.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/textworx/tika/tika-app-1.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

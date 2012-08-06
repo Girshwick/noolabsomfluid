@@ -1,5 +1,5 @@
 #Fat Jar Configuration File
-#Thu May 17 01:13:38 CEST 2012
+#Mon Jul 30 12:35:56 BST 2012
 onejar.license.required=true
 manifest.classpath=
 manifest.removesigners=true
@@ -10,5 +10,5 @@ manifest.mainclass=
 manifest.file=<createnew>
 jarname.isextern=true
 onejar.expand=
-excludes=<jar|commons-lang3-3.0.jar>;<jar|commons-httpclient-3.1.jar>;<jar|commons-codec-1.4.jar>;<jar|commons-collections-3.2.1.jar>;<jar|commons-io-2.0.1.jar>;<jar|jsoup-1.6.0.jar>;<jar|xalan-2.7.1.jar>;<jar|xercesImpl-2.9.1.jar>;<jar|xalan.jar>;<jar|xercesImpl.jar>;<jar|xml-apis.jar>;<jar|tika-app-0.9.jar>;<jar|xmlenc-0.52.jar>;<jar|xmlParserAPIs-2.6.2.jar>;<jar|serializer.jar>;<jar|javax.servlet.jar>
+excludes=<jar|commons-lang3-3.0.jar>;<jar|commons-httpclient-3.1.jar>;<jar|commons-codec-1.4.jar>;<jar|commons-collections-3.2.1.jar>;<jar|commons-io-2.0.1.jar>;<jar|jsoup-1.6.0.jar>;<jar|core.jar>;<jar|tika-app-1.2.jar>
 includes=

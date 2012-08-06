@@ -20,6 +20,21 @@
             <fatjar.manifest/>
             <fatjar.filesource path="D:\dev\java\workspace\NooLabUtilities\bin" relpath=""/>
             <fatjar.filesource path="D:\dev\java\workspace\NooLabChord\bin" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\apacheTools\logging\log4j-1.2.16.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\httpc\htmlunit-2.8\lib\xalan-2.7.1.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\apacheTools\xml\xercesImpl-2.9.1.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\apacheTools\xml\xalan\xalan-j_2_7_1\xalan.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\apacheTools\xml\xalan\xalan-j_2_7_1\xercesImpl.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\apacheTools\xml\xalan\xalan-j_2_7_1\xml-apis.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\xml\xmlbuilder\java-xmlbuilder-0.4.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\httpc\htmlparse\tidy\jtidy-r938.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\uuid-3.2.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\apacheTools\xml\mjxml.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\apacheTools\xml\xmlenc-0.52.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\apacheTools\xml\xmlParserAPIs-2.6.2.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\apacheTools\xml\xalan\xalan-j_2_7_1\serializer.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\javax\javax.servlet.jar" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\nets\nat\jNAT-PMPlib.jar" relpath=""/>
         </fatjar.build>
     </target>
 </project>
