@@ -1385,14 +1385,18 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		}
 		return ir;
 	}
-	
-	public boolean matchSimpleWildcard(String compareThisSnip, String toFullString) {
+
+	public static boolean matchSimpleWildCard(String compareThisSnip, String toFullString) {
 		boolean rB=false;
 		String compareThis = compareThisSnip.trim();
 
 		if ((compareThis.endsWith("*")) && (compareThis.startsWith("*") )){
 			compareThis = compareThis.replace("*", "");
-			
+			if (compareThis.length()==0){
+				rB=true;
+			}else{
+				rB = toFullString.contains(compareThis) ;
+			}
 			return rB;
 		}
 		
@@ -1412,6 +1416,11 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		
 		// if *ABC -> match to the end, if *ABC* match anywhere, if ABC* match at the beginning 
 		return rB;
+		
+	}
+
+	public boolean matchSimpleWildcard(String compareThisSnip, String toFullString) {
+		return matchSimpleWildCard(compareThisSnip, toFullString);
 	}
 	
 	
@@ -1950,7 +1959,7 @@ if (str.contains("1. 5")){
 			
 			if (p1>=0){
 				if (matchingMode==0){
-					p2 = this.indexOfStrings(str, close,p1);
+					p2 = this.indexOfStrings(str, close,p1+1); d=0;
 					// p2 =  nums.arrayMin(pp2, -1) ;
 					// p2 = str.indexOf(close,p1) ;
 				}
@@ -4172,6 +4181,18 @@ if (str.contains("1. 5")){
 		return languageID; 
 	}
 
+	public static String separateBeforeLast(String inStr, String separator) {
+		String str = separateLast(inStr, separator) ;
+		String rstr = "";
+		
+		if (str.length()>0){
+			rstr = inStr.replace(str, "");
+		}else{
+			rstr = "";
+		}
+		return rstr;
+	}
+	
 	public static String separateLast(String string, String separator) {
 		String separatedPart = ""; 
 		String[] parts;
@@ -4353,6 +4374,51 @@ if (str.contains("1. 5")){
 		}
 		
 		return extStr;
+	}
+
+	public String[] getFilenameExtensions(String filename) {
+		String[] exts = new String[0];
+		String str = filename;
+		int n;
+		
+		str = this.replaceAll(str, "..", ".").trim() ; 
+		if (str.endsWith(".")){
+			str = str.substring(0,str.length()-1);
+		}
+		
+		n= this.frequencyOfStr(str, ".");
+		if (n==0){
+			return exts;
+		}
+		
+		int p = str.indexOf(".") ;
+		if (p<0){
+			return exts;
+		}
+		
+		str = str.substring(p,str.length()) ;
+
+		n= this.frequencyOfStr(str, ".");
+		p = str.indexOf(".");
+		
+		if ((n==1) && (p==0)){
+			exts = new String[1] ;
+			exts[0] = str;
+		}else{
+			if (p==0){
+				str = str.substring(1,str.length()) ;
+			}
+			String[] extsn = str.split("\\.") ; // it is regex!! escape the escape  the dot , in order to get it as literal
+			exts = extsn;
+		}
+		
+		for (int i=0;i<exts.length;i++){
+			
+			exts[i] = "."+exts[i];
+			exts[i] = exts[i].replace("..", ".") ;
+		}
+		
+		return exts;
 	}
 
 

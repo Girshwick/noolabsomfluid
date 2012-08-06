@@ -619,11 +619,15 @@ public class DFutils extends Thread{
 	}
 	
 	public ArrayList<String> listOfSubDirectories( String basePath , String nameFilter, boolean fullPath){
+		return listOfSubDirectories( basePath , nameFilter, fullPath, false) ;
+	}
+	
+	public ArrayList<String> listOfSubDirectories( String basePath , String nameFilter, boolean fullPath, boolean recursive){
 		
 		ArrayList<String> folderList= new ArrayList<String> ();
 		String fstr ;
 		
-		File[] files = dirutil.getSubDirectories(nameFilter, basePath);
+		File[] files = dirutil.getSubDirectories(nameFilter, basePath, recursive);
 		
 		for (int i=0;i<files.length;i++){
 		
@@ -633,8 +637,10 @@ public class DFutils extends Thread{
 				fstr = files[i].getPath();
 				fstr = files[i].getName();
 			}
+			
 			if (fstr.length()>0){
-				folderList.add(fstr);
+				fstr = StringsUtil.replaceall(fstr, "\\", "/") ;
+ 				folderList.add(fstr);
 			}
 		}
 		
@@ -695,7 +701,15 @@ public class DFutils extends Thread{
 		return n;
 	}
 
-	 
+	public ArrayList<String> listOfFiles( String namesfilter, String extension, String dirpath){
+		ArrayList<String> filenames = new ArrayList<String>();
+		
+		filenames = DirectoryContent.getFileList(namesfilter, extension, dirpath);
+		
+		return filenames;
+	}
+
+	
 	public String createEnumeratedFilename( String dirpath, String namesfilter, String extension, int len){
 		String namesnip, ext, enumstr, str, rStr="";
 	 	int n, t=0;
@@ -830,7 +844,7 @@ public class DFutils extends Thread{
 			dirname = strgutil.replaceAll(dirname, "//", "/");
 			
 		}catch(Exception e){
-			
+			dirname ="" ;
 		}
 		
 		return dirname;
@@ -907,6 +921,13 @@ public class DFutils extends Thread{
 	public String getUserDir(){
 		return System.getProperty("user.dir"); 	 
 	}
+	// http://www.leepoint.net/notes-java/io/30properties_and_preferences/40sysprops/10sysprop.html
+	// user.dir=C:\0www-workingnotes\notes-java-working\io\30properties_and_preferences\40sysprops\SysPropList
+	// user.home=C:\Documents and Settings\Owner
+	public String getUserHomeDir(){
+		return System.getProperty("user.home"); 	 
+	}
+	
 	
 	/**
 	 * the systems tmp dir
@@ -2060,7 +2081,33 @@ public class DFutils extends Thread{
 		return folderExists(foldername);
 	} 
 	
-	public static boolean folderExists(String foldername) {
+	public static boolean isFile(String filename){
+		boolean rB=false;
+		
+		if ((filename==null) || (filename.length()==0)){
+			return rB;
+		}
+		
+		File file = new File(filename);
+		
+		if (file.isFile()==false){
+			return false;
+		}
+		try {
+			
+			File fil = new File(filename);
+		    rB = fil!=null;
+		    fil=null;
+		    
+		} catch (Exception e) {
+			rB = false;
+		}
+		
+		return rB;
+	}
+
+	
+	public static boolean isFolder(String foldername){
 		boolean rB=false;
 		
 		if ((foldername==null) || (foldername.length()==0)){
@@ -2090,6 +2137,38 @@ public class DFutils extends Thread{
 		return rB;
 	}
 	
+	public static boolean folderExists(String foldername) {
+		boolean rB=false;
+		
+		if ((foldername==null) || (foldername.length()==0)){
+			return rB;
+		}
+		
+		File file = new File(foldername);
+		
+		if (file.isDirectory()==false){
+			return false;
+		}
+		try {
+
+			// dir = new File (".");
+		    // currentDir =  dir.getCanonicalPath();
+			
+			File dir = new File(foldername);
+		    /*
+		    File[] fils = dir.listFiles();
+		    
+		    rB = fils!=null;
+		    */
+			rB = dir != null;
+			
+		} catch (Exception e) {
+			rB = false;
+		}
+		
+		return rB;
+	}
+	
 	
 	public boolean filenameIsUsable(String dataFieldFilename) {
 		boolean rB=false;
@@ -2101,14 +2180,33 @@ public class DFutils extends Thread{
 				if (fileexists(dataFieldFilename)){
 					return true;
 				}
+				
 				testedFilename = "~tmp_test.x";
-				parentDir = getParentDir(testedFilename);
+				parentDir = getParentDir(dataFieldFilename);
+				if (parentDir.length()==0){
+					rB=false;
+					return rB;
+				}
 				
 				testedFilename = this.createPath( parentDir,testedFilename );
 				
 				this.writeFileSimple(testedFilename, ".");
 				if (fileexists(testedFilename)){
 					deleteFile(testedFilename);
+					rB=true;
+				}
+				
+				int p= dataFieldFilename.lastIndexOf("/");
+				if (p==0){
+					p= dataFieldFilename.lastIndexOf("\\");
+				}
+				if (p==0){
+					rB=false ;
+				}else{
+					testedFilename = dataFieldFilename.substring(p+1,dataFieldFilename.length()) ;
+					if (testedFilename.length()==0){
+						rB=false;
+					}
 				}
 				
 			}catch(Exception e){
@@ -2153,7 +2251,11 @@ public class DFutils extends Thread{
 	    return date ;
 	}
 	
-	public long getFileSize( String filename){
+	public long getFilesize( String filename){
+		return  getFileSize(filename);
+	}
+	
+	public static long getFileSize( String filename){
 		
 		long filsize = -1; 
 		File file;
@@ -2655,7 +2757,7 @@ public class DFutils extends Thread{
 	}
 	/**
 	 * 
-	 * This is suitble only for data table files! <br/>
+	 * This is suitable only for data table files! <br/>
 	 * this also creates a map to pointers {@code Map<String,int> ~ Map<filename, index>}, which
 	 * point to non-data-sections. {@code Vector<String>}
 	 * 
@@ -2736,7 +2838,6 @@ public class DFutils extends Thread{
 		}
 	}
 
-
 	public String readFile2String ( File file) throws IOException {
 		
 		MappedByteBuffer bb;
@@ -2750,6 +2851,7 @@ public class DFutils extends Thread{
 			
 			/* Instead of using default, pass in a decoder. */
 			
+			
 			return Charset.defaultCharset().decode(bb).toString();
 			
 		} finally {
@@ -2759,7 +2861,38 @@ public class DFutils extends Thread{
 		}
 	}
 	
-	
+	public CharBuffer readFile2Chars ( String filepath, long limit) throws Exception {
+		
+		
+
+		MappedByteBuffer bb;
+		FileInputStream stream ;
+		FileChannel fc ;
+		long size ;
+		
+		
+		stream = new FileInputStream(new File(filepath));
+		try {
+			fc = stream.getChannel();
+			
+			size = fc.size();
+			
+			if (limit>0) {
+				if (size>limit){
+					size = 1000;
+				}
+			}	
+			
+			bb = fc.map(FileChannel.MapMode.READ_ONLY, 0, size);
+			
+			return Charset.defaultCharset().decode(bb);
+		
+		} finally {
+			if (stream!=null){
+				stream.close();
+			}
+		}
+	}
 	
 	public BufferedReader getLineReaderReference( String filename){
 		File file;
@@ -2923,6 +3056,19 @@ public class DFutils extends Thread{
 		
 		
 		return createdFolder;
+	}
+
+
+	public static String getName(String filename) {
+		String _filename = filename;
+		
+		File fil = new File(_filename) ;
+		
+		if (fil!=null){
+			_filename = fil.getName() ;
+		}
+		
+		return _filename;
 	}
 
 

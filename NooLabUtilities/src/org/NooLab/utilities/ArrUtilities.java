@@ -189,7 +189,9 @@ public class ArrUtilities {
 		// needs a lot of memory...: return_value = StringUtils.join(vector.toArray(),"\t") ;
 		
 		StringBuilder sb = new StringBuilder();
-
+		if ((separator==null) || (separator.length()==0)){
+			separator = "\t";
+		}
 		int z=0; 
 		for (String s : vector) {
 											if (vector.size()>5000){
@@ -197,7 +199,9 @@ public class ArrUtilities {
 											}
 
 			sb.append(s);
-			sb.append("\t");
+			if (z<vector.size()){
+				sb.append(separator);
+			}
 			z++;
 		}
 

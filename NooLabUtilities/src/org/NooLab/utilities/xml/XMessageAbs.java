@@ -44,7 +44,7 @@ public abstract class XMessageAbs {
 	
 	// helper objects .................
 	 
-	protected PrintLog out;
+	protected PrintLog out = new PrintLog(2,false);
 	protected DFutils fileutil = new DFutils() ;
 	protected StringsUtil strgutil = new StringsUtil() ;
 
@@ -468,6 +468,36 @@ public abstract class XMessageAbs {
 		
 	}
 	
+	/**
+	 * this is a natural companion for getNodeList();
+	 * 
+	 * @param string
+	 * @param strIn
+	 * @return
+	 */
+	public String[] getAttrValuesForNode( Node node , String nodename, String[] strIn) {
+		
+		int an = strIn.length;
+		
+		String[] stringsOut = new String[ an ] ;
+		
+		try{
+
+			// -> LOOP
+			for (int i=0;i<an;i++){
+				if ((strIn[i]!=null) && (strIn[i].length()>0)){
+					stringsOut[i] = getNodeInfo(node, nodename, strIn[i]);
+				}
+				
+			}// i->
+			
+		}catch(Exception e){
+			
+		}
+		
+		return stringsOut;
+	}
+
 	
 	public Vector<Object> getNodeList( String rawXmlMsg, String domainSpecs, String itemSpecs){
 		
@@ -478,6 +508,8 @@ public abstract class XMessageAbs {
     	
     	// Object getMatchingXmlNode( String xmlpath, String nodeName, String attrName  )
     	
+		xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
+		
     	root = this.contentRoot ;
     	
     	domainSpecs = domainSpecs.trim();
@@ -502,8 +534,18 @@ public abstract class XMessageAbs {
 	   
     /**
      * 
-     * if idSpecs="" then this will return a list of nodes !
-     * if idSpecs is defined, it will return the value of the attribute 
+     * example: </br> 
+     *  &lt;exclude&gt;&lt;type&gt;</br> 
+          &nbsp;&nbsp;&lt;item name="image"/&gt;</br>   
+          &nbsp;&nbsp;&lt;item name="video"/&gt;</br> 
+          &nbsp;&nbsp;&lt;item name="sound"/&gt;</br> 
+          &nbsp;&nbsp;&lt;item name="program"/&gt;</br> 
+      	&lt;/type&gt;&lt;/exclude&gt;  </br></br>
+       the query would be:</br>
+       &nbsp;&nbsp;getItemsList(rawXmlStr, ":RootElement:"/exclude/type", "item", "name")</br> 	
+	   this will return then a list of objects containing image, video, sound, program;</br></br>
+	   if you want to get the list of nodes instead you may use getNodeList(rawXmlStr, "/exclude/type", "item") ; 
+     *  
      * 
      * @param rawXmlMsg
      * @param domainSpecs
@@ -854,7 +896,34 @@ public abstract class XMessageAbs {
 		String str = xqueryBasicCondition ;
 		return xstr;
 	}
-	
+	public String getTextDataFromNode( String rawXmlMsg, Object xmlNodeObj, String xpath) {
+
+		String resultInfo="";
+		Node node;
+		
+		if (xmlNodeObj==null){
+			return resultInfo;
+		}
+
+		node = (Node)xmlNodeObj;
+		// resultInfo = xpathQuery.readNode( xmlNodeObj, attrSpecs ) ;
+		
+		// get full path for node
+		// resultInfo = node.getTextContent();
+		
+		String npath = node.getBaseURI();
+		
+		
+		// npath = node.getLocalName() ;
+		if (npath!=null){
+			int z = npath.length();
+		}
+		
+		resultInfo = getTextData( rawXmlMsg, xpath);
+		
+		return resultInfo;
+	}
+
 	public String getNodeInfo(Object xmlNodeObj, String domainSpecs, String attrSpecs){
 		
 		String resultInfo="";
@@ -899,7 +968,16 @@ public abstract class XMessageAbs {
 	}
 
  
- 
+	/**
+	 * <b>not yet implemented !!</b>
+	 * 
+	 * @param rawXmlMsg
+	 * @param domainSpecs
+	 * @param condAttrSpecs
+	 * @param condition
+	 * @param dataTagSpecs
+	 * @return
+	 */
 	public Vector<Object> getSpecifiedConditionalNode(	String rawXmlMsg, 
 															String domainSpecs, 
 															String condAttrSpecs,
@@ -909,10 +987,76 @@ public abstract class XMessageAbs {
 		
 		return null;
 	}
+	
+	
+	public String getTextDataFromConditionalSection( String rawXmlMsg, 
+													String domainSpecs, 
+													String condAttrSpecs,
+													String condition, 
+													String dataTagSpecs){
+
+		String resultInfo = "";
+		Node pkgNode;
+		
+		// similar to 
+		// pkgNode = (Node)selectSpecifiedItem(rawXmlMsg, "//sompackages/packages", "package", "name", condition);
+		
+		
+		Object xmlNodeObj = null;
+    	
+    	String xquery , startmarker = "//";
+    	// xquery = "//*[@pet='cat']";
+    	
+    	
+    	try{
+    		domainSpecs = domainSpecs.trim();
+    		
+    		if (domainSpecs.startsWith("//")){
+    			startmarker="" ;
+    		}
+        	if (domainSpecs.length()==0){
+        		domainSpecs="*";
+        	}
+    		if ((domainSpecs.startsWith("//")==false) && (domainSpecs.startsWith("/"))){
+    			domainSpecs = domainSpecs.substring(1,domainSpecs.length()) ;
+    		}
+        	
+    		
+        	xquery = startmarker + domainSpecs+"[@"+condAttrSpecs+"='"+condition+"']/"+dataTagSpecs;
+        		 //   //property[@id='1'] 
+
+    		if (xquery.startsWith("///")){
+    			xquery = xquery.substring(1,xquery.length()) ;
+    		}
+
+    		
+        	xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
+    		 
+    			lastErrorState = "";
+    			xmlNodeObj = xpathQuery.getMatchingXmlNode( xquery ) ;
+
+    			// resultInfo = xpathQuery.readNode( xmlNodeObj,dataAttrSpecs ) ;
+    		
+    			resultInfo = ((Node)xmlNodeObj).getTextContent();
+    			
+    			
+    	}catch(Exception e){
+    		
+    	}
+		return resultInfo;
+		
+	}
+	
 	/**
 	 * this creates queries like  
 	 * 		"locations/vendor/location[@id = 'store102']//street"  
-	 * where the "street" is a tag inside the conditionally tag = selected on condition fulfilled by an attribute
+	 * where the "street" is a tag inside the conditional tag = selected on condition fulfilled by an attribute</br></br>
+	 * 
+	 * example:</br>
+	 * there is a tag &lt;table name= [str]&gt; for which we have identified the value of the "name" attribute before.
+	 * this table defines a section, which contains a nested &lt;create&gt;&lt;drop active="1" /&gt; </br></br>
+	 * The call is then like this.... </br>
+	 * (rawXmlMsg, "/table", "name", str, "/create/drop", "active") ;
 	 * 
 	 * 
 	 */
@@ -944,10 +1088,19 @@ public abstract class XMessageAbs {
         	if (domainSpecs.length()==0){
         		domainSpecs="*";
         	}
+    		if ((domainSpecs.startsWith("//")==false) && (domainSpecs.startsWith("/"))){
+    			domainSpecs = domainSpecs.substring(1,domainSpecs.length()) ;
+    		}
         	
+    		
         	xquery = startmarker + domainSpecs+"[@"+condAttrSpecs+"='"+condition+"']/"+dataTagSpecs;
         		 //   //property[@id='1'] 
-        	
+
+    		if (xquery.startsWith("///")){
+    			xquery = xquery.substring(1,xquery.length()) ;
+    		}
+
+    		
         	xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
     		 
     			lastErrorState = "";
@@ -1028,7 +1181,8 @@ public abstract class XMessageAbs {
 	 * 
 	 * example: from several "property", we want that with id=1, and from that
 	 *          the value of "label"
-	 *          &lt;property id="1" label="keywords" /&gt;
+	 *          &lt;property id="1" label="keywords" /&gt;</br></br>
+	 * (do no include the xml root, as for any method of the  "getSpecifiedInfo()" group!)
 	 * 
 	 * 
 	 * @param rawXmlMsg
@@ -1298,6 +1452,7 @@ public abstract class XMessageAbs {
     	
     	return value;
     }
+
     
     public String getTextData( String rawXmlMsg, String xpath){ 
 	
