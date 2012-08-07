@@ -17,5 +17,8 @@ public interface SerialMapItemIntf {
 
 	public void setGroupLabel(String grouplabel);
 	public String getGroupLabel();
+
+	public void setActivationStatus(int active);
+	public int getActivationStatus();
 	
 }

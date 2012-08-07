@@ -1,5 +1,5 @@
 #Fat Jar Configuration File
-#Mon Jul 30 12:35:56 BST 2012
+#Mon Aug 06 23:34:41 BST 2012
 onejar.license.required=true
 manifest.classpath=
 manifest.removesigners=true
@@ -10,5 +10,5 @@ manifest.mainclass=
 manifest.file=<createnew>
 jarname.isextern=true
 onejar.expand=
-excludes=<jar|commons-lang3-3.0.jar>;<jar|commons-httpclient-3.1.jar>;<jar|commons-codec-1.4.jar>;<jar|commons-collections-3.2.1.jar>;<jar|commons-io-2.0.1.jar>;<jar|jsoup-1.6.0.jar>;<jar|core.jar>;<jar|tika-app-1.2.jar>
+excludes=<jar|commons-lang3-3.0.jar>;<jar|commons-httpclient-3.1.jar>;<jar|commons-codec-1.4.jar>;<jar|jsoup-1.6.0.jar>;<jar|jtidy-r938.jar>;<jar|javax.servlet.jar>;<jar|jNAT-PMPlib.jar>;<jar|core.jar>;<jar|tika-app-1.2.jar>
 includes=
