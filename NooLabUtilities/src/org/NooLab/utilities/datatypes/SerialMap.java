@@ -14,7 +14,7 @@ public class SerialMap implements Serializable{
 	
 	// ------------------------------------------------------------------------
 	public SerialMap(){
-		
+		 
 	}
 	// ------------------------------------------------------------------------
 	
@@ -28,6 +28,7 @@ public class SerialMap implements Serializable{
 		item.name = name;
 		item.data = data ;
 		
+		item.activationStatus = 0;
 		
 		return item;
 	}

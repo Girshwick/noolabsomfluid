@@ -10,6 +10,7 @@ public class SerialMapItem implements Serializable,SerialMapItemIntf{
 
 	int index = -1;
 	String name = "";
+	int activationStatus = 0;
 	Object data ;
 
 	private String groupLabel;
@@ -52,6 +53,16 @@ public class SerialMapItem implements Serializable,SerialMapItemIntf{
 
 	public String getGroupLabel() {
 		return groupLabel;
+	}
+
+	@Override
+	public void setActivationStatus(int value) {
+		activationStatus = value ;	
+	}
+
+	@Override
+	public int getActivationStatus() {
+		return activationStatus ;		
 	}
 	
 	
