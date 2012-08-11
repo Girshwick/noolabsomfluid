@@ -115,6 +115,7 @@ public class DelayFor {
 		setUserbreak(stopwaiting ,0);
 	}
 	public void setUserbreak(boolean stopwaiting, int completeFirst) {
+		
 		this.userbreak = stopwaiting;
 		if (completeFirst>0){
 			while (isRunning ){
@@ -122,5 +123,7 @@ public class DelayFor {
 			}
 		}
 	}	
+	
+	
 	
 }

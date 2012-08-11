@@ -952,6 +952,8 @@ public class StringsUtil{  //  implements Serializable
 		return indexOfparticles( str, delimiters, 0, 0, true) ;
 	}
 
+	
+
 	public int indexOfparticles( String str , String[] delimiters, int startpos ){
 		
 		return indexOfparticles( str, delimiters, startpos, 0, true) ;
@@ -961,6 +963,9 @@ public class StringsUtil{  //  implements Serializable
 		 * 
 		 * returns the "next" = first position of the members of a set of delimiters
 		 * 
+		 * for all items in "delimiters" the positions will be determined, then
+		 * the minimum of those positions will be selected as the result
+		 * 
 		 * @param str
 		 * @param delimiters
 		 * @param startpos
@@ -968,8 +973,8 @@ public class StringsUtil{  //  implements Serializable
 		 * @param any
 		 * @return
 		 */
-	public int indexOfparticles(String str, String[] delimiters, int startpos,
-		int nth_occurence, boolean any) {
+	public int indexOfparticles( String str, String[] delimiters, int startpos,
+								 int nth_occurence, boolean any) {
 		int currpos = 0;
 		int[] allpositions;
 		int pLen, sLen, dLen, p, i = 0, d, count;
@@ -999,7 +1004,13 @@ public class StringsUtil{  //  implements Serializable
 				particle = delimiters[d];
 
 				pLen = particle.length();
-
+				
+				
+				if (pLen==0){
+					allpositions[d] = -1;
+					continue;
+				}
+				
 				i = 0;
 				p = 0;
 
@@ -1012,7 +1023,7 @@ public class StringsUtil{  //  implements Serializable
 					p = str.indexOf(particle, i);
 					if (p < 0) {
 						// particle = particle.replace("", "");
-						p = str.indexOf(particle, i);
+						// == not found -> -1 into the list of positions // p = str.indexOf(particle, i);
 					}
 
 					if (p >= 0) {
@@ -1036,8 +1047,8 @@ public class StringsUtil{  //  implements Serializable
 						break;
 					}
 					i++;
-				}
-
+				} // i < sLen
+				i=0;
 			} // d -> all particles
 
 		} catch (Exception e) {
@@ -1052,7 +1063,10 @@ public class StringsUtil{  //  implements Serializable
 			}
 
 		}
-
+		int maxPosVal = ArrUtilities.arraymax(allpositions) ;
+		int posOfMin = ArrUtilities.arrayMinPos(allpositions,-1 ) ;
+		    currpos  = allpositions[posOfMin] ;  
+		
 		if (currpos >= 999999) {
 			currpos = -1;
 		}
@@ -1060,6 +1074,123 @@ public class StringsUtil{  //  implements Serializable
 		return currpos;
 	}
 
+	public int[] indexFullOfparticles( String str , String[] delimiters   ){
+		return indexFullOfparticles( str, delimiters, 0);
+	}
+	public int[] indexFullOfparticles( String str , String[] delimiters, int startpos  ){
+		return indexFullOfparticles( str, delimiters, startpos, 0, true) ;
+	}
+	public int[] indexFullOfparticles( String inStr , String[] delimiters, int startpos,
+			 						   int nth_occurence, boolean any){
+	
+		int[] resultValues = new int[2];
+		int currpos = 0;
+		int[] allpositions;
+		int pLen, sLen, dLen, p, i = 0, d, count;
+		String particle,str = inStr;
+
+		resultValues[0] = -1;
+		resultValues[1] = -1;
+		if ((delimiters == null) || (delimiters.length == 0)) {
+			return resultValues;
+		}
+
+		allpositions = new int[delimiters.length];
+		for (d = 0; d < allpositions.length; d++) {
+			allpositions[d] = -1;
+		}
+
+		try {
+
+			sLen = str.length();
+			dLen = delimiters.length;
+			count = 0;
+
+			if (startpos>0){
+				str = str.substring(startpos,str.length());
+			}
+			
+			for (d = 0; d < dLen; d++) {
+
+				if (!any) {
+					count = 0;
+				}
+
+				particle = delimiters[d];
+
+				pLen = particle.length();
+				
+				
+				if (pLen==0){
+					allpositions[d] = -1;
+					continue;
+				}
+				
+				i = 0;
+				p = 0;
+
+				if (startpos > 0) {
+					// i = startpos;
+				}
+
+				while (i < sLen) {
+
+					p = str.indexOf(particle, i);
+					if (p < 0) {
+						// particle = particle.replace("", "");
+						// == not found -> -1 into the list of positions // p = str.indexOf(particle, i);
+					}
+
+					if (p >= 0) {
+						count++;
+						i = i + pLen;
+						if ((nth_occurence > 0)) {
+
+							if (count >= nth_occurence) {
+								allpositions[d] = p;
+								currpos = p;
+								break;
+							}
+
+						} else {
+							allpositions[d] = p;
+							currpos = p;
+							break;
+						}
+
+					} else {
+						break;
+					}
+					i++;
+				} // i < sLen
+				i=0;
+			} // d -> all particles
+
+		} catch (Exception e) {
+			count = -1;
+			e.printStackTrace();
+		}
+
+		currpos = 999999;
+		for (d = 0; d < allpositions.length; d++) {
+			if ((currpos > allpositions[d]) && (allpositions[d] >= 0)) {
+				currpos = allpositions[d];
+			}
+
+		}
+		int maxPosVal = ArrUtilities.arraymax(allpositions) ;
+		// we have to exclude -1
+		int posOfMin = ArrUtilities.arrayMinPos(allpositions,-1 ) ;
+		    currpos  = allpositions[posOfMin] ;  
+		
+		if (currpos >= 999999) {
+			currpos = -1;
+		}
+		resultValues[0] = currpos+startpos;
+		resultValues[1] = posOfMin;
+		
+		return resultValues;
+	}
 	
 	public int firstIndexOfStrings( String str , String[] strings, int startpos ){
 		
@@ -1750,38 +1881,46 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 	 * @param str
 	 * @param delimiters
 	 */
-	public Vector<XMap>  splitStringby( String str, String[] delimiters ){
+	public ArrayList<XMap>  splitStringby( String str, String[] delimiters ){
 		
 		// String[] 
-
-		Vector<XMap> parts= new Vector<XMap>();
+		ArrayList<String> delimsList = new ArrayList<String>(Arrays.asList( delimiters ));
+		ArrayList<XMap> parts= new ArrayList<XMap>();
 		XMap xm;
 		
-		String temp,sc1,sc2,sc3 ;
+		String temp,sc1,sc2,sc3 , effectiveDelimiter;
+		int[] pps;
 		int p,p0,c ;
+		int delimPos ;
 		boolean done=false,hb ;
 		
 		try{
 			p0=0;
-if (str.contains("1. 5")){
-	
-}
+ 
+			 
+ 
 			while (!done){
 				
-				p   = indexOfparticles( str , delimiters ,p0 ) ; // delivers the first pos-value across all particles ???
+				// p   = indexOfparticles( str , delimiters ,p0 ) ; // delivers the first pos-value across all particles ???
+				pps = indexFullOfparticles( str , delimiters ,p0 ) ;
+				p = pps[0] ;
+				delimPos = pps[1] ;
+				effectiveDelimiter = delimiters[delimPos] ;
+				 
+				// we need the index of the delimiter in the array of delmiiters as well...
 				// pfi = firstIndexOfparticles( str , delimiters,p0 ) ;
 				
 				if ((p>1) && (p<str.length()-1)){
-					// NOT for numericals !!!
+					// check: NOT for numericals !!!
 					// check left-hand and right-hand
 					sc1 = str.substring(p-1,p);
 					sc2 = str.substring(p+1,p+2);
 					sc3 = str.substring(p+2,p+3);
 					
-					hb = (isNumeric(sc1)) && (isNumeric(sc3)) ;
+					hb = (this.isNumericX(sc1)) && (isNumericX(sc3)) ;
 					hb = hb && (sc2.contentEquals(" ")) ;
 					
-					if ( ((isNumeric(sc1)) && (isNumeric(sc2))) ||
+					if ( ((isNumericX(sc1)) && (isNumericX(sc2))) ||
 						 (hb==true)	
 					   ){
 						 // if it is numeric we should not split it !!
@@ -1792,29 +1931,39 @@ if (str.contains("1. 5")){
 						p = indexOfparticles( str , delimiters ,p+2 ) ;
 					}
 				}
-				
+				// the actual split...
 				if (p>0){
-					c=1;
+					c=0;
+					
+					if (p0==0)c=1;
 					if (p>=str.length()-1){
 						c=0;
 					}
+					int pb=p0;
 					temp = str.substring(p0,p+c).trim() ;
-					p0 = p+1+c;
+					p0 = p+c+ effectiveDelimiter.length() - 1;
+					if (p0==p){
+						p0=p+1;
+					}
 					
-					xm = new XMap( parts.size(), p, temp );
-					
-					parts.add( xm)  ;
+					if ((temp.length()>0) && (delimsList.indexOf( temp )<0)){
+						// System.out.println(" --- "+temp);
+						xm = new XMap( parts.size(), pb, temp );
+						parts.add( xm)  ;
+					}
 					 
 				} else{
 					done=true;
 					
-					temp = str.substring(p0, str.length()).trim() ;
-					
+					temp = str.substring( p0, str.length() ).trim() ;
+										// System.out.println(" --- "+temp);
 					xm = new XMap( parts.size(), p, temp );
 					parts.add( xm) ;
 					 
 				}
-				
+				if (p0>str.length()-1){
+					done=true;
+				}
 			} // -> done !
 			
 			
