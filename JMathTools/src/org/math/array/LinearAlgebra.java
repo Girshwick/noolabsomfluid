@@ -3,6 +3,8 @@
  */
 package org.math.array;
 
+import java.util.ArrayList;
+
 import Jama.CholeskyDecomposition;
 import Jama.EigenvalueDecomposition;
 import Jama.LUDecomposition;
@@ -268,9 +270,23 @@ public class LinearAlgebra extends DoubleArray {
 		return array;
 	}
 
+	/*
+	        RxC     RxC       concat'd
+		A = 2x3     5x30  ->  1x150      num of columns in A
+                                   			==  
+		R = 3x2     30x8                 num of row in R, while num of col in R 
+                                   			== 
+		T = 2x2     5x8   ->  1x40       num of col in T
+
+	 */
+ 
+	
+	public static double[][] matrixMult(double[][] v1, double[][] v2) {
+		return times( v1, v2) ;
+	}
 	/**
 	 * Matrix multiplication according to the rules of linear algebra.
-	 * Matrices must be same size.
+	 * Matrices must be same size. kwa: ->-> that's nonsense
 	 * @param v1 Matrix
 	 * @param v2 Matrix
 	 * @return Matrix v1 * v2
@@ -279,6 +295,7 @@ public class LinearAlgebra extends DoubleArray {
 		checkRowDimension(v2, v1[0].length);
 		//checkColumnDimension(v2, v1[0].length);
 		double[][] array = new double[v1.length][v2[0].length];
+		
 		for (int i = 0; i < array.length; i++)
 			for (int j = 0; j < array[i].length; j++) {
 				double tmp = 0;
