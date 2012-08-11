@@ -51,7 +51,7 @@ public class DFutils extends Thread{
     Map<String, Integer> nonDataSectionsMap = new HashMap<String, Integer>();
     
     
-    StringsUtil strgutil = new StringsUtil();
+    static StringsUtil strgutil = new StringsUtil();
     DirectoryContent dirutil = new DirectoryContent();
     
     // org.NooLab.utilities.logging.PrintLog out ;
@@ -701,7 +701,11 @@ public class DFutils extends Thread{
 		return n;
 	}
 
-	public ArrayList<String> listOfFiles( String namesfilter, String extension, String dirpath){
+	public ArrayList<String> listofFiles( String namesfilter, String extension, String dirpath){
+		return listOfFiles( namesfilter, extension, dirpath);
+	}
+
+	static public ArrayList<String> listOfFiles( String namesfilter, String extension, String dirpath){
 		ArrayList<String> filenames = new ArrayList<String>();
 		
 		filenames = DirectoryContent.getFileList(namesfilter, extension, dirpath);
@@ -824,7 +828,43 @@ public class DFutils extends Thread{
 	}
 	
 	
-	public String getParentDir( String path ){
+
+	public static String getParentDir( String dir, int steps) {
+		String path = "";
+		File _fdir;
+		try{
+			
+			if (steps<0){
+				steps=999; // -> till root
+			}
+			
+			for (int i=0;i<steps;i++){
+				path=dir;
+				
+				try{
+					
+					_fdir = new File(path);
+					if (_fdir!=null){
+						dir = _fdir.getParent();
+					}
+					
+				}catch(Exception e){
+				}
+				
+			}// i->
+			path=dir;
+			
+		}catch(Exception e){
+			
+		}
+		
+		return path;
+	}
+	
+	public String getparentdir( String path ){
+		return getParentDir(path);
+	}	
+	public static String getParentDir( String path ){
 		
 		String dirname = "";
 		File dir;
@@ -921,6 +961,8 @@ public class DFutils extends Thread{
 	public String getUserDir(){
 		return System.getProperty("user.dir"); 	 
 	}
+	
+
 	// http://www.leepoint.net/notes-java/io/30properties_and_preferences/40sysprops/10sysprop.html
 	// user.dir=C:\0www-workingnotes\notes-java-working\io\30properties_and_preferences\40sysprops\SysPropList
 	// user.home=C:\Documents and Settings\Owner
@@ -1277,7 +1319,12 @@ public class DFutils extends Thread{
 		fname = "" ;
 	}
 
-
+	/**
+	 * 
+	 * @param basePath
+	 * @param ftype  1=files; 2=folders;  3=both
+	 * @param maxCount
+	 */
 	public static void reduceFileFolderList(String basePath, int ftype, int maxCount) {	
 		reduceFileFolderList( basePath, ftype, "", maxCount) ;
 	}
@@ -2291,7 +2338,9 @@ public class DFutils extends Thread{
 		File file;
 	    Writer writer = null;
 	     
-	    
+	    if (content==null){
+	    	content="" ;
+	    }
 	    try {
       
           file = new File(filename);
@@ -3070,6 +3119,8 @@ public class DFutils extends Thread{
 		
 		return _filename;
 	}
+
+
 
 
 }

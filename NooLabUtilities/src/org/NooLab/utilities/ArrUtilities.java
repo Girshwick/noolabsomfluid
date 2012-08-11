@@ -89,14 +89,18 @@ public class ArrUtilities {
 		return arr2Text( vector, fracdigits, "  ") ;
 	}
 	public static String arr2Text(ArrayList<Double> vector, int fracdigits, String separator) {
-		String return_value = "";
+		String sep="",return_value = "";
 		int i;
 
 		if (vector == null) {
 			return "";
 		}
 		for (i = 0; i < vector.size(); i++) {
-			return_value = return_value + separator + String.format("%." + fracdigits + "f", vector.get(i));
+			sep = separator;
+			if (i==0){
+				sep="" ;
+			}
+			return_value = return_value + sep + String.format("%." + fracdigits + "f", vector.get(i));
 		}
 		return return_value.trim().replace(",", ".");
 	}
@@ -734,6 +738,21 @@ public class ArrUtilities {
 	public int arrValuepos( int[] valarr, double value){
 		return arrValuepos(valarr, value);
 	}
+	
+	public static int arrValuePos( int[] valarr, double value, int excludedValue){
+
+		int pos=-1;
+		
+		for (int i=0;i<valarr.length;i++){
+			if ((valarr[i] != excludedValue) && (valarr[i] == value)){
+				pos = i;
+				break;
+			}
+		}
+		
+		return pos;
+	}
+
 	public static int arrValuePos( int[] valarr, double value){
 		
 		int pos=-1;
@@ -871,6 +890,30 @@ public class ArrUtilities {
 	public int arraymin( int[] valarr, int defaultValue){
 		return arrayMin( valarr, defaultValue);
 	}
+	
+	public static int arrayMin( int[] valarr, int defaultValue, int excludedValue){
+	
+		int return_value = defaultValue, min =  999999999;
+		int i;
+		
+		if ((valarr==null) || (valarr.length==0)){
+			return return_value;
+		}
+		i=0;
+		for ( i = 0; i < valarr.length; i++) {
+			  if ((valarr[i] != excludedValue) && (min>valarr[i])){
+				  min = valarr[i] ;
+			  }
+		}
+		if (min ==  999999999){
+			min = defaultValue;
+		}
+		return_value = min ;
+		
+		return return_value;		
+
+	}
+
 	public static int arrayMin( int[] valarr, int defaultValue){
 		int return_value = defaultValue, min =  999999999;
 		int i;
@@ -890,7 +933,6 @@ public class ArrUtilities {
 		return_value = min ;
 		
 		return return_value;		
-		
 		
 	}
 
@@ -987,8 +1029,10 @@ public class ArrUtilities {
 		
 		
 	}
-	
-	public double arrayMax( ArrayList<Double> valarr, double defaultValue){
+	public double arraymax( ArrayList<Double> valarr, double defaultValue){
+		return arrayMax( valarr, defaultValue);
+	}
+	public static double arrayMax( ArrayList<Double> valarr, double defaultValue){
 		
 		if ((valarr==null) || (valarr.size()==0)){
 			return defaultValue;
@@ -1126,6 +1170,30 @@ public class ArrUtilities {
 	public int arrayMinpos( int[] valarr  ){
 		return arrayMinPos( valarr );
 	}
+
+	/**
+	 * 
+	 * @param valarr
+	 * @param excludedValue commonly excluded -1 in a list of positive values
+	 * @return
+	 */
+	public static int arrayMinPos( int[] valarr , int excludedValue ){
+
+		int pos =-1;
+		double  minval;
+		
+		if ((valarr==null) || (valarr.length==0)){
+			return -1;
+		}
+		  
+		minval = arrayMin( valarr , 0, excludedValue) ;
+		
+		pos = arrValuePos( valarr, minval, excludedValue);
+		
+		return pos ;
+
+	}
+
 	public static int arrayMinPos( int[] valarr  ){
 		
 		int pos =-1;
@@ -1240,6 +1308,64 @@ public class ArrUtilities {
 		ArrayList<Integer> int_arl = new ArrayList<Integer>(int_arr);
 
 		return arraySum(int_arl);		
+	}
+
+	/**
+	 * summing two lists into a result list
+	 * @param values1
+	 * @param values2
+	 * @param lenMode
+	 * @return
+	 */
+	class ArraySum{
+		
+		ArrayList<Double> values1;
+		ArrayList<Double> values2;
+		int lenMode;
+		
+		// ................................................
+		public ArraySum(ArrayList<Double> values1, ArrayList<Double> values2, int lenMode){
+			this.values1 = values1;
+			this.values2 = values2;
+			this.lenMode = lenMode;
+		}
+		// ................................................
+		public ArrayList<Double> calc() {
+		
+			// make it dependent on usemode, 1=use values1, 2=use values2, 0=create a new liat
+			ArrayList<Double> rvalues = values1; 
+			double v;
+			int n=values1.size() ;
+			
+			for (int i=0;i<n;i++){
+				v = values1.get(i) + values2.get(i) ;
+				rvalues.set(i, v);
+			}
+			
+			return rvalues;
+		}
+	}
+
+	// should not be static !
+	public ArrayList<Double> arraySum(ArrayList<Double> values1, ArrayList<Double> values2, int lenMode) {
+		
+		return (new ArraySum(values1, values2, lenMode)).calc();
+	}
+
+
+	public static ArrayList<Double> arrayNormalize(ArrayList<Double> values){
+		ArrayList<Double> outValues = new ArrayList<Double>();
+		double v;
+		
+		outValues.addAll(values);
+		double max = ArrUtilities.arrayMax( values, 0) ;
+
+		for (int i=0;i<values.size();i++){
+			v = outValues.get(i)/max ;
+			outValues.set(i,v);
+		}
+
+		return outValues;
 	}
 
 	public int valuefrequency( Vector<Integer> vilist, int dpi) {
