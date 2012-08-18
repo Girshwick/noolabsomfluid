@@ -8,21 +8,21 @@ import math.geom2d.conic.Ellipse2D;
 import math.geom2d.line.Line2D;
 import math.geom2d.polygon.Polygon2D;
 
-import org.NooLab.repulsive.RepulsionField;
-import org.NooLab.repulsive.RepulsionFieldFactory;
+import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
+import org.NooLab.field.repulsive.RepulsionField;
+import org.NooLab.field.repulsive.RepulsionFieldFactory;
+import org.NooLab.field.repulsive.components.Neighborhood;
+import org.NooLab.field.repulsive.components.RepulsionFieldProperties;
+import org.NooLab.field.repulsive.components.SurroundRetrieval;
+import org.NooLab.field.repulsive.components.data.PointXY;
+import org.NooLab.field.repulsive.components.data.SurroundResults;
+import org.NooLab.field.repulsive.intf.ParticleDataHandlingIntf;
+import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
+import org.NooLab.field.repulsive.intf.main.RepulsionFieldSelectionIntf;
+import org.NooLab.field.repulsive.intf.particles.GraphParticleIntf;
+import org.NooLab.field.repulsive.intf.particles.GraphParticlesIntf;
+import org.NooLab.field.repulsive.particles.Particles;
  
-import org.NooLab.repulsive.components.Neighborhood;
-import org.NooLab.repulsive.components.RepulsionFieldProperties;
-import org.NooLab.repulsive.components.SurroundRetrieval;
-import org.NooLab.repulsive.components.data.PointXY;
-import org.NooLab.repulsive.components.data.SurroundResults;
-import org.NooLab.repulsive.intf.ParticleDataHandlingIntf;
-import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
-import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
-import org.NooLab.repulsive.intf.main.RepulsionFieldSelectionIntf;
-import org.NooLab.repulsive.intf.particles.GraphParticleIntf;
-import org.NooLab.repulsive.intf.particles.GraphParticlesIntf;
-import org.NooLab.repulsive.particles.Particles;
 
  
 

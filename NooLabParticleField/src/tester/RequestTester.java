@@ -1,6 +1,6 @@
 package tester;
 
-import org.NooLab.repulsive.RepulsionField;
+import org.NooLab.field.repulsive.RepulsionField;
 
 public class RequestTester implements Runnable{
 
