@@ -828,7 +828,13 @@ public class DFutils extends Thread{
 	}
 	
 	
-
+	/**
+	 * stepping up <>
+	 * 
+	 * @param dir
+	 * @param steps
+	 * @return
+	 */
 	public static String getParentDir( String dir, int steps) {
 		String path = "";
 		File _fdir;

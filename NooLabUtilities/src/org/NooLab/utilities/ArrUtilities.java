@@ -89,7 +89,7 @@ public class ArrUtilities {
 		return arr2Text( vector, fracdigits, "  ") ;
 	}
 	public static String arr2Text(ArrayList<Double> vector, int fracdigits, String separator) {
-		String sep="",return_value = "";
+		String sep="",return_value = "", vstr;
 		int i;
 
 		if (vector == null) {
@@ -100,7 +100,12 @@ public class ArrUtilities {
 			if (i==0){
 				sep="" ;
 			}
-			return_value = return_value + sep + String.format("%." + fracdigits + "f", vector.get(i));
+			vstr = String.format("%." + fracdigits + "f", vector.get(i));
+			vstr = StringsUtil.trimTrailingZeroes(vstr).replace(",", ".") ;
+			if (vstr.indexOf(".")<0){
+				vstr=vstr+".0" ;
+			}
+			return_value = return_value + sep + vstr;
 		}
 		return return_value.trim().replace(",", ".");
 	}

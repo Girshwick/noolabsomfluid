@@ -21,7 +21,7 @@ public class CreateLogging {
     */
 	
     static Appender logAppender;
-	static public Level debugLevel = Level.INFO;
+	static public Level debugLevel = Level.ERROR;//  Level.INFO;
 
 	/*
 	defineLogging( loggerG );
@@ -235,7 +235,7 @@ public class CreateLogging {
 		if (intLevel==0){
 			debuglevel= Level.OFF; 
 		}else{
-			debuglevel= Level.INFO; 
+			debuglevel= Level.ERROR;// .INFO; 
 		}
 		CreateLogging.debugLevel = debuglevel;
 	} 	

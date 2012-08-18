@@ -16,6 +16,7 @@ import java.util.regex.*;
 // import org.NooLab.utilities.*;
 
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.CallbackForPrcCompletionIntf;
 import org.NooLab.utilities.inifile.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.*;
@@ -100,13 +101,17 @@ public class StringsUtil{  //  implements Serializable
 	// result buffer
 	transient Vector<ItemResult> itemresults = new Vector<ItemResult>();
 	
-	 
-	transient StringComparison strgcomp =  new StringComparison();
-	
-
+	transient StringComparison strgcomp =  new StringComparison(); 
 	
 	transient localNumStuff nums = new localNumStuff();
+
+	transient CallbackForPrcCompletionIntf displayCompletion;
+	
   	
+	public void setDisplayCompletion(CallbackForPrcCompletionIntf callbackInstance) {
+		displayCompletion = callbackInstance;
+	}
+
 	/**
 	 * 
 	 * replaces 
@@ -1074,6 +1079,15 @@ public class StringsUtil{  //  implements Serializable
 		return currpos;
 	}
 
+	/**
+	 * the result array contains 2 values
+	 *    [0] = position;    ...refers to the position in the string
+	 *    [1] = posOfMin;    ...refers to the position in the provided array of delimiters
+	 * 
+	 * @param str
+	 * @param delimiters
+	 * @return
+	 */
 	public int[] indexFullOfparticles( String str , String[] delimiters   ){
 		return indexFullOfparticles( str, delimiters, 0);
 	}
@@ -1180,8 +1194,11 @@ public class StringsUtil{  //  implements Serializable
 		}
 		int maxPosVal = ArrUtilities.arraymax(allpositions) ;
 		// we have to exclude -1
+		currpos = -1;
 		int posOfMin = ArrUtilities.arrayMinPos(allpositions,-1 ) ;
-		    currpos  = allpositions[posOfMin] ;  
+			if (posOfMin>=0){
+				currpos  = allpositions[posOfMin] ;  
+			}
 		
 		if (currpos >= 999999) {
 			currpos = -1;
@@ -1874,6 +1891,93 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		return str ;
 	}
 	
+	
+	
+	public String dehyphenize(String textstr, String[] hyphens, String[] protectedPrefixes) {
+	
+		String diag ,text = textstr;
+		int p,p1,p2;
+		String leftC,rightC;
+		String[] rightS = new String[2] ;
+		
+		// hyper self meta pre post non a 
+		
+		try{
+	
+			// pattern :
+			// X"- " -> "" if X not a blank, and on both sides a char (not a num)
+			// [any char except blank]-[opt. blank][anychar except num]
+			p = text.indexOf("-");
+			p1=0; p2=-1;
+															displayCompletion.setCompletionPercentage( (double)(0.0)/(double)(text.length()));
+			while ((p>1) && (p<text.length()-2)){
+				
+															if (displayCompletion!=null){
+																displayCompletion.setCompletionPercentage( (double)(p)/(double)(text.length())); 
+															}
+				p2=-1;
+				p = text.indexOf("-", p1) ; // returns
+				if (p>0){
+					p2 = text.indexOf("-", p+1) ; 
+				}
+				// get surround
+				if (p<0){
+					break;
+				}
+				diag = "";
+				if ((p>5) && (p<text.length()-6)){
+					diag = text.substring(p-4,p+5) ;
+				}
+				
+				if ((p2>p1) && (p2-p1<=8)){
+					// future-in-the-present, 
+					// we should replace them by blanks ...
+					p1=p2+1;
+					continue;
+				}
+				leftC  = text.substring(p-1,p) ;
+				rightC = text.substring(p+1,p+2) ;
+				rightS[0] = rightC;
+				rightS[1] = text.substring(p+2,p+3) ;
+				
+				// 
+				int rr = 0;
+				if (isAlphaChar( leftC )){
+					if (isAlphaChar( rightC)){
+						rr = 1;
+					}else{
+						if (rightC.contentEquals(" ")){
+							if (isAlphaChar(rightS[1])){
+								rr=2;
+							}
+						} // ?
+					}
+				} // ?
+				if (rr>0){
+					// check for protected prefixes
+					
+					text = remove(text,p,p+rr) ;
+					p=p-1;
+					
+					if ((p>5) && (p<text.length()-6)){
+						diag = text.substring(p-8,p+8) ;
+					}
+					rr=0;
+				}
+				p1=p+1;
+				
+			} // ->
+			
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
+		
+		return text;
+	}
+
+	
 	/**
 	 * 
 	 * String[] 
@@ -1882,45 +1986,97 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 	 * @param delimiters
 	 */
 	public ArrayList<XMap>  splitStringby( String str, String[] delimiters ){
-		
-		// String[] 
+		return splitStringby( str, delimiters, new String[]{},false,false);
+	}
+	
+	/**
+	 * 
+	 * @param str              the text
+	 * @param delimiters       String[] splitting delimiters
+	 * @param shownDelimiters  String[] of delimiting items that will be kept, is a subset of the set of splitting delimiters 
+	 * @param useSepecialMark  true: uses $D$ before the delimiter for unique identification and more convenient extraction
+	 * @return
+	 */
+	public ArrayList<XMap>  splitStringby( String str, 
+										   String[] delimiters, String[] shownDelimiters, 
+										   boolean keepEmpty,
+										   boolean useSepecialMark ){
+		 
 		ArrayList<String> delimsList = new ArrayList<String>(Arrays.asList( delimiters ));
+		ArrayList<String> shownDelimList = new ArrayList<String>(Arrays.asList( shownDelimiters ));
+		
+		
 		ArrayList<XMap> parts= new ArrayList<XMap>();
 		XMap xm;
 		
-		String temp,sc1,sc2,sc3 , effectiveDelimiter;
+		String temp,sc1,sc2,sc3 ,sdel, shownDelimiter, effectiveDelimiter = "";
 		int[] pps;
-		int p,p0,c ;
+		int p = 0,p0,c, dp ;
 		int delimPos ;
 		boolean done=false,hb ;
 		
 		try{
 			p0=0;
- 
-			 
- 
+			if (str.length()==0){
+				return parts;
+			}
+			str = str.trim(); 
+			//remove all delimiters from beginning or end of str
+			
+			for (int i=0;i<delimiters.length;i++){
+				str = trimm(str, delimiters[i]) ;
+			}
+			
 			while (!done){
+				                       // callback for percentage done
+									   if (displayCompletion!=null){
+										   displayCompletion.setCompletionPercentage( ((double)p)/(double)str.length()) ;
+									   }
 				
 				// p   = indexOfparticles( str , delimiters ,p0 ) ; // delivers the first pos-value across all particles ???
 				pps = indexFullOfparticles( str , delimiters ,p0 ) ;
 				p = pps[0] ;
-				delimPos = pps[1] ;
-				effectiveDelimiter = delimiters[delimPos] ;
-				 
-				// we need the index of the delimiter in the array of delmiiters as well...
+					dp = pps[1] ; 
+					shownDelimiter="";
+					if (dp>=0){ 
+						sdel = delimiters[dp];
+						dp = shownDelimList.indexOf(sdel) ;
+						if (dp>=0){
+							shownDelimiter = shownDelimList.get(dp) ;
+						}
+					}
+					
+					
+				if (pps.length>=2){
+					delimPos = pps[1] ;
+					if (delimPos>=0){
+						effectiveDelimiter = delimiters[delimPos] ;
+					}else{
+						p=-1;
+					}
+				}else{
+					p=-1;;
+				}
+				// we need the index of the delimiter in the array of delimiters as well...
 				// pfi = firstIndexOfparticles( str , delimiters,p0 ) ;
 				
-				if ((p>1) && (p<str.length()-1)){
+				if ((p>=0) && (p<str.length()-1)){
 					// check: NOT for numericals !!!
 					// check left-hand and right-hand
+					sc1="";sc2="";sc3="";
 					sc1 = str.substring(p-1,p);
-					sc2 = str.substring(p+1,p+2);
-					sc3 = str.substring(p+2,p+3);
+					if (p+2<str.length()){
+						sc2 = str.substring(p+1,p+2);
+						if (p+3<str.length()){
+							sc3 = str.substring(p+2,p+3);
+						}
+					}
 					
-					hb = (this.isNumericX(sc1)) && (isNumericX(sc3)) ;
+					
+					hb = (this.isNumericX(sc1)) && (sc3.length()>0) && (isNumericX(sc3)) ;
 					hb = hb && (sc2.contentEquals(" ")) ;
 					
-					if ( ((isNumericX(sc1)) && (isNumericX(sc2))) ||
+					if ( ((isNumericX(sc1)) && (sc2.length()>0) && (isNumericX(sc2))) ||
 						 (hb==true)	
 					   ){
 						 // if it is numeric we should not split it !!
@@ -1932,7 +2088,7 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 					}
 				}
 				// the actual split...
-				if (p>0){
+				if (p>0) {
 					c=0;
 					
 					if (p0==0)c=1;
@@ -1941,14 +2097,44 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 					}
 					int pb=p0;
 					temp = str.substring(p0,p+c).trim() ;
-					p0 = p+c+ effectiveDelimiter.length() - 1;
-					if (p0==p){
+					if ((effectiveDelimiter!=null) && (effectiveDelimiter.length()>0)){
+						p0 = p+c+ effectiveDelimiter.length() - 1;
+					}else{
+						p0=-1;
+					}
+					if ((p0==p) && (p0>0)){
 						p0=p+1;
 					}
 					
-					if ((temp.length()>0) && (delimsList.indexOf( temp )<0)){
+if (temp.length()<=1){
+	p=p+1-1;
+}
+if (temp.contains("staggers")){
+	p=p+1-1;
+}
+					
+					
+					hb = (temp.length()>0) && (delimsList.indexOf( temp )<0); 
+					
+					if ((hb==false) && (keepEmpty==true)){
+						String putativeDelimChar = str.substring(p,p+1);
+						if (delimsList.indexOf( putativeDelimChar )>=0){
+							hb=true;
+							temp=" "+putativeDelimChar;
+						}
+					}
+					if (hb){
 						// System.out.println(" --- "+temp);
 						xm = new XMap( parts.size(), pb, temp );
+						if ((shownDelimiters!=null) && (shownDelimiters.length>0) && (shownDelimiter.length()>0)){
+							String spm = "";
+							if (useSepecialMark){
+								spm = "$D$";
+							}
+							xm.str = xm.str + spm + shownDelimiter;
+							//  
+
+						}
 						parts.add( xm)  ;
 					}
 					 
@@ -2741,7 +2927,18 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		
 		return return_value;
 	}
-
+	
+	public String trimm( String str, String[] removals){
+		String rem, rStr = str ;
+		
+		for (int i=0;i<removals.length;i++){
+			rem = removals[i];
+			rStr = trimm(rStr,rem);
+		}
+		
+		return rStr ;
+	}
+	
 	public String trimm( String str, String removal){
 		String rStr = str ;
 		boolean  done = false;
@@ -3042,11 +3239,11 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		return bstr;
 	}
 	
-	public Vector<String> extractNumsFromString(String str){
+	public ArrayList<String> extractNumsFromString(String str){
 
-		Vector<String> numbers = new Vector<String>();
+		ArrayList<String> numbers = new ArrayList<String>();
 
-		Pattern p = Pattern.compile("\\d+"); // does not work for real values in string, just for integers
+		Pattern p = Pattern.compile("\\d+"); // does not work for real values in string, just for simple integer 
 		Matcher m = p.matcher(str); 
 		while (m.find()) {
 		   numbers.add(m.group());
@@ -3892,6 +4089,57 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 	}
 	
 	public String remove( String str, int startAt , int endAt ){
+	
+		String rstr = str , resultStr=str,rstr2,rstr1;
+		
+		
+		if (startAt<0){
+			return rstr;
+		}
+		if (endAt> str.length()){
+			return rstr;
+		}
+		if (endAt<=startAt){
+			return rstr;
+		}
+		
+		if (startAt==0){
+			if (endAt < str.length()){
+				rstr = str.substring( endAt, str.length());
+			} else{
+				rstr = str.substring( endAt, str.length());
+			}
+			resultStr = rstr ;
+		} else{
+			if (endAt < str.length()){
+				rstr1 = str.substring( 0,startAt);
+				rstr2 = str.substring( endAt, str.length());
+				
+				String s1,s2;
+				s1 = rstr1.substring( rstr1.length()-10,rstr1.length() ) ;
+				s2 = rstr2.substring( 0,10 ) ;
+				
+				rstr = s1+s2 ;
+				rstr = rstr1+rstr2;
+				resultStr = rstr;
+			} else{ 
+				rstr = str.substring( 0,startAt) ;
+			}
+			 
+		}
+		
+		return resultStr;
+	}
+	
+	/**
+	 * should be used only if the substring to be replaced is unique
+	 * 
+	 * @param str
+	 * @param startAt
+	 * @param endAt
+	 * @return
+	 */
+	public String removeForSingulars( String str, int startAt , int endAt ){
 		String rstr = str , resultStr=str;
 		
 		
@@ -3918,8 +4166,6 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 			}
 			resultStr = str.replace( rstr,"");
 		}
-		
-		 
 		
 		return resultStr;
 	}
@@ -4570,6 +4816,36 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		return exts;
 	}
 
+	public static String padLeadingZeroes(int intValue, int zCount) {
+
+		String format = String.format("%%0%dd", zCount);
+		String result = String.format(format, intValue);
+		return result;
+ 	}
+
+	public boolean isYear(String str) {
+		 
+		boolean rB=false;
+		int yValue=-1;
+		
+		try{
+			
+			if (isNumericX(str)==true){
+				if ((str.indexOf(".")<0) && ((str.indexOf(",")<0))) {
+					yValue = Integer.parseInt( str ) ;
+					if ((yValue>1600) && (yValue<2100)){
+						rB=true;
+					}
+				}
+			}
+			
+		}catch(Exception e){
+		}
+		
+		return rB;
+	}
+
+
 
 	
 }
@@ -4655,6 +4931,9 @@ class UnaccentedStr {
     + "OoUu"          // double acute
     ;
 
+    private static final String UMLAUT = "äöüÄÖÜß";
+    
+    
     private static final String UNICODE =
      "\u00C0\u00E0\u00C8\u00E8\u00CC\u00EC\u00D2\u00F2\u00D9\u00F9"
     + "\u00C1\u00E1\u00C9\u00E9\u00CD\u00ED\u00D3\u00F3\u00DA\u00FA\u00DD\u00FD"
@@ -4671,14 +4950,27 @@ class UnaccentedStr {
 
     // remove accented from a string and replace with ascii equivalent
     public static String convertNonAscii(String s) {
-       if (s == null) return null;
+       
+    	if ((s == null) || (s.length()==0)){
+    		return "";
+    	}
+    	
        StringBuilder sb = new StringBuilder();
+       
        int n = s.length();
+       
        for (int i = 0; i < n; i++) {
+    	   
           char c = s.charAt(i);
           int pos = UNICODE.indexOf(c);
-          if (pos > -1){
-              sb.append(PLAIN_ASCII.charAt(pos));
+          
+          if (pos > -1) {
+        	  if (UMLAUT.indexOf(CharUtils.toString(c))>=0){ 
+        		  sb.append(PLAIN_ASCII.charAt(pos));
+        		  sb.append("e");
+        	  }else{
+        		  sb.append(PLAIN_ASCII.charAt(pos));
+        	  }
           }
           else {
               sb.append(c);

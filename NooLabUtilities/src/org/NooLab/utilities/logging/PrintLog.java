@@ -39,7 +39,7 @@ public class PrintLog {
 	DateTimeValue dt = new DateTimeValue(3,0);
 	boolean measureTimeDelta = true;
 	
-	int printLevel = 1;
+	static int printLevel = 1;
 	boolean showTimeStamp;
 	boolean onlyShowTimeDelta = false;
 	boolean showDateValue = false;
@@ -49,7 +49,7 @@ public class PrintLog {
 	int countlimit = 10;
 	boolean isPrintFileLogging = false; 
 	
-	String prefix="";
+	static String prefix="";
 	
 	Map<String,String> filters = new TreeMap<String,String>(); 
 	
@@ -318,6 +318,13 @@ if ((msg==null) ){
 		prnerr = false;
 		linefeed = 1;
 		print( level, msg, true) ;
+	}
+	
+	public static void Print( int level, String msg){
+		
+		if (printLevel >= level){
+			System.out.println(prefix +" "+ msg);
+		}
 	}
 	
 	public void print( int level, String msg){
