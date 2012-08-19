@@ -1,0 +1,15 @@
+
+
+
+a box contains a stack of sheets
+
+
+a sheet is a fixed layout field, which can 
+ - grow by attachment and densification
+ - differentiate by melting nodes away
+
+Sheets grow by attachment first, then by densification, then they fold
+ 
+if sheets grow and reach the border of the box, the start to fold 
+
+The volume of the box is limited, or grows much slower than the sheets.
