@@ -43,7 +43,7 @@ import org.NooLab.utilities.logging.LogControl;
  * -XX:+UseConcMarkSweepGC
 
 
- * TODO Roc-AuC is too optimistic (not cut at sensitivity=100)  
+ * TODO ? Roc-AuC is too optimistic (not cut at sensitivity=100) (check it!)  
  *      TV columns need complete scan for values ...
  *  	if the last column has only empty cells from row n until last row, cellvalues will be too short
  *      -> correct this through homogenizing the col length, stuffing mv into it... "m.v." as string
@@ -57,7 +57,8 @@ import org.NooLab.utilities.logging.LogControl;
  * 
  * 
  * note that the SomFluid instance always contains the full spectrum of tools, yet,
- * it behaves as such or such (Som, Sprite, Optimizer, transformer), according to the request.
+ * it behaves as such or such (Som, Sprite, Optimizer, transformer), according to 
+ * the request that is shaped via ?.
  * 
  * 
  * nice examples here:  http://technojeeves.com/
@@ -85,7 +86,7 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 	int _numberOfExploredCombinations  = 31;
 	
 	// further work....
-	// best model when using ALL data(limited exploration without cross-validation stability)
+	// best model when using ALL data (limited exploration without cross-validation stability)
 	// noising data
 	// results: lift factor at TP-0 TP-ECR (actual cost), TP-ECR (effective @ sensitivity constraint)
 	// showing final selection, showing PCA selection, switching on PCA for start
@@ -402,6 +403,8 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 		}
 
 	}
+
+	
 	/**
 	 * 
 	 * @param somtype 0=default: simple, single run; 1=som optimizer
@@ -497,7 +500,7 @@ class SomModuleInstanceM1 implements 	Runnable,
 	SomFluidMonoTaskIntf sfTask;
 	SomFluidIntf somFluid;
 	SomProcessControlIntf somProcessControl ;
-	 
+	
 	int instanceType = SomFluidFactory._INSTANCE_TYPE_OPTIMIZER;
 	
 	int absoluteNumberOfExploredCombinations = 10;
@@ -556,7 +559,11 @@ class SomModuleInstanceM1 implements 	Runnable,
 	
 	public void issueUserbreak() {
 		//  
-		somProcessControl.interrupt(0);
+		if (somProcessControl!=null){
+			somProcessControl.interrupt(0);
+		}else{
+			System.err.println("Nothing to stop, <somProcessControl> was not up and running...");
+		}
 	}
  
 	 
@@ -656,10 +663,20 @@ class SomModuleInstanceM1 implements 	Runnable,
 			
 			if (instance.contentEquals("som")){
 
-				sfPropertiesDefaults.setInstance( "som" ,nodeCount ); 
+				sfPropertiesDefaults.setInstance( "som" ,nodeCount );
+				
 									// alternatively: "map" "transformer", or detailed by constants: 
 									// (SomFluidFactory._INSTANCE_TYPE_OPTIMIZER, SomFluidProperties._SOMTYPE_MONO)
 
+				// choose a fixed or a fluid grid
+				sfPropertiesDefaults.setGridType( SomFluidFactory._SOM_GRIDTYPE_FIXED ) ;
+				sfPropertiesDefaults.setGridType( SomFluidFactory._SOM_GRIDTYPE_FLUID) ;
+				
+				// choose a guessing instance: low-resolution grid, speeding the 
+				// node selection in large grids
+				
+				
+				
 				// this applies only if the instance is of type "som", which includes optimizing of the model
 				// the absolute number of different models that will be checked
 				sfPropertiesDefaults.setOptimizerStoppingCriteria( absoluteNumberOfExploredCombinations ) ;					
