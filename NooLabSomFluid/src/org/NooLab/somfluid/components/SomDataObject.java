@@ -186,7 +186,7 @@ public class SomDataObject 	implements      Serializable,
 			
 			
 			// now the SomDataObject has a table loaded
-			// only for XML outut from transformer,etc... readData(filename);
+			// only for XML output from transformer,etc... readData(filename);
 			
 		} // getDataUptakeControl >=0 ?
 		

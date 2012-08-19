@@ -18,7 +18,7 @@ import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
  
-import org.NooLab.repulsive.components.data.SurroundResults;
+import org.NooLab.field.repulsive.components.data.SurroundResults;
  
  
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivity;

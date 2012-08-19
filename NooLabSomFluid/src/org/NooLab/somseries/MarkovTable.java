@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import org.NooLab.repulsive.components.data.PointXY;
+import org.NooLab.field.repulsive.components.data.PointXY;
 import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.engines.det.SomMapTable;
 import org.math.array.DoubleArray;

@@ -42,8 +42,8 @@ public class SomFluidProperties
 	
 	transient static SomFluidProperties sfp; 
 	
-	public final static int _SOMTYPE_PROB = 1;
-	public final static int _SOMTYPE_MONO = 2; 
+	public final static int _SOMTYPE_PROB = 1; // probabilistic storage, using internal criteria, e.g. variance, exceptionality
+	public final static int _SOMTYPE_MONO = 2; // modeling using operationalization of external criteria 
 	
 	public final static int _SRC_TYPE_FILE = 1;
 	public final static int _SRC_TYPE_DB   = 3;
@@ -66,9 +66,9 @@ public class SomFluidProperties
 	public static final String _STORAGE_XML = "SomFluid-properties.xml";
 	
 	
-	transient SomFluidFactory sfFactory ;
-
-	
+	private int somInstanceType = 0 ;
+	private int somGridType = -1;
+		
 	/** <0: don't load, 0: immediate uptake; >0:delayed uptake (in millis) */
 	int dataUptakeControl = -1 ;
 	
@@ -105,9 +105,19 @@ public class SomFluidProperties
 	private String systemRootDir;
 
 	transient private String currentSettingsXml="";
+
+
+	
+
+
+	
+
+
+	
 	
 	// ========================================================================
 	public SomFluidProperties(){
+		super();
 		
 	}
 	// ========================================================================
@@ -116,9 +126,6 @@ public class SomFluidProperties
 	public SomFluidProperties(SomAppProperties appProperties) {
 	  
 		sfp = this;
-		
-		
-		
 		
 	}
 
@@ -281,13 +288,14 @@ public class SomFluidProperties
 	}
 
 
+	public DataUseSettings getDataUseSettings() {
+		return dataUseSettings;
+	}
+
+
 	public PersistenceSettings getPersistenceSettings() {
 		
 		return persistenceSettings;
-	}
-
-	public DataUseSettings getDataUseSettings() {
-		return dataUseSettings;
 	}
 
 
@@ -627,7 +635,8 @@ public class SomFluidProperties
 		outputSettings = new OutputSettings(persistenceSettings);
 		
 		fileOrganizer.setPropertiesBase(this);
-		
+		 
+		this.somInstanceType = somInstanceType;
 	}
 	
 	public void setglueModuleMode(int glueModuleMode) {
@@ -859,6 +868,27 @@ public class SomFluidProperties
 		if (list!=null){
 			groupDesignVariables = new ArrayList<String>(list);
 		}
+	}
+
+
+	public void setSomGridType(int somGridtype) {
+		
+		somGridType = somGridtype ;
+	}
+
+
+	public int getSomInstanceType() {
+		return somInstanceType;
+	}
+
+
+	public void setSomInstanceType(int somInstanceType) {
+		this.somInstanceType = somInstanceType;
+	}
+
+
+	public int getSomGridType() {
+		return somGridType;
 	}
 
 

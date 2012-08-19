@@ -11,7 +11,7 @@ public abstract class AlgoColumnWriterAbstract implements AlgoColumnWriterIntf{
 	private static final long serialVersionUID = -2872072817907944827L;
 	
 
-	protected boolean hasParameters = false; // will be true in case of algos like NumValEnum
+	protected boolean hasParameters = false; // will be true in case of algorithms like NumValEnum
 	
 	protected AlgorithmParameters parameters ; 
 	

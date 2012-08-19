@@ -1,12 +1,10 @@
 package org.NooLab.somfluid.components;
 
-import org.NooLab.repulsive.RepulsionField;
-import org.NooLab.repulsive.RepulsionFieldFactory;
-import org.NooLab.repulsive.components.Neighborhood;
-import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
-import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
+import org.NooLab.field.interfaces.FixedNodeFieldEventsIntf;
+import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
+import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
 import org.NooLab.somfluid.SomFluidFactory;
-import org.NooLab.utilities.logging.LogControl;
+import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.utilities.logging.PrintLog;
 
 
@@ -21,9 +19,14 @@ import org.NooLab.utilities.logging.PrintLog;
  */
 public class PhysicalFieldFactory {	
 	
-	RepulsionFieldFactory rfFactory;
-	RepulsionField repulsionField; 
+	SomFluidProperties sfProperties ;
+	
+	PhysicalGridFieldIntf somfield ;
+	RepulsionFieldEventsIntf eventSinkDynGrid;
+	FixedNodeFieldEventsIntf eventSingFixgrid;
 
+	boolean somFieldInitComplete;
+	
 	double deceleration = 1.0 ; 
 	double repulsion = 1.0 ; 
 	double energy = 1.0 ;  
@@ -32,7 +35,9 @@ public class PhysicalFieldFactory {
 	
 	int width, height;
 	
-	boolean initComplete = false;
+	// boolean initComplete = false;
+	
+	
 	private PrintLog out = new PrintLog(2,true);
 	
 	// ------------------------------------------------------------------------
@@ -41,170 +46,61 @@ public class PhysicalFieldFactory {
 	}
 	// ------------------------------------------------------------------------
 	
-	public void defineEventMessagingEndpoint( RepulsionFieldEventsIntf eventSink){
-		if (repulsionField!=null){
-			repulsionField.registerEventMessaging( eventSink );
-		}
-	}
-	
-	
-	public RepulsionFieldIntf createPhysicalField( SomFluidFactory sfFactory,  RepulsionFieldEventsIntf eventSink,int nbrparticles ){ // ,
 	 
-		int runRequestTester=0,  selszLimit ;
+	public PhysicalGridFieldIntf createPhysicalField( SomFluidFactory sfFactory,  
+													  Object eventSink,
+													  int nbrparticles ){  
 		
-		// TODO: properties offered by static create(s) and interface
-		//       which then are part of SomFluidProperties 
 		
-		if (runRequestTester>0){
-			// for testing, 100 = 100ms delay between calls, pres +/. to ac-/decelerate
-			rfFactory = new RepulsionFieldFactory("test:RQ=1000", 1); // , LogControl.Level);
-			
-			int pp=0;
-			if (sfFactory.getSfProperties().isMultithreadedProcesses()){
-				pp=1;
-			}
-			repulsionField = rfFactory.getRepulsionField() ;
-			
-		}else{
-			// simple call 
-			rfFactory = new RepulsionFieldFactory();
-			repulsionField = rfFactory.getRepulsionField() ;
+		// will be returned, is generic for any type of grid : PhysicalGridFieldIntf
+		somfield =null;
+		
+		sfProperties = sfFactory.getSfProperties();
+		
+		defineEventMessagingEndpoint(eventSink )  ;
+		// eventSinkDynGrid = eventSink;
+		
+		
+		int somtype = sfProperties.getSomGridType();
+		
+		if (somtype == SomFluidFactory._SOM_GRIDTYPE_FIXED){
+			somfield = null; 
 		}
-		 
-		// repulsionField.useParallelProcesses(pp); // set to 0 for debugging
-		repulsionField.useParallelProcesses(0);
+		if (somtype == SomFluidFactory._SOM_GRIDTYPE_FLUID){
 		
-		repulsionField.registerEventMessaging( eventSink );
-		
-		repulsionField.setName("somfluid-app") ;
-		repulsionField.setColorSize(false, true);
-
-		repulsionField.setInitialLayoutMode(RepulsionField._INIT_LAYOUT_REGULAR);
-		
-		
-		
-		nbrParticles = nbrparticles;
-		
-		if (nbrParticles<100){
-			repulsionField.setAreaSizeMin();
-		} else{
-			repulsionField.setDefaultDensity(12, nbrParticles);
-			repulsionField.setAreaSizeAuto( nbrParticles );	
-			width  = repulsionField.getAreaSize()[0] +10;
-			height = repulsionField.getAreaSize()[1] +10;
+			somfield = new PhysicalRepulsionField( sfFactory, 
+												   (RepulsionFieldEventsIntf)eventSink,
+					  							   nbrparticles )  ;
 		}
-	 	
-		repulsionField.setMaxDensityDeviationPercent( 15.0 );
-		// setting basic parameters for the dynamic behavior of the particles
-		// will be used if there is nothing to load
 		
-		repulsionField.setDynamics( nbrParticles, energy, repulsion, deceleration );
-		repulsionField.setBorderMode( Neighborhood.__BORDER_ALL); // all=rectangle, none=torus (borderless)
 		
-		// these two parameters can be allowed to auto-adjust by SomFluidProperties
-		
-		// in contrast to standard SOM we need not to choose a big initial radius (usually half of the SOM size),
-		// since we can merge, split and move the particles, which prevents multicenters for very similar contexts
-		double rad = (int)( (Math.sqrt( nbrParticles )/3.5));
-		
-		int _selectionsize = (int) (Math.round((rad * rad)*Math.PI)*0.82)  ;
-		
-		if ((nbrParticles>500) && (_selectionsize>nbrParticles*0.4)){
-			_selectionsize = (int) (nbrParticles*0.4) ; // maxSelectionSize 1000, 5000
-		}
-		 
-		selszLimit = sfFactory.getSfProperties().getRestrictionForSelectionSize();
-		
-		if (selszLimit>11){
-			repulsionField.setSelectionSizeRestriction(selszLimit) ;
-		}else{
-			repulsionField.setSelectionSizeRestriction(-1) ;
-		}
-
-		// this will calculate the next larger number for a hexagonal pattern;
-		// i.e. for the acual selection we have to truncate the selected collection
-		// which is not a problem, because it is returned in ordered fashion
-	
-		repulsionField.setSelectionSize( _selectionsize ); // will be confined by setSelectionSizeRestriction()
-		_selectionsize = repulsionField.getSelectionSize() ;
-		
-		// this populates the field, set "nbrParticles" to 0 if you will import coordinates or a field
-		// can be set to auto-adapt
-		repulsionField.init( nbrParticles );
-		
-		// importing set of coordinates from last auto-save , or from given filename 
-		// any particle existing before will be removed;
-		// if no file will be found, it will be initialized randomly
-		
-		// repulsionField.init( "importField" );
-		// or with filename:  
-		// repulsionField.init("importField:filename=C:/Users/kwa/rf/config/~RepulsionFieldData-app-10000.dat" );
-		// C:/Users/kwa/rf/config/~RepulsionFieldData-app-10000.dat
-		
-		// or alternatively in two steps:
-		// repulsionField.init(repulsionField,1 );
-		// repulsionField.importField();
-		
-		initComplete=false;
-		repulsionField.setDelayedOnset(50);
-		
-		out.delay(200) ;
-											out.print(4, "updating field of particles ... ") ;
-		for (int i=0;i<1;i++)
-		{ // makes it more regular... but the more regular the less the quality of the model
-			repulsionField.update();out.delay(10) ;
-		} 
-		
-		while (initComplete==false){
-			 out.delay(10) ;
-			 if (eventSink==null){
-				 initComplete = repulsionField.getInitComplete();
-			 }
-		}
-											
-		 
-		repulsionField.releaseShakeIt(0,5000 );
-		
-		initComplete=false; int z=0;
-		while ((initComplete==false) && (z<12000)){
-			repulsionField.out.delay(10) ;
-			z++;
-		}
-											out.print(4, "updating field of particles done. ") ;
-		return (RepulsionFieldIntf)repulsionField;
+		return somfield;
 	}
 	
-	
-	private boolean getInitComplete() {
-		 
-		return false;
-	}
-	public RepulsionField getRepulsionField() {
-		return repulsionField;
-	}
-
-	public int getWidth() {
-		return width;
-	}
-
-	public void setWidth(int width) {
-		this.width = width;
+	public void defineEventMessagingEndpoint( Object eventSink) {
+		
+		int somtype = sfProperties.getSomGridType();
+		
+		// dependent on grid type
+		if (somtype == SomFluidFactory._SOM_GRIDTYPE_FLUID){
+			eventSinkDynGrid = (RepulsionFieldEventsIntf)eventSink ;
+		}
+		if (somtype == SomFluidFactory._SOM_GRIDTYPE_FIXED){
+			eventSingFixgrid = (FixedNodeFieldEventsIntf)eventSink ;
+		}
 	}
 
-	public int getHeight() {
-		return height;
-	}
 
-	public void setHeight(int height) {
-		this.height = height;
-	}
+	 
+	 
 
-	public boolean isInitComplete() {
-		return initComplete;
-	}
-
-	public void setInitComplete(boolean initComplete) {
-		this.initComplete = initComplete;
+	public void setInitComplete(boolean flag) {
+		// if (somfield!=null)somfield.setInitComplete(flag);
+		/* there is NO push of this information possible, because the routine returning
+		 * the somfield did not yet arrive
+		 * we either wait here or use a fetch mechanism in PhysicalRepulsionField
+		 */
+		somFieldInitComplete= flag;
 	}
  
 }

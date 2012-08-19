@@ -9,8 +9,10 @@ import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
 import org.NooLab.utilities.objects.StringedObjects;
 
-import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
-import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
+import org.NooLab.field.interfaces.FixedNodeFieldEventsIntf;
+import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
+import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
+import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
 
 import org.NooLab.somfluid.properties.* ;
 import org.NooLab.somfluid.app.SomAppProperties;
@@ -62,9 +64,10 @@ public class SomFluid
 								 SomFluidIntf,
 								 
 								 SomSupervisionIntf ,
-								 RepulsionFieldEventsIntf
+								 RepulsionFieldEventsIntf,
+								 FixedNodeFieldEventsIntf
 								 {
-	
+	//   
 	
 	
 
@@ -88,7 +91,9 @@ public class SomFluid
 	Thread sfThread;
 	
 	private boolean processIsActivated=false;
-	private RepulsionFieldIntf particleField;
+	// private RepulsionFieldIntf particleField;
+	private PhysicalGridFieldIntf particleField;
+	
 	private boolean userBreak;
 	transient SomApplicationEventIntf appInformer ;
 	
@@ -196,6 +201,7 @@ public class SomFluid
 	 * @throws Exception 
 	 */
 	private void performModelOptimizcreener(SomFluidTask sfTask) throws Exception {
+		
 		ModelOptimizer moz ;
 		ModelOptimizerDigester optimizerResultHandler ;
 		somDataObjects.clear();
@@ -519,9 +525,10 @@ public class SomFluid
 	public String addTask(SomFluidTask somFluidTask) {
 		 
 		somFluidTask.guidID = GUID.randomvalue() ;
-		somTasks.add(somFluidTask);
 		
 		somTasks.setSfFactory(sfFactory) ;
+		
+		somTasks.add(somFluidTask);
 		
 		 
 		out.setPrefix( "[SomFluid]") ; 
@@ -631,6 +638,7 @@ public class SomFluid
 					
 					if (sfTask.somType == SomFluidProperties._SOMTYPE_MONO){
 						
+						/*
 						// accessing the persistent file,
 						// it may be an external file containing raw data, or
 						// if sth exists an already prepared one
@@ -643,7 +651,7 @@ public class SomFluid
 							// goto standby mode for this task
 							sfTask.isStandbyActive = true;
 						}
-						
+						*/
 						if (sfTask.getSpelaLevel()<=1){
 						// preparing the data, at least transforming and normalizing it
 						// is embedded into the SomDataObject, where it is called by
@@ -926,21 +934,16 @@ public class SomFluid
 
 
 	/**
-	 * @return the particleField
+	 * @return the particleField 
 	 */
-	public RepulsionFieldIntf getParticleField() {
+	public PhysicalGridFieldIntf getParticleField() {
+	//public RepulsionFieldIntf getParticleField() {
 		return particleField;
 	}
 
 
 	// ------------------------------------------------------------------------
 	// callbacks from RepulsionField 
-
-	@Override
-	public void onLayoutCompleted(int flag) {
-		
-	}
-
 
 
 
@@ -985,7 +988,9 @@ public class SomFluid
 			out.print(2,"Calculations (SomFluid as event mgr) in particle field are going to be completed, please wait...");
 			
 		}
-		sfFactory.setPhysicalFieldStarted(1);
+		
+		
+		// sfFactory.setPhysicalFieldStarted(1);
 		
 		sfFactory.getFieldFactory().setInitComplete(true);
 		
@@ -1008,6 +1013,12 @@ public class SomFluid
 			setUserbreak(true) ;
 		}
 		return userBreak;
+	}
+
+	@Override
+	public void onLayoutCompleted(int flag) {
+		// TODO Auto-generated method stub
+		
 	}
  
 	
