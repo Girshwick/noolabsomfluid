@@ -1,10 +1,12 @@
 package tester;
 
 import org.NooLab.field.repulsive.RepulsionField;
+import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
+import org.NooLab.utilities.logging.PrintLog;
 
 public class RequestTester implements Runnable{
 
-	RepulsionField rField;
+	RepulsionFieldIntf rField;
 	int rqDelay = 1000;
 
 	boolean isRunning =false;
@@ -12,7 +14,7 @@ public class RequestTester implements Runnable{
 	Thread reqtThrd;
 	
 	
-	public RequestTester( RepulsionField rf, int rqdelay ){
+	public RequestTester( RepulsionFieldIntf rf, int rqdelay ){
 		
 		rField = rf;
 		rqDelay = rqdelay;
@@ -53,7 +55,7 @@ public class RequestTester implements Runnable{
 					isWorking=false;
 				}
 				
-				rField.out.delay(rqDelay);
+				PrintLog.Delay(rqDelay);
 			} // ->
 			
 		}catch(Exception e){

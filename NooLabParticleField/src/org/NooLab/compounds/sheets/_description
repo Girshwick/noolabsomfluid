@@ -1,0 +1,16 @@
+
+
+
+a sheet is a fixed layout field, which can 
+ - grow by attachment and densification
+ - differentiate by melting nodes away
+
+Sheets grow by attachment first, then by densification, then they fold
+
+
+Only if a field is a sheet, it can be folded. Fields do not fold.
+In other words, going from fields to sheets means to 
+proceed from logic to physis.
+
+The sheet provides the necessary additional structures, interfaces,
+classes and methods to enrich fields such that they behave as a sheet
