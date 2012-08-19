@@ -5,8 +5,9 @@ import java.util.ArrayList;
 import java.util.Random;
  
  
-import org.NooLab.repulsive.intf.main.RepulsionFieldEventsIntf;
-import org.NooLab.repulsive.intf.main.RepulsionFieldIntf;
+import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
+import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
+import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.somfluid.app.IniProperties;
 import org.NooLab.somfluid.app.SomAppProperties;
 import org.NooLab.somfluid.app.SomAppUsageIntf;
@@ -42,7 +43,7 @@ import org.NooLab.utilities.resources.ResourceLoader;
  *  
  * 
  * in Eclipse, there are 2 possibilities 
- * 1- go to Windows > preferences > Java > installed JREs : select one > Edit > defualt VM arguments  "-Xmx640m"  
+ * 1- go to Windows > preferences > Java > installed JREs : select one > Edit > default VM arguments  "-Xmx640m"  
  * 2- run > run configurations : select the application/applet > arguments > VM arguments : "-Xmx640m"
  * 
  */
@@ -57,11 +58,14 @@ public class SomFluidFactory  implements 	//
 	public static final int _INSTANCE_TYPE_TRANSFORM  = 4;
 	public static final int _INSTANCE_TYPE_CLASSIFIER = 7;
 	
+	public static final int _SOM_GRIDTYPE_FIXED = 1 ;
+	public static final int _SOM_GRIDTYPE_FLUID = 2 ;
+	
 	public static final int _GLUE_MODULE_ENV_NONE     = 0;
 	public static final int _GLUE_MODULE_ENV_CLIENT   = 1;
 	
 	
-	private PhysicalFieldFactory fieldFactory;  
+	PhysicalFieldFactory fieldFactory;  
 	RepulsionFieldEventsIntf somEventSink =null ;
 	
 	int physicalFieldStarted = 0;
@@ -80,6 +84,7 @@ public class SomFluidFactory  implements 	//
 	
 	//
 	
+	
 	DataFileReceptorIntf dataReceptor;
 	SomProcessControl somProcessControl ;
 	SomObjects somObjects;
@@ -87,9 +92,9 @@ public class SomFluidFactory  implements 	//
 	
 	
 	int instanceType   = -1;
-	int glueModuleMode = 0;
 	int preparePhysicalParticlesField;
 
+	int glueModuleMode = 0;
 	GlueClientAdaptor glueClient ;
 	GlueBindings glueBindings;
 	
@@ -331,7 +336,7 @@ public class SomFluidFactory  implements 	//
 	}
 	
 
-	protected SomFluidIntf getSomFluid( int preparePhysicalParticlesField ){
+	protected SomFluidIntf getSomFluid(){ // int preparePhysicalParticlesField
 		
 		
 		if (somFluidModule==null){
@@ -450,8 +455,9 @@ public class SomFluidFactory  implements 	//
 		DFutils.reduceFileFolderList( dir,1,".trace",20) ;
 	}
 
-	public RepulsionFieldIntf createPhysicalField( RepulsionFieldEventsIntf eventSink, int initialNodeCount) { // 
-		RepulsionFieldIntf physicalField;
+	public PhysicalGridFieldIntf createPhysicalField( RepulsionFieldEventsIntf eventSink, int initialNodeCount) { // 
+		// RepulsionFieldIntf physicalField;
+		PhysicalGridFieldIntf physicalField;
 		
 		out.setPrefix("[SomFluid-factory]") ;
 		out.print(2, "starting the physical particles field... ") ;  
@@ -606,19 +612,21 @@ public class SomFluidFactory  implements 	//
 	}
 	
 	public <T> Object createTask(int instancetype, String guidId) {
-		 
+		String descr="The requested type of instance to be created is unknown, no task has been created." ;
+		
 		SomFluidClassTaskIntf somclass=null;
 		
 		if (instancetype == SomFluidFactory._INSTANCE_TYPE_CLASSIFIER ){
 			
 			somclass = (SomFluidClassTaskIntf) (new SomFluidTask( guidId, SomFluidTask._TASK_CLASSIFICATION ));
-			
+			descr="A task has been created, type = <TASK_CLASSIFICATION>";
 		}
 		if (instancetype == SomFluidFactory._INSTANCE_TYPE_OPTIMIZER ){
 			
 			somclass = (SomFluidClassTaskIntf) (new SomFluidTask( guidId, SomFluidTask._TASK_MODELING ));
-			
+			descr="A task has been created, type = <_TASK_MODELING>";
 		}
+		out.print(2, descr) ;
 		return somclass;
 	}
 
@@ -636,7 +644,7 @@ public class SomFluidFactory  implements 	//
 	 * takes the task and produces the SOM, usually, if not set otherwise, 
 	 * it also will start the process
 	 * @return 
-	 * @throws Exception 
+	 * @throws Exception  
 	 */
 	public  void produce( Object sfTask ) throws Exception {
 	
@@ -655,7 +663,9 @@ public class SomFluidFactory  implements 	//
 		if (somFluidTask.taskType.toLowerCase().startsWith("c")){
 			preparePhysicalParticlesField = 0;
 		}
-		getSomFluid(preparePhysicalParticlesField);
+		
+		// creating the main module and starting the task loop
+		getSomFluid(); // obs__ (preparePhysicalParticlesField)
 		 
 		
 		if (somFluidTask.getStartMode() == 1){

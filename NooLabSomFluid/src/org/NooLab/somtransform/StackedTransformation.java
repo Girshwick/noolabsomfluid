@@ -55,6 +55,7 @@ public class StackedTransformation  implements Serializable{
 
 	/** this serves as a transfer container when the transformations are serialized  */
 	AlgorithmParameters algoParameters;
+
 	/** 
 	 * defined in AlgorithmIntf
 	 * 0=passive, 1=value transform, 2=column writer, determines the interface and thus the handling of data
@@ -119,6 +120,7 @@ public class StackedTransformation  implements Serializable{
 	public void createOutData() {
 		createOutData(null) ;
 	}
+	
 	public void createOutData(ArrayList<Double> values) {
 		 
 		if (outData==null){
@@ -505,11 +507,6 @@ public class StackedTransformation  implements Serializable{
 	}
 
 
-	
-	
-	
-	
-	
 	
 
 	// ========================================================================

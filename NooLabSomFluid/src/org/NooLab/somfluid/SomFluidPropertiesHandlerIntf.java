@@ -74,6 +74,8 @@ public interface SomFluidPropertiesHandlerIntf {
 	public String getStartupTraceInfo();
 
 	public void publishApplicationPackage(boolean flag, String basepath);
+
+	public void setGridType(int somGridtypeFixed);
 	
 
 }

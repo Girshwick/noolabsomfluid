@@ -69,6 +69,8 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 	transient XmlStringHandling xMsg = new XmlStringHandling() ;
 
 	
+
+	
 	// ========================================================================
 	public SomFluidPropertiesHandler( SomFluidProperties properties){
 		sfProperties = properties;
@@ -186,6 +188,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		sfProperties.getModelingSettings().setTvLabelAuto("TV") ;
 		 */
 
+		
 		
 		
 		sfProperties.setGlueInstanceType(1);
@@ -673,6 +676,10 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 				lap = new AlgorithmPluginsLoader(sfProperties, true);
 				if (lap.isPluginsAvailable()) {
 					lap.load();
+					int k = lap.getNotLoadedJars().size();
+					if (k>0){
+						out.printErr(2,k +" jarfiles failed to load.");
+					}
 				}
 			}
 			// feedback about how much plugins loaded ...
@@ -735,6 +742,9 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		} // som for targeted modeling
 		
 		
+		// som map as associative storage: no target variable, but some choice of internal consistency / contrast measures
+		// modes of working: plain, +3-sigma, +internal variance (combined with 3-sigma)
+		// important: list of indices, list of profile columns or column numbers such as [3,12-65, 120-all], 
 		if (description.startsWith("map")){
 			sfProperties.setSomType( SomFluidProperties._SOMTYPE_PROB ) ;
 			
@@ -748,6 +758,14 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		
 		 
 		ps = sfProperties.getPersistenceSettings() ;
+	}
+
+	@Override
+	public void setGridType(int somGridtype) {
+		// 
+		 
+		sfProperties.setSomGridType( somGridtype ) ; 
+		
 	}
 
 	@Override

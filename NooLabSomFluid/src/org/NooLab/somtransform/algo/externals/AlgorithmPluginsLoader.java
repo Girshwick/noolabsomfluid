@@ -41,6 +41,7 @@ public class AlgorithmPluginsLoader implements PluginLoaderIntf{
 	SomFluidAppGeneralPropertiesIntf sfProperties;
 	
 	ArrayList<String> jarfiles = new ArrayList<String>();
+	ArrayList<String> notLoadedJars = new ArrayList<String>();
 	
 	JarFileLoader jLoader ;
 	
@@ -167,6 +168,7 @@ public class AlgorithmPluginsLoader implements PluginLoaderIntf{
 	private void loadAlgorithmJars() throws MalformedURLException {
 		
 		String className ;
+		String errStr;
 		String[] classNameEntry ;
 		ArrayList<String[]> classNameEntries;
 		
@@ -183,9 +185,10 @@ public class AlgorithmPluginsLoader implements PluginLoaderIntf{
 
 			for (int i = 0; i < jarfiles.size(); i++) {
 
-				jLoader.addJarSource( jarfiles.get(i) );
+				String jfile = jarfiles.get(i);
+				jLoader.addJarSource( jfile  );
 				
-				classNameEntries = getClassJarContent( jarfiles.get(i) ) ;
+				classNameEntries = getClassJarContent( jfile ) ;
 				 
 				for (int c=0;c<classNameEntries.size();c++){
 					
@@ -193,6 +196,7 @@ public class AlgorithmPluginsLoader implements PluginLoaderIntf{
 					
 
 					if ( classNameEntry[0].length()>0){
+						
 						try {
 							
 							Class<?> pClass = jLoader.loadClass( classNameEntry[0] ); // "org.gjt.mm.mysql.Driver");
@@ -201,10 +205,16 @@ public class AlgorithmPluginsLoader implements PluginLoaderIntf{
 							pluginSettings.registerPluginClass( classNameEntry[1] , pClass);
 							 
 							
-						}catch(ClassNotFoundException e){
+						}catch( ClassNotFoundException e){ 
 							// log as not loaded ...
+							errStr = jfile + " :: ClassNotFoundException :: "+ classNameEntry[0];
+							notLoadedJars.add( errStr ) ;
+						}catch( NoClassDefFoundError e){ 
+							// log as not loaded ...
+							errStr = jfile + " :: NoClassDefFoundError :: "+ classNameEntry[0];
+							notLoadedJars.add( errStr ) ;
 						}
-						 
+						
 					}
 				} // all entries from jarfile
 				 
@@ -287,11 +297,12 @@ public class AlgorithmPluginsLoader implements PluginLoaderIntf{
 
 
 	private void getAvailableJarFiles() {
-
+		ArrayList<String> jfiles;
 		DirectoryContent dc = new DirectoryContent();
 		try{
 			jarfiles.clear();
-			jarfiles.addAll( dc.getFileList( "*", "jar", pluginSettings.getBaseFilePath()) );
+			jfiles = DirectoryContent.getFileList( "*", ".jar", pluginSettings.getBaseFilePath());
+			jarfiles.addAll( jfiles );
 		}catch(Exception e){
 			jarfiles = new ArrayList<String>();
 		}
@@ -299,6 +310,14 @@ public class AlgorithmPluginsLoader implements PluginLoaderIntf{
 
 	public boolean isPluginsAvailable() {
 		return pluginsAvailable;
+	}
+
+	public SomFluidPluginSettingsIntf getPluginSettings() {
+		return pluginSettings;
+	}
+
+	public ArrayList<String> getNotLoadedJars() {
+		return notLoadedJars;
 	}
 	
 	

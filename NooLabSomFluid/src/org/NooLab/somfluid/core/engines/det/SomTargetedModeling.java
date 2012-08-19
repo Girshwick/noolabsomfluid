@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Observer;
 
-import org.NooLab.repulsive.components.data.SurroundResults;
-import org.NooLab.repulsive.intf.main.*;
-import org.NooLab.repulsive.particles.Particle;
+import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
+import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
+import org.NooLab.field.repulsive.RepulsionField;
+import org.NooLab.field.repulsive.components.data.SurroundResults;
+import org.NooLab.field.repulsive.intf.main.*;
+import org.NooLab.field.repulsive.particles.Particle;
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
@@ -69,7 +72,7 @@ public class SomTargetedModeling    extends
 	
 	SomFluidTask sfTask;
 	
-	RepulsionFieldIntf particleField ;
+	PhysicalGridFieldIntf particleField ;
 	LatticePropertiesIntf latticeProperties;
 	
 	/** 
@@ -178,7 +181,7 @@ public class SomTargetedModeling    extends
 	 * Hence, our nodes need to be attached to the particles  
 	 */
 	@SuppressWarnings("unchecked")
-	private void createVirtualLattice( VirtualLattice somLattice, RepulsionFieldIntf particleField, int initialNodeCount, boolean showNodeCount) {
+	private void createVirtualLattice( VirtualLattice somLattice, PhysicalGridFieldIntf particleField, int initialNodeCount, boolean showNodeCount) {
 		
 		MetaNode mnode;
 		long idbase;
@@ -855,8 +858,8 @@ public class SomTargetedModeling    extends
 	}
 
 
-	@Override
-	public void onLayoutCompleted(int flag) {
+	
+	public void _onLayoutCompleted(int flag) {
 		
 		out.print(2,"Layout of particle field has been completed.");
 	}
@@ -947,5 +950,12 @@ public class SomTargetedModeling    extends
 	
 	public boolean isCompleted() {
 		return isCompleted;
+	}
+
+
+	@Override
+	public void onLayoutCompleted(int flag) {
+		// TODO Auto-generated method stub
+		
 	}
 }

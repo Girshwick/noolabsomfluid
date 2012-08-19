@@ -24,6 +24,8 @@ public class SomFluidAppPropertiesAbstract
 	protected transient AlgorithmDeclarationsLoader algoDeclarations;
 	SomFluidPluginSettings pluginSettings = new SomFluidPluginSettings();
 
+	transient protected SomFluidFactory sfFactory ;
+	
 	/** concerns persistence of objects, including the models exported for "offline" use */
 	protected PersistenceSettings persistenceSettings  ;
 	

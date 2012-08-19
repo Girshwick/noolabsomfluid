@@ -24,9 +24,9 @@ public class ProjectSpaceMaintenance {
 													"model/transform",
 													"tmp"
 													} ;
-	String[] sfSystemFoldersAlgorithmCatalog = new String[]{"somfluid",
-															"somfluid/plugins/transforms",
-															"somfluid/plugins"
+	String[] sfSystemFoldersAlgorithmCatalog = new String[]{"texx",
+															"texx/plugins/transforms",
+															"texx/plugins"
 															};
 	
 	String catalogFolder = "somfluid/plugins";
