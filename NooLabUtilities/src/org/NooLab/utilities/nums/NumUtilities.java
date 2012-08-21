@@ -133,4 +133,34 @@ public class NumUtilities {
 		}
         return min + (int) (random.nextDouble() * (max - min));
 	}
+	
+
+	// later: put this to NumUtilities
+	public int getLayerCountOfHexPattern( int platelets){
+		
+		int n=0, sp=1, add;
+		
+		while (sp<platelets){
+			n++;
+			add = n*6 ;
+			sp = sp+add;
+		}
+		
+		return n;
+	}
+
+
+	public int calculatePlateletsCountInHexPattern( int layers){
+		int n=0, sp=1, add;
+		
+		while (n<layers){
+			n++;
+			add = n*6 ;
+			sp = sp+add;
+		}
+		
+		return sp;
+	}
+
+
 }

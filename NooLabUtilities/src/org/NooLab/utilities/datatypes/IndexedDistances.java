@@ -208,6 +208,12 @@ public class IndexedDistances implements Serializable{
 	}
 
 
+	public ArrayList<String> getAllFieldLabels() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
 	public void removeItem( int index){
 		items.remove(index);
 	}
@@ -232,12 +238,6 @@ public class IndexedDistances implements Serializable{
 	public void addItems(IndexedDistances listOfPutativeTransforms) {
 		// TODO Auto-generated method stub
 		
-	}
-
-
-	public ArrayList<String> getAllFieldLabels() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 
