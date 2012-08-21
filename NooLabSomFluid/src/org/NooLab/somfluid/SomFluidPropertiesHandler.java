@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.data.VariableSettingsHandler;
 import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
@@ -714,7 +715,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		
 		
 		if (description.startsWith("som")){
-			sfProperties.setInstanceType( SomFluidFactory._INSTANCE_TYPE_OPTIMIZER ) ;   
+			sfProperties.setInstanceType( FieldIntf._INSTANCE_TYPE_OPTIMIZER ) ;   
 				// the main role the module is exhibiting, MANDATORY !!!
 				// _SOM  _OPTIMIZER _TRANSFORM
 

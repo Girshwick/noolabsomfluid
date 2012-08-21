@@ -3,7 +3,7 @@ package org.NooLab.somfluid.app;
 import java.util.ArrayList;
 
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
-import org.NooLab.field.repulsive.particles.Particle;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;

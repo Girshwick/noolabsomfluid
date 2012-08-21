@@ -4,12 +4,17 @@ import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Observer;
 
+import org.NooLab.field.FieldIntf;
+import org.NooLab.field.FieldParticleIntf;
+import org.NooLab.field.fixed.components.FixedFieldParticlesIntf;
+import org.NooLab.field.interfaces.FixedNodeFieldEventsIntf;
 import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
 import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
 import org.NooLab.field.repulsive.RepulsionField;
 import org.NooLab.field.repulsive.components.data.SurroundResults;
 import org.NooLab.field.repulsive.intf.main.*;
-import org.NooLab.field.repulsive.particles.Particle;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
@@ -55,7 +60,8 @@ public class SomTargetedModeling    extends
 	 								 		    SomProcessIntf ,
 	 								 		    Observer,
 	 								 		    // events from particle field, namely selections!
-	 								 		    RepulsionFieldEventsIntf{
+	 								 		    RepulsionFieldEventsIntf,
+	 								 		    FixedNodeFieldEventsIntf{
 
 	String name = "";
 	long numericID = 0L;
@@ -148,7 +154,10 @@ public class SomTargetedModeling    extends
 			  
 			somLattice = new VirtualLattice( this, targetModeling.somLattice.getLatticeProperties(),-5 );
 		}
+		// sfPropertiesDefaults.setGridType( SomFluidFactory._SOM_GRIDTYPE_FIXED ) ;
+		// sfPropertiesDefaults.setGridType( SomFluidFactory._SOM_GRIDTYPE_FIXED ) ;
 		
+		somLattice.setFieldIsDynamic( sfProperties.getSomGridType() == FieldIntf._SOM_GRIDTYPE_FLUID ) ;
 		sfTask = targetModeling.sfTask  ;
 		
  
@@ -163,7 +172,9 @@ public class SomTargetedModeling    extends
 		sfFactory = factory;
 		
 		sfProperties = sfFactory.getSfProperties() ;
-		 
+		sfFactory.establishPhysicalFieldMessaging( this ); 
+		// <<<<<<<<< onSelectionRequestCompleted() very important for routing result to the SomLattice/VirtualLattice !!!
+		// also for associative storage, where we do NOT have a targeted modeling
 		
 		// only if requested by the properties ....
 		somBags = new SomBags(this, sfProperties) ;
@@ -185,7 +196,7 @@ public class SomTargetedModeling    extends
 		
 		MetaNode mnode;
 		long idbase;
-		Particle particle;
+		FieldParticleIntf particle=null;
 		
 		somDataObject = somHost.getSomDataObj() ;
 		 									if ((showNodeCount) || (somHost.getSfTask().getCounter()<=3)){ 
@@ -211,8 +222,19 @@ public class SomTargetedModeling    extends
 				ArrayList<Double> values = ArrUtilities.createCollection( vari.size(), 0.5) ;
 				pv.setValues(values);
 				
-				particle = particleField.getParticles().get(i);
-				particle.setIndexOfDataObject( mnode.getSerialID() );
+				int somtype = sfProperties.getSomGridType();
+				Object obj = particleField.getParticles();
+				 
+				if (somtype == FieldIntf._SOM_GRIDTYPE_FLUID){
+					particle = ((RepFieldParticlesIntf)obj).get(i);
+				}
+				if (somtype == FieldIntf._SOM_GRIDTYPE_FIXED){
+					particle = (( FixedFieldParticlesIntf)obj).get(i);
+				}
+				
+				if (particle!=null){
+					particle.setIndexOfDataObject( mnode.getSerialID() );
+				}
 				
 			}catch(Exception e){
 				e.printStackTrace() ;
@@ -243,8 +265,6 @@ public class SomTargetedModeling    extends
 		}
 		
 		
-		
-		
 		particleField = somHost.getSomFluid().getParticleField( ) ;
 		
 		// re-arranging the endpoint for notifications
@@ -253,6 +273,8 @@ public class SomTargetedModeling    extends
 		
 		somLattice = new VirtualLattice(this,latticeProperties,(int) (100+numericID));
 		  
+		somLattice.setFieldIsDynamic( sfProperties.getSomGridType() == FieldIntf._SOM_GRIDTYPE_FLUID ) ;
+
 		// initStructures( somLattice );
 	 
 		boolean displayNodeCount = sfTask.getCounter()<=0;
@@ -810,10 +832,11 @@ public class SomTargetedModeling    extends
 		particleField.setSelectionSize( surroundN ) ;
 		
 		// asking for the surrounding, -> before start set the selection radius == new API function
-		String guid = particleField.getSurround( particleindex, 1, true);
+		String guid = particleField.getSurround( particleindex, 1, surroundN, true); 
 		
 		// will immediately return, the selection will be sent 
-		// through event callback to "onSelectionRequestCompleted()" below 
+		// through event callback to "onSelectionRequestCompleted()" below
+		
  		return  guid;
 	}
 	
@@ -882,12 +905,15 @@ public class SomTargetedModeling    extends
 	public void onSelectionRequestCompleted( Object resultsObj ) {
 		
 		// TODO: this should be immediately forked into objects, since the requests could be served in parallel
+		//       XXX XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    URGENT  abc124 
+		
 		SurroundResults results, clonedResults;
 		String str ;
 		int[] particleIndexes;
 		
 		results = (SurroundResults)resultsObj;  
 		
+		out.print(4, "event <onSelectionRequestCompleted()> received message with <resultsObj> ... ") ;
 		/*
 		 *  here we have to use a message queue running in its own process, otherwise
 		 *  the SurroundRetrieval Process will NOT be released...
@@ -921,7 +947,8 @@ public class SomTargetedModeling    extends
 		}
 		
 		ArrayList<SurroundResults> rQueue = somLattice.getSelectionResultsQueue(); 
-		rQueue.add( clonedResults );
+		// rQueue.add( clonedResults );
+		somLattice.getSelectionResultsQueue().add( clonedResults );
 		
 		//out.print(2, "size of rQueue : "+rQueue.size());
 		return; 

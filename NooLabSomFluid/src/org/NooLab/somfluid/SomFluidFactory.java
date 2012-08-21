@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Random;
  
  
+import org.NooLab.field.FieldIntf;
 import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
 import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
@@ -52,14 +53,6 @@ public class SomFluidFactory  implements 	//
 											SomAppFactoryClientIntf,
 											SomFluidFactoryClassifierIntf{
 	
-	public static final int _INSTANCE_TYPE_SOM        = 1;
-	public static final int _INSTANCE_TYPE_SPRITE     = 2;
-	public static final int _INSTANCE_TYPE_OPTIMIZER  = 3;
-	public static final int _INSTANCE_TYPE_TRANSFORM  = 4;
-	public static final int _INSTANCE_TYPE_CLASSIFIER = 7;
-	
-	public static final int _SOM_GRIDTYPE_FIXED = 1 ;
-	public static final int _SOM_GRIDTYPE_FLUID = 2 ;
 	
 	public static final int _GLUE_MODULE_ENV_NONE     = 0;
 	public static final int _GLUE_MODULE_ENV_CLIENT   = 1;
@@ -170,8 +163,8 @@ public class SomFluidFactory  implements 	//
 			
 		}
 		
-		if ((factorymode==SomFluidFactory._INSTANCE_TYPE_OPTIMIZER) ||
-			(factorymode==SomFluidFactory._INSTANCE_TYPE_SOM)){
+		if ((factorymode==FieldIntf._INSTANCE_TYPE_OPTIMIZER) ||
+			(factorymode==FieldIntf._INSTANCE_TYPE_SOM)){
 			
 			preparePhysicalParticlesField = 1;
 		}
@@ -194,8 +187,8 @@ public class SomFluidFactory  implements 	//
 		 
 		OutputSettings outs = sfProperties.getOutputSettings() ;
 		
-		boolean appubb = ((factoryMode==SomFluidFactory._INSTANCE_TYPE_OPTIMIZER) ||
-						  (factoryMode==SomFluidFactory._INSTANCE_TYPE_SOM)) ;
+		boolean appubb = ((factoryMode==FieldIntf._INSTANCE_TYPE_OPTIMIZER) ||
+						  (factoryMode==FieldIntf._INSTANCE_TYPE_SOM)) ;
 
 		// we only need a publishing dir if we are SOM or OPTIMIZER...
 		
@@ -231,7 +224,7 @@ public class SomFluidFactory  implements 	//
 		try {
 			
 			 
-			factoryMode = SomFluidFactory._INSTANCE_TYPE_CLASSIFIER ;
+			factoryMode = FieldIntf._INSTANCE_TYPE_CLASSIFIER ;
 			sfProperties = appProperties.getPropertiesConnection() ;
  			somAppProperties = appProperties;
  			
@@ -495,8 +488,8 @@ public class SomFluidFactory  implements 	//
 	/**
 	 * @param physicalFieldStarted the physicalFieldStarted to set
 	 */
-	public void setPhysicalFieldStarted(int physicalFieldStarted) {
-		this.physicalFieldStarted = physicalFieldStarted;
+	public void setPhysicalFieldStarted(int startedFlag) {
+		physicalFieldStarted = startedFlag;
 	}
 
 	public PhysicalFieldFactory getFieldFactory() {
@@ -616,12 +609,12 @@ public class SomFluidFactory  implements 	//
 		
 		SomFluidClassTaskIntf somclass=null;
 		
-		if (instancetype == SomFluidFactory._INSTANCE_TYPE_CLASSIFIER ){
+		if (instancetype == FieldIntf._INSTANCE_TYPE_CLASSIFIER ){
 			
 			somclass = (SomFluidClassTaskIntf) (new SomFluidTask( guidId, SomFluidTask._TASK_CLASSIFICATION ));
 			descr="A task has been created, type = <TASK_CLASSIFICATION>";
 		}
-		if (instancetype == SomFluidFactory._INSTANCE_TYPE_OPTIMIZER ){
+		if (instancetype == FieldIntf._INSTANCE_TYPE_OPTIMIZER ){
 			
 			somclass = (SomFluidClassTaskIntf) (new SomFluidTask( guidId, SomFluidTask._TASK_MODELING ));
 			descr="A task has been created, type = <_TASK_MODELING>";

@@ -107,9 +107,14 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	@Override
 	public void clear() {
 		
-		statistics.resetFieldStatisticsAll();
-		listOfRecords.clear() ;
-		listOfRecords.trimToSize() ;
+		try{
+			statistics.resetFieldStatisticsAll();
+			listOfRecords.clear() ;
+			listOfRecords.trimToSize() ;	
+		}catch(Exception e){
+		
+		}
+	
 	}
 
 	@Override

@@ -1,15 +1,16 @@
 package org.NooLab.somfluid.components;
 
-import org.NooLab.field.fixed.FixedField;
+ 
+
 import org.NooLab.field.fixed.FixedFieldFactory;
 import org.NooLab.field.fixed.FixedFieldIntf;
+import org.NooLab.field.fixed.FixedFieldWintf;
+import org.NooLab.field.fixed.components.FixedFieldParticlesIntf;
 import org.NooLab.field.interfaces.FixedNodeFieldEventsIntf;
 import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
-import org.NooLab.field.repulsive.RepulsionField;
-import org.NooLab.field.repulsive.RepulsionFieldFactory;
+ 
 import org.NooLab.field.repulsive.components.Neighborhood;
-import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
 import org.NooLab.somfluid.SomFluidFactory;
 
 
@@ -31,7 +32,7 @@ import org.NooLab.somfluid.SomFluidFactory;
 public class PhysicalFixedField extends ExternalGridFieldAbstract{	
 	
 	FixedFieldFactory rfFactory;
-	FixedField fixedField; 
+	FixedFieldWintf fixedField; 
 
 	FixedNodeFieldEventsIntf eventSink = null;
 	
@@ -41,7 +42,7 @@ public class PhysicalFixedField extends ExternalGridFieldAbstract{
 	
 	boolean initComplete = false;
 	
-	
+	 
 	// ========================================================================
 	public PhysicalFixedField( 	SomFluidFactory sfFactory, 
 								FixedNodeFieldEventsIntf eventsink, 
@@ -65,14 +66,22 @@ public class PhysicalFixedField extends ExternalGridFieldAbstract{
 	
 	// ========================================================================
 	
-	public void defineEventMessagingEndpoint( RepulsionFieldEventsIntf eventSink){
+	
+
+	public void defineEventMessagingEndpoint( FixedNodeFieldEventsIntf eventSink){
 		if (fixedField!=null){
 			fixedField.registerEventMessaging( eventSink );
-		}
+		}   
 	}
 	
 	
-	public FixedFieldIntf  createFixedField( SomFluidFactory sfFactory,  
+	@Override
+	public void registerEventMessaging(Object eventSinkObj) {
+		 
+		defineEventMessagingEndpoint( (FixedNodeFieldEventsIntf) eventSinkObj);
+	}
+
+	public FixedFieldWintf  createFixedField( SomFluidFactory sfFactory,  
 											 FixedNodeFieldEventsIntf eventSink,
 											 int nbrparticles ){ // ,
 	 
@@ -89,16 +98,26 @@ public class PhysicalFixedField extends ExternalGridFieldAbstract{
 		
 		// in contrast to standard SOM we need not to choose a big initial radius (usually half of the SOM size),
 		// since we can merge, split and move the particles, which prevents multicenters for very similar contexts
-		double rad = (int)( (Math.sqrt( nbrParticles )/3.5));
+
+		double rad = 0;
 		
-		int _selectionsize = (int) (Math.round((rad * rad)*Math.PI)*0.82)  ;
+		rad = ((int)( (Math.sqrt( nbrParticles )/3.5)) +
+		       (((double)fixedField.getPhysicalWidth()/5.0 + (double)fixedField.getPhysicalHeight()/5.0)/2.0))/2.0;
 		
-		if ((nbrParticles>500) && (_selectionsize>nbrParticles*0.4)){
-			_selectionsize = (int) (nbrParticles*0.4) ; // maxSelectionSize 1000, 5000
+		int smside = (int) Math.min( fixedField.getPhysicalWidth()/5.0 ,fixedField.getPhysicalHeight()/5.0 );
+		
+		if (rad > (double)smside * 0.54){
+			rad = (double)smside * 0.54 ;
+		}
+		
+		int _selectionsize = (int) (Math.round((rad * rad)*Math.PI)*0.84)  ;
+		
+		if ((nbrParticles>500) || (_selectionsize>nbrParticles*0.48)){
+			_selectionsize = (int) (nbrParticles*0.48) ; // maxSelectionSize 1000, 5000
 		}
 		 
+		rad = rad + fixedField.getResolutionFactor() ;
 		selszLimit = sfFactory.getSfProperties().getRestrictionForSelectionSize();
-		
 		
 		// this will calculate the next larger number for a hexagonal pattern;
 		// i.e. for the actual selection we have to truncate the selected collection
@@ -107,16 +126,15 @@ public class PhysicalFixedField extends ExternalGridFieldAbstract{
 		fixedField.setSelectionSize( _selectionsize ); // will be confined by setSelectionSizeRestriction()
 		_selectionsize = fixedField.getSelectionSize() ;
 		
+		
+		
+		out.setPrefix("[SomFluid-factory]");
+		
+		out.print(2, "updating field of particles ... ") ;
+		fixedField.update();
+		
 		 
-		
-		initComplete=false;
-		fixedField.setDelayedOnset(50);
-		out.setPrefix("[SomFlmuid-factory]");
-		
-		out.delay(200) ;
-											out.print(2, "updating field of particles ... ") ;
-		 fixedField.update();
-			 
+		initComplete = (fixedField.getParticles().size()>0) ;
 		 
 		if ((fixedField!=null) && (initComplete)){
 			String particltype , gridtype;
@@ -126,15 +144,17 @@ public class PhysicalFixedField extends ExternalGridFieldAbstract{
 			
 			int nbp = fixedField.getNumberOfParticles() ;
 			out.print(1, "\nInitialization has completed successfully, \n"+
-						 "now running a grid of type <> using <"+nbp+"> "+particltype+". \n") ;
-
+						 "                   now running a grid of type <> using <"+nbp+"> "+particltype+". \n") ;
+			                
 
 		}
-		return (FixedFieldIntf)fixedField;
+		return (FixedFieldWintf)fixedField;
 	}
 	
 	
-	public FixedFieldIntf getFixedField() {
+
+
+	public FixedFieldWintf getFixedField() {
 		return fixedField;
 	}
 
@@ -164,9 +184,9 @@ public class PhysicalFixedField extends ExternalGridFieldAbstract{
 	}
 
 	@Override
-	public ParticlesIntf getParticles() {
+	public FixedFieldParticlesIntf getParticles() {
 		 
-		return fixedField.getParticles();
+		return (FixedFieldParticlesIntf) fixedField.getParticles();
 	}
 
 
@@ -177,9 +197,11 @@ public class PhysicalFixedField extends ExternalGridFieldAbstract{
 	}
 
 	@Override
-	public String getSurround(int particleindex, int i, boolean b) {
-		 
-		return fixedField.getSurround(0, 0, true) ; // ?????
+	public String getSurround(int particleindex, int selmode, int surroundN, boolean autoselect) {
+
+		// for parallel queries we have to create a compartment
+		String gstr = fixedField.getSurround(particleindex, selmode, surroundN,autoselect) ; 
+		return gstr; 
 	}
 
 	@Override

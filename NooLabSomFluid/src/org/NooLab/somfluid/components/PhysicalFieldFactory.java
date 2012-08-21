@@ -1,8 +1,10 @@
 package org.NooLab.somfluid.components;
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.field.interfaces.FixedNodeFieldEventsIntf;
 import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
 import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
+import org.NooLab.field.repulsive.RepulsionFieldFactory;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.utilities.logging.PrintLog;
@@ -20,10 +22,11 @@ import org.NooLab.utilities.logging.PrintLog;
 public class PhysicalFieldFactory {	
 	
 	SomFluidProperties sfProperties ;
+	SomFluidFactory sfFactory;
 	
 	PhysicalGridFieldIntf somfield ;
 	RepulsionFieldEventsIntf eventSinkDynGrid;
-	FixedNodeFieldEventsIntf eventSingFixgrid;
+	FixedNodeFieldEventsIntf eventSinkFixgrid;
 
 	boolean somFieldInitComplete;
 	
@@ -54,7 +57,7 @@ public class PhysicalFieldFactory {
 		
 		// will be returned, is generic for any type of grid : PhysicalGridFieldIntf
 		somfield =null;
-		
+		this.sfFactory = sfFactory;
 		sfProperties = sfFactory.getSfProperties();
 		
 		defineEventMessagingEndpoint(eventSink )  ;
@@ -63,10 +66,13 @@ public class PhysicalFieldFactory {
 		
 		int somtype = sfProperties.getSomGridType();
 		
-		if (somtype == SomFluidFactory._SOM_GRIDTYPE_FIXED){
-			somfield = null; 
+		if (somtype == FieldIntf._SOM_GRIDTYPE_FIXED){
+			somfield = new PhysicalFixedField( sfFactory, 
+					   						   (FixedNodeFieldEventsIntf)eventSink,
+					   						   nbrparticles ) ;  
+			sfFactory.setPhysicalFieldStarted(1); 
 		}
-		if (somtype == SomFluidFactory._SOM_GRIDTYPE_FLUID){
+		if (somtype == FieldIntf._SOM_GRIDTYPE_FLUID){
 		
 			somfield = new PhysicalRepulsionField( sfFactory, 
 												   (RepulsionFieldEventsIntf)eventSink,
@@ -82,12 +88,18 @@ public class PhysicalFieldFactory {
 		int somtype = sfProperties.getSomGridType();
 		
 		// dependent on grid type
-		if (somtype == SomFluidFactory._SOM_GRIDTYPE_FLUID){
+		if (somtype == FieldIntf._SOM_GRIDTYPE_FLUID){
 			eventSinkDynGrid = (RepulsionFieldEventsIntf)eventSink ;
 		}
-		if (somtype == SomFluidFactory._SOM_GRIDTYPE_FIXED){
-			eventSingFixgrid = (FixedNodeFieldEventsIntf)eventSink ;
+		if (somtype == FieldIntf._SOM_GRIDTYPE_FIXED){
+			eventSinkFixgrid = (FixedNodeFieldEventsIntf)eventSink ;
 		}
+		if (somfield!=null){
+			somfield.registerEventMessaging( eventSink );
+		}
+		
+		
+		
 	}
 
 

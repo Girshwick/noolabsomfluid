@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 import processing.core.*;
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.SomApplicationResults;
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
@@ -73,7 +74,7 @@ public class SomFluidModuleApplet extends PApplet{
 
 		 
 		
-		somInstance = new SomModuleInstance( SomFluidFactory._INSTANCE_TYPE_SOM , 
+		somInstance = new SomModuleInstance( FieldIntf._INSTANCE_TYPE_SOM , 
 											 SomFluidFactory._GLUE_MODULE_ENV_NONE,
 											 sourceForProperties ) ;
 		somInstance.startInstance() ;
@@ -284,16 +285,16 @@ class SomModuleInstance implements 	Runnable,
 		 * Nevertheless the module should be able to exhibit a particular "main" functionality 
 		 * 
 		 */
-		if (instanceType == SomFluidFactory._INSTANCE_TYPE_SOM){
+		if (instanceType == FieldIntf._INSTANCE_TYPE_SOM){
 			prepareSOM();
 		}
-		if (instanceType == SomFluidFactory._INSTANCE_TYPE_OPTIMIZER){
+		if (instanceType == FieldIntf._INSTANCE_TYPE_OPTIMIZER){
 			prepareSomOptimizer();
 		}
-		if (instanceType == SomFluidFactory._INSTANCE_TYPE_SPRITE){
+		if (instanceType == FieldIntf._INSTANCE_TYPE_SPRITE){
 			prepareSomSprite();
 		}
-		if (instanceType == SomFluidFactory._INSTANCE_TYPE_TRANSFORM){
+		if (instanceType == FieldIntf._INSTANCE_TYPE_TRANSFORM){
 			prepareSomTransformer();
 		}
 		

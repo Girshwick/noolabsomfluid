@@ -573,7 +573,7 @@ if (currentEpoch>=3){
 			sampleRecordIDs=null;
 			
 		}catch(Exception e){
-			if (LogControl.Level >=3){
+			if (LogControl.Level >=2){
 				e.printStackTrace();
 			}else{
 				out.printErr(1, e.getMessage());
@@ -788,26 +788,33 @@ if (currentEpoch>=3){
 
  
 	
-	private void clearNodesExtension( int currentEpoch){
+	private void clearNodesExtension( int currentEpoch) {
 		
 		NodeTask task;
 		LatticeFutureVisor latticeFutureVisor;
-		
+		int n=0;
 		MetaNodeIntf  node;
 		ExtensionalityDynamicsIntf  ext;
 		IntensionalitySurfaceIntf  ints;
 		
-		for (int i=0;i<dSom.somLattice.size();i++){
-		
-			node = dSom.somLattice.getNode(i);
+		try{
+			node=null;
+			n = dSom.somLattice.size();
+			for (int i=0;i<n;i++){
 			
-			ext  = node.getExtensionality();
-			ints = node.getIntensionality() ;
-			
-			ext.clear();
-			
+				node = dSom.somLattice.getNode(i);
+				
+				ext  = node.getExtensionality();
+				ints = node.getIntensionality() ;
+				
+				ext.clear();
+				
+			}
+
+		}catch(Exception e){
+			e.printStackTrace();
 		}
-		
+		n=n+1-1;
 		if (currentEpoch >= 1) {
 			 // send a message to all nodes
 			

@@ -585,7 +585,10 @@ public class DependencyScreener {
 
 				} // i-> all pairs
 				
-				bestEstimatedUtilities.addAll( bestEstimatedUtilitiesList.get(0) );
+				if (bestEstimatedUtilitiesList.size()>0){
+					bestEstimatedUtilities.addAll( bestEstimatedUtilitiesList.get(0) );
+				}
+				
 			}							
 			
 			screeningObserver.observerIsRunning = false;							
