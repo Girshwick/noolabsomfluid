@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.Vector;
 
+import org.NooLab.field.FieldGridSubstrateIntf;
+import org.NooLab.field.FieldIntf;
+import org.NooLab.field.fixed.FixedField;
 import org.NooLab.field.repulsive.RepulsionFieldCore;
 import org.NooLab.field.repulsive.components.data.RetrievalParamSet;
 import org.NooLab.field.repulsive.components.topology.CoverageByBars;
@@ -17,37 +20,21 @@ import org.NooLab.utilities.datatypes.IndexDistance;
 
 
 
+/**
+ * 
+ * this is a sister component for "GridSubstrate"
+ * 
+ * 
+ *
+ */
+public class ParticleGrid implements FluidFieldGridSubstrateIntf{
 
-public class ParticleGrid {
-
-	public final static int _STRING  = 1; // like in a violine, or in a model of atomic bonds ("bar-like electron clouds")
-	public final static int _RECT    = 3;
-	public final static int _CIRCLE  = 4;
-	public final static int _ELLIPSE = 9; // will be a subset of circle, i.e. it is inscribed
 	
-	
-	// some topological properties of the area regarding the border  
-	public static final int __BORDER_ALL  = 1; // rectangle
-	public static final int __BORDER_NONE = 2; // torus
-	public static final int __BORDER_OPEN_L = 5; // 
-	public static final int __BORDER_OPEN_R = 6; // 
-	public static final int __BORDER_OPEN_T = 7; // 
-	public static final int __BORDER_OPEN_D = 8; //
-	public static final int __BORDER_OPEN_ZA = 15; //
-	public static final int __BORDER_OPEN_ZB = 16; //
-	public static final int __BORDER_OPEN_Z  = 17; //
-	
-	public static final int __BORDER_LR_ONLY = 20; // 
-	public static final int __BORDER_SN_ONLY = 21; // SN = south-north 
-	public static final int __BORDER_EW_ONLY = 22; // 
-	public static final int __BORDER_ZA_ONlY = 23; // 
-	public static final int __BORDER_ZB_ONLY = 24; // 
-	
-	public static final int __BORDER_SE_ONLY = 21; //
-	public static final int __BORDER_NW_ONLY = 21; //
-	
-	
-	RepulsionFieldCore rfCore ;
+	//RepulsionFieldCore rfCore ;
+	// FieldIntf field ;
+	RepulsionFieldCore field;
+	private RepulsionFieldCore rfCore;
+	private FixedField fixedField;
 	
 	// the grid contains a pointer to the particle index
 	int[][] grid ; 
@@ -69,12 +56,15 @@ public class ParticleGrid {
 	SelectionConstraints selectionConstraints ; 
 	
 	ArrUtilities arrutil = new ArrUtilities();
-
+	
+	
 	// ========================================================================
 	public ParticleGrid( RepulsionFieldCore rfc ) {
-		 
-		rfCore = rfc ;
+		rfCore = rfc; 
+		field = rfc ;
 	}
+	
+ 
 	// ========================================================================
 	
 	public void cloneDataSectionsFrom( ParticleGrid pg ){
@@ -124,9 +114,9 @@ public class ParticleGrid {
 		double minDistance = -1.0,x,y;
 		int ncol,nrow,c,r;
 		
-		minDistance = rfCore.getMinimalDistance() ;
+		minDistance = field.getMinimalDistance() ;
 		if ((minDistance<0) || (minDistance>999999999.9)){
-			rfCore.out.print(2, "ParticleGrid, update not possible...") ;
+			// rfCore.out.print(2, "ParticleGrid, update not possible...") ;
 			return ;
 		}
 		
@@ -138,10 +128,10 @@ public class ParticleGrid {
 		
 		resolution = minDistance/2.3;
 		
-		ncol = (int) (Math.round(rfCore.getAreaWidth()/resolution) +1);
-		nrow = (int) (Math.round(rfCore.getAreaHeight()/resolution) +1);
+		ncol = (int) (Math.round(field.getAreaWidth()/resolution) +1);
+		nrow = (int) (Math.round(field.getAreaHeight()/resolution) +1);
 		
-		rfCore.out.print(4, "ParticleGrid, updating r,c: "+nrow+", "+ncol) ;
+		// rfCore.out.print(4, "ParticleGrid, updating r,c: "+nrow+", "+ncol) ;
 		
 		grid = new int[nrow][ncol] ; // x,y
 		colMaps = new PositionMap[nrow];
@@ -154,16 +144,16 @@ public class ParticleGrid {
 		}
 		
 		c=0;
-		for (int i=0;i<rfCore.particles.size();i++){
+		for (int i=0;i<field.getParticles().size();i++){
 			
-			x = rfCore.particles.get(i).x ;
-			y = rfCore.particles.get(i).y ;
+			x = field.getParticles().get(i).getX() ;
+			y = field.getParticles().get(i).getY() ;
 			
 			c = (int) Math.round(x/resolution) ;
  			r = (int) Math.round(y/resolution) ;
  			
  			if (grid[r][c]>=0){
- 				rfCore.out.printErr(2, "grid position <"+c+","+r+"> already taken by index "+grid[c][r]+", will be overwritten by index "+i+"! ");
+ 				// rfCore.out.printErr(2, "grid position <"+c+","+r+"> already taken by index "+grid[c][r]+", will be overwritten by index "+i+"! ");
  			}
 			grid[r][c] = i;
 			
@@ -270,7 +260,7 @@ public class ParticleGrid {
 		if (ix<0){
 			// this does not work .... better; calculate a box and get indexed distances
 			z=0;
-			ix = (new GetIndexListThroughParticleGrid( this, -1, 2*rfCore.getAverageDistance() )).retrieveParticleForCoordinate( c*resolution, r*resolution);
+			ix = (new GetIndexListThroughParticleGrid( this, -1, 2*field.getAverageDistance() )).retrieveParticleForCoordinate( c*resolution, r*resolution);
 	 
 		}
 		resultPos = ix;
@@ -319,6 +309,84 @@ public class ParticleGrid {
 		
 		updateCounter++;
 		return updateCounter%period;
+	}
+
+	public RepulsionFieldCore getRfCore() {
+		return rfCore;
+	}
+
+	public FixedField getFixedField() {
+		return fixedField;
+	}
+
+	public FieldIntf getField() {
+		return field;
+	}
+
+	@Override
+	public SelectionConstraints getSelectionConstraints() {
+		
+		return selectionConstraints;
+	}
+
+	@Override
+	public double getRadiusCorrectionFactor() {
+		
+		return radiusCorrectionFactor;
+	}
+
+	@Override
+	public int[][] getGrid() {
+		
+		return grid;
+	}
+
+	@Override
+	public void setSelectionConstraints(SelectionConstraints selectconstraints) {
+		
+		selectionConstraints = selectconstraints ;
+	}
+
+	@Override
+	public double getResolution() {
+		// 
+		return resolution;
+	}
+
+	@Override
+	public void setRadiusCorrectionFactor(double value) {
+		// 
+		radiusCorrectionFactor  =value;
+	}
+
+	@Override
+	public void setResolution(double value) {
+		
+		resolution = value;
+	}
+
+	@Override
+	public Object[] getColMaps() {
+		
+		return colMaps;
+	}
+
+	@Override
+	public Object getRowMap() {
+		
+		return rowMap;
+	}
+
+	@Override
+	public int getColMapsPositions(int r, int particleIndex) {
+		
+		return colMaps[r].getPosition().get(particleIndex) ;
+	}
+
+	@Override
+	public int getRowMapPosition(int particleIndex) {
+		
+		return rowMap.position.get(particleIndex);
 	}
 
 

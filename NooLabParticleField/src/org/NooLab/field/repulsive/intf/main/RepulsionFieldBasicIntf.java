@@ -4,13 +4,15 @@ package org.NooLab.field.repulsive.intf.main;
 
 import java.util.ArrayList;
 
+import org.NooLab.field.FieldHostIntf;
+import org.NooLab.field.FieldIntf;
 import org.NooLab.field.repulsive.RepulsionFieldCore;
 import org.NooLab.field.repulsive.components.data.AreaPoint;
 import org.NooLab.field.repulsive.components.data.LineXY;
 import org.NooLab.field.repulsive.components.data.PointXY;
 import org.NooLab.field.repulsive.intf.ParticleDataHandlingIntf;
 import org.NooLab.field.repulsive.intf.particles.GraphParticlesIntf;
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
 
 
 /**
@@ -36,6 +38,7 @@ public interface RepulsionFieldBasicIntf extends RepulsionFieldSelectionIntf{
 	
 	public String getVersionStr();
 	
+	public FieldHostIntf getGenericFieldReference();
 	 
 	// -------------------------------------
 	
@@ -50,7 +53,7 @@ public interface RepulsionFieldBasicIntf extends RepulsionFieldSelectionIntf{
 	 *  the collection of particles as items </br>
 	 *  this is necessary if the particles contain pointers to data objects 
 	 */
-	public ParticlesIntf getParticles() ;
+	public RepFieldParticlesIntf getParticles() ;
 	
 
 	

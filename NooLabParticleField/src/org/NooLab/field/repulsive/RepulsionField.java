@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
+import org.NooLab.field.FieldHostIntf;
 import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
 import org.NooLab.field.repulsive.components.FacadeUpdater;
 import org.NooLab.field.repulsive.components.Neighborhood;
@@ -12,7 +13,7 @@ import org.NooLab.field.repulsive.components.ParticleAction;
 import org.NooLab.field.repulsive.components.RepulsionFieldProperties;
 import org.NooLab.field.repulsive.components.SelectionConstraints;
 import org.NooLab.field.repulsive.components.SurroundBuffers;
-import org.NooLab.field.repulsive.components.SurroundRetrieval;
+import org.NooLab.field.repulsive.components.FluidFieldSurroundRetrieval;
 import org.NooLab.field.repulsive.components.data.PointXY;
 import org.NooLab.field.repulsive.components.data.SurroundResults;
 import org.NooLab.field.repulsive.intf.ParticleDataHandlingIntf;
@@ -23,9 +24,9 @@ import org.NooLab.field.repulsive.intf.main.RepulsionFieldCoreIntf;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldSelectionIntf;
 import org.NooLab.field.repulsive.intf.particles.GraphParticlesIntf;
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
-import org.NooLab.field.repulsive.particles.Particle;
-import org.NooLab.field.repulsive.particles.Particles;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
 
 
 import org.NooLab.utilities.ArrUtilities;
@@ -76,10 +77,10 @@ public class RepulsionField implements 	Runnable,
 	Neighborhood neighborhood;
 	//SurroundBuffers surroundBuffers; 
 	
-	Particles particles ;
-	Particles queuedCoreParticles;
+	RepulsionFieldParticles particles ;
+	RepulsionFieldParticles queuedCoreParticles;
 	
-	SurroundRetrieval surroundRetrieval;
+	FluidFieldSurroundRetrieval surroundRetrieval;
 	ParticleAction particleAction;
 	
 	RepulsionFieldProperties rfProperties;
@@ -212,10 +213,10 @@ public class RepulsionField implements 	Runnable,
 	 * @param y
 	 */
 	@SuppressWarnings("unused")
-	private void createFacadeParticle( Particle coreParticle){
+	private void createFacadeParticle( RepulsionFieldParticle coreParticle){
 		
 		FacadeUpdater facade; 
-		Particle p;
+		RepulsionFieldParticle p;
 		int count=0;
 		// facade = new FacadeUpdater( this, newParticleIndex, particles,surroundBuffers,neighborhood, coreInstance) ;
 	
@@ -238,7 +239,7 @@ public class RepulsionField implements 	Runnable,
 	}
 	
 	@Override
-	public void onAddingParticle(Object observable, Particle p, int index) {
+	public void onAddingParticle(Object observable, RepulsionFieldParticle p, int index) {
 		 
 		out.print(3, "facade received msg in onAddingParticle() ... ");
 		updatingBuffersFromCore( index );
@@ -246,7 +247,7 @@ public class RepulsionField implements 	Runnable,
 	
 
 	@Override
-	public void onDeletingParticle(Object observable, Particle p, int index) {
+	public void onDeletingParticle(Object observable, RepulsionFieldParticle p, int index) {
 		// 
 		
 	}
@@ -281,7 +282,7 @@ public class RepulsionField implements 	Runnable,
 		 
 		int i=particles.size();
 		while (i>=0){
-			Particle p=particles.get(i);
+			RepulsionFieldParticle p=particles.get(i);
 			if (p.getIndexesOfAllDataObject()!=null)p.getIndexesOfAllDataObject().clear();
 			p=null;
 		}
@@ -383,7 +384,7 @@ public class RepulsionField implements 	Runnable,
 		boolean autoselect;
 		
 
-		public SurroundRetrievalHandler(  double xpos, double ypos, boolean autoselect){
+		public SurroundRetrievalHandler(  double xpos, double ypos, int surroundN,boolean autoselect){
 			
 			surroundN = coreInstance.selectionSize ;
 			this.xpos= (int) xpos;
@@ -392,7 +393,7 @@ public class RepulsionField implements 	Runnable,
 			this.autoselect = autoselect;
 		}
 
-		public SurroundRetrievalHandler(  int xpos, int ypos, int selectMode, boolean autoselect){
+		public SurroundRetrievalHandler(  int xpos, int ypos, int selectMode, int surroundN,boolean autoselect){
 			surroundN = coreInstance.selectionSize ;
 			this.xpos= xpos;
 			this.ypos= ypos;
@@ -434,13 +435,13 @@ public class RepulsionField implements 	Runnable,
 			}
 			 
 			// for getting the results we should NOT refer to the core, of course !!
-			surroundRetrieval = new SurroundRetrieval( rField, coreInstance.particleGrid,  (SurroundRetrievalObserverIntf)rField) ; 
+			surroundRetrieval = new FluidFieldSurroundRetrieval( rField, coreInstance.particleGrid,  (SurroundRetrievalObserverIntf)rField) ; 
 			
 			pix = surroundRetrieval.addRetrieval( xpos, ypos, autoselect);
 			
 			// this will directly return, the retrieval then happens in another thread, who will signal
 			// its results through a callback
-			guidStr = surroundRetrieval.go(pix,SurroundRetrieval._TASK_PARTICLE);
+			guidStr = surroundRetrieval.go(pix,FluidFieldSurroundRetrieval._TASK_PARTICLE);
 			 
 			availableResults.add(guidStr);
 			
@@ -448,7 +449,7 @@ public class RepulsionField implements 	Runnable,
 			
 			String str = Thread.currentThread().getStackTrace()[1].getMethodName();
 			// 	caller: GetStacktrace()[1]
-			
+			z=z+1-1;
 			return guidStr;
 			
 		}
@@ -477,7 +478,7 @@ public class RepulsionField implements 	Runnable,
 				int pix;
 				 
 				if (surroundRetrieval==null){
-					surroundRetrieval = new SurroundRetrieval( rField, coreInstance.particleGrid,  (SurroundRetrievalObserverIntf)rField) ;
+					surroundRetrieval = new FluidFieldSurroundRetrieval( rField, coreInstance.particleGrid,  (SurroundRetrievalObserverIntf)rField) ;
 				}else{  surroundRetrieval.setParticleGrid( coreInstance.particleGrid );
 				}
 				surroundRetrieval.setSelectionConstraints( coreInstance.selectionConstraints );
@@ -486,7 +487,7 @@ public class RepulsionField implements 	Runnable,
 				
 				pix = surroundRetrieval.addRetrieval( xpos, ypos, surroundN, selectMode, autoselect);
 				
-				guidStr = surroundRetrieval.go(pix, SurroundRetrieval._TASK_SURROUND_C);
+				guidStr = surroundRetrieval.go(pix, FluidFieldSurroundRetrieval._TASK_SURROUND_C);
 				  
 				
 				// in surroundRetrieval there is a resultMap which now contains an entry with guidStr;
@@ -520,21 +521,21 @@ public class RepulsionField implements 	Runnable,
 
 				if (surroundRetrieval==null){
 					out.print(3,"getSurround(), NEW SurroundRetrieval");
-					surroundRetrieval = new SurroundRetrieval( rField, coreInstance.particleGrid,  (SurroundRetrievalObserverIntf)rField) ;
+					surroundRetrieval = new FluidFieldSurroundRetrieval( rField, coreInstance.particleGrid,  (SurroundRetrievalObserverIntf)rField) ;
 				}
 
 				surroundRetrieval.setSelectionConstraints( coreInstance.selectionConstraints );
 				
 				pix = surroundRetrieval.addRetrieval(index, surroundN, selectMode, autoselect);
 
-				guidStr = surroundRetrieval.go(pix, SurroundRetrieval._TASK_SURROUND_X);
+				guidStr = surroundRetrieval.go(pix, FluidFieldSurroundRetrieval._TASK_SURROUND_X);
 				return guidStr;
 			}
 			return "";
 		}
 
 		public void close() {
-			// TODO Auto-generated method stub
+			// 
 			
 		}
 		
@@ -553,23 +554,23 @@ public class RepulsionField implements 	Runnable,
 		 * of that message ALSO has to be stateless = thread-safe by using an acceptance class!!!
 		 * (FIFO message queue for serializing parallel/overlapping requests) 
 		 */  
-		SurroundRetrievalHandler suRR = (new SurroundRetrievalHandler( (double)xpos, (double)ypos, autoselect)) ;
+		SurroundRetrievalHandler suRR = (new SurroundRetrievalHandler( (double)xpos, (double)ypos, 0,autoselect)) ;
 		String selection = suRR.go(1) ;
 		suRR.close();
 		return selection;
 	}
 
 	@Override
-	public String getSurround(int xpos, int ypos, int selectMode, boolean autoselect) {
+	public String getSurround(int xpos, int ypos, int selectMode, int surroundN,boolean autoselect) {
 		// EXCEPT startup, NOT handled by passing through, served from objects of the facade 
 		
-		return (new SurroundRetrievalHandler( xpos, ypos, selectMode, autoselect)).go(2);
+		return (new SurroundRetrievalHandler( xpos, ypos, selectMode, surroundN,autoselect)).go(2);
 	}
 	
 	@Override
-	public String getSurround( int index, int selectMode, boolean autoselect) {
+	public String getSurround( int index, int selectMode, int surroundN, boolean autoselect) {
 
-		return (new SurroundRetrievalHandler( index, selectMode, autoselect)).go(3);
+		return (new SurroundRetrievalHandler( index, selectMode, surroundN,autoselect)).go(3);
 	}
 	
 	@Override
@@ -624,7 +625,7 @@ public class RepulsionField implements 	Runnable,
 	
 		
 		if (surroundRetrieval==null){
-			surroundRetrieval = new SurroundRetrieval( this, coreInstance.particleGrid,  (SurroundRetrievalObserverIntf)this) ;
+			surroundRetrieval = new FluidFieldSurroundRetrieval( this, coreInstance.particleGrid,  (SurroundRetrievalObserverIntf)this) ;
 		}
 
 		// pix then will contain the indx to a slot in the collecton of
@@ -632,7 +633,7 @@ public class RepulsionField implements 	Runnable,
 		
 		pix = surroundRetrieval.addRetrieval(indexes, thickness, endPointRatio, autoselect);
 	
-		guidStr = surroundRetrieval.go(pix, SurroundRetrieval._TASK_SURROUND_MST);
+		guidStr = surroundRetrieval.go(pix, FluidFieldSurroundRetrieval._TASK_SURROUND_MST);
 	
 		return guidStr;
 	}
@@ -644,13 +645,13 @@ public class RepulsionField implements 	Runnable,
 		int pix;
 		
 		if (surroundRetrieval==null){
-			surroundRetrieval = new SurroundRetrieval( this, coreInstance.particleGrid, (SurroundRetrievalObserverIntf)this) ;
+			surroundRetrieval = new FluidFieldSurroundRetrieval( this, coreInstance.particleGrid, (SurroundRetrievalObserverIntf)this) ;
 		}
 
 		// pix then will contain the index to a slot in the collecton of "paramSets"
 		pix = surroundRetrieval.addRetrieval( indexes,  thickness, topology, autoselect);
 		
-		guidStr = surroundRetrieval.go(pix,SurroundRetrieval._TASK_SURROUND_CXHULL);
+		guidStr = surroundRetrieval.go(pix,FluidFieldSurroundRetrieval._TASK_SURROUND_CXHULL);
 		 
 		return guidStr;
 	}
@@ -767,7 +768,7 @@ public class RepulsionField implements 	Runnable,
 
 
 	@Override
-	public ParticlesIntf getParticles() {
+	public RepFieldParticlesIntf getParticles() {
 		 
 		if (particles==null){
 			return coreInstance.getParticles();
@@ -814,7 +815,7 @@ public class RepulsionField implements 	Runnable,
 	@Override
 	public int splitParticle(int index, ParticleDataHandlingIntf pdataHandler) {
 		int newParticleIndex;
-		Particle particle;
+		RepulsionFieldParticle particle;
 		
 		particle = particles.get(index) ;
 		
@@ -856,7 +857,7 @@ public class RepulsionField implements 	Runnable,
 	@Override
 	public void moveParticle(int particleIndex, int type, double xParam, double yParam) {
 		double newX, newY;
-		Particle particle;
+		RepulsionFieldParticle particle;
 		
 		particle = particles.get(particleIndex) ;
 		
@@ -1233,8 +1234,12 @@ public class RepulsionField implements 	Runnable,
 	// ========================================================================
 
 	@Override                        
-	public void surroundRetrievalUpdate( SurroundRetrieval Observable, String guid) {
-		SurroundRetrieval sr = null;
+	public void surroundRetrievalUpdate( Object _Observable, String guid) {
+		FluidFieldSurroundRetrieval sr = null;
+		FluidFieldSurroundRetrieval Observable ;
+		
+		
+		Observable = (FluidFieldSurroundRetrieval)_Observable;
 		
 		out.print(4, "result returned to field from SurroundRetrieval(), result id = "+guid );
 		
@@ -1252,25 +1257,25 @@ public class RepulsionField implements 	Runnable,
 
 			result.arrutil = arrutil;
 			
-			if (result.getParamSet().getTask() >= SurroundRetrieval._TASK_SURROUND_C) {
+			if (result.getParamSet().getTask() >= FluidFieldSurroundRetrieval._TASK_SURROUND_C) {
 				// particles.selectSurround( result.getParticleIndexes(), result.getParamSet().isAutoselect());
 			}
 
-			if (result.getParamSet().getTask() <= SurroundRetrieval._TASK_PARTICLE) {
+			if (result.getParamSet().getTask() <= FluidFieldSurroundRetrieval._TASK_PARTICLE) {
 				result.setParticleIndexes( new int[] { (int) result.particleIndex });
 				// particles.selectSurround(result.getParticleIndexes(), result.getParamSet().isAutoselect());
 				
-				if (result.getParamSet().getTask() <= SurroundRetrieval._TASK_PARTICLE) {
+				if (result.getParamSet().getTask() <= FluidFieldSurroundRetrieval._TASK_PARTICLE) {
 					// particles.selectSurround(result.getParticleIndexes(), result.getParamSet().isAutoselect());
 				}
 			}
 
-			if (result.getParamSet().getTask() == SurroundRetrieval._TASK_SURROUND_MST){
+			if (result.getParamSet().getTask() == FluidFieldSurroundRetrieval._TASK_SURROUND_MST){
 				// particles.selectSurround(result.getParticleIndexes(), result.getParamSet().isAutoselect());
 			}
 			if ((eventsReceptor != null)  ){
 				try{
-					sr = (SurroundRetrieval)suRRMap.get(result.getGuid());
+					sr = (FluidFieldSurroundRetrieval)suRRMap.get(result.getGuid());
 					
 				}catch(Exception e){
 					
@@ -1319,8 +1324,15 @@ public class RepulsionField implements 	Runnable,
 	
 	@Override
 	public void handlingDataOnParticleSplit( Object observable,
-											 Particles particles, int originix, int pullulix) {
+											 RepulsionFieldParticles particles, int originix, int pullulix) {
 		
+	}
+
+
+	@Override
+	public FieldHostIntf getGenericFieldReference() {
+	 
+		return coreInstance;
 	}
  
 

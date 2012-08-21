@@ -2,25 +2,28 @@ package org.NooLab.field.repulsive.particles;
 
 import java.util.ArrayList;
 
+import org.NooLab.field.FieldHostIntf;
+import org.NooLab.field.FieldParticleIntf;
 import org.NooLab.field.repulsive.RepulsionField;
 import org.NooLab.field.repulsive.components.SurroundBuffers;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldBasicIntf;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.field.repulsive.intf.particles.GraphParticlesIntf;
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
 
  
 
-public class Particles implements ParticlesIntf , GraphParticlesIntf{ 
+public class RepulsionFieldParticles implements RepFieldParticlesIntf , GraphParticlesIntf{ 
 	// not correct yet, we have to maintain 
 	
 	String parentName = "" ; // name of the field which is hosting this collection of particles
 	
-	ArrayList<Particle> items = new ArrayList<Particle>();
+	ArrayList<RepulsionFieldParticle> items = new ArrayList<RepulsionFieldParticle>();
 	
 	ParticlePropertiesIntf particleProperties;
 	
 	RepulsionFieldBasicIntf field;
+	FieldHostIntf parentField;
 	
 	int nbrParticles;
 	double averageDistance=0.0, densityPerAcre=0.0 ;
@@ -28,10 +31,10 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 	private double defaultRadius;
 	
 	
-	public Particles( RepulsionFieldBasicIntf field ){ // , int nbrParticles
+	public RepulsionFieldParticles( RepulsionFieldBasicIntf field , FieldHostIntf parent){ // , int nbrParticles
 		this.field = field;
 		// this.nbrParticles = nbrParticles;
-		 
+		parentField = parent;
 	}
 	
 	/**
@@ -39,9 +42,11 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 	 * @param surroundBuffers 
 	 * @param particles
 	 */
-	public Particles(Particles templateParticles) { // , SurroundBuffers sbs
+	public RepulsionFieldParticles(RepulsionFieldParticles templateParticles,FieldHostIntf parent) { // , SurroundBuffers sbs
 		
-		Particle p;
+		RepulsionFieldParticle p;
+		
+		parentField = parent;
 		particleProperties = templateParticles.particleProperties ;
 		int k;
 		
@@ -50,7 +55,7 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 			if (i==641){
 				k=0;
 			}
-			p = new Particle( templateParticles.size(),i, templateParticles.get(i) );// , sbs
+			p = new RepulsionFieldParticle( templateParticles.size(),i, templateParticles.get(i),parentField );// , sbs
 			
 			// p.isAlive = templateParticles.get(i).isAlive; // will be set to -1 if it is scheduled to be deleted
 			items.add(p);
@@ -67,8 +72,8 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 	 * @param sbs
 	 * @param beyondIndex
 	 */
-	public void updateByParticles(Particles srcParticles,  int beyondIndex) { // SurroundBuffers sbs,
-		Particle srcP, p;
+	public void updateByParticles(RepulsionFieldParticles srcParticles,  int beyondIndex) { // SurroundBuffers sbs,
+		RepulsionFieldParticle srcP, p;
 	 
 		
 		int fn,pn ,startix;
@@ -92,7 +97,7 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 			
 			if (i>items.size()-1){ 
 				// mirroring the add operation in the core 
-				p = new Particle( items.size(), i ,srcP); // , sbs
+				p = new RepulsionFieldParticle( items.size(), i ,srcP,parentField); // , sbs
 				p.setDataAsCloneOf( srcP );
 				items.add(p) ;
 				
@@ -128,12 +133,19 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 		return items.size();
 	}
 
-	public void add(Particle p){
+	public void add(RepulsionFieldParticle p){
 		items.add(p);
 		nbrParticles = items.size() ;
 	}
 
-	public Particle get(int index){
+	@Override
+	public void add(FieldParticleIntf p) {
+		 
+		items.add((RepulsionFieldParticle) p);
+		nbrParticles = items.size() ;
+	}
+
+	public RepulsionFieldParticle get(int index){
 		if ((items!=null) && (index>=0) && (index<items.size())){
 			nbrParticles = items.size();
 			
@@ -145,7 +157,7 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 	}
 	
 	public void remove(int index){
-		Particle p;
+		RepulsionFieldParticle p;
 		
 		p = items.get(index) ;
 		// p.surroundBuffer.clear(index); // informs its neighbors
@@ -157,15 +169,15 @@ public class Particles implements ParticlesIntf , GraphParticlesIntf{
 	}
 	
 
-	public Particle getByProperty(int index){
+	public RepulsionFieldParticle getByProperty(int index){
 		return items.get(index);
 	}
 
-	public ArrayList<Particle> getItems() {
+	public ArrayList<RepulsionFieldParticle> getItems() {
 		return items;
 	}
 
-	public void setItems(ArrayList<Particle> items) {
+	public void setItems(ArrayList<RepulsionFieldParticle> items) {
 		this.items = items;
 	}
 

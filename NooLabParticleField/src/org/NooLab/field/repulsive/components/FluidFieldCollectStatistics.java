@@ -2,20 +2,20 @@ package org.NooLab.field.repulsive.components;
 
 import java.util.Vector;
 
+import org.NooLab.field.Stoppable;
 import org.NooLab.field.repulsive.RepulsionFieldCore;
 import org.NooLab.field.repulsive.components.infra.PhysicsDigester;
-import org.NooLab.field.repulsive.intf.Stoppable;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
-import org.NooLab.field.repulsive.particles.Particles;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
 import org.NooLab.utilities.logging.PrintLog;
 
 // nbthrd  sfthrd wqthrd 
 
 
-public class CollectStatistics implements Runnable,Stoppable{
+public class FluidFieldCollectStatistics implements Runnable,Stoppable{
 	
 	RepulsionFieldCore  parentField;
-	Particles particles;
+	RepulsionFieldParticles particles;
  	
 	boolean wasMetaStable=false;
 	public boolean isPhysicsProcessActivated=false;
@@ -40,7 +40,7 @@ public class CollectStatistics implements Runnable,Stoppable{
 	PrintLog out;
 	
 	
-	public CollectStatistics( RepulsionFieldCore  parent ){
+	public FluidFieldCollectStatistics( RepulsionFieldCore  parent ){
 		
 		
 		try{

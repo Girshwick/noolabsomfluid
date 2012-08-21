@@ -2,7 +2,8 @@ package org.NooLab.field.repulsive.components.topology;
 
 import java.util.ArrayList;
 
-import org.NooLab.field.repulsive.particles.Particle;
+import org.NooLab.field.FieldParticleIntf;
+// import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
 
 
 
@@ -10,9 +11,9 @@ import org.NooLab.field.repulsive.particles.Particle;
 public class ParticleLinkages {
 	
 	ArrayList<ParticleLinkage> particleLinkages = new ArrayList<ParticleLinkage>();
-	Particle parentParticle ;
+	FieldParticleIntf parentParticle ;
 	
-	public ParticleLinkages( Particle p){
+	public ParticleLinkages( FieldParticleIntf p){
 		parentParticle = p;
 		
 	}

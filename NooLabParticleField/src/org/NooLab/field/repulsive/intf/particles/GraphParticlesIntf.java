@@ -6,6 +6,8 @@ public interface GraphParticlesIntf extends ParticlesBaseIntf{
 	
 	 
 	public GraphParticleIntf get(int index);
+
+	public int size();
   
 	
 }

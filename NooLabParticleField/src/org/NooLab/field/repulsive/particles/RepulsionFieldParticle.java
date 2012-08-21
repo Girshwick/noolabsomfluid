@@ -4,10 +4,12 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.NooLab.field.FieldHostIntf;
+import org.NooLab.field.FieldParticleIntf;
+import org.NooLab.field.interfaces.DataObjectIntf;
 import org.NooLab.field.repulsive.components.topology.ParticleBondsIntf;
 import org.NooLab.field.repulsive.components.topology.ParticleLinkage;
 import org.NooLab.field.repulsive.components.topology.ParticleLinkages;
-import org.NooLab.field.repulsive.intf.DataObjectIntf;
 import org.NooLab.field.repulsive.intf.particles.GraphParticleIntf;
 import org.NooLab.field.repulsive.intf.particles.ParticleStateIntf;
 
@@ -20,11 +22,19 @@ import org.NooLab.field.repulsive.intf.particles.ParticleStateIntf;
  * 
  * 
  */
-public 	class Particle implements GraphParticleIntf, ParticleStateIntf, ParticleBondsIntf, DataObjectIntf, Serializable{
+public 	class RepulsionFieldParticle 
+										implements 
+													FieldParticleIntf,
+													GraphParticleIntf, 
+													ParticleStateIntf, 
+													ParticleBondsIntf, 
+													DataObjectIntf, 
+													Serializable{
 	
 	
 	private static final long serialVersionUID = 7492922749522343802L;
 
+	transient FieldHostIntf parentField;
 	
 	String label="" ;
 	int particleIndex = -1;
@@ -81,8 +91,12 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 	public int charge = 1 ;
 	
 	// ------------------------------------------------------------------------
-	public Particle( int index, int w, int h, double kRadiusFactor,int nbrParticles, double repulsion, double sizemode, int colormode){
+	public RepulsionFieldParticle( int index, int w, int h, 
+					 			   double kRadiusFactor,int nbrParticles, 
+					 			   double repulsion, double sizemode, int colormode,
+					 			   FieldHostIntf parent){
 		
+		this.parentField = parent ;
 		width = w; 
 		height = h;
 		this.kRadiusFactor = kRadiusFactor;
@@ -96,11 +110,16 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 		
 		initParticle();
 	}
+
 	
 	// ------------------------------------------------------------------------
 	
 	
-	public Particle( int pIndex, int index, Particle templateparticle) { // , SurroundBuffers sbs
+	public RepulsionFieldParticle( int pIndex, int index, 
+								   RepulsionFieldParticle templateparticle,
+								   FieldHostIntf parent) { // , SurroundBuffers sbs
+		
+		this.parentField = parent ;
 		
 		transferControlData(templateparticle);
 		
@@ -120,9 +139,15 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 
 	
 	private void initParticle(){
+		Random random ;
 		
-		Random random = new Random();
-		random.setSeed( 9347 + 97*particleIndex) ;
+		random = parentField.getRandom() ;
+
+		if (random==null){
+			random = new Random();
+			random.setSeed( 9347 + 97*particleIndex) ;
+			
+		}
 		random.nextGaussian() ;
 		
 		mainColor.r = (float) Math.random()*0.3f;
@@ -165,7 +190,7 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 		random = null;
 	}
 	
-	private void transferBasicData( Particle templateparticle ){
+	private void transferBasicData( RepulsionFieldParticle templateparticle ){
 		x = templateparticle.x;
 		y = templateparticle.y;
 		z = templateparticle.z;
@@ -186,7 +211,7 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 		selectedFlag = templateparticle.selectedFlag   ;
 	}
 
-	private void transferControlData( Particle templateparticle ){
+	private void transferControlData( RepulsionFieldParticle templateparticle ){
 		
 		width = templateparticle.width   ;
 		height = templateparticle.height   ; 
@@ -204,7 +229,7 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 	 * 
 	 * @param templateparticle
 	 */
-	private void transferSurroundBuffers( Particle templateparticle ){
+	private void transferSurroundBuffers( RepulsionFieldParticle templateparticle ){
 		
 		/*
 		try{
@@ -239,7 +264,7 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 		*/
 	}
 	
-	public void setDataAsCloneOf(Particle srcParticle) {
+	public void setDataAsCloneOf(RepulsionFieldParticle srcParticle) {
 		 
 		transferSurroundBuffers( srcParticle );
 		
@@ -255,6 +280,7 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 		double result = width * kRadiusFactor / (4 * Math.sqrt(countOfParticles));
 		return result ;
 	}
+
 	public boolean isFrozen() {
 		return isFrozen;
 	}
@@ -338,6 +364,13 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 
 	public int getB(){
 		return (int)(displayedColor.b*255.0);
+	}
+
+
+	@Override
+	public int getindex() {
+		
+		return particleIndex;
 	}
 
 
@@ -631,11 +664,11 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 	*/
 	
 	public double getX() {
-		return x;
+		return (int)x;
 	}
 
 	public double getY() {
-		return y;
+		return (int)y;
 	}
 
 	public double getZ() {
@@ -654,6 +687,7 @@ public 	class Particle implements GraphParticleIntf, ParticleStateIntf, Particle
 		return charge;
 	}
 
+ 
 
 
  

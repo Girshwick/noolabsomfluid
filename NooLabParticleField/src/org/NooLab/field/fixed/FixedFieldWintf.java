@@ -1,28 +1,44 @@
 package org.NooLab.field.fixed;
 
-import org.NooLab.field.interfaces.FixedNodeFieldEventsIntf;
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
 
-public interface FixedFieldWintf {
+import org.NooLab.field.FieldParticlesIntf;
+import org.NooLab.field.fixed.components.FixedFieldSelectionIntf;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
 
-	void registerEventMessaging(FixedNodeFieldEventsIntf eventSink);
 
-	void setBorderMode(int borderAll);
 
-	void init(int nbrParticles);
 
-	void setSelectionSize(int _selectionsize);
+public interface FixedFieldWintf extends FixedFieldSelectionIntf{
 
-	int getSelectionSize();
+	public void registerEventMessaging( Object eventObj );
 
-	void update();
+	public void close();
 
-	int getNumberOfParticles();
+	public void init(int nbrParticles);
 
-	void close();
+	public void update();
+	
+	public void setBorderMode(int borderAll);
 
-	ParticlesIntf getParticles();
 
-	String getSurround(int i, int j, boolean b);
+	public int getResolutionFactor();
 
+	public int getPhysicalWidth();
+
+	public double getPhysicalHeight();
+
+	public int getNumberOfParticles();
+
+	
+	public FieldParticlesIntf getParticles();
+	
+	public void setSelectionSize(int _selectionsize);
+
+	public int getSelectionSize();
+
+	
+	public String getSurround(int particleIndex, int selectmode, int surroundN, boolean autoselect);
+
+	public String getSurround(int xpos, int ypos, int selectMode, int surroundN, boolean autoselect) ;
+	
 }

@@ -9,8 +9,8 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
  
 import org.NooLab.field.repulsive.RepulsionFieldCore;
-import org.NooLab.field.repulsive.particles.Particle;
-import org.NooLab.field.repulsive.particles.Particles;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 
@@ -59,8 +59,8 @@ public class Storage {
 		
 		int sbiCount=0, ix;
 		FieldStorageContainer fsc;
-		Particles particles;
-		Particle particle;
+		RepulsionFieldParticles particles;
+		RepulsionFieldParticle particle;
 		FieldAreaProperties areaProps;
 		SurroundBuffer sbi;
 		

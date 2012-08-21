@@ -3,15 +3,22 @@ package org.NooLab.field.repulsive.components;
 import java.util.ArrayList;
 import java.util.Vector;
 
+import org.NooLab.field.FieldGridSubstrateIntf;
+import org.NooLab.field.FieldIntf;
+import org.NooLab.field.fixed.components.FixedFieldGridSubstrateIntf;
 import org.NooLab.graph.TreeLinesIntf;
 import org.NooLab.utilities.datatypes.IndexDistance;
+import org.NooLab.utilities.logging.PrintLog;
  
 
 
 
 public class GetIndexListThroughParticleGrid {
 
-	ParticleGrid pgrid;
+	//ParticleGrid pgrid;
+	FluidFieldGridSubstrateIntf pgrid;
+	FixedFieldGridSubstrateIntf fgrid;
+	FieldGridSubstrateIntf grid;
 	
 	ArrayList<IndexDistance> indexedDistances = new ArrayList<IndexDistance>();
 	
@@ -27,21 +34,23 @@ public class GetIndexListThroughParticleGrid {
 	
 	SpatialGeomCalc spatialGeomCalc;
 	
+	PrintLog out = new PrintLog(2,false);
+	
 	// ====================================================================
-	public GetIndexListThroughParticleGrid( ParticleGrid pg, int particleIndex , double radius){
-		pgrid = pg;
+	public GetIndexListThroughParticleGrid( FluidFieldGridSubstrateIntf gridsubstrate, int particleIndex , double radius){
+		pgrid = gridsubstrate;
 		this.particleIndex = particleIndex ;
 		this.radius = radius ;
 		init();
 	}
 	
-	public GetIndexListThroughParticleGrid( ParticleGrid pg,double x, double y, double radius ){
+	public GetIndexListThroughParticleGrid( FluidFieldGridSubstrateIntf pg,double x, double y, double radius ){
 		pgrid = pg;
 		particleIndex = pgrid.getIndexNear(x,y ) ;
 		this.radius = radius ;
 		init();
 	}
-	public GetIndexListThroughParticleGrid( ParticleGrid pg,double x, double y, int count ){
+	public GetIndexListThroughParticleGrid( FluidFieldGridSubstrateIntf pg,double x, double y, int count ){
 		
 		pgrid = pg;
 		particleIndex = pgrid.getIndexNear(x,y ) ;
@@ -51,7 +60,7 @@ public class GetIndexListThroughParticleGrid {
 		init();
 	}
 	
-	public GetIndexListThroughParticleGrid( ParticleGrid pg,int c, int r, double radius){
+	public GetIndexListThroughParticleGrid( FluidFieldGridSubstrateIntf pg,int c, int r, double radius){
 		
 		pgrid = pg;
 		particleIndex = pgrid.getIndexNear( c, r ) ;
@@ -60,7 +69,7 @@ public class GetIndexListThroughParticleGrid {
 		init();
 	}
 	
-	public GetIndexListThroughParticleGrid( ParticleGrid pg,int c, int r, int count){
+	public GetIndexListThroughParticleGrid( FluidFieldGridSubstrateIntf pg,int c, int r, int count){
 		
 		pgrid = pg;
 		this.particleIndex = pgrid.getIndexNear( c, r ) ;
@@ -73,9 +82,9 @@ public class GetIndexListThroughParticleGrid {
 
 	private void init(){
 		int w,h;
-		w = pgrid.rfCore.getAreaWidth() ;
-		h = pgrid.rfCore.getAreaHeight() ;
-		spatialGeomCalc = new SpatialGeomCalc(w,h, pgrid.rfCore.getBorderMode() ); 
+		w = pgrid.getField().getAreaWidth() ;
+		h = pgrid.getField().getAreaHeight() ;
+		spatialGeomCalc = new SpatialGeomCalc(w,h, pgrid.getField().getBorderMode() ); 
 	}
 	
 	private void postProcessIndexesList(){
@@ -92,10 +101,10 @@ public class GetIndexListThroughParticleGrid {
 			sortIxDist();
 		}
 		
-		if (pgrid.selectionConstraints.isActive()){
-			if (pgrid.selectionConstraints.currentShapeId == ParticleGrid._ELLIPSE) {
-				p1 = pgrid.selectionConstraints.shapeParam1 ;
-				p2 = pgrid.selectionConstraints.shapeParam2 ;
+		if (pgrid.getSelectionConstraints().isActive()){
+			if (pgrid.getSelectionConstraints().currentShapeId == ParticleGrid._ELLIPSE) {
+				p1 = pgrid.getSelectionConstraints().shapeParam1 ;
+				p2 = pgrid.getSelectionConstraints().shapeParam2 ;
 				
 				// deselect particles outside the ellipse
 				// AbstractCoverage
@@ -135,8 +144,8 @@ public class GetIndexListThroughParticleGrid {
 		double estRadius = 100.0, avgDist;
 		int ab;
 		
-		particlesCount = pgrid.rfCore.particles.size();
-		avgDist = pgrid.rfCore.getAverageDistance() ;
+		particlesCount = pgrid.getField().getParticles().size();
+		avgDist = pgrid.getField().getAverageDistance() ;
 		
 		// w = pgrid.rfCore.getAreaWidth() ;
 		// h = pgrid.rfCore.getAreaHeight() ;
@@ -146,7 +155,7 @@ public class GetIndexListThroughParticleGrid {
 		
 		// average degree of filling of the grid[][] array
 		
-		ab = (int) (1.2 * pgrid.radiusCorrectionFactor * (Math.sqrt(avgDist)+avgDist)/3.0 * Math.round(Math.sqrt( n + 1)) );
+		ab = (int) (1.2 * pgrid.getRadiusCorrectionFactor() * (Math.sqrt(avgDist)+avgDist)/3.0 * Math.round(Math.sqrt( n + 1)) );
 		
 		estRadius = 1.4 * (double)ab;
 		
@@ -187,7 +196,7 @@ public class GetIndexListThroughParticleGrid {
 		 
 		n = indexedDistances.size() ;
 		
-		pgrid.rfCore.out.print(4, "primary sice of selection n = "+n);
+		out.print(4, "primary sice of selection n = "+n);
 		try{
 
 			if ((n>1) && (count<indexedDistances.size())){
@@ -248,20 +257,20 @@ public class GetIndexListThroughParticleGrid {
 		
 		for (int i=rs;i<re;i++){
 			for (int j=cs;j<ce;j++){
-				ix = pgrid.grid[i][j] ;
+				ix = pgrid.getGrid()[i][j] ;
 				if (ix<0){
 				
 				}
-				if ((ix>=0) && (pgrid.rfCore.particles.get(ix)==null)){
+				if ((ix>=0) && (pgrid.getField().getParticles().get(ix)==null)){
 					ix=-3;
-					pgrid.grid[i][j] = -1;
+					pgrid.getGrid()[i][j] = -1;
 				}
 				if (ix>=0){
 					// calculating effective distance
 					effDist = -1;
 				
-					dx = spatialGeomCalc.getLinearDistanceX( _px, pgrid.rfCore.particles.get(ix).x) ;
-					dy = spatialGeomCalc.getLinearDistanceY( _py, pgrid.rfCore.particles.get(ix).y) ;
+					dx = spatialGeomCalc.getLinearDistanceX( _px, pgrid.getField().getParticles().get(ix).getX()) ;
+					dy = spatialGeomCalc.getLinearDistanceY( _py, pgrid.getField().getParticles().get(ix).getY()) ;
 				
 					effDist = Math.sqrt( dx*dx + dy*dy) ;
 					
@@ -291,8 +300,13 @@ public class GetIndexListThroughParticleGrid {
 		
 		indexedDistances.clear() ;
 		
-		if (pgrid.selectionConstraints==null){
-			pgrid.selectionConstraints = new SelectionConstraints(pgrid.rfCore) ;
+		if (pgrid.getSelectionConstraints() == null){
+			int gridtype = pgrid.getField().getType();
+			if (gridtype == FieldIntf._SOM_GRIDTYPE_FLUID){
+				pgrid.setSelectionConstraints ( new SelectionConstraints (pgrid.getRfCore()) );
+			}else{
+				pgrid.setSelectionConstraints( null);
+			}
 		}
 		// int cc = this.count ;
 		// double res = pgrid.resolution;
@@ -301,7 +315,7 @@ public class GetIndexListThroughParticleGrid {
 		int zz=0;
 		
 		while (selectionSizeOk==false){
-			dcr =  (int) (Math.round( radius / pgrid.resolution)+1) ;
+			dcr =  (int) (Math.round( radius / pgrid.getResolution())+1) ;
 		
 		
 			cs = c - dcr-1 ; 
@@ -310,41 +324,41 @@ public class GetIndexListThroughParticleGrid {
 			re = r + dcr+1 ;
 			// bordermode !!!
 		
-			if ((count<=3) || ( pgrid.rfCore.getBorderMode() == ParticleGrid.__BORDER_ALL)){  // standard rectangle
+			if ((count<=3) || ( pgrid.getField().getBorderMode() == ParticleGrid.__BORDER_ALL)){  // standard rectangle
 				if (cs<0)cs=0;
 				if (rs<0)rs=0;
 				
-				if (ce>pgrid.grid[0].length-1) ce = pgrid.grid[0].length-1;
-				if (re>pgrid.grid.length-1)    re = pgrid.grid.length-1;
+				if (ce>pgrid.getGrid()[0].length-1) ce = pgrid.getGrid()[0].length-1;
+				if (re>pgrid.getGrid().length-1)    re = pgrid.getGrid().length-1;
 			} // __BORDER_ALL 
 			
-			if ((count>3) && ( pgrid.rfCore.getBorderMode() == ParticleGrid.__BORDER_NONE)){  // torus
+			if ((count>3) && ( pgrid.getField().getBorderMode() == ParticleGrid.__BORDER_NONE)){  // torus
 				
 				cx = -1;
 				rx = -1;
 				
 				if (cs<0){
-					cx = pgrid.grid[0].length-1 + cs;
+					cx = pgrid.getGrid()[0].length-1 + cs;
 					cs=0;
-					cxx = pgrid.grid[0].length - 1 ;
-					rxx = pgrid.grid.length - 1 ;
+					cxx = pgrid.getGrid()[0].length - 1 ;
+					rxx = pgrid.getGrid().length - 1 ;
 				}
 				if (rs<0){
-					rx = pgrid.grid.length-1 + rs;
+					rx = pgrid.getGrid().length-1 + rs;
 					rs=0;
-					cxx = pgrid.grid[0].length - 1 ;
-					rxx = pgrid.grid.length - 1 ;
+					cxx = pgrid.getGrid()[0].length - 1 ;
+					rxx = pgrid.getGrid().length - 1 ;
 				}
 				
-				if (ce>pgrid.grid[0].length-1){
+				if (ce>pgrid.getGrid()[0].length-1){
 					cx=0; 
-					cxx = ce - pgrid.grid[0].length ;
-					ce = pgrid.grid[0].length-1;
+					cxx = ce - pgrid.getGrid()[0].length ;
+					ce = pgrid.getGrid()[0].length-1;
 				}
-				if (re>pgrid.grid.length-1){
+				if (re>pgrid.getGrid().length-1){
 					rx=0; 
-					rxx = re - pgrid.grid.length ;
-					re = pgrid.grid.length-1;
+					rxx = re - pgrid.getGrid().length ;
+					re = pgrid.getGrid().length-1;
 				}
 				
 				
@@ -373,9 +387,9 @@ public class GetIndexListThroughParticleGrid {
 				// adjust radius ;
 				// dcr*2*10 ~
 				double cr = (double)(count *0.85)/(double)indexedDistances.size();
-				pgrid.resolution = pgrid.rfCore.getMinimalDistance()/2.3;
+				pgrid.setResolution( pgrid.getField().getMinimalDistance()/2.3 );
 				radius = estimateRequiredRadius( (int)(count * cr) );
-				dcr =  (int) (Math.round( radius / pgrid.resolution)+1) ;
+				dcr =  (int) (Math.round( radius / pgrid.getResolution())+1) ;
 				if (zz>3){
 					break;
 				}
@@ -410,13 +424,13 @@ public class GetIndexListThroughParticleGrid {
 		
 		if (radius<0){
 			
-			radius = 3.0 * pgrid.rfCore.getAverageDistance() ;
+			radius = 3.0 * pgrid.getField().getAverageDistance() ;
 		}
 		count = 3 ;
 		particlesCount = 3;
 		
-		c = (int)(((double)(cx*1.0))/pgrid.resolution); 
-		r = (int)(((double)(cy*1.0))/pgrid.resolution);
+		c = (int)(((double)(cx*1.0))/pgrid.getResolution()); 
+		r = (int)(((double)(cy*1.0))/pgrid.getResolution());
 		
 		neighbors = retrieveListOfParticles( c,r, cx,cy) ;
 		
@@ -445,20 +459,20 @@ public class GetIndexListThroughParticleGrid {
 		try{
 			 
 			if (particleIndex>=0){
-				r = pgrid.rowMap.position.get(particleIndex ) ;
-				c = pgrid.colMaps[r].position.get(particleIndex ) ;
+				r = pgrid.getRowMapPosition(particleIndex ) ;
+				c = pgrid.getColMapsPositions(r,particleIndex ) ;
 			
 				ix = pgrid.getIndexNear( c,r ) ;
 				
-				_px = pgrid.rfCore.particles.get(particleIndex).x ;
-				_py = pgrid.rfCore.particles.get(particleIndex).y ;
+				_px = pgrid.getField().getParticles().get(particleIndex).getX() ;
+				_py = pgrid.getField().getParticles().get(particleIndex).getY() ;
 				
 				neighbors = retrieveListOfParticles( c,r, _px, _py);
 				
 			} else {
 				
-				_px = c * pgrid.resolution;
-				_py = r * pgrid.resolution;
+				_px = c * pgrid.getResolution();
+				_py = r * pgrid.getResolution();
 				
 				ix = retrieveParticleForCoordinate(_px, _py);
 			 
@@ -469,12 +483,12 @@ public class GetIndexListThroughParticleGrid {
 			}
 			
 			if ( ((double)neighbors.length)<0.98*((double)count)){
-				pgrid.radiusCorrectionFactor = ((double) count)/((double)neighbors.length );
-				pgrid.rfCore.out.print(4, "selection was too small ( actual:"+neighbors.length+", requested:"+count+")");
-				pgrid.rfCore.out.print(4, "radius will be corrected next time by factor rcf = "+ pgrid.radiusCorrectionFactor);
+				pgrid.setRadiusCorrectionFactor( ((double) count)/((double)neighbors.length ) );
+				out.print(4, "selection was too small ( actual:"+neighbors.length+", requested:"+count+")");
+				out.print(4, "radius will be corrected next time by factor rcf = "+ pgrid.getRadiusCorrectionFactor());
 			}
 			
-			pgrid.rfCore.out.print(4, "actual selection count n="+neighbors.length);
+			out.print(4, "actual selection count n="+neighbors.length);
 		}catch(Exception e){
 		}
 		

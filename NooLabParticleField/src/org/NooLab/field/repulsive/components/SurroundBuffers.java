@@ -10,9 +10,9 @@ import org.NooLab.field.repulsive.components.topology.Surround;
 import org.NooLab.field.repulsive.intf.SurroundRetrievalObserverIntf;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldBasicIntf;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
-import org.NooLab.field.repulsive.particles.Particle;
-import org.NooLab.field.repulsive.particles.Particles;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
  
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.logging.PrintLog;
@@ -64,7 +64,7 @@ public class SurroundBuffers implements Runnable{
 	int selectionSize=0 ;
 	
 	Plane xyPlane;
-	ParticlesIntf particles; 
+	RepFieldParticlesIntf particles; 
 	
 	// ----------------------------------
 	
@@ -79,7 +79,7 @@ public class SurroundBuffers implements Runnable{
 	public PrintLog out;
 	
 	
-	public SurroundBuffers( RepulsionFieldCore parentfield, Particles particles, PrintLog outprn){
+	public SurroundBuffers( RepulsionFieldCore parentfield, RepulsionFieldParticles particles, PrintLog outprn){
 	
 		parentField = parentfield;
 		 
@@ -157,7 +157,7 @@ public class SurroundBuffers implements Runnable{
 	 * @param i
 	 * @param p
 	 */
-	public void updateSurroundExtension(int i, Particle p) {
+	public void updateSurroundExtension(int i, RepulsionFieldParticle p) {
 		
 		Surrex surrex = new Surrex(i,p); 
 		surroundExtension.add( surrex );
@@ -429,7 +429,7 @@ public class SurroundBuffers implements Runnable{
 	 * @param targetParticles the particles which we have to update
 	 * @param sourceBuffers
 	 */
-	public void updateFromSurroundBuffers( Particles targetParticles, SurroundBuffers sourceBuffers, int transferDataFlag ) {
+	public void updateFromSurroundBuffers( RepulsionFieldParticles targetParticles, SurroundBuffers sourceBuffers, int transferDataFlag ) {
 		/* 
 		int index;
 		Particle particle;
@@ -494,7 +494,7 @@ public class SurroundBuffers implements Runnable{
 		int resultState = -1;
 		
 		int pointIndex;
-		Particle particle;
+		RepulsionFieldParticle particle;
 		int[] surrounding;
 		double[] surroundDistances;
 		SurroundBuffer sb;
@@ -792,7 +792,7 @@ public class SurroundBuffers implements Runnable{
 		boolean rB, sizeOK;
 		int stateResult;
 		SurroundBuffer sb;
-		Particle particle;
+		RepulsionFieldParticle particle;
 		
 		stateResult=1;
 		rB = (selectionSize >= surroundSize);
@@ -905,7 +905,7 @@ public class SurroundBuffers implements Runnable{
 		MultiDigester digester=null ;
 		 
 		//Vector<String>  rowText ;
-		ParticlesIntf pparticles;
+		RepFieldParticlesIntf pparticles;
 		boolean baseDataChanged=false;
 		boolean activated=false;
 		
@@ -920,7 +920,7 @@ public class SurroundBuffers implements Runnable{
 		
 		// . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 		
-		public void doParallelSurroundCalc(  ParticlesIntf particles, int threadcount){ 
+		public void doParallelSurroundCalc(  RepFieldParticlesIntf particles, int threadcount){ 
 			 
 			
 			// providing also right now the callback address (=this class)

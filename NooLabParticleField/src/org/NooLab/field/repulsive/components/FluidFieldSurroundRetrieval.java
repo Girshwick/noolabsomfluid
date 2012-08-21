@@ -22,8 +22,8 @@ import org.NooLab.field.repulsive.intf.RepulsionFieldObjectsIntf;
 import org.NooLab.field.repulsive.intf.SurroundRetrievalObserverIntf;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldBasicIntf;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
-import org.NooLab.field.repulsive.particles.Particle;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
 import org.NooLab.graph.TreeLinesIntf;
  
  
@@ -38,7 +38,7 @@ import org.NooLab.utilities.net.GUID;
  * 
  * 
  */
-public class SurroundRetrieval implements Runnable {
+public class FluidFieldSurroundRetrieval implements Runnable {
 
 	public static final int _TASK_PARTICLE_RX = 1;
 	public static final int _TASK_PARTICLE    = 2;
@@ -64,8 +64,8 @@ public class SurroundRetrieval implements Runnable {
 	// SurroundBuffers surroundBuffers;
 	
 	ParticleGrid particleGrid;
-	ParticlesIntf particles;
-	
+	RepFieldParticlesIntf particles;
+	 
 	ArrayList<RetrievalParamSet> paramSets = new ArrayList<RetrievalParamSet>(); // !!!!!!!!!!
 	
  	Map<String,Object> resultMap = new HashMap<String,Object>();  // !!!!!!!!!!!!!!!!!
@@ -82,7 +82,7 @@ public class SurroundRetrieval implements Runnable {
 	private boolean adjustmentWait;
 	
 	// ========================================================================
-	public SurroundRetrieval( RepulsionFieldCore rfcore ){
+	public FluidFieldSurroundRetrieval( RepulsionFieldCore rfcore ){
 		 
 		rfCore = rfcore;
 		
@@ -98,7 +98,7 @@ public class SurroundRetrieval implements Runnable {
 	}
 	 
 	
-	public SurroundRetrieval( Object parent , ParticleGrid pg, SurroundRetrievalObserverIntf observer ){
+	public FluidFieldSurroundRetrieval( Object parent , ParticleGrid pg, SurroundRetrievalObserverIntf observer ){
 		
 		if (parent==null){
 			return;
@@ -326,7 +326,7 @@ public class SurroundRetrieval implements Runnable {
 	private void getParticle( int style ){
 		
 		int xpos, ypos;
-		Particle p;
+		RepulsionFieldParticle p;
 		
 		Surround surround;
 		SurroundResults results = new SurroundResults();
@@ -510,7 +510,7 @@ public class SurroundRetrieval implements Runnable {
 			}
 			// out.print(2, "SurroundRetrieval, size of paramSets: "+paramSets.size()) ;
 			// out.print(2, "-                          resultMap: "+resultMap.size()) ;
-			
+			// observer = RepulsionField
 			srObserver.surroundRetrievalUpdate(this, p.guid);
 		}
 		
@@ -555,7 +555,7 @@ public class SurroundRetrieval implements Runnable {
 		results.particleIndex = ix;
 		// get circle, or any other figure
 		
-		Particle p = particles.get( results.particleIndex ) ;
+		RepulsionFieldParticle p = particles.get( results.particleIndex ) ;
 		
 		out.print(3, "going to retrieve particles...");
 		
@@ -586,7 +586,7 @@ public class SurroundRetrieval implements Runnable {
 	private SurroundResults getSurround( int index , int surroundN ,  
 		     							 int selectMode, boolean autoselect){
 		
-		double x,y ;
+		double x, y ;
 		SurroundResults results = new SurroundResults(); 
 		// Surround surround;
 		
@@ -596,7 +596,7 @@ public class SurroundRetrieval implements Runnable {
 		
 		// get circle, or any other figure
 		
-		Particle p = particles.get( index ) ;
+		RepulsionFieldParticle p = particles.get( index ) ;
 		
 		out.print(4, "going to retrieve particles (b)...");
 		

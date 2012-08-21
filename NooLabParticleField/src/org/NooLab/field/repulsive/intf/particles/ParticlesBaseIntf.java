@@ -1,14 +1,10 @@
 package org.NooLab.field.repulsive.intf.particles;
 
-import org.NooLab.field.repulsive.particles.Particle;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle; 
 
 
 public interface ParticlesBaseIntf {
 	
-	public int size();
 
-	public void add(Particle p);
- 
-	public void remove(int index);
 	
 }

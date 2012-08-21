@@ -7,7 +7,7 @@ import org.NooLab.field.repulsive.components.Neighborhood;
 import org.NooLab.field.repulsive.components.SurroundBuffers;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldBasicIntf;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
-import org.NooLab.field.repulsive.particles.Particles;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
 
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.logging.PrintLog;
@@ -36,7 +36,7 @@ public class Surround {
 	
 	Neighborhood neighborhood;
 	SurroundBuffers surroundBuffers;
-	Particles particles;
+	RepulsionFieldParticles particles;
 	
 	String requestGuid="";
 	
@@ -74,7 +74,7 @@ public class Surround {
 		 
 		neighborhood = sbs.getNeighborhood() ;
  		
-		particles = (Particles) parentField.getParticles() ;
+		particles = (RepulsionFieldParticles) parentField.getParticles() ;
 		 
 		out = new PrintLog(2,false);
 	}

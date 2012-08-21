@@ -48,7 +48,7 @@ public class RequestTester implements Runnable{
 					
 					try{
 					
-						requestGuid = rField.getSurround( ix,  1, true);
+						requestGuid = rField.getSurround( ix,  1,7, true);
 						
 					}catch(Exception e){}
 					

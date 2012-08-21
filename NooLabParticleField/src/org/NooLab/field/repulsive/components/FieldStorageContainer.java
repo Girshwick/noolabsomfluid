@@ -4,8 +4,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.NooLab.field.repulsive.RepulsionFieldCore;
-import org.NooLab.field.repulsive.particles.Particle;
-import org.NooLab.field.repulsive.particles.Particles;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
  
 
 
@@ -17,7 +17,7 @@ public class FieldStorageContainer implements Serializable{
 
 	
 
-	ArrayList<Particle> particleStore = new ArrayList<Particle> (); 
+	ArrayList<RepulsionFieldParticle> particleStore = new ArrayList<RepulsionFieldParticle> (); 
 	ArrayList<SurroundBuffer> surroundBufferItems = new ArrayList<SurroundBuffer>() ; // 
 	FieldAreaProperties areaProperties = new FieldAreaProperties();
 	
@@ -39,8 +39,8 @@ public class FieldStorageContainer implements Serializable{
 		
 	}
 		
-	public void acquireParticles( Particles particles){
-		Particle particle;
+	public void acquireParticles( RepulsionFieldParticles particles){
+		RepulsionFieldParticle particle;
 		try{
 			
 			for (int i=0;i<particles.size();i++){
@@ -83,11 +83,11 @@ public class FieldStorageContainer implements Serializable{
 	
 	
 
-	public ArrayList<Particle> getParticleStore() {
+	public ArrayList<RepulsionFieldParticle> getParticleStore() {
 		return particleStore;
 	}
 
-	public void setParticleStore(ArrayList<Particle> particleStore) {
+	public void setParticleStore(ArrayList<RepulsionFieldParticle> particleStore) {
 		this.particleStore = particleStore;
 	}
 
