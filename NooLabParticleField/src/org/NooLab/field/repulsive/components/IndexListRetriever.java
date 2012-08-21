@@ -2,6 +2,7 @@ package org.NooLab.field.repulsive.components;
 
 import java.util.ArrayList;
 
+import org.NooLab.field.FieldGridSubstrateIntf;
 import org.NooLab.utilities.datatypes.IndexDistance;
 
  
@@ -9,12 +10,13 @@ import org.NooLab.utilities.datatypes.IndexDistance;
  
 public class IndexListRetriever {
 
-	ParticleGrid pgrid;
+	// ParticleGrid pgrid;
+	FluidFieldGridSubstrateIntf pgrid;
 	
 	int shapeId = ParticleGrid._CIRCLE ;
 	
 	// ========================================================================
-	public IndexListRetriever( ParticleGrid pg){
+	public IndexListRetriever( FluidFieldGridSubstrateIntf pg ){
 		pgrid = pg ;
 	}
 	// ========================================================================
@@ -107,7 +109,7 @@ public class IndexListRetriever {
 
 	public IndexListRetriever setConstraints( SelectionConstraints selectconstraints) {
 		
-		pgrid.selectionConstraints = selectconstraints ;
+		pgrid.setSelectionConstraints( selectconstraints );
 		
 		return this;
 	}

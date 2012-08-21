@@ -1,6 +1,6 @@
 package org.NooLab.field.interfaces;
 
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
+// import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
 
 
 
@@ -24,16 +24,20 @@ public interface PhysicalGridFieldIntf {
 
 	public void setInitComplete(boolean initComplete) ;
 
-	public ParticlesIntf getParticles();
+	// RepFieldParticlesIntf -> instantiation dependent on parameter
+	public Object getParticles();
 
 	double getAverageDistanceBetweenParticles();
 
 	void setSelectionSize(int surroundN);
 
-	String getSurround(int particleindex, int i, boolean b);
+	/** int index, int selectMode, boolean autoselect */
+	String getSurround(int particleindex, int selectMode, int surroundN, boolean autoselect);
 
 	boolean getInitComplete();
-	
+
+	 
+	public void registerEventMessaging( Object eventSinkObj ) ;
 	
 	
 	

@@ -6,8 +6,8 @@ import java.util.TimerTask;
 import org.NooLab.field.repulsive.RepulsionField;
 import org.NooLab.field.repulsive.RepulsionFieldCore;
 import org.NooLab.field.repulsive.components.data.SurroundResults;
-import org.NooLab.field.repulsive.particles.Particle;
-import org.NooLab.field.repulsive.particles.Particles;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
 
 
 
@@ -67,8 +67,8 @@ public class GridOptimizer {
 		// ................................................
 		
 		private void perform(){
-			Particles particles;
-			Particle p;
+			RepulsionFieldParticles particles;
+			RepulsionFieldParticle p;
 			RepulsionField rField ;
 			
 			double w,h ,x,y ;
@@ -78,7 +78,7 @@ public class GridOptimizer {
 			try{
 											
 				
-				particles = new Particles(rfCore);
+				particles = new RepulsionFieldParticles(rfCore, rfCore);
 				
 				// random selection of location
 				w = rfCore.getAreaWidth() ;

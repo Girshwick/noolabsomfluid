@@ -2,7 +2,14 @@ package org.NooLab.field.repulsive.components;
 
 
  
-
+/**
+ * 
+ * 
+	 * @param width
+	 * @param height
+	 * @param borders
+ *
+ */
 public class SpatialGeomCalc {
 
 	int width, height;
@@ -10,7 +17,12 @@ public class SpatialGeomCalc {
 	int borderMode = ParticleGrid.__BORDER_ALL ;
 	
 	
-	
+	/**
+	 * 
+	 * @param width
+	 * @param height
+	 * @param borders
+	 */
 	public SpatialGeomCalc( int width, int height,int borders ){
 		this.width  = width ;
 		this.height = height ;
@@ -39,9 +51,11 @@ public class SpatialGeomCalc {
 		
 		
 		result = ( x1 - x2) ;
+		if (borderMode == ParticleGrid.__BORDER_ALL){
+			result = Math.max(x1,x2) - Math.min(x1,x2);
+		}
 		
-		if (borderMode == ParticleGrid.__BORDER_NONE)
-		{
+		if (borderMode == ParticleGrid.__BORDER_NONE){
 			
 			
 			w = (double)(maxDist*1.0) ;

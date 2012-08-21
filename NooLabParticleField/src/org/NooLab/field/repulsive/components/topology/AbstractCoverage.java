@@ -5,15 +5,15 @@ import java.util.*;
 import math.geom2d.Point2D;
 
 import org.NooLab.field.repulsive.components.SurroundBuffers;
-import org.NooLab.field.repulsive.components.SurroundRetrieval;
+import org.NooLab.field.repulsive.components.FluidFieldSurroundRetrieval;
 import org.NooLab.field.repulsive.components.data.PointXY;
 import org.NooLab.field.repulsive.components.data.RetrievalParamSet;
 import org.NooLab.field.repulsive.components.data.SurroundResults;
 import org.NooLab.field.repulsive.intf.RepulsionFieldObjectsIntf;
 import org.NooLab.field.repulsive.intf.SurroundRetrievalObserverIntf;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldBasicIntf;
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
-import org.NooLab.field.repulsive.particles.Particle;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
 import org.NooLab.utilities.logging.PrintLog;
 
 
@@ -27,14 +27,14 @@ abstract public class AbstractCoverage implements Runnable{
 	
 	SurroundBuffers surroundBuffers;
 	
-	ParticlesIntf particles;
+	RepFieldParticlesIntf particles;
 	
 	SurroundRetrievalObserverIntf  srObserver;
 	String resultsGuidStr = "" ;
 	
 	SurroundResults results ; 
 	
-	SurroundRetrieval surroundRetrieval;
+	FluidFieldSurroundRetrieval surroundRetrieval;
 	RetrievalParamSet rps;
 	int task = -1;
 	
@@ -57,7 +57,7 @@ abstract public class AbstractCoverage implements Runnable{
 	PrintLog out;
 	
 	// ------------------------------------------------------------------------
-	public AbstractCoverage( Object parent, SurroundRetrievalObserverIntf observer, SurroundRetrieval srt, RetrievalParamSet rps ){
+	public AbstractCoverage( Object parent, SurroundRetrievalObserverIntf observer, FluidFieldSurroundRetrieval srt, RetrievalParamSet rps ){
 		
 
 		String guid = rps.guid ; 
@@ -165,7 +165,7 @@ abstract public class AbstractCoverage implements Runnable{
 		
 		ArrayList<Integer> pset = new ArrayList<Integer>()  ;
 		Point2D   testP2D;
-		Particle particle;
+		RepulsionFieldParticle particle;
 		Object geomObject;
 		
 		boolean covered;

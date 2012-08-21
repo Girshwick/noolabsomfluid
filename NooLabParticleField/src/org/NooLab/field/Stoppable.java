@@ -1,4 +1,4 @@
-package org.NooLab.field.repulsive.intf;
+package org.NooLab.field;
 
 public interface Stoppable {
 

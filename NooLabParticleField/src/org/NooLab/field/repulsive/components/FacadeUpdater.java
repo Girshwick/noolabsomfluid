@@ -3,8 +3,8 @@ package org.NooLab.field.repulsive.components;
 import org.NooLab.field.repulsive.RepulsionFieldCore;
 import org.NooLab.field.repulsive.components.data.PointXY;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
-import org.NooLab.field.repulsive.particles.Particle;
-import org.NooLab.field.repulsive.particles.Particles;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
 import org.NooLab.utilities.logging.PrintLog;
 
 
@@ -25,7 +25,7 @@ public class FacadeUpdater implements Runnable{
 	RepulsionFieldCore coreInstance;
 	RepulsionFieldIntf rField;
 	
-	Particles particles ;  
+	RepulsionFieldParticles particles ;  
 	Neighborhood neighborhood ; 
 	// SurroundBuffers surroundBuffers;
 	
@@ -40,7 +40,9 @@ public class FacadeUpdater implements Runnable{
 	
 	// ------------------------------------------------------------------------
 	
-	public FacadeUpdater(RepulsionFieldIntf rfield, int indexForUpdate, double x, double y, Particles particles,  Neighborhood nb, RepulsionFieldCore rfcore){ 
+	public FacadeUpdater( RepulsionFieldIntf rfield, int indexForUpdate, double x, double y, 
+			              RepulsionFieldParticles particles,  Neighborhood nb, 
+			              RepulsionFieldCore rfcore){ 
 												                                                     // SurroundBuffers sbs,
 		double w = rField.getAreaSize()[0];
 		double h = rField.getAreaSize()[1];
@@ -53,7 +55,8 @@ public class FacadeUpdater implements Runnable{
 		
 	}
 
-	public FacadeUpdater( RepulsionFieldIntf rfield, Particles particles, Neighborhood nb, RepulsionFieldCore rfcore){
+	public FacadeUpdater( RepulsionFieldIntf rfield, RepulsionFieldParticles particles, 
+			              Neighborhood nb, RepulsionFieldCore rfcore){
 		 														// SurroundBuffers sbs,
 		rField = rfield ;
 		coreInstance = rfcore ;
@@ -128,7 +131,8 @@ public class FacadeUpdater implements Runnable{
 			// hence it is NOT just the copy of the references!
 											out.print(3,"facade updater, copying particles...");
 											
-			particles = new Particles( coreInstance.particles); // , surroundBuffers
+			particles = new RepulsionFieldParticles( coreInstance.particles,
+					                                 coreInstance.getGenericFieldReference()); // , surroundBuffers
 											out.print(3,"facade updater, particles copied.  ");
 			
 			// setting the reference to the facade field
@@ -192,7 +196,7 @@ public class FacadeUpdater implements Runnable{
 		isRunning= false;
 	}
 
-	public Particles getParticles() {
+	public RepulsionFieldParticles getParticles() {
 		return particles;
 	}
 
@@ -204,7 +208,7 @@ public class FacadeUpdater implements Runnable{
 		return null; // surroundBuffers;
 	}
 
-	public SurroundBuffers getSyncedSurroundBuffers( Particles particles){
+	public SurroundBuffers getSyncedSurroundBuffers( RepulsionFieldParticles particles){
 		 
 		neighborhood.particles = particles;
 		// surroundBuffers.particles = particles;

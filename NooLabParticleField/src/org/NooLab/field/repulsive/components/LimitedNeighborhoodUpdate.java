@@ -12,8 +12,8 @@ import org.NooLab.field.repulsive.RepulsionFieldCore;
 import org.NooLab.field.repulsive.components.data.AreaPoint;
 import org.NooLab.field.repulsive.components.data.FieldPoint;
 import org.NooLab.field.repulsive.components.topology.Surround;
-import org.NooLab.field.repulsive.particles.Particle;
-import org.NooLab.field.repulsive.particles.Particles;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
  
 
 import org.NooLab.utilities.ArrUtilities;
@@ -62,7 +62,7 @@ public class LimitedNeighborhoodUpdate {
 	}
 	
 	/**   */
-	public int checkParticle(Particle particle) {
+	public int checkParticle(RepulsionFieldParticle particle) {
 		
 		boolean rB = true;
 		int pointIndex = -1;

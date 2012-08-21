@@ -8,7 +8,7 @@ import org.NooLab.field.repulsive.RepulsionFieldCore;
 import org.NooLab.field.repulsive.components.data.AreaPoint;
 import org.NooLab.field.repulsive.components.data.PointXY;
 import org.NooLab.field.repulsive.intf.particles.GraphParticlesIntf;
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
 
 
 /**

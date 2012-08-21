@@ -5,7 +5,7 @@ package org.NooLab.field.repulsive.components;
 import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
 import org.NooLab.field.repulsive.RepulsionFieldCore;
 import org.NooLab.field.repulsive.RepulsionFieldFactory;
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
 import org.NooLab.utilities.logging.PrintLog;
 
 
@@ -26,7 +26,7 @@ public class SamplingField implements Runnable, RepulsionFieldEventsIntf{
 	
 	int nbrParticles = 5;
 
-	ParticlesIntf particles ;
+	RepFieldParticlesIntf particles ;
 
 	boolean completed=false;
 	int iterations =0;

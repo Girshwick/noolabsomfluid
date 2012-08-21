@@ -5,8 +5,8 @@ import org.NooLab.chord.CompletionEventMessageCallIntf;
 import org.NooLab.chord.IndexedItemsCallbackIntf;
 import org.NooLab.chord.MultiDigester;
 import org.NooLab.field.repulsive.RepulsionFieldCore;
-import org.NooLab.field.repulsive.components.CollectStatistics;
-import org.NooLab.field.repulsive.particles.Particles;
+import org.NooLab.field.repulsive.components.FluidFieldCollectStatistics;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
 
 
 
@@ -15,12 +15,12 @@ public class PhysicsDigester implements IndexedItemsCallbackIntf{
 	MultiDigester digester=null ;
 	 
 	//Vector<String>  rowText ;
-	Particles pparticles;
+	RepulsionFieldParticles pparticles;
 	boolean baseDataChanged=false;
 	boolean activated=false;
 	
 	RepulsionFieldCore parentField;
-	CollectStatistics statisticsCollector;
+	FluidFieldCollectStatistics statisticsCollector;
 	CompletionEventMessageCallIntf completionObserver ;
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -33,7 +33,7 @@ public class PhysicsDigester implements IndexedItemsCallbackIntf{
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 	
-	public void doParallelPhysics(  Particles particles, int threadcount){ 
+	public void doParallelPhysics(  RepulsionFieldParticles particles, int threadcount){ 
 		 
 		
 		// providing also right now the callback address (=this class)

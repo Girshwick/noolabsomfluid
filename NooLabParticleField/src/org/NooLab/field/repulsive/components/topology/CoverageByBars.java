@@ -13,13 +13,13 @@ import math.geom2d.conic.Ellipse2D;
 import math.geom2d.line.Line2D;
 
 import org.NooLab.field.repulsive.components.Neighborhood;
-import org.NooLab.field.repulsive.components.SurroundRetrieval;
+import org.NooLab.field.repulsive.components.FluidFieldSurroundRetrieval;
 import org.NooLab.field.repulsive.components.data.LineXY;
 import org.NooLab.field.repulsive.components.data.PointXY;
 import org.NooLab.field.repulsive.components.data.RetrievalParamSet;
 import org.NooLab.field.repulsive.components.data.SurroundResults;
 import org.NooLab.field.repulsive.intf.SurroundRetrievalObserverIntf;
-import org.NooLab.field.repulsive.particles.Particle;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
 import org.NooLab.graph.PointXYIntf;
 import org.NooLab.graph.TreeLinesIntf;
 import org.NooLab.utilities.logging.PrintLog;
@@ -51,7 +51,7 @@ public class CoverageByBars extends AbstractCoverage{
 	PrintLog out;
 	
 	// ------------------------------------------------------------------------
-	public CoverageByBars( Object parent, SurroundRetrievalObserverIntf observer, SurroundRetrieval srt, RetrievalParamSet rps) {
+	public CoverageByBars( Object parent, SurroundRetrievalObserverIntf observer, FluidFieldSurroundRetrieval srt, RetrievalParamSet rps) {
 		super( parent, observer, srt, rps);
 		 
 	}
@@ -148,7 +148,7 @@ public class CoverageByBars extends AbstractCoverage{
 		 
 		PointXY startpoint, endpoint;
 		Point2D   testP2D;
-		Particle particle;
+		RepulsionFieldParticle particle;
 		Ellipse2D ellipse;
 		
 		

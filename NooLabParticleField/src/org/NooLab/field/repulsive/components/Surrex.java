@@ -1,13 +1,13 @@
 package org.NooLab.field.repulsive.components;
 
-import org.NooLab.field.repulsive.particles.Particle;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
 
 public class Surrex {
 
 	public int index; 
-	public Particle particle;
+	public RepulsionFieldParticle particle;
 	
-	public Surrex(int ix, Particle p) {
+	public Surrex(int ix, RepulsionFieldParticle p) {
 		index = ix;
 		particle = p;
 	}

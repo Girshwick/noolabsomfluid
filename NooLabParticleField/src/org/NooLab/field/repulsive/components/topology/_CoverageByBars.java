@@ -14,7 +14,7 @@ import math.geom2d.line.Line2D;
 
 import org.NooLab.field.repulsive.components.Neighborhood;
 import org.NooLab.field.repulsive.components.SurroundBuffers;
-import org.NooLab.field.repulsive.components.SurroundRetrieval;
+import org.NooLab.field.repulsive.components.FluidFieldSurroundRetrieval;
 import org.NooLab.field.repulsive.components.data.LineXY;
 import org.NooLab.field.repulsive.components.data.PointXY;
 import org.NooLab.field.repulsive.components.data.RetrievalParamSet;
@@ -22,8 +22,8 @@ import org.NooLab.field.repulsive.components.data.SurroundResults;
 import org.NooLab.field.repulsive.intf.RepulsionFieldObjectsIntf;
 import org.NooLab.field.repulsive.intf.SurroundRetrievalObserverIntf;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldBasicIntf;
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
-import org.NooLab.field.repulsive.particles.Particle;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
 import org.NooLab.graph.PointXYIntf;
 import org.NooLab.graph.TreeLinesIntf;
 import org.NooLab.utilities.logging.PrintLog;
@@ -48,14 +48,14 @@ public class _CoverageByBars implements Runnable{
 	
 	SurroundBuffers surroundBuffers;
 	
-	ParticlesIntf particles;
+	RepFieldParticlesIntf particles;
 	
 	SurroundRetrievalObserverIntf  srObserver;
 	String resultsGuidStr = "" ;
 	
 	SurroundResults results ; 
 	
-	SurroundRetrieval surroundRetrieval;
+	FluidFieldSurroundRetrieval surroundRetrieval;
 	RetrievalParamSet rps;
 	int task = -1;
 	
@@ -75,7 +75,7 @@ public class _CoverageByBars implements Runnable{
 	PrintLog out;
 	
 	// ------------------------------------------------------------------------
-	public _CoverageByBars( Object parent, SurroundRetrievalObserverIntf observer, SurroundRetrieval srt, RetrievalParamSet rps) {
+	public _CoverageByBars( Object parent, SurroundRetrievalObserverIntf observer, FluidFieldSurroundRetrieval srt, RetrievalParamSet rps) {
 		String guid = rps.guid ; 
 		
 		try{
@@ -272,7 +272,7 @@ public class _CoverageByBars implements Runnable{
 		 
 		PointXY startpoint, endpoint;
 		Point2D   testP2D;
-		Particle particle;
+		RepulsionFieldParticle particle;
 		Ellipse2D ellipse;
 		PointXY[] boundingBox = new PointXY[4];
 		
@@ -370,7 +370,7 @@ public class _CoverageByBars implements Runnable{
 		Ellipse2D ellipse;
 		Point2D  testP2D ;
 		 
-		Particle particle;
+		RepulsionFieldParticle particle;
 		
 		ArrayList<Point2D> testedP2Ds = new ArrayList<Point2D> ();
 		

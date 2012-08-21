@@ -2,9 +2,9 @@ package org.NooLab.field.repulsive.components;
 
 import org.NooLab.field.repulsive.RepulsionFieldCore;
 import org.NooLab.field.repulsive.components.topology.Surround;
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
-import org.NooLab.field.repulsive.particles.Particle;
-import org.NooLab.field.repulsive.particles.Particles;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
 
 import org.NooLab.utilities.logging.PrintLog;
  
@@ -40,8 +40,8 @@ public class FieldSampler{
 	double aspectratio, densityPerAcre;
 	int[] sample  = new int[0];
 	
-	Particles sampledParticles , fieldParticles;
-	Particles samplePatchCenterParticles ;
+	RepulsionFieldParticles sampledParticles , fieldParticles;
+	RepulsionFieldParticles samplePatchCenterParticles ;
 	
 	PrintLog out;
 	 
@@ -59,9 +59,9 @@ public class FieldSampler{
 	}
 	
 	
-	public Particles getParticlesList(){
+	public RepulsionFieldParticles getParticlesList(){
 		
-		Particles nth_sample = fieldParticles;
+		RepulsionFieldParticles nth_sample = fieldParticles;
 		
 		// determinePatches();
 		
@@ -109,10 +109,10 @@ public class FieldSampler{
 	}
 
 	/** importing the particles that represent the sample patches */ 
-	public void setSampleRoots( ParticlesIntf particles ) {
+	public void setSampleRoots( RepFieldParticlesIntf particles ) {
 		int n,w,h;
 		double r,x,y ;
-		Particle particle;
+		RepulsionFieldParticle particle;
 		
 		if (samplePatchCenterParticles!=null){
 			if (samplePatchCenterParticles.size()>0){
@@ -121,7 +121,7 @@ public class FieldSampler{
 			samplePatchCenterParticles = null;
 		}
 		
-		samplePatchCenterParticles = new Particles( parentField );  
+		samplePatchCenterParticles = new RepulsionFieldParticles( parentField, parentField );  
 		
 		n = particles.size();
 		w = parentField.getSamplingField().getWidth() ;
@@ -132,7 +132,7 @@ public class FieldSampler{
 			y = Math.round(particles.get(i).y);
 			r = Math.round(particles.get(i).radius);
 			
-			particle = new Particle( i,w,h, parentField.getkRadiusFactor(), n,parentField.getRepulsion(),1.0,1);
+			particle = new RepulsionFieldParticle( i,w,h, parentField.getkRadiusFactor(), n,parentField.getRepulsion(),1.0,1,parentField);
 			samplePatchCenterParticles.add(particle) ;
 			
 		} // i->
@@ -149,7 +149,7 @@ public class FieldSampler{
 	}
 
 
-	public Particles getSamplePatchCenterParticles() {
+	public RepulsionFieldParticles getSamplePatchCenterParticles() {
 		return samplePatchCenterParticles;
 	}
 
@@ -166,10 +166,10 @@ public class FieldSampler{
 	 * performs a simple check on coordinates and radius
 	 * 
 	 */
-	public boolean particleIsInSample(Particle testParticle) {
+	public boolean particleIsInSample(RepulsionFieldParticle testParticle) {
 		
 		boolean rB=false;
-		Particle sparticle;
+		RepulsionFieldParticle sparticle;
 		double radius, dx ,xd,yd;
 	 
 		

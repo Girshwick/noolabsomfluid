@@ -6,9 +6,12 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 import org.NooLab.chord.CompletionEventMessageCallIntf;
+import org.NooLab.field.FieldHostIntf;
+import org.NooLab.field.FieldIntf;
+import org.NooLab.field.Stoppable;
 import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
 import org.NooLab.field.repulsive.components.ActionDescriptor;
-import org.NooLab.field.repulsive.components.CollectStatistics;
+import org.NooLab.field.repulsive.components.FluidFieldCollectStatistics;
 import org.NooLab.field.repulsive.components.FieldSampler;
 import org.NooLab.field.repulsive.components.GridOptimizer;
 import org.NooLab.field.repulsive.components.LimitedNeighborhoodUpdate;
@@ -21,7 +24,7 @@ import org.NooLab.field.repulsive.components.SelectionConstraints;
 import org.NooLab.field.repulsive.components.SpatialGeomCalc;
 import org.NooLab.field.repulsive.components.Storage;
 import org.NooLab.field.repulsive.components.SurroundBuffers;
-import org.NooLab.field.repulsive.components.SurroundRetrieval;
+import org.NooLab.field.repulsive.components.FluidFieldSurroundRetrieval;
 import org.NooLab.field.repulsive.components.data.AreaPoint;
 import org.NooLab.field.repulsive.components.data.DislocationXY;
 import org.NooLab.field.repulsive.components.data.FieldPoint;
@@ -31,13 +34,12 @@ import org.NooLab.field.repulsive.components.infra.PhysicsDigester;
 import org.NooLab.field.repulsive.intf.ActiveAreaIntf;
 import org.NooLab.field.repulsive.intf.ParticleDataHandlingIntf;
 import org.NooLab.field.repulsive.intf.RepulsionFieldsSyncEventsIntf;
-import org.NooLab.field.repulsive.intf.Stoppable;
 import org.NooLab.field.repulsive.intf.SurroundRetrievalObserverIntf;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldCoreIntf;
 import org.NooLab.field.repulsive.intf.particles.GraphParticlesIntf;
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
-import org.NooLab.field.repulsive.particles.Particle;
-import org.NooLab.field.repulsive.particles.Particles;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
 
  
 
@@ -48,13 +50,14 @@ import org.NooLab.field.repulsive.particles.Particles;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.nums.NumUtilities;
 import org.math.array.StatisticSample;
 
 
 /**
- * Version 1.00.00 </br>
- * Date  Jan,23rd 2012 </br>
- * Author kwa </br> </br>
+ * Version 1.20.00 </br>
+ * Date    Aug, 23rd 2012 </br>
+ * Author  kwa </br> </br>
  * 
  * This software is under any GPL, free for use and free for change.  </br> </br> </br>
  * 
@@ -67,9 +70,9 @@ import org.math.array.StatisticSample;
  *  
  * The main purpose of this RepulsionField is to serve as a base layer for a Self-Organizing Map;</br>
  * Usually, SOMs are implemented on fixed grids; this causes a lot of troubles if "growth" should be 
- * implemented for the SOM. The RepulsoinFIeld is a natural solution for this.</br></br>
+ * implemented for the SOM. The RepulsionField is a natural solution for this.</br></br>
  * 
- *  This purpose implies a range of consequences concerning the capabilities of the RepulsionFIeld 
+ *  This purpose implies a range of consequences concerning the capabilities of the RepulsionField 
  *  and the particles therein:</br>
  *  - all particles are identified by an index; </br>
  *  - the RepulsionField always knows the location of each particle, such that spatially close
@@ -120,11 +123,11 @@ import org.math.array.StatisticSample;
  *    - SurroundBuffers, neighborhood objects
  *     
  * 1. the standard RepulsionField is instantiated through the facade; </br>
- *    the facade offers the sae interface, but for the read-operations requested from the areea
+ *    the facade offers the same interface, but for the read-operations requested from the area
  * 2. once ready, the facade is being created, offering the same calls, but without any own functionality,
  *    except the getParticle and the getSurround </br>
- *    for any other functinoality, commands are routed to the main field and data are retrieved by it.  </br>
- * 3. Finally, the references of full-object and its facade are axchanged for the perspective of the client. </br>
+ *    for any other functionality, commands are routed to the main field and data are retrieved by it.  </br>
+ * 3. Finally, the references of full-object and its facade are exchanged for the perspective of the client. </br>
  * 
  * The approach using the facade does not need swapping of instances;
  * </br> </br>
@@ -168,6 +171,8 @@ import org.math.array.StatisticSample;
 public class RepulsionFieldCore implements 	Runnable, 
 								        //  the public interface for usage of the RepulsionField
 											RepulsionFieldCoreIntf, 
+											FieldHostIntf,
+											FieldIntf,
 										//  information about states of the SurroundBuffer process
 											SurroundRetrievalObserverIntf , 
 										//  information issued by NooLabChord's MultiDigester class
@@ -183,7 +188,7 @@ public class RepulsionFieldCore implements 	Runnable,
 	Vector<RepulsionFieldEventsIntf> eventsReceptors = new Vector<RepulsionFieldEventsIntf>();
 	RepulsionFieldsSyncEventsIntf internalLayerEvents; 
 	
-	public Particles particles, frozenParticles;
+	public RepulsionFieldParticles particles, frozenParticles;
 
 	int nbrParticles = 0;
 	double currentBaselineDensity = -1.0 ;
@@ -258,13 +263,13 @@ public class RepulsionFieldCore implements 	Runnable,
 	long relocationInterruptDelay = 25000;
 	long relocationInterruptDelayOnDel = 5000;
 	
-	CollectStatistics statisticsCollector ;
+	FluidFieldCollectStatistics statisticsCollector ;
 	
 	Neighborhood neighborhood;
 	SpatialGeomCalc spatialGeomCalc;
 	
 	LimitedNeighborhoodUpdate limitedAreaUpdate;
-	SurroundRetrieval surroundRetrieval; // a wrapper for get-surround methods
+	FluidFieldSurroundRetrieval surroundRetrieval; // a wrapper for get-surround methods
 	//SurroundBuffers  surroundBuffers; 
 	
 	boolean selectionBuffersActivated=false;
@@ -316,12 +321,13 @@ public class RepulsionFieldCore implements 	Runnable,
 	Storage storage;
 	
 	StatisticSample statsSampler; // from adapted JMathTools which allows for an external seed
+	Random random;
 	
+	NumUtilities numutil = new NumUtilities();
 	ArrUtilities arrutil = new ArrUtilities();
 	public PrintLog out = new PrintLog(2,true);
 	
-	
-	
+	// ========================================================================
 	/** static method to retrieve an interface to the object, it is possible to provide a name for the instance */
 	protected static RepulsionFieldCoreIntf create( RepulsionFieldProperties rfProperties ){
 		
@@ -350,6 +356,8 @@ public class RepulsionFieldCore implements 	Runnable,
 	private static RepulsionFieldCore getInstance( RepulsionFieldProperties rfProperties ){
 		return (new RepulsionFieldCore( rfProperties ));
 	}
+	// ========================================================================
+	
 	
 	public void setFactoryReference(RepulsionFieldFactory rff) {
 		repulsionFieldFactory = rff;
@@ -489,7 +497,9 @@ public class RepulsionFieldCore implements 	Runnable,
 		int w, h;
 		
 		statsSampler = new StatisticSample(9437);
-		 
+		random = new Random();
+		random.setSeed(9436) ;
+		
 		w = areaWidth;
 		h = areaHeight ;
 		
@@ -607,9 +617,9 @@ public class RepulsionFieldCore implements 	Runnable,
 		} 
 
 		*/		
-		statisticsCollector = new CollectStatistics(this);
+		statisticsCollector = new FluidFieldCollectStatistics(this);
 		statisticsCollector.setShowStatisticsInfo(false) ;
-		surroundRetrieval = new SurroundRetrieval(this); 
+		surroundRetrieval = new FluidFieldSurroundRetrieval(this); 
 		
 		/*
 		neighborhood = new Neighborhood( neighborhoodBorderMode, surroundBuffers,out ) ;
@@ -622,11 +632,11 @@ public class RepulsionFieldCore implements 	Runnable,
 	
 	private void createParticlesPopulation() {
 	
-		Particle p;
+		RepulsionFieldParticle p;
 		double globRepulsion ;
 		// defining the collections
-		particles = new Particles(this);
-		frozenParticles = new Particles(this);
+		particles = new RepulsionFieldParticles(this,this);
+		frozenParticles = new RepulsionFieldParticles(this,this);
 		
 		
 		
@@ -645,7 +655,9 @@ public class RepulsionFieldCore implements 	Runnable,
 			}
 			
 	
-			p = new Particle( i, areaWidth, areaHeight, kRadiusFactor, nbrParticles, repulsion, sizefactor, colormode);
+			p = new RepulsionFieldParticle( i, areaWidth, areaHeight, kRadiusFactor, 
+										    nbrParticles, 
+										    repulsion, sizefactor, colormode, this);
 			if (initialLayoutMode == RepulsionField._INIT_LAYOUT_REGULAR){
 				
 				
@@ -797,9 +809,14 @@ if (this.name.contains("sampler")){
 		
 	}
 	
+	@Override
+	public int getType() {
+		
+		return FieldIntf._SOM_GRIDTYPE_FLUID;
+	}
 	private ArrayList<Integer> getNeighboredParticlesAccelerated(int i){
 		 
-		Particle p_i,p_j;
+		RepulsionFieldParticle p_i,p_j;
 		double dx,dy ;
 		double _vicinity,_repulsion , _repulsionRange;
 		
@@ -1042,7 +1059,7 @@ if (this.name.contains("sampler")){
 	
 	private ArrayList<Integer> getCrossBorderItems( int index, ArrayList<Integer> neighbors, int direction){
 		ArrayList<Integer> cB_neighbors = new ArrayList<Integer>() ;
-		Particle pi, pn ;
+		RepulsionFieldParticle pi, pn ;
 		int nIndex;
 		
 		for (int n=0;n<neighbors.size(); n++){
@@ -1092,7 +1109,7 @@ if (this.name.contains("sampler")){
 	
 	private void calculateDislocationWithOutBorders( int index, ArrayList<Integer> neighbors, double wt,  double fx, double fy){
 	
-		Particle particle_i = particles.get(index) ;
+		RepulsionFieldParticle particle_i = particles.get(index) ;
 		
 		double dx, dy, distance ,wtd =0.0, scale, diff ;
 		double maxDist = particle_i.radius;
@@ -1201,7 +1218,7 @@ if (this.name.contains("sampler")){
 	}
 	private void calculateDislocationWithinBorders( int index, double wt,  double fx, double fy){
 	
-		Particle particle_i = particles.get(index) ;
+		RepulsionFieldParticle particle_i = particles.get(index) ;
 		
 		double dx, dy, distance , scale, diff ;
 		double maxDist = particle_i.radius;
@@ -1345,7 +1362,7 @@ if (this.name.contains("sampler")){
 			
 			multiProc = false;
 			if (statisticsCollector==null){
-				statisticsCollector = new CollectStatistics(rf);
+				statisticsCollector = new FluidFieldCollectStatistics(rf);
 				// statisticsCollector.explicitTrigger();
 			}
 			if (neighborhood == null){
@@ -1390,7 +1407,7 @@ if (this.name.contains("sampler")){
 		
 		double minDist = 999999999999.9;
 		double minObsDistance,dx,dy ,distance;
-		Particle particle_j, particle_i;
+		RepulsionFieldParticle particle_j, particle_i;
 		
 		int z,j;
 		int[] indexes;
@@ -1471,7 +1488,7 @@ if (this.name.contains("sampler")){
 	 * 
 	 * @param particles
 	 */
-	public void collectStatistics( Particles particles){
+	public void collectStatistics( RepulsionFieldParticles particles){
 		collectStatistics( particles, false ) ;
 	}
 		
@@ -1482,10 +1499,10 @@ if (this.name.contains("sampler")){
 	 * @param particles
 	 * @param enforce
 	 */
-	public void collectStatistics( Particles particles, boolean enforce  ){
+	public void collectStatistics( RepulsionFieldParticles particles, boolean enforce  ){
 			 
 			double dx ,dy, distance , minDistance=9999999999999.9;
-			Particle particle_i, particle_j;
+			RepulsionFieldParticle particle_i, particle_j;
 			
 			//Vector<Neighbor> neighbors = new Vector<Neighbor>();
 			double minObsDistance=0.0, movedDistanceSum =0.0,minDistSum=0.0, mds_sqr =0.0, var=0;
@@ -1689,9 +1706,13 @@ if (this.name.contains("sampler")){
 	 * 
 	 */
 	@Override
-	public void surroundRetrievalUpdate( SurroundRetrieval Observable, String guid) {
+	public void surroundRetrievalUpdate( Object _Observable, String guid) {
 	
+		FluidFieldSurroundRetrieval Observable ;
 		
+		
+		Observable = (FluidFieldSurroundRetrieval)_Observable;
+
 		out.print(4, "result returned to core from SurroundRetrieval(), result id = "+guid );
 		
 		// now we can retrieve the results
@@ -1703,22 +1724,23 @@ if (this.name.contains("sampler")){
 		}
 
 		 
-		if (result.getParamSet().getTask() >= SurroundRetrieval._TASK_SURROUND_C) {
+		if (result.getParamSet().getTask() >= FluidFieldSurroundRetrieval._TASK_SURROUND_C) {
 			particles.selectSurround(result.getParticleIndexes(), result.getParamSet().isAutoselect());
 		}
 
-		if (result.getParamSet().getTask() <= SurroundRetrieval._TASK_PARTICLE) {
+		if (result.getParamSet().getTask() <= FluidFieldSurroundRetrieval._TASK_PARTICLE) {
 			result.setParticleIndexes( new int[] { (int) result.particleIndex });
 			particles.selectSurround(result.getParticleIndexes(), result.getParamSet().isAutoselect());
 			
-			if (result.getParamSet().getTask() <= SurroundRetrieval._TASK_PARTICLE) {
+			if (result.getParamSet().getTask() <= FluidFieldSurroundRetrieval._TASK_PARTICLE) {
 				
 			}
 		}
 
 		if ((eventsReceptors != null) && (eventsReceptors.size()>0)){
 			for (int i=0;i<eventsReceptors.size();i++){
-				eventsReceptors.get(i).onSelectionRequestCompleted(result);
+				RepulsionFieldEventsIntf eventsIntf = eventsReceptors.get(i);
+				eventsIntf.onSelectionRequestCompleted(result);
 			}
 		}
 
@@ -1735,7 +1757,7 @@ if (this.name.contains("sampler")){
 		
 		pix = surroundRetrieval.addRetrieval( xpos, ypos, autoselect);
 		
-		guidStr = surroundRetrieval.go(pix,SurroundRetrieval._TASK_PARTICLE);
+		guidStr = surroundRetrieval.go(pix,FluidFieldSurroundRetrieval._TASK_PARTICLE);
 		 
 		return guidStr;
 		
@@ -1749,10 +1771,12 @@ if (this.name.contains("sampler")){
 	 * int[]
 	 */
 	public String getSurround( int xpos, int ypos ,  
-			  				   int selectMode, boolean autoselect){
+			  				   int selectMode,int surroundN, boolean autoselect){
 		String guidStr="";
 		int pix;
-		int surroundN = 7;
+		if (surroundN<7){
+			surroundN = 7;
+		}
 		
 		if (selectionSize>5){
 			surroundN = selectionSize;
@@ -1762,32 +1786,41 @@ if (this.name.contains("sampler")){
 		
 		pix = surroundRetrieval.addRetrieval( xpos, ypos, surroundN, selectMode, autoselect);
 		
-		guidStr = surroundRetrieval.go(pix, SurroundRetrieval._TASK_SURROUND_C);
+		guidStr = surroundRetrieval.go(pix, FluidFieldSurroundRetrieval._TASK_SURROUND_C);
 		 
 		return guidStr;
 	}
 
+	@Override
+	public String getSurround(int index, int selectMode, boolean autoselect) {
 
+		return getSurround( index ,   
+				   			selectMode,selectionSize,
+				   			autoselect);
+	}
 	/**
 	 *  selectMode=1 : selecting closest "surroundN" items;
 	 *  selectMode=2 : selecting closest items within a radius of surroundN   
 	 */
 	public String getSurround( int index ,   
-							   int selectMode,
+							   int selectMode,int surroundN,
 							   boolean autoselect){
 		
 		
 		String guidStr="";
 		int pix;
-		int surroundN=7;
+		if (surroundN<7){
+			surroundN = 7;
+		}
 
+		// that's not completely correct, we should refer to selection size only as parameter... 
 		if (selectionSize>5){
 			surroundN = selectionSize;
 		}
 		
 		pix = surroundRetrieval.addRetrieval( index, surroundN, selectMode, autoselect);
 		
-		guidStr = surroundRetrieval.go(pix, SurroundRetrieval._TASK_SURROUND_X);
+		guidStr = surroundRetrieval.go(pix, FluidFieldSurroundRetrieval._TASK_SURROUND_X);
 		 
 		return guidStr;
  
@@ -1806,7 +1839,7 @@ if (this.name.contains("sampler")){
 		// pix then will contain the indx to a slot in the collecton of "paramSets"
 		pix = surroundRetrieval.addRetrieval( indexes,  thickness, endPointRatio, autoselect);
 		
-		guidStr = surroundRetrieval.go(pix,SurroundRetrieval._TASK_SURROUND_MST);
+		guidStr = surroundRetrieval.go(pix,FluidFieldSurroundRetrieval._TASK_SURROUND_MST);
 		 
 		return guidStr;
 	}
@@ -1829,7 +1862,7 @@ if (this.name.contains("sampler")){
 		// pix then will contain the indx to a slot in the collecton of "paramSets"
 		pix = surroundRetrieval.addRetrieval( indexes,  thickness, topology, autoselect);
 		
-		guidStr = surroundRetrieval.go(pix,SurroundRetrieval._TASK_SURROUND_MST);
+		guidStr = surroundRetrieval.go(pix,FluidFieldSurroundRetrieval._TASK_SURROUND_MST);
 		 
 		return guidStr;
 	}
@@ -1857,9 +1890,9 @@ if (this.name.contains("sampler")){
 		
 		if (mode<=1){
 			 
-			layerCount = getLayerCountOfHexPattern(selectionSize);
+			layerCount = numutil.getLayerCountOfHexPattern(selectionSize);
 			if (layerCount>=2){
-				selectionSize = calculatePlateletsCountInHexPattern(layerCount-1);
+				selectionSize = numutil.calculatePlateletsCountInHexPattern(layerCount-1);
 				out.print(2, "selectionSize has been reduced to "+selectionSize+" particles.");
 			}else{
 				selectionSize = 7;
@@ -1889,8 +1922,8 @@ if (this.name.contains("sampler")){
 		*/
 		if (mode<=1){
 			
-			layerCount = getLayerCountOfHexPattern(selectionSize);
-			selectionSize = calculatePlateletsCountInHexPattern(layerCount+1);
+			layerCount = numutil.getLayerCountOfHexPattern(selectionSize);
+			selectionSize = numutil.calculatePlateletsCountInHexPattern(layerCount+1);
 			
 			applySelectionSizeRestrictions();
 			
@@ -1922,7 +1955,7 @@ if (this.name.contains("sampler")){
 		// alternative strategy: immediately setting the particle to "invisible=true"
 		// such it will not be regarded anywhere
 		int index = 0,count ;
-		Particle p=null;
+		RepulsionFieldParticle p=null;
 		double newradius;
 		//int deletedIndex = -1;
 		
@@ -2039,13 +2072,15 @@ if (this.name.contains("sampler")){
 
 	private void createUnboundedParticle( int x, int y){
 		
-		Particle p;
+		RepulsionFieldParticle p;
 		
 		if (x<=-3){
 			return  ;
 		}
 		
-		p = new Particle( particles.getItems().size() ,areaWidth, areaHeight, kRadiusFactor, nbrParticles, repulsion, sizefactor, 0);
+		p = new RepulsionFieldParticle( particles.getItems().size() ,areaWidth, areaHeight, 
+										kRadiusFactor, 
+										nbrParticles, repulsion, sizefactor, 0, this);
 		
 		if ((x>0) && (y>0)){
 			if (x>areaWidth) {x = (int) (areaWidth*0.98);}
@@ -2167,7 +2202,7 @@ if (this.name.contains("sampler")){
 	public int splitParticle(int index, ParticleDataHandlingIntf pdataHandler) {
 	 
 		int x,y;
-		Particle particle ;
+		RepulsionFieldParticle particle ;
 		
 		
 		if ((index<0) || (index>particles.size()-1)){
@@ -2198,7 +2233,7 @@ if (this.name.contains("sampler")){
 	public String mergeParticles( int mergeTargetIndex, int[] indexes) {
 		int ix;
 		double d;
-		Particle particle,p;
+		RepulsionFieldParticle particle,p;
 		Vector<Integer> ixes = new Vector<Integer>();
 		
 		// check distances
@@ -2243,7 +2278,7 @@ if (this.name.contains("sampler")){
 	@Override
 	public void moveParticle( int particleIndex, int type, double xParam, double yParam) {
 		double newX, newY;
-		Particle particle;
+		RepulsionFieldParticle particle;
 		
 		particle = particles.get(particleIndex) ;
 		
@@ -2303,7 +2338,7 @@ if (this.name.contains("sampler")){
 	
 	public void clearData(int index){
 		
-		Particle particle;
+		RepulsionFieldParticle particle;
 		
 		particle = particles.get( index ) ;
 		
@@ -2317,7 +2352,7 @@ if (this.name.contains("sampler")){
 	@Override
 	public void insertDataPointer(int particleIndex, long dataPointer) {
 
-		Particle particle;
+		RepulsionFieldParticle particle;
 		
 		particle = particles.get(particleIndex) ;
 		
@@ -2327,7 +2362,7 @@ if (this.name.contains("sampler")){
 
 	@Override
 	public void removeDataPointer(int particleIndex, long dataPointer) {
-		Particle particle;
+		RepulsionFieldParticle particle;
 		
 		particle = particles.get(particleIndex) ;
 		
@@ -2346,7 +2381,7 @@ if (this.name.contains("sampler")){
 		(new Shaker(particles,intensity,maxTime)).go();
 	}
 
-	private void relocateParticles( Particle lastOfParticles, int direction){
+	private void relocateParticles( RepulsionFieldParticle lastOfParticles, int direction){
 		
 		double chgHistoryCounterThreshold;
 		double radius ;
@@ -2418,14 +2453,14 @@ if (this.name.contains("sampler")){
 		RestoreInitialValues restoreTask ; 
 		Timer rivTimer ;
 		
-		public Shaker( Particles particles, int intensity, int maxTime){
+		public Shaker( RepulsionFieldParticles particles, int intensity, int maxTime){
 			init(particles, intensity, maxTime);
 		}
-		public Shaker( Particles particles, int intensity){
+		public Shaker( RepulsionFieldParticles particles, int intensity){
 			init(particles, intensity, 15);
 		}
 		
-		private void init( Particles particles, int intensity,int maxTime ){
+		private void init( RepulsionFieldParticles particles, int intensity,int maxTime ){
 			
 			this.intensity = intensity;
 			this.maxTime = maxTime;
@@ -2446,7 +2481,7 @@ if (this.name.contains("sampler")){
 		}
 	
 		private void releaseShaking(){
-			Particle p ;
+			RepulsionFieldParticle p ;
 			double ds,deloc ;
 			
 			if (fieldLayoutFrozen==false){
@@ -2648,7 +2683,7 @@ if (this.name.contains("sampler")){
 
 	private void restartSubProcesses(int mode){
 		
-		CollectStatistics statsCollector;
+		FluidFieldCollectStatistics statsCollector;
 		if ((neighborhood == null) || (statisticsCollector==null)) {
 			mode = 1;
 		}
@@ -2667,7 +2702,7 @@ if (this.name.contains("sampler")){
 			neighborhood = new Neighborhood(neighborhoodBorderMode,out) ; // surroundBuffers,
 			neighborhood.setBorderMode( neighborhoodBorderMode );
 			 
-			statsCollector = new CollectStatistics(this); // rf); // ???
+			statsCollector = new FluidFieldCollectStatistics(this); // rf); // ???
 			
 			boolean p1,p2;
 			out.delay(10) ;
@@ -2879,9 +2914,9 @@ if (this.name.contains("sampler")){
 			neighborhood.setAreaSize( areaWidth, areaHeight, areaDepth);
 			// neighborhood.setBorderMode( neighborhoodBorderMode );
 
-			statisticsCollector = new CollectStatistics(this);
+			statisticsCollector = new FluidFieldCollectStatistics(this);
 			statisticsCollector.setShowStatisticsInfo(false) ;
-			surroundRetrieval = new SurroundRetrieval(this); 
+			surroundRetrieval = new FluidFieldSurroundRetrieval(this); 
 			
 			
 			
@@ -3074,7 +3109,7 @@ if (this.name.contains("sampler")){
 	public RepulsionFieldProperties getRfProperties() {
 		return rfProperties;
 	}
-	public CollectStatistics getStatisticsCollector() {
+	public FluidFieldCollectStatistics getStatisticsCollector() {
 		return statisticsCollector;
 	}
 
@@ -3153,9 +3188,9 @@ if (this.name.contains("sampler")){
 	
 	
 	@Override
-	public ParticlesIntf getParticles() {
+	public RepFieldParticlesIntf getParticles() {
 		 
-		return (ParticlesIntf) particles;
+		return (RepFieldParticlesIntf) particles;
 	}
 
 
@@ -3171,6 +3206,8 @@ if (this.name.contains("sampler")){
 	public ParticleGrid getParticleGrid() {
 		return particleGrid;
 	}
+	
+	
 	@Override
 	public void setBorderMode(int bordermode) {
 		
@@ -3806,7 +3843,7 @@ if (index>nbrParticles-5){
 	}
 	
 	private void informParticlesAboutArea( int w, int h){
-		Particle p;
+		RepulsionFieldParticle p;
 		
 		if (particles==null){
 			return;
@@ -3899,7 +3936,7 @@ if (index>nbrParticles-5){
 				 
 				// restart();
 				if (statisticsCollector==null){
-					statisticsCollector = new CollectStatistics(rf);
+					statisticsCollector = new FluidFieldCollectStatistics(rf);
 				}
 				fieldLayoutFrozen=false;
 				if (this.minimalDistance<0){
@@ -3956,20 +3993,20 @@ if (index>nbrParticles-5){
 		int layerCount,p,n4 ;
 		
 		
-		layerCount = getLayerCountOfHexPattern(selectionSize);
-		newSelectionSize = calculatePlateletsCountInHexPattern(layerCount);
+		layerCount = numutil.getLayerCountOfHexPattern(selectionSize);
+		newSelectionSize = numutil.calculatePlateletsCountInHexPattern(layerCount);
 		
 		applySelectionSizeRestrictions();
 		cSelSize = selectionSize ;
 			
 		selsizes = new int[3];
 		dsizes = new int[3];
-		n4 = calculatePlateletsCountInHexPattern(3);
+		n4 = numutil.calculatePlateletsCountInHexPattern(3);
 		if (layerCount>=3){
 			
-			selsizes[0] = calculatePlateletsCountInHexPattern(layerCount-1);
-			selsizes[1] = calculatePlateletsCountInHexPattern(layerCount );
-			selsizes[2] = calculatePlateletsCountInHexPattern(layerCount+1);
+			selsizes[0] = numutil.calculatePlateletsCountInHexPattern(layerCount-1);
+			selsizes[1] = numutil.calculatePlateletsCountInHexPattern(layerCount );
+			selsizes[2] = numutil.calculatePlateletsCountInHexPattern(layerCount+1);
 				
 			dsizes[0] = Math.abs( selsizes[0]  - cSelSize);
 			dsizes[1] = Math.abs( selsizes[1]  - cSelSize);
@@ -4013,6 +4050,7 @@ if (index>nbrParticles-5){
 		
 	}
 	
+	/*
 	// later: put this to NumUtilities
 	public int getLayerCountOfHexPattern( int platelets){
 		
@@ -4039,7 +4077,7 @@ if (index>nbrParticles-5){
 		
 		return sp;
 	}
-
+	*/
 
 	class StopThread implements Runnable{
 		Thread sT;
@@ -4153,7 +4191,7 @@ if (index>nbrParticles-5){
 			}
 			
 		}
-		@Override
+	 	@Override
 		public void run() {
 			send();
 		}
@@ -4188,9 +4226,16 @@ if (index>nbrParticles-5){
 	public RelocationDurationLimiter getRelocationDurationLimiter() {
 		return relocationDurationLimiter;
 	}
+	
 	public void setFieldIsRandom(boolean flag) {
 		
 		fieldIsRandom = flag;
+	}
+	
+	@Override
+	public Random getRandom() {
+		// that's for sharing the random object among the particles... for saving memory
+		return random;
 	}
 	
 	public StatisticSample getStatsSampler() {
@@ -4209,6 +4254,13 @@ if (index>nbrParticles-5){
 		//  
 		return null;
 	}
+	@Override
+	public FieldHostIntf getGenericFieldReference() {
+	
+		return this;
+	}
+
+	 
 	
 
 
@@ -4225,10 +4277,10 @@ if (index>nbrParticles-5){
 class Neighbor{
 	
 	int index;
-	Particle particle;
+	RepulsionFieldParticle particle;
 	double distance ;
 	
-	public Neighbor( int ix, Particle particle, double distance ){
+	public Neighbor( int ix, RepulsionFieldParticle particle, double distance ){
 		this.index = ix ;
 		this.particle = particle ;
 		this.distance = distance ;

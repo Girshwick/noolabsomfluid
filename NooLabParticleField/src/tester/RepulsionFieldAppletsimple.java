@@ -13,7 +13,7 @@ import org.NooLab.field.repulsive.RepulsionField;
 import org.NooLab.field.repulsive.RepulsionFieldFactory;
 import org.NooLab.field.repulsive.components.Neighborhood;
 import org.NooLab.field.repulsive.components.RepulsionFieldProperties;
-import org.NooLab.field.repulsive.components.SurroundRetrieval;
+import org.NooLab.field.repulsive.components.FluidFieldSurroundRetrieval;
 import org.NooLab.field.repulsive.components.data.PointXY;
 import org.NooLab.field.repulsive.components.data.SurroundResults;
 import org.NooLab.field.repulsive.intf.ParticleDataHandlingIntf;
@@ -21,7 +21,7 @@ import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldSelectionIntf;
 import org.NooLab.field.repulsive.intf.particles.GraphParticleIntf;
 import org.NooLab.field.repulsive.intf.particles.GraphParticlesIntf;
-import org.NooLab.field.repulsive.particles.Particles;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
  
 
  
@@ -73,7 +73,7 @@ public class RepulsionFieldAppletsimple 	extends
 	double repulsion = 1.0 ; 
 	double energy = 1.0 ;  
 	
-	int nbrParticles = 71 ;
+	int nbrParticles = 271 ;
 	
 	String requestGuid;
 	int selectedParticleIndex = -1;
@@ -401,7 +401,7 @@ public class RepulsionFieldAppletsimple 	extends
 
 			int i = results.getParamSet().getTask();
 
-			if (results.getParamSet().getTask() >= SurroundRetrieval._TASK_SURROUND_C) {
+			if (results.getParamSet().getTask() >= FluidFieldSurroundRetrieval._TASK_SURROUND_C) {
 				printIndexList(results, 2);
 			}
 		}
@@ -670,7 +670,7 @@ public class RepulsionFieldAppletsimple 	extends
 
 	@Override
 	public void handlingDataOnParticleSplit(Object observable,
-			Particles particles, int originix, int pullulix) {
+			RepulsionFieldParticles particles, int originix, int pullulix) {
 		// TODO Auto-generated method stub
 		
 	}

@@ -8,11 +8,11 @@ import java.util.Map;
 import java.util.Vector;
 
  
+import org.NooLab.field.Stoppable;
 import org.NooLab.field.repulsive.components.data.RequestBorder;
 import org.NooLab.field.repulsive.components.infra.C2DComparable;
 import org.NooLab.field.repulsive.intf.ItemLinkageIntf;
-import org.NooLab.field.repulsive.intf.Stoppable;
-import org.NooLab.field.repulsive.particles.Particles;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.logging.PrintLog;
@@ -144,7 +144,7 @@ public class Neighborhood implements Runnable, Stoppable{
 	
 	Map<String, RequestBorder> requestBorders = new HashMap<String, RequestBorder>();
 	
-	Particles particles;
+	RepulsionFieldParticles particles;
 	// SurroundBuffers  surroundBuffers ;
 	boolean buffersOpen=true;
 	

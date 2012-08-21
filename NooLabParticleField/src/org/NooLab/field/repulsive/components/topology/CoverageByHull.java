@@ -15,7 +15,7 @@ import math.geom2d.polygon.Polygon2D;
 
 import org.NooLab.field.repulsive.components.Neighborhood;
 import org.NooLab.field.repulsive.components.SurroundBuffers;
-import org.NooLab.field.repulsive.components.SurroundRetrieval;
+import org.NooLab.field.repulsive.components.FluidFieldSurroundRetrieval;
 import org.NooLab.field.repulsive.components.data.LineXY;
 import org.NooLab.field.repulsive.components.data.PointXY;
 import org.NooLab.field.repulsive.components.data.RetrievalParamSet;
@@ -23,8 +23,8 @@ import org.NooLab.field.repulsive.components.data.SurroundResults;
 import org.NooLab.field.repulsive.intf.RepulsionFieldObjectsIntf;
 import org.NooLab.field.repulsive.intf.SurroundRetrievalObserverIntf;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldBasicIntf;
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
-import org.NooLab.field.repulsive.particles.Particle;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
+import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
 import org.NooLab.graph.PointXYIntf;
 import org.NooLab.graph.TreeLinesIntf;
 import org.NooLab.utilities.logging.PrintLog;
@@ -44,7 +44,7 @@ public class CoverageByHull extends AbstractCoverage {
 	
 	
 	// ------------------------------------------------------------------------
-	public CoverageByHull( Object parent, SurroundRetrievalObserverIntf observer, SurroundRetrieval srt, RetrievalParamSet rps) {
+	public CoverageByHull( Object parent, SurroundRetrievalObserverIntf observer, FluidFieldSurroundRetrieval srt, RetrievalParamSet rps) {
 		super( parent, observer, srt, rps);
 		
 		
