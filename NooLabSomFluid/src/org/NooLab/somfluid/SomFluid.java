@@ -9,6 +9,7 @@ import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
 import org.NooLab.utilities.objects.StringedObjects;
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.field.interfaces.FixedNodeFieldEventsIntf;
 import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
 import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
@@ -67,7 +68,7 @@ public class SomFluid
 								 RepulsionFieldEventsIntf,
 								 FixedNodeFieldEventsIntf
 								 {
-	//   
+	//    
 	
 	
 
@@ -285,13 +286,13 @@ public class SomFluid
 				classTaskId = soapp.perform();
 				
 				if (appInformer != null){
-					appInformer.onProcessStarted( sfTask, SomFluidFactory._INSTANCE_TYPE_CLASSIFIER, classTaskId) ;
+					appInformer.onProcessStarted( sfTask, FieldIntf._INSTANCE_TYPE_CLASSIFIER, classTaskId) ;
 				}
 			}else{
 				String str = soapp.getLastStatusMessage();
 				
 				if (appInformer != null){
-					appInformer.onStatusMessage( sfTask, SomFluidFactory._INSTANCE_TYPE_CLASSIFIER, -1, str) ;
+					appInformer.onStatusMessage( sfTask, FieldIntf._INSTANCE_TYPE_CLASSIFIER, -1, str) ;
 											// -1 ... we should use a centralized error code directory instead
 				}
 			}
@@ -949,7 +950,7 @@ public class SomFluid
 
 	@Override
 	public void onSelectionRequestCompleted(Object results) {
-		
+		out.printErr(1,"SomFluid, receiving result message...") ;
 	}
 
 

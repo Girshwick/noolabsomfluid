@@ -99,9 +99,8 @@ public class VirtualLattice implements LatticeIntf{
 	StatisticSample statsSampler;
 	Random rndInstance = new Random();
 	
-	// ArrUtilities arrutil = new ArrUtilities (); 
-	PrintLog out = new PrintLog(2,true);
 
+	private boolean fieldIsDynamic = false;
 	private double averagePhysicalDistance = 1.0;
 
 	public boolean bmuBufferActivated = false;
@@ -111,7 +110,7 @@ public class VirtualLattice implements LatticeIntf{
 
 	private int dataSize;
 	
-	
+	PrintLog out = new PrintLog(2,true);
 	// ========================================================================
 	public VirtualLattice(SomProcessIntf parent, LatticePropertiesIntf latticeProps, int svlIndex){
 		  
@@ -859,6 +858,9 @@ public class VirtualLattice implements LatticeIntf{
 
 		SurroundResults results;
 		String queryGuid  ;
+		String rguid = "" ;
+		
+		
 		
 		public ParticleSelectionQuery() {
 			 
@@ -871,36 +873,75 @@ public class VirtualLattice implements LatticeIntf{
 			
 			// define selection size, otherwise the field will take the default !!!
 			// this call returns immediately, providing the GUID as issued by the RepulsionField
+			
+			// somProcessParent: e.g. SomTargetedModeling
 			queryGuid = somProcessParent.getNeighborhoodNodes( index ,surroundN);   
-											out.print(4, "request for getNeighborhoodNodes, waiting for guid = "+queryGuid);
-											
+											out.print(3, "Lattice released a request for getNeighborhoodNodes, waiting for guid = "+queryGuid);
+
+            
 			// putting this to a map <guid,null>, the matching result object will contain the same Guid
 			// but only, if it does not exist so far: if retrieval is not threaded, then it will be already there!								
 			if (selectionResultsQueryMap.containsKey(queryGuid)==false){
-				selectionResultsQueryMap.put(queryGuid,null) ;
+				selectionResultsQueryMap.put(queryGuid,null) ; 
+				
 			}
-			// now waiting here XXX			
-			int z=0;
-			while ((z<2000) && (selectionResultsQueryMap.get(queryGuid)==null)){ // (z<300) && // activate for NON _DEBUG abc124
-				minidelay(10); 
-				z++;
-			}
-			
-			if (selectionResultsQueryMap.get(queryGuid)==null){
-				out.print(3, "request for getNeighborhoodNodes NOT found, would-be guid = "+queryGuid);
-				IndexDistance ixd = new IndexDistance(index,0.0,"");
-				ArrayList<IndexDistance> ixds = new ArrayList<IndexDistance>();
-				ixds.add(ixd);
-				particlesIntf = new ArrayList<IndexDistanceIntf>( ixds);
-			}
-											out.print(5, "size of selectionResultsQueryMap : "+selectionResultsQueryMap.size()) ;
-			if (selectionResultsQueryMap.containsKey(queryGuid)){
-				results = (SurroundResults) selectionResultsQueryMap.get(queryGuid);
-				selectionResultsQueryMap.remove(queryGuid) ;
-			}else{
-				// create an empty dummy
-				return particlesIntf;
-			}
+
+			//if (fieldIsDynamic)
+			{
+				
+				
+				/* now waiting here ... this should not be too short !!!
+				 * since the results have to be routed trough an event :
+				 *    (e.g. sin SomFluid, SomTargetedModeling, onSelectionRequestCompleted()
+				 * into  somLattice.getSelectionResultsQueue().add( results )
+				 * and this queue will be handled by a digester (here below) and the
+				 * "ParticleSelectionDispatcher" compartment
+				 * 			
+				 * The actual speed is limited by the waiting times in the queue handling 
+				 * e.g. SelectionResultsQueueDigester
+				 */
+				long waitingStartTime = System.currentTimeMillis();
+				int z=0; 
+				while ( (z<500) && // 500ms 
+						(selectionResultsQueryMap.get(queryGuid)==null)){ // (z<300) && // activate for NON _DEBUG abc124
+					minidelay(5); // wait effectively 1ms 
+					z++;
+					
+				}
+				
+				long waitingEndTime = System.currentTimeMillis();
+				long waitingTime =  waitingEndTime- waitingStartTime;
+											// out.print(5, "lattice have been waiting for selection: "+waitingTime +" ms") ;
+				
+				rguid =  rguid + " ";
+				if (selectionResultsQueryMap.get(queryGuid)==null){
+					
+					out.printErr(3, "request for getNeighborhoodNodes (p-index:"+index+") NOT found after waiting "+waitingTime+" ms, would-be guid = "+queryGuid);
+					IndexDistance ixd = new IndexDistance(index,0.0,"");
+					ArrayList<IndexDistance> ixds = new ArrayList<IndexDistance>();
+					ixds.add(ixd);
+					particlesIntf = new ArrayList<IndexDistanceIntf>( ixds);
+				}
+												out.print(5, "size of selectionResultsQueryMap : "+selectionResultsQueryMap.size()) ;
+				
+			} // fluid? => separate thread with necessity to wait for !
+			/*else{
+				
+				if (selectionResultsQueryMap.containsKey(queryGuid)){
+					results = (SurroundResults) selectionResultsQueryMap.get(queryGuid);
+					selectionResultsQueryMap.remove(queryGuid) ;
+				}
+				int q = selectionResultsQueue.size();
+				if (q>0){
+					selectionResultsQueue.get(0) ;
+				}
+				if (results==null){
+					// create an empty dummy
+					return particlesIntf;
+				}
+
+			} // fixed => NO separate thread with necessity to wait for
+			*/
 			
 			if ((results!=null) && (results.getParticlesAsIndexedDistances()!=null)){
 				particles =  results.getParticlesAsIndexedDistances();
@@ -914,14 +955,6 @@ public class VirtualLattice implements LatticeIntf{
 			results = null;
 			latticeQuery = 0;
 			return particlesIntf;
-		}
-	
-		@SuppressWarnings("static-access")
-		public void minidelay(int nanos){
-			try {
-				Thread.currentThread().yield();
-				Thread.currentThread().sleep(0,nanos);
-			} catch (Exception e) {}
 		}
 	} // inner class ParticleSelectionQuery
 	
@@ -967,6 +1000,14 @@ public class VirtualLattice implements LatticeIntf{
 		System.gc();
 	}
 	
+	@SuppressWarnings("static-access")
+	public void minidelay(int nanos){
+		try {
+			Thread.currentThread().yield();
+			Thread.currentThread().sleep(0,nanos);
+		} catch (Exception e) {}
+	}
+
 	public MetaNode getNodeByNumId( long nodeID ){
 		
 		MetaNode node= null, _node;
@@ -1319,9 +1360,11 @@ public class VirtualLattice implements LatticeIntf{
 					} // isWorking ?
 					
 					if (selectionResultsQueue.size()==0){
-						dt = 1 ;
-						out.delay(dt);
+						dt = 2 ;
+						minidelay(dt);
+						// a delay in nanoseconds...
 					}else{
+						// as long as there are items in the queue, there will be no waiting time
 						dt = 0 ;
 					}
 					
@@ -1499,6 +1542,14 @@ public class VirtualLattice implements LatticeIntf{
 
 	public StatisticSample getRndSamplerInstance() {
 		return statsSampler;
+	}
+
+	public boolean isFieldIsDynamic() {
+		return fieldIsDynamic;
+	}
+
+	public void setFieldIsDynamic(boolean fieldIsDynamic) {
+		this.fieldIsDynamic = fieldIsDynamic;
 	}
 
 	public void setDataSize(int totalRecordCount) {

@@ -6,7 +6,7 @@ import org.NooLab.utilities.logging.PrintLog;
 public abstract class ExternalGridFieldAbstract  implements PhysicalGridFieldIntf{
 	
 	
-	PhysicalGridFieldIntf intfReference;
+	PhysicalGridFieldIntf fieldIntfReference;
 	
 	int nbrParticles = 661 ;
 	

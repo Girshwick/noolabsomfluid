@@ -247,7 +247,9 @@ if ((currentEpoch+1)>=somSteps){
 	    	// in the final step we do nothing structural any more ! ...in order to get a stable representation 
 		    if (((currentEpoch+1)<somSteps) && (mode==0)){ 
 				// ????
-				if ((recordsConsidered<4) && (neighbourhoodSize<=1)){ adoptInfluenceAndReach( sampleRecordIDs.size(), recordsConsidered-1, currentEpoch, somSteps ,timeConstant ); }
+				if ((recordsConsidered<4) && (neighbourhoodSize<=1)){ 
+					adoptInfluenceAndReach( sampleRecordIDs.size(), recordsConsidered-1, currentEpoch, somSteps ,timeConstant ); 
+				}
 
 				// retrieves the list of nodes from the physical ParticleField that are in the vicinity of the winner 
 				affectedNodesIndexes = getAffectedNodes( winningNodeIndexes, 1 );

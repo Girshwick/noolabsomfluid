@@ -6,7 +6,7 @@ import org.NooLab.field.repulsive.RepulsionField;
 import org.NooLab.field.repulsive.RepulsionFieldFactory;
 import org.NooLab.field.repulsive.components.Neighborhood;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
-import org.NooLab.field.repulsive.intf.particles.ParticlesIntf;
+import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.utilities.logging.LogControl;
 import org.NooLab.utilities.logging.PrintLog;
@@ -70,6 +70,12 @@ public class PhysicalRepulsionField extends ExternalGridFieldAbstract{
 	}
 	
 	
+	@Override
+	public void registerEventMessaging(Object eventSinkObj) {
+		 
+		defineEventMessagingEndpoint( (RepulsionFieldEventsIntf) eventSinkObj) ;
+	}
+
 	public RepulsionFieldIntf createPhysicalField( SomFluidFactory sfFactory,  RepulsionFieldEventsIntf eventSink,int nbrparticles ){ // ,
 	 
 		int runRequestTester=0,  selszLimit ;
@@ -169,7 +175,7 @@ public class PhysicalRepulsionField extends ExternalGridFieldAbstract{
 		
 		initComplete=false;
 		repulsionField.setDelayedOnset(50);
-		out.setPrefix("[SomFlmuid-factory]");
+		out.setPrefix("[SomFluid-factory]");
 		
 		out.delay(200) ;
 											out.print(2, "updating field of particles ... ") ;
@@ -255,6 +261,10 @@ public class PhysicalRepulsionField extends ExternalGridFieldAbstract{
 		return repulsionField;
 	}
 
+	public RepulsionFieldFactory getRfFactory() {
+		return rfFactory;
+	}
+
 	public boolean getInitComplete() {
 		 
 		return initComplete;
@@ -281,7 +291,7 @@ public class PhysicalRepulsionField extends ExternalGridFieldAbstract{
 	}
 
 	@Override
-	public ParticlesIntf getParticles() {
+	public RepFieldParticlesIntf getParticles() {
 		 
 		return repulsionField.getParticles();
 	}
@@ -299,9 +309,9 @@ public class PhysicalRepulsionField extends ExternalGridFieldAbstract{
 	}
 
 	@Override
-	public String getSurround(int particleindex, int i, boolean b) {
+	public String getSurround(int particleindex, int selectmode, int surroundN, boolean autoselect) {
 		 
-		return repulsionField.getSurround(0, 0, true) ; // ?????
+		return repulsionField.getSurround( particleindex, selectmode, surroundN,autoselect) ;  
 	}
 	
  
