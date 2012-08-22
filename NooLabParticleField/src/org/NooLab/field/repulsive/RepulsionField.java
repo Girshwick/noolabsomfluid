@@ -407,6 +407,10 @@ public class RepulsionField implements 	Runnable,
 			this.autoselect = autoselect;
 		}
 	
+		public SurroundRetrievalHandler setParticleIndex(int ix){
+			index = ix;
+			return this;
+		}
 		
 		public String go(int task){
 
@@ -570,7 +574,13 @@ public class RepulsionField implements 	Runnable,
 	@Override
 	public String getSurround( int index, int selectMode, int surroundN, boolean autoselect) {
 
-		return (new SurroundRetrievalHandler( index, selectMode, surroundN,autoselect)).go(3);
+		SurroundRetrievalHandler srh = new SurroundRetrievalHandler( index, selectMode, surroundN,autoselect);
+		srh.setParticleIndex(index);
+		if (srh.index != index){
+			out.printErr(1, "RepulsionField, getSurround(): index "+index+" requested, but index "+srh.index+" recognized!");
+		}
+		return srh.go(3);
+		// return (new SurroundRetrievalHandler( index, selectMode, surroundN,autoselect)).setParticleIndex(index).go(3);
 	}
 	
 	@Override

@@ -116,7 +116,7 @@ public class GridOptimizer {
 						rfCore.updateParticlesByDislocation( pixes[k] );
 					}
 					
-					rfCore.out.delay(200) ;
+					rfCore.out.delay(50) ;
 					if (rfCore.isFieldLayoutFrozen()==false){
 						return ;
 					}
@@ -156,7 +156,7 @@ public class GridOptimizer {
 			isRunning=true;
 			lastWorkTime = System.currentTimeMillis() ;
 			
-			rfCore.out.delay(30000);
+			rfCore.out.delay(3000);
 			
 			try{
 				
@@ -181,7 +181,7 @@ public class GridOptimizer {
 						lastWorkTime = System.currentTimeMillis() ;
 						isWorking = false;
 					}
-					rfCore.out.delay(100) ;
+					rfCore.out.delay(10) ;
 				}// ->
 
 			}catch(Exception e){

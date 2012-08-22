@@ -1534,7 +1534,7 @@ if (this.name.contains("sampler")){
 				scPasses=0;
 			}
 
-											out.print(3,"collecting stats, "+((int)t)+" by-passed...  pass no. "+passes+"  ... ");
+											out.print(4,"collecting stats, "+((int)t)+" by-passed...  pass no. "+passes+"  ... ");
 			try{
 		// before we start with this we should ensure that the neighborhood has worked through its queue of tasks
 			z=0;
@@ -1566,7 +1566,7 @@ if (this.name.contains("sampler")){
 				 
 			} // i->
 			
-												out.print(3,"collecting stats: all particles visited... ");
+												out.print(4,"collecting stats: all particles visited... ");
 			 
 			movedDistanceSum = movedDistanceSum/particles.size();
 			
@@ -1582,12 +1582,12 @@ if (this.name.contains("sampler")){
 			var =  mds_sqr - movedDistanceSum*movedDistanceSum ; 
 			
 			double _rad = particles.get(0).radius;
-												out.print(3,"before calculating stability measure (moved distance="+movedDistanceSum+", radius="+_rad+",n-p factor="+v+")... ");
+												out.print(4,"before calculating stability measure (moved distance="+movedDistanceSum+", radius="+_rad+",n-p factor="+v+")... ");
 												
 			if ((movedDistanceSum>0) && (movedDistanceSum/(0.01+ _rad *v) <0.1)){
 				
 				String vs1,vs2,vs3,vs0,vs4;
-												out.print(4,"calculating stability measure (1)... ");
+												out.print(5,"calculating stability measure (1)... ");
 	
 				vs0= ""+  minDistSum;  minDistSum = Math.round(movedDistanceSum*10000.0)/10000.0;    vs0= vs0.substring(0,Math.min(5,vs0.length()));
 				vs1= ""+ Math.round(movedDistanceSum*10000.0)/10000.0; 
@@ -1625,7 +1625,7 @@ if (this.name.contains("sampler")){
 	 						// out.print(2,"population (n="+particles.size()+") came to rest,  q = "+vs3 + "   stability = "+vs4);
 	 											out.print(4,"stability measure calculated, now setting... ");
 	 			statisticsCollector.setCurrentMovedDistanceSum( movedDistanceSum);
-	 			// here it is alrady the average
+	 			// here it is already the average
 	 			if ((movedDistanceSum>3) && (particles.size()<15)){
 	 				stability = stability * 10+ 5* statsSampler.randomUniSimple() ;
 	 				out.print(3,"movedDistanceSum = "+movedDistanceSum);
@@ -1657,13 +1657,13 @@ if (this.name.contains("sampler")){
 			    	provideGridPerspective();
 			    }
 			}
-												out.print(3,"collecting stats: leaving ... ");
+												out.print(4,"collecting stats: leaving ... ");
 			// out.print(2,"mean moved distance : "+movedDistanceSum);
 			// check if it is active, then set it to frozen ()
 			}catch(Exception e){
 				
 			}finally{
-				out.print(3,"collecting stats: exiting ... ");	
+				out.print(4,"collecting stats: exiting ... ");	
 			}
 			
 		}
@@ -2462,6 +2462,7 @@ if (this.name.contains("sampler")){
 		
 		private void init( RepulsionFieldParticles particles, int intensity,int maxTime ){
 			
+			out.printErr(3, "RepulsionField Shaker has been started...");
 			this.intensity = intensity;
 			this.maxTime = maxTime;
 			
@@ -2540,6 +2541,7 @@ if (this.name.contains("sampler")){
 			
 			out.print(4, "values restored") ;
 			
+			fieldLayoutFrozen = true;
 			cancel();
 		}
 	
@@ -2705,7 +2707,7 @@ if (this.name.contains("sampler")){
 			statsCollector = new FluidFieldCollectStatistics(this); // rf); // ???
 			
 			boolean p1,p2;
-			out.delay(10) ;
+			out.delay(5) ;
 
 			p1 = neighborhood.isRunning() ;
 			p2 = statsCollector.isRunning() ;
@@ -2726,7 +2728,7 @@ if (this.name.contains("sampler")){
 		}
 		
 		
-		out.delay(50);
+		out.delay(10);
 		if (statisticsCollector.isRunning()){
 			statisticsCollector.isPhysicsProcessActivated=true;
 		}
@@ -3917,7 +3919,7 @@ if (index>nbrParticles-5){
 					repulsionFieldFactory.isFacadeReadyToUse = true;
 				}
 				(new CallbackServer()).go(0,eix);
-				out.delay(150);
+				out.delay(50);
 				eix=eix+1-1 ;
 			}
 			
@@ -4290,7 +4292,7 @@ class Neighbor{
  
 
 /**
- * this class runs a thread to supervise schedulaed timers.
+ * this class runs a thread to supervise scheduled timers.
  * Timers can overlap, where each timer sits on a dedicated slot in a FiFo list,
  * from where the timers are removed upon completion
  * 
@@ -4344,7 +4346,7 @@ class RelocationDurationLimiter implements Runnable{
 			return;
 		}
 		
-		timers.add( new Timer() );              
+		timers.add( new Timer("rdl") );              
 	 
 	 
 		lastScheduling = System.currentTimeMillis();
@@ -4375,13 +4377,17 @@ class RelocationDurationLimiter implements Runnable{
 			*/
 
 			// freeze only if this is the last of all overlapping timers
-			parent.out.print(3,"timer before sending a freeze command ...");
+			parent.out.print(3,"timer in DelayedReFreezeTask before sending a freeze command ...");
 			
 			if (timers.size()<=1){
 				parent.out.print(3,"timer sent a freeze command (stablity param:"+parent.stability+").");
 				parent.freezeLayout(parent.stability,2);
 			}
 			timerIsRunning=false;
+			
+			parent.freezeLayout(parent.stability,2);
+			parent.setFieldLayoutFrozen(true) ;
+			parent.isReadyToUse = true;
 			
 			parent.out.print(3,"relocation timer interrupted the update procedure (<"+parent.name+">).") ;
 			timerHasBeenStopping = true;
@@ -4390,11 +4396,12 @@ class RelocationDurationLimiter implements Runnable{
 
 	@Override
 	public void run() {
+		
 		parent.out.print(3,"relocation timer supervision is running...");
 		try{
 			supervisionIsRunning=true;
 			while (supervisionIsRunning){ 
-				parent.out.delay(100);
+				parent.out.delay(10);
 				
 				if (timerIsRunning==false){
 					if (timerHasBeenStopping){

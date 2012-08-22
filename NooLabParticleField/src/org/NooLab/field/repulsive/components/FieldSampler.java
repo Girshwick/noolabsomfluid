@@ -141,7 +141,7 @@ public class FieldSampler{
 		if (samplingField!=null){
 			if (samplingField.srepulsionField != null){
 				samplingField.srepulsionField.stopFieldThread() ;
-				out.delay(100);
+				out.delay(10);
 				samplingField =null ;
 			}
 		} // samplingField != null ?
