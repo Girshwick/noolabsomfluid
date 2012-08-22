@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.components.ModelOptimizer;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
@@ -124,7 +125,7 @@ public class SomContainer {
 				// - - - - - - - - - - - - - - - - - -
 							int tc=0,targetMode = cs.getTargetMode(); // like ClassificationSettings._TARGETMODE_SINGLE   ;
 					        String str ="0" ;
-							if ((somType == SomFluidProperties._SOMTYPE_MONO)  ){
+							if ((somType == FieldIntf._SOMTYPE_MONO)  ){
 								str = ""+targetMode ;  //_TARGETMODE_SINGLE  _TARGETMODE_MULTI = 2, 
 							}
 							if (targetMode==1){

@@ -8,6 +8,7 @@ import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.engines.det.ProfileVectorMatcher;
+import org.NooLab.somfluid.core.nodes.LatticeProperties;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.data.Variable;
@@ -48,6 +49,7 @@ public class SomAppSomObject {
 
 	// structures
 	LatticePropertiesIntf latticeProps;
+	int somType ;
 	
 	SomAppClassifier soappClassifier;
 	
@@ -57,10 +59,13 @@ public class SomAppSomObject {
 	PrintLog out;
 	
 	// ========================================================================
-	public SomAppSomObject( SomAppClassifier soappC, int ix) {
+	public SomAppSomObject( SomAppClassifier soappC, int ix, int somType) {
 		 
 		soappClassifier = soappC;
 	// 	soappNodes = new SomAppNodes(this) ;
+		latticeProps = new LatticeProperties();
+		latticeProps.setSomType(somType); 
+		 
 		soappNodes = new VirtualLattice( soappClassifier, latticeProps,0 ) ;
 								// soappClassifier as SomProcessIntf, 
 		index = ix;

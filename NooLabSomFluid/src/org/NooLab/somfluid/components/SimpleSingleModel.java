@@ -148,6 +148,7 @@ public class SimpleSingleModel implements SomHostIntf, Serializable{
 		} catch (Exception e) {
 			
 			out.printErr(1, "A critical inconsistency has been detected while preparing the som: "+e.getMessage() ) ;
+			e.printStackTrace();
 			lastState = -7;
 			return ;
 		}

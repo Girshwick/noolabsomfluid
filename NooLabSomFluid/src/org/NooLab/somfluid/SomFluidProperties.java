@@ -9,6 +9,7 @@ import org.NooLab.somfluid.app.SomFluidAppPropertiesAbstract;
 import org.NooLab.somfluid.components.AlgorithmDeclarationsLoader;
 import org.NooLab.somfluid.components.DataFilter;
 import org.NooLab.somfluid.core.engines.det.ResultRequests;
+import org.NooLab.somfluid.core.nodes.LatticeProperties;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
 import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
@@ -42,8 +43,6 @@ public class SomFluidProperties
 	
 	transient static SomFluidProperties sfp; 
 	
-	public final static int _SOMTYPE_PROB = 1; // probabilistic storage, using internal criteria, e.g. variance, exceptionality
-	public final static int _SOMTYPE_MONO = 2; // modeling using operationalization of external criteria 
 	
 	public final static int _SRC_TYPE_FILE = 1;
 	public final static int _SRC_TYPE_DB   = 3;
@@ -77,6 +76,8 @@ public class SomFluidProperties
 	DataUseSettings dataUseSettings = new DataUseSettings() ;
 	transient VariableSettingsHandlerIntf variableSettings; // TODO all getters and setters should be contained in interface... 
  
+	// LatticeProperties latticeProps;
+	
 	// lattice
 	int somType = -1; // mandatory 
 	int initialNodeCount = -1;
@@ -105,6 +106,9 @@ public class SomFluidProperties
 	private String systemRootDir;
 
 	transient private String currentSettingsXml="";
+
+
+	private boolean isAssignatesHomogeneous=true;
 
 
 	
@@ -874,6 +878,9 @@ public class SomFluidProperties
 	public void setSomGridType(int somGridtype) {
 		
 		somGridType = somGridtype ;
+		
+		// latticeProps.setSomType(somGridtype) ;
+		// setSomType(somGridtype);
 	}
 
 
@@ -889,6 +896,13 @@ public class SomFluidProperties
 
 	public int getSomGridType() {
 		return somGridType;
+	}
+
+
+	@Override
+	public boolean isAssignatesHomogeneous() {
+		 
+		return isAssignatesHomogeneous;
 	}
 
 

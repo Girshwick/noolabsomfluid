@@ -7,11 +7,12 @@ import java.util.Vector;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
+import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;
  
 
 
 
-public class NodeStatistics {
+public class NodeStatisticsDetailed implements NodeStatisticsIntf{
 
 	ArrayList<BasicStatisticalDescription> fieldValues ;
 	
@@ -19,7 +20,7 @@ public class NodeStatistics {
 	
 	
 	// ========================================================================
-	public NodeStatistics(){
+	public NodeStatisticsDetailed(){
 		fieldValues = new ArrayList<BasicStatisticalDescription>();
 		
 	}
@@ -76,9 +77,7 @@ public class NodeStatistics {
 
 
 
-	public void setFieldValues(ArrayList<BasicStatisticalDescription> fieldvalues) {
-		this.fieldValues = fieldvalues;
-	}
+
 
 
 
@@ -113,5 +112,18 @@ public class NodeStatistics {
 		}
 		
 	}
+
+
+
+	@SuppressWarnings("unchecked")
+	@Override
+ 	public void setFieldValues(ArrayList<?> fieldvalues) {
+		if (fieldvalues!=null){
+			this.fieldValues = (ArrayList<BasicStatisticalDescription>) fieldvalues;
+		}
+	}
+
+
+	 
     
 }

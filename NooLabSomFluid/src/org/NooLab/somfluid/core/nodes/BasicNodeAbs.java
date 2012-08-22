@@ -82,7 +82,7 @@ public abstract class BasicNodeAbs implements
 			
 		}
 		
-		
+		nd=0;
 	}
 
 	public void setVariableLabels(ArrayList<String> varLabels) {

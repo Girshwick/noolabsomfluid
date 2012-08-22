@@ -26,6 +26,7 @@ import org.NooLab.somfluid.env.data.* ;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.engines.det.results.*;
 import org.NooLab.somfluid.core.engines.det.adv.SomBags;
+import org.NooLab.somfluid.core.nodes.LatticeProperties;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.data.*;
@@ -54,9 +55,7 @@ import org.NooLab.utilities.timing.DelayFor;
  * 
  *
  */
-public class SomTargetedModeling    extends
-	 											NodesInformer    
-	 								implements  
+public class SomTargetedModeling    implements  
 	 								 		    SomProcessIntf ,
 	 								 		    Observer,
 	 								 		    // events from particle field, namely selections!
@@ -88,12 +87,14 @@ public class SomTargetedModeling    extends
 	 */
 	VirtualLattice somLattice ; 
 	
+	NodesInformer nodesinformer;
+	
 	SomBags somBags; 
 	DSom dSom ;
 	
 	DataFileReceptorIntf dataReceptor;
 	
-	
+	 
 	int callerStatus = 0;
 	
 	StringedObjects sob = new StringedObjects();
@@ -117,6 +118,8 @@ public class SomTargetedModeling    extends
 		
 		modelingSettings = sfProperties.getModelingSettings() ;
 		
+		latticeProperties = (LatticePropertiesIntf)sfProperties;
+		
 		this.numericID = numericid;
 		// this should be a copy, in order to allow parallel processing on the same machine
 		// TODO: somLattice = new VirtualLattice(latticeNodes) ;
@@ -129,6 +132,8 @@ public class SomTargetedModeling    extends
 		sfTask = sftask  ;
 		callerStatus = sfTask.getCallerStatus() ;
 		
+		nodesinformer = new NodesInformer ();
+		
 		basicInitialization( factory );
 		
 		completingInitialization();
@@ -136,13 +141,15 @@ public class SomTargetedModeling    extends
 	}
 	// ========================================================================
 	
-	
+	// cloning
 	public SomTargetedModeling( SomTargetedModeling targetModeling, boolean newLattice, int callerState ) {
 		 
 		callerStatus = callerState;
 		
 		sfProperties = targetModeling.sfProperties  ; 
 		somDataObject = targetModeling.somDataObject ;
+		
+		latticeProperties = (LatticePropertiesIntf)sfProperties;
 		
 		basicInitialization( sfFactory );
 		
@@ -151,8 +158,9 @@ public class SomTargetedModeling    extends
 			somLattice.reInitNodeData() ;
 			somLattice.setSomData(somDataObject);
 		}else{
-			  
-			somLattice = new VirtualLattice( this, targetModeling.somLattice.getLatticeProperties(),-5 );
+			 
+			
+			somLattice = new VirtualLattice( this, latticeProperties ,-5 );
 		}
 		// sfPropertiesDefaults.setGridType( SomFluidFactory._SOM_GRIDTYPE_FIXED ) ;
 		// sfPropertiesDefaults.setGridType( SomFluidFactory._SOM_GRIDTYPE_FIXED ) ;
@@ -176,6 +184,8 @@ public class SomTargetedModeling    extends
 		// <<<<<<<<< onSelectionRequestCompleted() very important for routing result to the SomLattice/VirtualLattice !!!
 		// also for associative storage, where we do NOT have a targeted modeling
 		
+		latticeProperties = (LatticePropertiesIntf)sfProperties;
+		
 		// only if requested by the properties ....
 		somBags = new SomBags(this, sfProperties) ;
 		 
@@ -184,6 +194,46 @@ public class SomTargetedModeling    extends
 	}
 
 
+	protected void completingInitialization(  ){
+		
+		
+		if (somLattice!=null){
+			somLattice.clear();
+			somLattice.close();
+			somLattice=null;	
+		}
+		
+		
+		particleField = somHost.getSomFluid().getParticleField( ) ;
+		
+		// re-arranging the endpoint for notifications
+		sfFactory.establishPhysicalFieldMessaging( this); // RepulsionFieldEventsIntf eventSink
+		
+		// do all into a container: LatticePreparation
+		
+		latticeProperties = (LatticePropertiesIntf)sfProperties;
+		
+		LatticePreparation latticePreparation = new LatticePreparation( this, somHost,sfProperties);
+		latticePreparation.setNodesInformer( nodesinformer ) ;
+		
+		somLattice = latticePreparation.getLattice();
+
+		/////////////////////////////////<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+		/*
+		somLattice = latticePreparation.getLattice();
+		 
+		latticeProperties = (LatticePropertiesIntf)sfProperties;
+		
+		somLattice = new VirtualLattice(this,latticeProperties,(int) (100+numericID));
+		  
+		somLattice.setFieldIsDynamic( sfProperties.getSomGridType() == FieldIntf._SOM_GRIDTYPE_FLUID ) ;
+	
+		// initStructures( somLattice );
+	
+		boolean displayNodeCount = sfTask.getCounter()<=0;
+		createVirtualLattice( somLattice, particleField, initialNodeCount , displayNodeCount);
+		*/ 
+	}
 	/**  
 	 * 
 	 * connecting the SOM nodes to the particles collection
@@ -204,25 +254,37 @@ public class SomTargetedModeling    extends
 		 									}
 		for (int i=0;i<initialNodeCount;i++){
 			
-			mnode = new MetaNode( somLattice, somDataObject  );
+			mnode = new MetaNode( somLattice, somDataObject  ); 
 			somLattice.addNode(mnode) ;
 			
 											out.print(4,"Node <"+i+">, serial = "+mnode.getSerialID());
 			try{
-				
 				// requires NodesInformer
-				registerNodeinNodesInformer( mnode );
+				nodesinformer.registerNodeinNodesInformer( mnode );
 				 
-				ArrayList<Variable> vari = somDataObject.getVariableItems();
-				ProfileVectorIntf pv = mnode.getIntensionality().getProfileVector();
-				pv.setVariables( vari ) ;
-		
-				mnode.getExtensionality().getStatistics().setVariables(somDataObject.getVariableItems());
+				int somtype = sfProperties.getSomGridType();
+				// the same as somLattice.getLatticeProperties().getSomType()
 				
-				ArrayList<Double> values = ArrUtilities.createCollection( vari.size(), 0.5) ;
+				ArrayList<Variable> v=null;
+				
+				if ( somtype == FieldIntf._SOMTYPE_MONO){
+					v = somDataObject.getVariableItems() ;	
+				}else{
+					v = somDataObject.getVariableItemsReference();
+				}
+				v = somDataObject.getVariableItemsReference();
+				
+				// ArrayList<Variable> vari = somDataObject.getVariableItems();
+				ProfileVectorIntf pv = mnode.getIntensionality().getProfileVector();
+				// pv.setVariables( vari ) ;
+				pv.setVariables( v ) ;
+				
+				mnode.getExtensionality().getStatistics().setVariables(v);
+				
+				ArrayList<Double> values = ArrUtilities.createCollection( v.size(), 0.5) ;
 				pv.setValues(values);
 				
-				int somtype = sfProperties.getSomGridType();
+				
 				Object obj = particleField.getParticles();
 				 
 				if (somtype == FieldIntf._SOM_GRIDTYPE_FLUID){
@@ -239,13 +301,9 @@ public class SomTargetedModeling    extends
 			}catch(Exception e){
 				e.printStackTrace() ;
 			}
-			
-			
-			
+			 
 		}
-		
-		
-		
+		 
 		double d = particleField.getAverageDistanceBetweenParticles();
 		somLattice.setAveragePhysicalDistance(d);
 		
@@ -254,34 +312,6 @@ public class SomTargetedModeling    extends
 	}
 
 
-	protected void completingInitialization(  ){
-		
-		int initialNodeCount = sfProperties.getInitialNodeCount();
-		
-		if (somLattice!=null){
-			somLattice.clear();
-			somLattice.close();
-			somLattice=null;	
-		}
-		
-		
-		particleField = somHost.getSomFluid().getParticleField( ) ;
-		
-		// re-arranging the endpoint for notifications
-		sfFactory.establishPhysicalFieldMessaging( this); // RepulsionFieldEventsIntf eventSink
-		
-		
-		somLattice = new VirtualLattice(this,latticeProperties,(int) (100+numericID));
-		  
-		somLattice.setFieldIsDynamic( sfProperties.getSomGridType() == FieldIntf._SOM_GRIDTYPE_FLUID ) ;
-
-		// initStructures( somLattice );
-	 
-		boolean displayNodeCount = sfTask.getCounter()<=0;
-		createVirtualLattice( somLattice, particleField, initialNodeCount , displayNodeCount); 
-	}
-	
-	
 	protected void initializeNodesWithData(){
 		
 		// "by index" refers to 
@@ -587,17 +617,12 @@ public class SomTargetedModeling    extends
 		
 		return this;
 	}
-
-	
-	protected void performTransformations() {
-		 
-		
-	}
+ 
 
 
 	public void clear() {
 		                   					out.print(5, "stm-clear (1)...");
-		stopMsgSrv(); // nodesinformer
+		nodesinformer.stopMsgSrv(); // nodesinformer
 											out.print(5, "stm-clear (2)...");
 		somLattice.reInitNodeData() ;
 		somLattice.close();

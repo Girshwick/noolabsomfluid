@@ -10,6 +10,7 @@ import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
 
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
@@ -367,7 +368,7 @@ if ((currentEpoch+1)>=somSteps){
 		
 		try{
 			
-			if (parentSom.somProcessParent.getSfProperties().getSomType() == SomFluidProperties._SOMTYPE_MONO){
+			if (parentSom.somProcessParent.getSfProperties().getSomType() == FieldIntf._SOMTYPE_MONO){
 				// with absolute excludes, this also could be a problem elsewhere !!
 				// we have to adjust the  TvColumnIndex in variables before starting modeling !!
 				int tvindex = parentSom.somData.getVariables().getTvColumnIndex() ; 

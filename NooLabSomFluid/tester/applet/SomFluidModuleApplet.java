@@ -339,7 +339,7 @@ class SomModuleInstance implements 	Runnable,
 
 		// target oriented modeling 
 		// lattice
-		sfProperties.setSomType( SomFluidProperties._SOMTYPE_MONO ) ;      // we define to create a SOM for targeted modeling 
+		sfProperties.setSomType( FieldIntf._SOMTYPE_MONO ) ;      // we define to create a SOM for targeted modeling 
 
 		sfProperties.setInitialNodeCount(nodeCount);                       // initial size; yet it does not matter much since the SomFluid will grow anyway 
 		

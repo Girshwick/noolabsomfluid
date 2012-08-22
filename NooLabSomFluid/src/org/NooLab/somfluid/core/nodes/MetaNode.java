@@ -16,7 +16,8 @@ import org.NooLab.somfluid.core.categories.extensionality.*;
 import org.NooLab.somfluid.core.categories.imports.*;
 import org.NooLab.somfluid.core.categories.intensionality.*;
 import org.NooLab.somfluid.core.categories.similarity.*;
-import org.NooLab.somfluid.core.engines.NodeStatistics;
+
+import org.NooLab.somfluid.core.engines.NodeStatisticsIntf;
 import org.NooLab.somfluid.core.engines.det.ProfileVectorMatcher;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
 import org.NooLab.somfluid.data.DataTableCol;
@@ -135,15 +136,15 @@ public class MetaNode   extends
 	
 	
 	// ------------------------------------------------------------------------
-	public MetaNode( VirtualLattice virtualLatticeNodes, DataSourceIntf somData ){
+	public MetaNode( VirtualLattice virtualLatticeNodes, DataSourceIntf somData  ){
 		super(virtualLatticeNodes,  somData );
 		mppLevel = virtualLatticeNodes.getMultiProcessingLevel();
 	}
 	
-	public MetaNode(VirtualLattice somlattice, DataSourceIntf somData, MetaNode templateNode) {
+	public MetaNode(VirtualLattice somlattice, DataSourceIntf somData, MetaNode templateNode ) {
 		super(somlattice,  somData );
 		
-		extensionality =  new ExtensionalityDynamics( (ExtensionalityDynamics)templateNode.extensionality ) ;
+		extensionality =  new ExtensionalityDynamics( (ExtensionalityDynamics)templateNode.extensionality, somType ) ;
 		
 		intensionality = new IntensionalitySurface( (IntensionalitySurface)templateNode.intensionality ) ;
 		
@@ -324,7 +325,7 @@ public class MetaNode   extends
     	double _new_w=0.0;
     	double _old_w=0.0, w_d , _v, _LR=1.0f,change ;
     	
-    	NodeStatistics nodeStats ;
+    	NodeStatisticsIntf nodeStats ;
     	ArrayList<Double> usevector, weightvector, nodeProfile, vector2 ;
 
 		try {
@@ -541,7 +542,7 @@ if ((_new_w<0) || (_new_w>1.04)){
 		double _old_pv , _new_pv, fieldValue ;
 		boolean calcThis ;
 		
-		NodeStatistics  nodeStats ;
+		NodeStatisticsIntf  nodeStats ;
 		BasicStatisticalDescription fieldStats ;
 		
 		ArrayList<Double> usevector,weightvector , nodeProfile ;

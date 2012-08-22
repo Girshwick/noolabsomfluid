@@ -2,7 +2,8 @@ package org.NooLab.somfluid.core.categories.extensionality;
 
 import java.util.ArrayList;
 
-import org.NooLab.somfluid.core.engines.NodeStatistics;
+ 
+import org.NooLab.somfluid.core.engines.NodeStatisticsIntf;
 
 
 
@@ -37,7 +38,7 @@ public interface ExtensionalityDynamicsIntf {
 
 	// ....................................................
 	
-	public NodeStatistics getStatistics();
+	public NodeStatisticsIntf getStatistics();
 	
 	// ....................................................
 

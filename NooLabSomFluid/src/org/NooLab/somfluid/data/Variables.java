@@ -716,6 +716,9 @@ if (varLabel.contains(pL)){
 	}
 	
 	
+	public ArrayList<Variable> getActiveVariablesReference() {
+		return items;
+	}
 	
 	@Override
 	public ArrayList<Variable> getActiveVariables() {

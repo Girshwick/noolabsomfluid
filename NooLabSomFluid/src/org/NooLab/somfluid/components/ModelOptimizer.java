@@ -18,6 +18,7 @@ import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.*;
 import org.NooLab.utilities.nums.NumUtilities;
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.math3.exception.NoDataException;
 import org.NooLab.math3.exception.NullArgumentException;
 import org.NooLab.math3.stat.correlation.SpearmansCorrelation;
@@ -376,7 +377,7 @@ public class ModelOptimizer implements SomHostIntf, ProcessCompletionMsgIntf{
 		// the Single-Target-Mode can be defined with several non-contiguous intervals within [0..1] 
 	
 		// 1. do we work in somType = mono?
-		if (sfProperties.getSomType() == SomFluidProperties._SOMTYPE_PROB){
+		if (sfProperties.getSomType() == FieldIntf._SOMTYPE_PROB){
 			requestIsOk = false;
 			msgStr = "The type of som (associative storage) does not match the type of the process (Optimizer)." ;
 		}
