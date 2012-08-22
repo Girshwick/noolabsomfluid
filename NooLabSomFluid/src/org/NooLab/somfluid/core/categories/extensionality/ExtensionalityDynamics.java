@@ -3,8 +3,10 @@ package org.NooLab.somfluid.core.categories.extensionality;
 import java.util.ArrayList;
 
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.core.engines.NodeStatistics;
+
+import org.NooLab.somfluid.core.engines.NodeStatisticsIntf;
 
 
 
@@ -48,8 +50,9 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	 *            
 	 */
 	
-	NodeStatistics statistics ;
-
+	//NodeStatisticsIntf statistics ;
+	NodeStatisticsIntf statistics ;
+	
 	/** the positive predictive value of the node */
 	double ppv = -1.0, npv = -1.0;
 	
@@ -61,16 +64,18 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	private int support;
 	
 	// ========================================================================
-	public ExtensionalityDynamics( SomDataObject somdata){
+	public ExtensionalityDynamics( SomDataObject somdata , int somType){
 		
 		somData = somdata;
-		statistics = new NodeStatistics()  ;
+		
+		statistics = NodeStatisticsFactory.getStatisticsImpl(somType);
+		
 		
 	}
 	
-	public ExtensionalityDynamics( ExtensionalityDynamics inExtensions) {
+	public ExtensionalityDynamics( ExtensionalityDynamics inExtensions, int somType) {
 		somData = inExtensions.somData;
-		statistics = inExtensions.statistics  ; 
+		statistics = inExtensions.getStatistics()  ; 
 		
 		
 		
@@ -133,7 +138,7 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 		return listOfRecords.size() ;
 	}
 
-	public NodeStatistics getStatistics() {
+	public NodeStatisticsIntf getStatistics() {
 		return statistics;
 	}
 
@@ -174,7 +179,7 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 		this.majorityValueIdentifier = majorityValueIdentifier;
 	}
 
-	public void setStatistics(NodeStatistics statistics) {
+	public void setStatistics(NodeStatisticsIntf statistics) {
 		this.statistics = statistics;
 	}
 

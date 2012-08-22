@@ -3,6 +3,7 @@ package org.NooLab.somfluid.core.nodes;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.components.DataSourceIntf;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
@@ -10,6 +11,7 @@ import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivity;
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivityIntf;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamics;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
+import org.NooLab.somfluid.core.categories.extensionality.NodeStatisticsFactory;
 import org.NooLab.somfluid.core.categories.imports.ExtensionalityDynamicsImportIntf;
 import org.NooLab.somfluid.core.categories.imports.IntensionalitySurfaceImportIntf;
 import org.NooLab.somfluid.core.categories.imports.MetaNodeConnectivityImportIntf;
@@ -18,9 +20,11 @@ import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurface;
 import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
-import org.NooLab.somfluid.core.engines.NodeStatistics;
+import org.NooLab.somfluid.core.engines.NodeStatisticsIntf;
+
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
+import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
 import org.NooLab.utilities.objects.StringedObjects;
@@ -70,7 +74,7 @@ public abstract class AbstractMetaNode  extends
 	String openLatticeFutureGuid ="";
 	int openLatticeFutureTask = -1 ;
 	
-	
+	int somType = 0;
 	
 	StatisticSample sampler;
 	Random nRandom ;
@@ -82,11 +86,16 @@ public abstract class AbstractMetaNode  extends
 	public AbstractMetaNode( VirtualLattice vnodes , DataSourceIntf somdata){
 		super();          // VirtualLattice
 		
+		virtualLattice = vnodes;
+		
+		
+		somType = virtualLattice.getLatticeProperties().getSomType() ;
+		
 		numID = SerialGuid.numericalValue() ;
 		
 		somData = somdata;
 		
-		virtualLattice = vnodes;
+		
 		// creating a monotonic
 		if (virtualLattice.size()>0){
 			serialID = virtualLattice.getNode( virtualLattice.size()-1).getSerialID()+1 ;
@@ -94,18 +103,7 @@ public abstract class AbstractMetaNode  extends
 	
 		initializeStructures(serialID);
 		
-		
-		if (virtualLattice.getRndInstance()!=null){ // && stability requirement Option  
-			nRandom = virtualLattice.getRndInstance() ;
-		}else{
-			nRandom = new Random();
-			nRandom.setSeed( serialID );
-		}
-		if (virtualLattice.getRndSamplerInstance()!=null){
-			sampler = virtualLattice.getRndSamplerInstance();
-		}else{
-			sampler = new StatisticSample(4359) ;
-		}
+		initRandom();
 		
 		metaNodeConnex = importMetaNodeConnectivity(serialID); 
 		
@@ -127,21 +125,45 @@ public abstract class AbstractMetaNode  extends
 	}
 	 
  
-	public AbstractMetaNode(LatticeIntf nodeCollection, DataSourceIntf somdata) {
+	public AbstractMetaNode(LatticeIntf nodeCollection, DataSourceIntf somdata ) {
 		super();  
 
+		
 		numID = SerialGuid.numericalValue() ;
 		
 		somData = somdata;
 		
 		virtualLattice = (VirtualLattice) nodeCollection;
 
-	
+		somType = virtualLattice.getLatticeProperties().getSomType() ; 
+		
+		initRandom();
+		
 		initializeStructures(serialID);
 			 	
 		out = virtualLattice.getOut();
 	}
 
+
+
+	private void initRandom() {
+		//
+		
+		if (virtualLattice.getRndInstance()!=null){ // && stability requirement Option  
+			nRandom = virtualLattice.getRndInstance() ;
+		}else{
+			nRandom = new Random();
+			nRandom.setSeed( serialID );
+		}
+		
+		if (virtualLattice.getRndSamplerInstance()!=null){
+			sampler = virtualLattice.getRndSamplerInstance();
+		}else{
+			sampler = new StatisticSample(4359) ;
+		}
+		
+		
+	}
 
 
 	protected Object decodeMsgObject( Object stringedObj){
@@ -208,7 +230,7 @@ public abstract class AbstractMetaNode  extends
 	 */
 	public void initializeSOMnode( int asymmetryMode ) {
 		
-		NodeStatistics nodeStats ;
+		NodeStatisticsIntf nodeStats ;
 		
 		// int _vectorsize = variableLabels.size() ;
 		
@@ -217,15 +239,33 @@ public abstract class AbstractMetaNode  extends
 		/*
 		 * 	ArrayList<Variable> variables = new ArrayList<Variable>(); 
 			ArrayList<Double>   values  
+			we create a new one if we need the possibility for different vectors in the map 
 		 */
-		profileVector.setVariablesStr(  new ArrayList<String>(getVariableLabels()) );
+		
+		boolean sameFeatures = virtualLattice.getLatticeProperties().isAssignatesHomogeneous();
+		
+		if (sameFeatures ==false){
+			profileVector.setVariablesStr(  new ArrayList<String>(getVariableLabels()) );
+		}else{
+			profileVector.setVariablesStr( getVariableLabels() );
+		}
+		
+		
 		
 		int n = profileVector.getVariablesStr().size() ;
 		
 		nodeStats = extensionality.getStatistics() ;
 		
-		nodeStats.setFieldValues( new ArrayList<BasicStatisticalDescription>() );
-		
+		// the interface to the basic statistical description is either "basic normal" (incl histograms etc) or "basic simple" (without histograms etc) 
+		nodeStats.setFieldValues( (ArrayList<BasicStatisticalDescriptionIntf>) NodeStatisticsFactory.getBasicStatisticalDescription(somType)  );
+		/*
+		if (this.somType == FieldIntf._SOMTYPE_MONO){
+			nodeStats.setFieldValues( (ArrayList<BasicStatisticalDescriptionIntf>) NodeStatisticsFactory.getBasicStatisticalDescription(somType)  );
+		}
+		if (this.somType == FieldIntf._SOMTYPE_PROB){
+			nodeStats.setFieldValues( (ArrayList<BasicStatisticalDescriptionIntf>) NodeStatisticsFactory.getBasicStatisticalDescription(somType)  );
+		}
+		*/
 		
 		 
 		
@@ -273,6 +313,7 @@ if (v0!=vv){
 			}
 			
 			nodeStats.getFieldValues().add( new BasicStatisticalDescription(false) ) ;
+			
 			nodeStats.setVariables(vars) ;
 		} // i-> all vector positions
 											out.print(4, "node <" + serialID + "> initialized.");

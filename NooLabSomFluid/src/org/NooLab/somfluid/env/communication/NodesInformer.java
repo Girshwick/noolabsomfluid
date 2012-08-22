@@ -96,7 +96,7 @@ public class NodesInformer {
 	/**
 	 * @return the msgSrv
 	 */
-	protected void stopMsgSrv() {
+	public void stopMsgSrv() {
 		msgSrv.stop() ;
 		taskQueue.clear();
 		observingNodes.clear() ;

@@ -16,7 +16,10 @@ import org.NooLab.somtransform.algo.distribution.EmpiricDistribution;
  * TODO: recalculation of statistics from within the extensionality container
  * 
  */
-public class BasicStatisticalDescription implements Serializable {
+public class BasicStatisticalDescription 
+											implements 
+														BasicStatisticalDescriptionIntf,
+														Serializable {
 
 	private static final long serialVersionUID = -6837594325966248821L;
 

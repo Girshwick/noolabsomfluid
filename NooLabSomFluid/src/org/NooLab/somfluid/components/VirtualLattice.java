@@ -53,6 +53,7 @@ public class VirtualLattice implements LatticeIntf{
 
 	public static final double __DEFAULT_NODE_INIT_STDEV = 0.16;
 
+	int somType ;
 	LatticePropertiesIntf latticeProperties;
 
 	ArrayList<MetaNode> nodes = new ArrayList<MetaNode>();
@@ -114,14 +115,15 @@ public class VirtualLattice implements LatticeIntf{
 
 	private boolean _DEBUG = false;
 	// ========================================================================
-	public VirtualLattice(SomProcessIntf parent, LatticePropertiesIntf latticeProps, int svlIndex){
+	public VirtualLattice( SomProcessIntf parent, LatticePropertiesIntf latticeProps, int svlIndex ){
 		  
 		latticeProperties = latticeProps;
 		somProcessParent = parent;
 		
-		 
+		somType = latticeProps.getSomType();  
 		
-		extensionalityDynamics = new ExtensionalityDynamics(somData) ; 
+		extensionalityDynamics = new ExtensionalityDynamics(somData, somType) ; 
+		 
 		
 		// ..........................................................
 		
@@ -1398,10 +1400,15 @@ public class VirtualLattice implements LatticeIntf{
 			int i=0;
 			while (i<waitingResults.size()){
 				SurroundResults wr = waitingResults.get(i);
-				String gs = wr.getGuid();
-				if ((gs!=null) && (gs.contentEquals(guidStr))){
-					waitingResults.remove(i);
-					i--;
+				// waitingResults is used only for fluid som ?
+				if (wr!=null){
+
+					String gs = wr.getGuid();
+					if ((gs!=null) && (gs.contentEquals(guidStr))){
+						waitingResults.remove(i);
+						i--;
+					}
+					
 				}
 				i++;
 			}
@@ -1584,7 +1591,7 @@ public class VirtualLattice implements LatticeIntf{
 			extensiony = nodes.get(nodeIndex).getExtensionality() ;
 		}
 		if (extensiony==null){
-			extensiony = new ExtensionalityDynamics(somData);
+			extensiony = new ExtensionalityDynamics(somData,somType);
 		}
 		
 		return extensiony;

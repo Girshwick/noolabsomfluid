@@ -10,6 +10,7 @@ import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
 
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.SomApplicationResults;
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidProperties;
@@ -121,7 +122,7 @@ public class SomTargetResults {
 	public void prepare() throws Exception {
 		 
 
-		if ( (dSom.getSfProperties().getSomType()==SomFluidProperties._SOMTYPE_MONO) && 
+		if ( (dSom.getSfProperties().getSomType() == FieldIntf._SOMTYPE_MONO) && 
 			 (modelingSettings.getTargetedModeling() )){
 
 			/*
@@ -991,10 +992,7 @@ if (v>0.3){
 			
 			latticeProperties = dSom.getSomProcessParent().getLatticeProperties() ;
 			
-			
-			/*
-			 * 
-			 */
+			 
 			pseudoLattice = new VirtualLattice(dSom.getSomProcessParent(), latticeProperties,50);
 		}
 		// ................................................
@@ -1064,8 +1062,8 @@ if (v>0.3){
 						if (pseudoNode==null){
 							
 							// pseudoNode = new MetaNode( pseudoLattice, somData);
-							
-							pseudoNode = new MetaNode( pseudoLattice, somData, nativeNode) ;
+							 
+							pseudoNode = new MetaNode( pseudoLattice, somData, nativeNode ) ;
 							 
 							pseudoNode.setNumID( nodeID ) ;
 							pseudoNode.clearData() ;

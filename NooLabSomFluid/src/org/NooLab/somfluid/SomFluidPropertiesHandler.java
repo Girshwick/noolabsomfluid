@@ -720,7 +720,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 				// _SOM  _OPTIMIZER _TRANSFORM
 
 				// target oriented modeling lattice
-			sfProperties.setSomType( SomFluidProperties._SOMTYPE_MONO ) ;   // we define to create a SOM for targeted modeling, target group settings must be supplied 
+			sfProperties.setSomType( FieldIntf._SOMTYPE_MONO ) ;   // we define to create a SOM for targeted modeling, target group settings must be supplied 
 
 			ms.setTargetedModeling(true) ;     								// VERY important setting, determines the fundamental mode in which the SOM will run
 			   																// invokes validation, and eventually feature selection via evo + sprite
@@ -747,7 +747,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		// modes of working: plain, +3-sigma, +internal variance (combined with 3-sigma)
 		// important: list of indices, list of profile columns or column numbers such as [3,12-65, 120-all], 
 		if (description.startsWith("map")){
-			sfProperties.setSomType( SomFluidProperties._SOMTYPE_PROB ) ;
+			sfProperties.setSomType( FieldIntf._SOMTYPE_PROB ) ;
 			
 			if ((nodecount!=null) && (nodecount.length>0)){
 				nodeCount = nodecount[0] ;	

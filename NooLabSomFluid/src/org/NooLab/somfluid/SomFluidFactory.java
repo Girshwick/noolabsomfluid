@@ -588,11 +588,11 @@ public class SomFluidFactory  implements 	//
 		
 		int stype = sfProperties.getSomType() ;
 		
-		if (stype == SomFluidProperties._SOMTYPE_MONO){
-			mono = (SomFluidMonoTaskIntf)(new SomFluidTask(guidId,SomFluidProperties._SOMTYPE_MONO));
+		if (stype == FieldIntf._SOMTYPE_MONO){
+			mono = (SomFluidMonoTaskIntf)(new SomFluidTask(guidId, FieldIntf._SOMTYPE_MONO));
 			return mono;
 		}else{
-			prob = (SomFluidProbTaskIntf)(new SomFluidTask(guidId,SomFluidProperties._SOMTYPE_PROB));
+			prob = (SomFluidProbTaskIntf)(new SomFluidTask(guidId, FieldIntf._SOMTYPE_PROB));
 			return prob;
 		}
 		 
@@ -619,6 +619,14 @@ public class SomFluidFactory  implements 	//
 			somclass = (SomFluidClassTaskIntf) (new SomFluidTask( guidId, SomFluidTask._TASK_MODELING ));
 			descr="A task has been created, type = <_TASK_MODELING>";
 		}
+		
+		if (instancetype == FieldIntf._INSTANCE_TYPE_ASTOR ){
+			
+			somclass = (SomFluidClassTaskIntf) (new SomFluidTask( guidId, SomFluidTask._TASK_SOMSTORAGEFIELD ));
+			descr="A task has been created, type = <_TASK_ASTOR>";
+		}
+		 
+		
 		out.print(2, descr) ;
 		return somclass;
 	}

@@ -2,6 +2,7 @@ package org.NooLab.somfluid.core.engines.det;
 
 import java.util.ArrayList;
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.SomFluidMonoTaskIntf;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidTask;
@@ -139,7 +140,7 @@ public class DSomCore {
 		}else{
 			// if somtype ...) -> performAstor()
 			
-			if (modset.getSomType() == SomFluidProperties._SOMTYPE_PROB ){
+			if (modset.getSomType() == FieldIntf._SOMTYPE_PROB ){
 				result = performAstor();
 			}else{
 				result = performDSom();	
@@ -443,7 +444,7 @@ public class DSomCore {
 		}
 		
 		
-		if (modset.getSomType() == SomFluidProperties._SOMTYPE_MONO ){
+		if (modset.getSomType() == FieldIntf._SOMTYPE_MONO ){
 			// if we are "modeling" i.e. working guided by a target variable, we have to distribute the use vector
 			 ArrayList<Double> usevector = null ;
 			 MetaNode  node;

@@ -10,6 +10,7 @@ import org.NooLab.somfluid.SomFluidPluginSettings;
 import org.NooLab.somfluid.SomFluidStartup;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
+import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.DataTableCol;
@@ -360,10 +361,11 @@ public class SomAppModelLoader {
 		SomAppSomObject soappObj;
 		
 		soappC = new SomAppClassifier(somApplication, sfFactory) ;
-		
+		 
 		// how many som instances? check:  <som index="0">
+		LatticePropertiesIntf latticeProps = sfFactory.getSfProperties();
 		
-		soappObj = new SomAppSomObject(soappC, soappC.somObjects.size());
+		soappObj = new SomAppSomObject(soappC, soappC.somObjects.size(), latticeProps.getSomType());
 
 		r = loadSomObject( soappObj, mcItem, 0 ) ;
 		

@@ -192,7 +192,7 @@ public class DSom extends Observable implements DSomIntf{
 		
 		
 		// will run the som in a dedicated thread
-		 
+		r = dSomCore.perform() ;
 		
 			
 		if (r<0){

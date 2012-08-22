@@ -19,7 +19,7 @@ public class SomFluidTask 	implements
 	public static final String _TASK_CLASSIFICATION  = "C";
 	public static final String _TASK_MODELING        = "M";
 	public static final String _TASK_SOMSTORAGEFIELD = "S";
-
+	 
 
 	public static final int _SOM_WORKMODE_FILE   = 1;
 	public static final int _SOM_WORKMODE_PIKETT = 2; // either by dir source or glue

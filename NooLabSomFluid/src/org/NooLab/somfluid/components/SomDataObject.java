@@ -1293,10 +1293,14 @@ public class SomDataObject 	implements      Serializable,
 		dobjsIndex = indexval ;
 	}
 
-
+	public ArrayList<Variable> getVariableItemsReference() {
+		return variables.getActiveVariablesReference() ;
+	}
+	
 	public ArrayList<Variable> getVariableItems() {
 		return variables.getActiveVariables() ;
 	}
+	
 	public Variable getVariable(String label) {
 		Variable variable = null;
 		String str ="";

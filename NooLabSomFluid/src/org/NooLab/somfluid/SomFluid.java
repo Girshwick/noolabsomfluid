@@ -196,7 +196,7 @@ public class SomFluid
 	}
 	
 
-	private void performAssociativeStorage(SomFluidTask sfTask) {
+	private void performAssociativeStorage(SomFluidTask sfTask) throws Exception {
 		 
 		
 		
@@ -209,6 +209,10 @@ public class SomFluid
 		
 		astor = new SomAssociativeStorage( this, sfFactory, sfProperties ); 
 		sfTask.setTaskType( SomFluidTask._TASK_SOMSTORAGEFIELD);
+		
+		
+		astor.perform() ;
+		
 	}
 
 	/**
@@ -638,7 +642,12 @@ public class SomFluid
 				
 				if ( SomFluidTask.taskIsModeling( _typeId ) ){ // replace by a proc + constant : modeling
 					
-					if (sfTask.somType == SomFluidProperties._SOMTYPE_MONO){
+					
+					if (sfTask.somType == FieldIntf._SOMTYPE_PROB ){
+						// _INSTANCE_TYPE_ASTOR
+						performAssociativeStorage(sfTask) ;
+					}
+					if (sfTask.somType == FieldIntf._SOMTYPE_MONO){
 						
 						/*
 						// accessing the persistent file,
