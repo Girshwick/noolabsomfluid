@@ -111,6 +111,8 @@ public class VirtualLattice implements LatticeIntf{
 	private int dataSize;
 	
 	PrintLog out = new PrintLog(2,true);
+
+	private boolean _DEBUG = false;
 	// ========================================================================
 	public VirtualLattice(SomProcessIntf parent, LatticePropertiesIntf latticeProps, int svlIndex){
 		  
@@ -165,7 +167,7 @@ public class VirtualLattice implements LatticeIntf{
 	 * 
 	 */
 	@Override
-	public ArrayList<IndexDistanceIntf> getNeighborhoodNodes( int index, int nodeCount ) {
+	public ArrayList<IndexDistanceIntf> getNeighborhoodNodes( int index, int nodeCount, int controlparam ) {
 		
 		ArrayList<IndexDistanceIntf> selectedNodes = new ArrayList<IndexDistanceIntf>();
 		
@@ -173,7 +175,7 @@ public class VirtualLattice implements LatticeIntf{
 		/*
 		 * ONLY FOR DEBUG TO PREVENT PARALLEL CALLS
 		 */
-			if (latticeQuery>0){
+			if ((_DEBUG == true) && (latticeQuery>0)){
 				return selectedNodes;
 			}
 			latticeQuery = 1;
@@ -182,7 +184,7 @@ public class VirtualLattice implements LatticeIntf{
 		 */
 		
 		// forking the request immediately to its own name space  
-		selectedNodes = (new ParticleSelectionQuery()).getNodes( index, (int) (nodeCount*1.3) );
+		selectedNodes = (new ParticleSelectionQuery(controlparam)).getNodes( index, (int) (nodeCount*1.3) );
 		
 		 
 		return selectedNodes;
@@ -859,11 +861,11 @@ public class VirtualLattice implements LatticeIntf{
 		SurroundResults results;
 		String queryGuid  ;
 		String rguid = "" ;
+		int control=0;
 		
 		
-		
-		public ParticleSelectionQuery() {
-			 
+		public ParticleSelectionQuery(int controlparam) {
+			 control = controlparam;
 		}
 
 		public ArrayList<IndexDistanceIntf> getNodes(int index, int surroundN) {
@@ -876,7 +878,7 @@ public class VirtualLattice implements LatticeIntf{
 			
 			// somProcessParent: e.g. SomTargetedModeling
 			queryGuid = somProcessParent.getNeighborhoodNodes( index ,surroundN);   
-											out.print(3, "Lattice released a request for getNeighborhoodNodes, waiting for guid = "+queryGuid);
+											out.printErr(3, "Lattice released a request for getNeighborhoodNodes, waiting for guid = "+queryGuid);
 
             
 			// putting this to a map <guid,null>, the matching result object will contain the same Guid
@@ -902,9 +904,14 @@ public class VirtualLattice implements LatticeIntf{
 				 */
 				long waitingStartTime = System.currentTimeMillis();
 				int z=0; 
-				while ( (z<500) && // 500ms 
+				int zlimit = 300;
+				if (control>0){ // >0 == if the first trial failed
+					zlimit=1200; // e.g. after shaking / reorganizing the field
+				}
+				while ( (z<zlimit) && // 500ms 
+						(getGuidItemFromResultsQueue(queryGuid)==null)&&
 						(selectionResultsQueryMap.get(queryGuid)==null)){ // (z<300) && // activate for NON _DEBUG abc124
-					minidelay(5); // wait effectively 1ms 
+					minidelay(2); // wait effectively 1ms 
 					z++;
 					
 				}
@@ -912,45 +919,77 @@ public class VirtualLattice implements LatticeIntf{
 				long waitingEndTime = System.currentTimeMillis();
 				long waitingTime =  waitingEndTime- waitingStartTime;
 											// out.print(5, "lattice have been waiting for selection: "+waitingTime +" ms") ;
-				
+								out.print(4, " - - - - - node list returned after : "+waitingTime+" ms...");
 				rguid =  rguid + " ";
 				if (selectionResultsQueryMap.get(queryGuid)==null){
 					
-					out.printErr(3, "request for getNeighborhoodNodes (p-index:"+index+") NOT found after waiting "+waitingTime+" ms, would-be guid = "+queryGuid);
-					IndexDistance ixd = new IndexDistance(index,0.0,"");
-					ArrayList<IndexDistance> ixds = new ArrayList<IndexDistance>();
-					ixds.add(ixd);
-					particlesIntf = new ArrayList<IndexDistanceIntf>( ixds);
-				}
-												out.print(5, "size of selectionResultsQueryMap : "+selectionResultsQueryMap.size()) ;
+					// really empty ?? or just the map?
+					if (selectionResultsQueryMap.containsKey(queryGuid)){
+						                     
+						results = (SurroundResults) selectionResultsQueryMap.get(queryGuid);
+						selectionResultsQueryMap.remove(queryGuid) ;
+						
+						if (results==null){
+
+							results = getGuidItemFromResultsQueue(queryGuid);
+							
+							// remove this guid also from the simple queue
+							removeGuidItemFromResultsQueue(queryGuid);
+
+						}	
+					} // Map.containsKey(queryGuid) ??
 				
-			} // fluid? => separate thread with necessity to wait for !
-			/*else{
-				
-				if (selectionResultsQueryMap.containsKey(queryGuid)){
+					if (results==null){
+					
+						out.printErr(2, "request for getNeighborhoodNodes (p-index:"+index+") NOT found after waiting "+waitingTime+" ms, would-be guid = "+queryGuid);
+						out.delay(50);
+						// We will repeat the query 1x !!
+
+					    /*
+						  	IndexDistance ixd = new IndexDistance(index, 0.0, "");
+							ArrayList<IndexDistance> ixds = new ArrayList<IndexDistance>();
+							ixds.add(ixd);
+						*/
+						particlesIntf = new ArrayList<IndexDistanceIntf>();
+					}
+					
+				}else{
+					// else::if Map.get(queryGuid)==null
+					
 					results = (SurroundResults) selectionResultsQueryMap.get(queryGuid);
 					selectionResultsQueryMap.remove(queryGuid) ;
 				}
-				int q = selectionResultsQueue.size();
-				if (q>0){
-					selectionResultsQueue.get(0) ;
-				}
-				if (results==null){
-					// create an empty dummy
-					return particlesIntf;
-				}
-
-			} // fixed => NO separate thread with necessity to wait for
-			*/
+				// only remove it here from incoming list !!!!
+												out.print(5, "size of selectionResultsQueryMap : "+selectionResultsQueryMap.size()) ;
+				
+			} // fluid? => separate thread with necessity to wait for !
 			
-			if ((results!=null) && (results.getParticlesAsIndexedDistances()!=null)){
-				particles =  results.getParticlesAsIndexedDistances();
-				particlesIntf = new ArrayList<IndexDistanceIntf>( particles );
-			}else{
+			selectionResultsQueueDigester.removeResultsFromDeliveryQueue(queryGuid);
+				
+			
+
+			if (results==null){
 				out.printErr(3, "retrieval of surround for index <"+index+"> was unexpectedly empty.");
 				surroundError++;
+
 				if (selectionResultsQueryMap.containsKey(queryGuid) )selectionResultsQueryMap.remove(queryGuid) ;
+
+				// create & return an empty dummy
+				return particlesIntf;
 			}
+
+			
+			if ((results!=null) && (results.getParticlesAsIndexedDistances()!=null)){
+				
+				particles =  results.getParticlesAsIndexedDistances();
+				particlesIntf = new ArrayList<IndexDistanceIntf>( particles );
+				/* from here, it will return to 
+				 * - the family of getSurround methods, or
+				 * - getAffectedNodes() in class "DSomDataPerception"
+				 */
+				// 
+			}
+			
 			
 			results = null;
 			latticeQuery = 0;
@@ -958,6 +997,35 @@ public class VirtualLattice implements LatticeIntf{
 		}
 	} // inner class ParticleSelectionQuery
 	
+	
+	private void removeGuidItemFromResultsQueue(String qGuid) {
+	
+		SurroundResults r,_results = null;
+		
+		for (int i=0;i<selectionResultsQueue.size();i++){
+			r = selectionResultsQueue.get(i);
+			if (r.getGuid().contentEquals(qGuid)){
+				selectionResultsQueue.remove(i);
+				break;
+			}
+		}
+		
+	}
+
+	private SurroundResults getGuidItemFromResultsQueue(String qGuid) {
+		SurroundResults r,_results = null;
+		
+		for (int i=0;i<selectionResultsQueue.size();i++){
+			r = selectionResultsQueue.get(i);
+			if (r.getGuid().contentEquals(qGuid)){
+				_results = r; 
+				break;
+			}
+		}
+		
+		return _results;
+	}
+
 	// ..........................................
 	
 	
@@ -1236,22 +1304,6 @@ public class VirtualLattice implements LatticeIntf{
 
 	}
 
-	// the event arrives in SomFluid, which is calling this method here
-	public void digestParticleSelection( SurroundResults results ) {
-		// SurroundResults contains particle indexes, distances to request center, and the request GUID !
-		
-	 
-		// String str = arrutil.arr2text( results.getParticleIndexes() ) ;
-		// out.print(2,"results returned to virtual lattice, "+str);
-		
-		new ParticleSelectionDispatcher( results );
-		 
-	}
-	
-	public ArrayList<SurroundResults> getSelectionResultsQueue() {
-		return selectionResultsQueue;
-	}
-
 	public LatticePropertiesIntf getLatticeProperties() {
 		return latticeProperties;
 	}
@@ -1292,6 +1344,16 @@ public class VirtualLattice implements LatticeIntf{
 			selectionResultsQueueDigester = new SelectionResultsQueueDigester(z) ;
 		}
 	}
+	
+	
+	public void addResultsToWaitingQueue(SurroundResults _results) {
+		selectionResultsQueue.add( _results );
+	}
+
+	public ArrayList<SurroundResults> getSelectionResultsQueue() {
+		return selectionResultsQueue;
+	}
+
 	/**
 	 * 
 	 * this class is the backbone for the acceptance of messages issued by the RepulsionField about
@@ -1305,6 +1367,7 @@ public class VirtualLattice implements LatticeIntf{
 		Thread vslSelectionDigest;
 		
 		SurroundResults _results ;
+		ArrayList<SurroundResults> waitingResults = new ArrayList<SurroundResults>();  
 		
 		public SelectionResultsQueueDigester(int z){
 		
@@ -1327,6 +1390,23 @@ public class VirtualLattice implements LatticeIntf{
 			}
 		}
 		
+		public void removeResultsFromDeliveryQueue( String guidStr){
+			
+			if (waitingResults==null){
+				return;
+			}
+			int i=0;
+			while (i<waitingResults.size()){
+				SurroundResults wr = waitingResults.get(i);
+				String gs = wr.getGuid();
+				if ((gs!=null) && (gs.contentEquals(guidStr))){
+					waitingResults.remove(i);
+					i--;
+				}
+				i++;
+			}
+			
+		}
 		
 		@Override		
 		public void run() {
@@ -1347,12 +1427,15 @@ public class VirtualLattice implements LatticeIntf{
 						
 						try{
 							
-							if (selectionResultsQueue.size()>0){
+							if ((selectionResultsQueue.size()>0) && 
+								(waitingResults.indexOf(selectionResultsQueue.get(0))<0)){
+								
 								_results = selectionResultsQueue.get(0) ;
+								waitingResults.add(_results);
 								
 								digestParticleSelection(_results) ;
 								
-								selectionResultsQueue.remove(0) ;
+								// not removing here !!! selectionResultsQueue.remove(0) ;
 							}
 						}catch(Exception e){}
 						
@@ -1360,7 +1443,7 @@ public class VirtualLattice implements LatticeIntf{
 					} // isWorking ?
 					
 					if (selectionResultsQueue.size()==0){
-						dt = 2 ;
+						dt = 1 ;
 						minidelay(dt);
 						// a delay in nanoseconds...
 					}else{
@@ -1379,24 +1462,58 @@ public class VirtualLattice implements LatticeIntf{
 		
 	}
 	
-	class ParticleSelectionDispatcher{
+	// the event arrives in SomFluid, which is calling this method here
+	public void digestParticleSelection( SurroundResults results ) {
+		// SurroundResults contains particle indexes, distances to request center, and the request GUID !
+		
+	
+		// String str = arrutil.arr2text( results.getParticleIndexes() ) ;
+		// out.print(2,"results returned to virtual lattice, "+str);
+		
+		new ParticleSelectionDispatcher( results );
+		 
+	}
+
+	class ParticleSelectionDispatcher implements Runnable{
 
 		String guidStr;
+		SurroundResults results;
+		Thread psd;
 		
 		public ParticleSelectionDispatcher(SurroundResults results) {
-			
+			this.results = results ;
+			// psd = new Thread(this,"psd") ; psd.start();
+			perform();
+		}
+		
+		private void perform(){	
 			guidStr = results.getGuid();
 			
-											out.print(5, "   - - - lattice is now checking match for results by guid="+guidStr);
+											out.print(3, "   - - - lattice is now checking match for received results by guid="+guidStr);
 			
-			if (selectionResultsQueryMap.containsKey(guidStr)){
+			if (selectionResultsQueryMap.containsKey(guidStr))
+			{
 				// we may even introduce a local selection buffer here, too !
 				selectionResultsQueryMap.put(guidStr, results);
+				         if (results==null){
+				        	 out.print(2, "result for guid "+guidStr+" received by lattice, but container is empty!\n");
+				         }else{
+											out.print(3, "result for guid "+guidStr+"\n"+
+													     "                put to <selectionResultsQueryMap>... lattice should be able to fetch it now...");
+				         }
 				// the map serves as a queue for named items !
 											out.print(5, "   - - - ...match found!");
-			}else{
+			}
+			/*else{
 				out.printErr(4, "   - - - lattice could not qualify results-guid = "+guidStr);	
 			}
+			*/
+		}
+
+		@Override
+		public void run() {
+			
+			perform();
 		}
 		
 	}

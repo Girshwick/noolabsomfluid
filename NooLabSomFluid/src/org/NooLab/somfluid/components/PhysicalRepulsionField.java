@@ -201,6 +201,7 @@ public class PhysicalRepulsionField extends ExternalGridFieldAbstract{
 										
 		 
 		repulsionField.releaseShakeIt(0,5000 );
+		out.delay(4000) ;
 		
 		z=0;
 		while ((initComplete==false) && (z<3000)){

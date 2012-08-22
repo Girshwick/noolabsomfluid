@@ -56,7 +56,7 @@ public class SomAppNodes implements LatticeIntf{
 	// ------------------------------------------------------------------------
 	
 	@Override
-	public ArrayList<IndexDistanceIntf> getNeighborhoodNodes(int index, int nodeCount) {
+	public ArrayList<IndexDistanceIntf> getNeighborhoodNodes(int index, int nodeCount,int control) {
 		// TODO Auto-generated method stub
 		return null;
 	}

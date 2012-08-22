@@ -177,7 +177,7 @@ public class DSom extends Observable implements DSomIntf{
 	
 	// ------------------------------------------------------------------------	
 
-	public void performTargetedModeling() throws Exception {
+	public void performModeling() throws Exception {
 		 
 		int r=-1;
 		try{
@@ -193,16 +193,28 @@ public class DSom extends Observable implements DSomIntf{
 		
 		// will run the som in a dedicated thread
 		 
-		r = dSomCore.perform() ;
+		
 			
 		if (r<0){
-			throw(new Exception("Critical error in dSomCore, stopping."));
+			throw(new Exception("Critical error in dSomCore (r="+r+"), stopping."));
 		}
 		
 		 
 		
 	}
 
+	
+	public  void performAstor() throws Exception  {
+		int r;
+		
+		
+		dSomCore = new DSomCore(this) ;
+		r = dSomCore.perform() ;
+			// calls performAstor() on somtype = somprob
+		
+	}
+	
+	
 	public void onCoreProcessCompleted(int resultCode){
 		ModelProperties modelProperties ;
 		

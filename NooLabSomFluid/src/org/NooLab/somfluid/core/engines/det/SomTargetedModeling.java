@@ -632,7 +632,7 @@ public class SomTargetedModeling    extends
 		dSom.setGuid(dsomGuid);
 		
 											String str = "Som is running, identifier: "+dsomGuid;
-											out.print(2, "Som running is going to be prepared...") ;
+											out.print(3, "Som running is going to be prepared...") ;
 		
 		somlattice = dSom.getSomLattice();
 											out.print(3, "dSom is working on lattice : "+somlattice.toString()) ;
@@ -686,8 +686,8 @@ public class SomTargetedModeling    extends
 			if (callerState>0){
 				dSom.inProcessWait = true ;
 			}
-											out.print(2, "Som is running...") ;
-			dSom.performTargetedModeling();
+											out.print(3, "Som is running...") ;
+			dSom.performModeling();
 		}
 		 
 		return dsomGuid;
@@ -913,7 +913,11 @@ public class SomTargetedModeling    extends
 		
 		results = (SurroundResults)resultsObj;  
 		
-		out.print(4, "event <onSelectionRequestCompleted()> received message with <resultsObj> ... ") ;
+		if (results==null){
+			out.printErr(2, "event <onSelectionRequestCompleted()> received message with <resultsObj>, but container was empty!") ;
+		}else{
+			out.print(4, "event <onSelectionRequestCompleted()> received message with <resultsObj> for guid "+results.getGuid()+"... ") ;
+		}
 		/*
 		 *  here we have to use a message queue running in its own process, otherwise
 		 *  the SurroundRetrieval Process will NOT be released...
@@ -948,7 +952,8 @@ public class SomTargetedModeling    extends
 		
 		ArrayList<SurroundResults> rQueue = somLattice.getSelectionResultsQueue(); 
 		// rQueue.add( clonedResults );
-		somLattice.getSelectionResultsQueue().add( clonedResults );
+		somLattice.addResultsToWaitingQueue(clonedResults );
+		// .getSelectionResultsQueue().add( clonedResults );
 		
 		//out.print(2, "size of rQueue : "+rQueue.size());
 		return; 

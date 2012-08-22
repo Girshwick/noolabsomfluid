@@ -549,6 +549,10 @@ if ((_new_w<0) || (_new_w>1.04)){
 		// dependent on size of extensional container !
 		nodeExtSize = getExtensionality().getCount() ;
 		
+		if ((dataNewRecord==null) || (dataNewRecord.size()==0)){
+			out.print(2, "insertDataAndAdjust(): data record was empty, putative index = "+recordIndexInTable);
+			return;
+		}
 		
 		try{
 			calculateAllVariables = false ;

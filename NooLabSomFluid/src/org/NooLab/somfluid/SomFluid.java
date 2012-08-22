@@ -20,6 +20,8 @@ import org.NooLab.somfluid.app.SomAppProperties;
 import org.NooLab.somfluid.app.SomAppUsageIntf;
 import org.NooLab.somfluid.app.SomAppValidationIntf;
 import org.NooLab.somfluid.app.SomApplicationEventIntf;
+import org.NooLab.somfluid.astor.SomAStorageQueryHandler;
+import org.NooLab.somfluid.astor.SomAssociativeStorage;
 import org.NooLab.somfluid.components.* ;
   
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
@@ -194,6 +196,21 @@ public class SomFluid
 	}
 	
 
+	private void performAssociativeStorage(SomFluidTask sfTask) {
+		 
+		
+		
+		SomAssociativeStorage astor ;
+		SomAStorageQueryHandler astorQueryHandler;
+		
+		
+		sfTask.setDescription("Astor()") ;
+		sfTask.setSomHost(null) ;
+		
+		astor = new SomAssociativeStorage( this, sfFactory, sfProperties ); 
+		sfTask.setTaskType( SomFluidTask._TASK_SOMSTORAGEFIELD);
+	}
+
 	/**
 	 * 
 	 * optimizes a single model, using evo-screener and sprite-derivation
@@ -244,22 +261,6 @@ public class SomFluid
 	}
 
 
-	private void performAssociativeStorage(SomFluidTask sfTask) {
-		 
-		/*
-		 * modeling needs internal statistics, such that variance is controlled 
-		 * additionally, we use variance of variances as a target target variable for intermittent optimization
-		 * 
-		 * also, a second version will be made available for further processing, which is a "crystallization"
-		 */
-		
-		sfFactory.openSource(); // just prepares access, includes connection to dir, db
-		
-		new SomAssociativeStorage( this, sfFactory, sfProperties, createSomDataObject() ); 
-		sfTask.setTaskType( SomFluidTask._TASK_SOMSTORAGEFIELD);
-	}
-
-	
 	private void performClassificationApp(SomFluidTask sfTask) {
 		
 		String classTaskId = "-1" ;

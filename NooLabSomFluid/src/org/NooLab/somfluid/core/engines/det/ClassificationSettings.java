@@ -514,7 +514,9 @@ public class ClassificationSettings implements Serializable{
 	public boolean isEcrAdaptationAllowed() {
 		return isEcrAdaptationAllowed;
 	}
-
+	public boolean getEcrAdaptationAllowed() {
+		return isEcrAdaptationAllowed;
+	}
 
 
 
