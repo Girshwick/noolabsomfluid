@@ -409,7 +409,7 @@ public class SurroundBuffers implements Runnable{
 				}// isWorking?
 				int z=0;
 				while ((fieldIsStable) && (z<100)){
-					out.delay(100); z++;
+					out.delay(10); z++;
 				}
 				out.delay(5);
 			}// ->

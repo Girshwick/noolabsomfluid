@@ -458,8 +458,8 @@ public class FluidFieldSurroundRetrieval implements Runnable {
 		if (paramSets.size()==0){
 			return;
 		}
-		
-		while (adjustmentWait){}
+		int z=0;
+		while ((adjustmentWait)&&(z<5)){z++; out.delay(2);}
 		
 		 
 		
@@ -478,7 +478,7 @@ public class FluidFieldSurroundRetrieval implements Runnable {
 			results = getSurround( p.xpos, p.ypos, p.surroundN, p.selectMode,  p.autoselect);
 		}
 		if (style== _TASK_SURROUND_X){
-			results = getSurround( p.particleIndex, p.surroundN, p.selectMode,  p.autoselect);
+			results = getSurround( p.particleIndex, p.guid, p.surroundN, p.selectMode,  p.autoselect);
 		}
 		
 		if (results!=null){
@@ -493,8 +493,10 @@ public class FluidFieldSurroundRetrieval implements Runnable {
 				
 			resultMap.put(p.guid, results);
 			
-			while (adjustmentWait){
-				
+			z=0;
+			while ((z<5) && (adjustmentWait)){
+				out.delay(2) ;
+				z++;
 			}
 			
 			if ((paramSets!=null) ) {
@@ -517,7 +519,7 @@ public class FluidFieldSurroundRetrieval implements Runnable {
 		Thread thrd = threadMap.get(p.guid);
 	 
 		// out.print(2, "nulling thread of guid: "+p.guid) ;
-		 
+		out.delay(20); 
 		threadMap.remove(p.guid);
 		if (thrd!=null){
 			thrd.setPriority(1); // type "rfSurrThrd"
@@ -583,7 +585,7 @@ public class FluidFieldSurroundRetrieval implements Runnable {
 		
 	}
 	
-	private SurroundResults getSurround( int index , int surroundN ,  
+	private SurroundResults getSurround( int index , String guid, int surroundN ,  
 		     							 int selectMode, boolean autoselect){
 		
 		double x, y ;
@@ -609,7 +611,7 @@ public class FluidFieldSurroundRetrieval implements Runnable {
 			results.getCoordinate()[0] = p.x;
 			results.getCoordinate()[1] = p.y;
 		}
-		
+		results.setGuid(guid) ;
 		results.getIndexedDistances().clear();
 
 

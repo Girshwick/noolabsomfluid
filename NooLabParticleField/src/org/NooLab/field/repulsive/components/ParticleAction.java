@@ -254,7 +254,7 @@ public class ParticleAction {
 					}
 
 						go();
-						rfield.out.delay(200) ;
+						rfield.out.delay(20) ;
 						isWorking=false;
 					
 				}

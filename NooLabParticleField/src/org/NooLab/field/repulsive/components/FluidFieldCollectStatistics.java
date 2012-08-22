@@ -73,7 +73,7 @@ public class FluidFieldCollectStatistics implements Runnable,Stoppable{
 			 
 			statsThrd.start();
 			while ((isSCRunning==false) && (isSCStopped==false)){
-				out.delay(5);
+				out.delay(2);
 			}
 			
 	    
@@ -251,7 +251,7 @@ public class FluidFieldCollectStatistics implements Runnable,Stoppable{
 						
 					} // NOT isCalculating?
 				} // not waiting of monoproc?
-				out.delay(100);
+				out.delay(20);
 			}// ->
 			
 		}catch(Exception e){
