@@ -1727,20 +1727,32 @@ out.printErr(2, "lattice 8 "+_somLattice.toString());
 			sfTask.setCallerStatus(0) ;
 			sfTask.setCounter(z) ;
 			
-			targetedModeling = new SomTargetedModeling( modOpti, sfFactory, sfProperties, sfTask, serialID);
+			try{
 			
-			targetedModeling.setSource(0);
-			
-			targetedModeling.prepare(usedVariables);
-			
-			String guid = targetedModeling.perform(0);
-			
-			out.print(2, "\nSom ("+z+") is running , identifier: "+guid) ; 
 
-			while (targetedModeling.isCompleted()==false){
-				out.delay(10);
+				targetedModeling = new SomTargetedModeling( modOpti, sfFactory, sfProperties, sfTask, serialID);
+				
+				targetedModeling.setSource(0);
+				
+				targetedModeling.prepare(usedVariables);
+				
+				String guid = targetedModeling.perform(0);
+				
+				out.print(2, "\nSom ("+z+") is running , identifier: "+guid) ; 
+
+				while (targetedModeling.isCompleted()==false){
+					out.delay(10);
+				}
+
+				targetedModeling.clear() ;
+				
+			}catch(Exception e){
+				// restart option ...
+				if (out.getPrintlevel()>=1){
+					e.printStackTrace();
+				}
 			}
-			targetedModeling.clear() ;
+			
 			targetedModeling = null;
 	}
 

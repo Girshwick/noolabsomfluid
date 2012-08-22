@@ -33,7 +33,7 @@ public class DSomDataPerception
 												FrequencyListGeneratorIntf{
 
 	
-	boolean _DEBUG = false;
+	public boolean _DEBUG = false;
 	
  
 
@@ -343,10 +343,10 @@ if ((currentEpoch+1)>=somSteps){
 		
 		parentSom.somLattice.activateNodes(); 
 		
-		if (parentSom.modelingSettings.getMinimalNodeSize()>0){
+		if ((parentSom.modelingSettings.getMinimalNodeSize()>0) &&  // if filled at all 
+			( ((currentEpoch+1)<somSteps) && (currentEpoch>1) )){   // not in the initialization steps, and not in the final step
 			careForMinimalFill( parentSom.modelingSettings.getMinimalNodeSize() ) ;
 		}
-		 
 		 
 		
  		if (_DEBUG)out.delay(130);
@@ -969,8 +969,17 @@ if (extSizeInNeighbors.size()>0){
 		
 		
 		// this performs the query, waits for the results and filters the results according to current radius...
-		nodelist = parentSom.somLattice.getNeighborhoodNodes( nodeIndex , neighbourhoodSize ) ;
-		 
+		int z=0;
+		while ((z<=1) && (nodelist.size()==0)){
+			nodelist = parentSom.somLattice.getNeighborhoodNodes( nodeIndex , neighbourhoodSize,z ) ;
+			if (nodelist.size()==0){
+				z=z+1-1;
+			}
+			z++;
+		}
+		if (nodelist.size()==0){
+			out.printErr(2, "retrieving affected nodes failed for nodeIndex : "+nodeIndex);
+		}
 		
 		// the lattice performs the call and organizes the wait by itself, -> no complicated callbacks to here...
 		// it wraps the call through the SomFluid object : parentSom.somFluidParent.getNeighborhoodNodes( index );

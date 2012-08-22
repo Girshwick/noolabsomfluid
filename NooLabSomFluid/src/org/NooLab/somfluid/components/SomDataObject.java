@@ -194,6 +194,16 @@ public class SomDataObject 	implements      Serializable,
 		
 	}
 	
+	/**
+	 * this is used in the context of Associative Storage
+	 * 
+	 * @param sfProperties2
+	 * @return
+	 */
+	public static SomDataObject openSomData(SomFluidProperties sfProperties2) {
+	
+		return null;
+	}
 	
 	/**
 	 * 
@@ -1514,6 +1524,15 @@ public class SomDataObject 	implements      Serializable,
 	public void setMissingValues(MissingValues missingValues) {
 		this.missingValues = missingValues;
 	}
+
+
+	public void establishDataLinkage() {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	
 
 
 	

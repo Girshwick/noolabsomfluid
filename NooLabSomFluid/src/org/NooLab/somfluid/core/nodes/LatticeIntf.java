@@ -9,7 +9,7 @@ import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 public interface LatticeIntf {
 
 	
-	public ArrayList<IndexDistanceIntf> getNeighborhoodNodes( int index , int nodeCount );
+	public ArrayList<IndexDistanceIntf> getNeighborhoodNodes( int index , int nodeCount, int controlparam );
 	
 	public void refreshDataSourceLink() ;
 	

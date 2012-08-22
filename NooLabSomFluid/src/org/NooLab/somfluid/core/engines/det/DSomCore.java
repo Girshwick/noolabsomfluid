@@ -6,6 +6,7 @@ import org.NooLab.somfluid.SomFluidMonoTaskIntf;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidTask;
  
+import org.NooLab.somfluid.astor.AstorSomField;
 import org.NooLab.somfluid.components.variables.SomVariableHandling;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
@@ -112,7 +113,13 @@ public class DSomCore {
 		prepareSomProcess();
 		
 	}
+	
+	public DSomCore(AstorSomField astorSomField) {
+		// TODO Auto-generated constructor stub
+	}
 	// ========================================================================
+	
+	
 	public void close(){
 		
 		// arrutil=null;
@@ -130,15 +137,18 @@ public class DSomCore {
 			new DsomStarter(); // ?? switched off only for DEBUG !!! abc124
 			result=0;
 		}else{
-			result = performDSom();
+			// if somtype ...) -> performAstor()
+			
+			if (modset.getSomType() == SomFluidProperties._SOMTYPE_PROB ){
+				result = performAstor();
+			}else{
+				result = performDSom();	
+			}
+			
 		}
 		return result; 
 	}
 
-
-	// ========================================================================
-	
-	
 	// just for starting in its own thread, but hiding the Runnable interface from/for the outside
 	class DsomStarter implements Runnable{
 	
@@ -378,6 +388,26 @@ public class DSomCore {
 		
 		return usagevector;
 	}
+	private int performAstor() throws Exception {
+		
+		int resultCode=-1;
+		SomVariableHandling variableHandling;
+		SomQuality sq ;
+		
+		
+		variableHandling = new SomVariableHandling( dSom.somData, modelingSettings  );
+		
+
+		resultCode = executeSOM() ; // >0 == ok 
+		 
+		if (resultCode<0){
+			return resultCode;
+		}
+		
+		dSom.onCoreProcessCompleted(resultCode);// VirtualLattice@1f07597, each loop a different one!
+		return resultCode; 
+	}
+
 	// ========================================================================
 	
 	
@@ -574,10 +604,11 @@ if (currentEpoch>=3){
 			
 		}catch(Exception e){
 			if (LogControl.Level >=2){
-				e.printStackTrace();
+				// e.printStackTrace();
 			}else{
 				out.printErr(1, e.getMessage());
 			}
+			e.printStackTrace();
 			result = -7 ;
 		}
 		if (result==0){

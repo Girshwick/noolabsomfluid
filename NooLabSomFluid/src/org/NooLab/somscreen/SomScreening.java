@@ -1509,9 +1509,9 @@ if (z==24){
 
 				// consider evoweights ...
 			}
-											int outlevel=2;
+											int outlevel=3;
 											if (sfTask.getCounter()>3){
-												outlevel=3;
+												outlevel=4;
 											}
 											out.print(outlevel, "specifyLargeChange(), getNextVariableSelection calling ...");
 			// care about the indices over there !!! 
@@ -1604,9 +1604,9 @@ if (selection.size()<=1){
 			if (linearIndexSelection.size()>0){
 				linearIndexSelection = translateVariableIndexesToGlobal( linearIndexSelection ) ;
 			}
-											int outlevel=2;
+											int outlevel=3;
 											if (sfTask.getCounter()>3){
-												outlevel=3;
+												outlevel=4;
 											}
 											out.print(outlevel, "linear index selections completed.");
 		}

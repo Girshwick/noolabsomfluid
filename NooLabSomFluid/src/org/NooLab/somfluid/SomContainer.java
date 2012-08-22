@@ -431,7 +431,7 @@ public class SomContainer {
 		ArrayList<Integer> ixList = new ArrayList<Integer>();
 		int ix ;
 		 
-		ArrayList<IndexDistanceIntf> ixda = somHost.getSomProcess().getSomLattice().getNeighborhoodNodes(index, count) ;
+		ArrayList<IndexDistanceIntf> ixda = somHost.getSomProcess().getSomLattice().getNeighborhoodNodes(index, count,0) ;
 		
 		for (int i=0;i<ixda.size();i++){
 			ix = ixda.get(i).getIndex() ;

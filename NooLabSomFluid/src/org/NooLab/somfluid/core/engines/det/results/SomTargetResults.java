@@ -275,15 +275,41 @@ public class SomTargetResults {
 				 * 
 				 */
 				
-				sampleValidator = new SampleValidator( dataSampler.getValidationSet() ) ;
-				sampleValidator.perform();
+									out.print(2,"...going to validate the SomLattice using "+(dataSampler.getValidationSet().size())+" records...") ;
+				double recsSelectedRatio = 0;
+				int repeaz = 0;
+				while (repeaz <= 1) {
 
-				this.modelProperties.validationSamples.add( sampleValidator.majorities.getModelProperties().getTrainingSample() );
-				
-				sampleValidator.pseudoLattice.clear();
-				sampleValidator.pseudoLattice.close();
-				sampleValidator.pseudoLattice=null;
-				
+					sampleValidator = new SampleValidator( dataSampler.getValidationSet() ) ;
+					sampleValidator.perform();
+
+					ValidationSet trainingsetValidationData = sampleValidator.majorities.getModelProperties().getTrainingSample();
+					
+					this.modelProperties.validationSamples.add( trainingsetValidationData );
+					
+					sampleValidator.pseudoLattice.clear();
+					sampleValidator.pseudoLattice.close();
+					sampleValidator.pseudoLattice=null;
+
+					
+					if (classifySettings.isEcrAdaptationAllowed()) {
+					
+						recsSelectedRatio = ((double)trainingsetValidationData.falsePositives)/ ((double) trainingsetValidationData.observationCount);
+											// falsePositives is not set... here
+						if ((classifySettings.getCapacityAsSelectedTotal() < trainingsetValidationData.ecrRelSize) || 
+							(classifySettings.getCapacityAsSelectedTotal() < recsSelectedRatio)) {
+							double currEcr = classifySettings.getEcr();
+							if (currEcr > 0.05) {
+								classifySettings.setEcr(currEcr * 0.9);
+							}
+						}
+					}else{
+						repeaz=99;
+					}
+					repeaz++;
+				} // ->
+
+								
 			}
 			 
 			
@@ -975,7 +1001,7 @@ if (v>0.3){
 		
 		
 		public void perform() throws Exception{
-											out.print(2,"...going to validate the SomLattice using "+(recordIDs.size())+" records...") ;
+											// out.print(2,"...going to validate the SomLattice using "+(recordIDs.size())+" records...") ;
 			recordIDs = dataSampler.getValidationSet() ;
 			establishPseudoLattice();
 											out.print(3,"...all records of the validation sample have been visited...") ;
@@ -988,6 +1014,8 @@ if (v>0.3){
 			// we have to copy those result data to the modelProperties.validationSample of the main somLattice
 			
 			somLattice.getModelProperties().setValidationSample( pseudoLattice.getModelProperties().getTrainingSample() ) ;
+			// cs.setEcrAdaptationAllowed, setCapacityAsSelectedTotal
+			
 			somLattice.getModelProperties().getValidationSample().setSampleSize( dataSampler.getSizeValidationSet() );
 			
 		}
