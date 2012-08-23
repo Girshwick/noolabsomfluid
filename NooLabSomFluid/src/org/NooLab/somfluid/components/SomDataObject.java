@@ -25,7 +25,7 @@ import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.data.DataFileReceptorIntf;
 import org.NooLab.somfluid.env.data.DataReceptor;
-import org.NooLab.somfluid.env.data.SomTexxDataBaseHandler;
+import org.NooLab.somfluid.env.data.SomTexxDataBase;
 import org.NooLab.somfluid.env.data.db.DataBaseAccessDefinition;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
@@ -81,10 +81,10 @@ public class SomDataObject 	implements      Serializable,
 	FileDataSource filesource;
 	transient XmlFileRead xmlFile ;
 	
-	TexxDataBaseSettingsIntf databaseSettings ;
-	DataBaseAccessDefinition dbAccessDefinition;
-	SomDataStreamer somDataStreamer ;
-	SomTexxDataBaseHandler somTexxDbHandler ;
+	transient TexxDataBaseSettingsIntf databaseSettings ;
+	transient DataBaseAccessDefinition dbAccessDefinition;
+	transient SomDataStreamer somDataStreamer ;
+	transient SomTexxDataBase somTexxDbHandler ;
 	
 	// main variables / properties ....
 	transient SomFluidFactory sfFactory ;
@@ -93,6 +93,7 @@ public class SomDataObject 	implements      Serializable,
 	DataTable normalizedSomData=null ;
 	
 	transient DataFileReceptorIntf dataReceptor;
+	SomFluidProperties sfProperties;
 	
 	DataTable profilesTable ; // for simulation mode
 	
@@ -132,30 +133,38 @@ public class SomDataObject 	implements      Serializable,
 	transient PrintLog out = new PrintLog(2,true) ;
 	// transient arrutil
 
-	private SomFluidProperties sfProperties;
+	
 		
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 	 
-	public SomDataObject( DataHandlingPropertiesIntf datahandleProps){
+	public SomDataObject( DataHandlingPropertiesIntf datahandleProps, SomFluidProperties sfProps){
 		
 		dataHandlingProperties = datahandleProps;
 		
-		
+		sfProperties = sfProps;
 		missingValues = new MissingValues(this);
 		data = new DataTable( this, true ); // true: isnumeric, Som data objects always contain numeric data
 		
-	 
-		somTexxDbHandler = new SomTexxDataBaseHandler(this) ; 
+		init();
 	}
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 	 
 	
 	public void setFactory(SomFluidFactory factory) {
 		sfFactory = factory;
-		
 		sfProperties = sfFactory.getSfProperties() ;
-		modelingSettings = sfFactory.getSfProperties().getModelingSettings() ;
+		init();
+	}
+	private void init(){
+		
+		
+		modelingSettings = sfProperties.getModelingSettings() ;
 		classifySettings = modelingSettings.getClassifySettings() ; 
+		
+		databaseSettings = sfProperties.getDatabaseSettings() ;
+		dbAccessDefinition = sfProperties.getDbAccessDefinition() ;
+		
+		somTexxDbHandler = new SomTexxDataBase(this,sfProperties) ; 
 	}
 
 	/**

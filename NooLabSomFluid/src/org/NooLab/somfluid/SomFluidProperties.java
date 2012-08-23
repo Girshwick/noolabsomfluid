@@ -973,7 +973,7 @@ public class SomFluidProperties
 	}
 
 
-	public void getDatabaseDefinitionInfo( ) throws Exception{
+	public void getDatabaseDefinitionInfo( String dbname) throws Exception{
 
 		dbDefinitionResource ="texx-db-definition-xml" ;
 		String cfgResourceJarPath="org/NooLab/somfluid/resources/sql/";
@@ -984,7 +984,7 @@ public class SomFluidProperties
 		 
 		xmlstr = ResourceContent.getConfigResource( this.getClass(), cfgResourceJarPath, dbDefinitionResource ) ;
 		 
-		dbAccessDefinition.getDatabaseDefinitionInfo(xmlstr) ;
+		dbAccessDefinition.getDatabaseDefinitionInfo(xmlstr,dbname) ;
 		
 		
 	}

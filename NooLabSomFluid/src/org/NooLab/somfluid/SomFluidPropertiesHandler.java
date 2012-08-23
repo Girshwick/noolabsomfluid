@@ -818,11 +818,11 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		targetMode = targetmode;
 	}
 
-	public void setDatabaseDefinitionResource( String alias) {
+	public void setDatabaseDefinitionResource( String alias, String dbname) {
 		setDatabaseDefinitionResource("" ,  alias);
 	}
 	@Override
-	public void setDatabaseDefinitionResource(String dbDefResource,String alias) {
+	public void setDatabaseDefinitionResource(String dbDefResource,String alias , String dbname) {
 		
 		if (dbDefResource.length()==0){
 			dbDefResource = "definition-db-sql-xml" ;
@@ -833,7 +833,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		// analyze for table names, columns
 		try {
 		
-			sfProperties.getDatabaseDefinitionInfo();
+			sfProperties.getDatabaseDefinitionInfo(dbname);
 
 		} catch (Exception e) {
 			e.printStackTrace();

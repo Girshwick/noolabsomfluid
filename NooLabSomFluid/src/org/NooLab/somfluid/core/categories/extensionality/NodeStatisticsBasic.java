@@ -46,4 +46,11 @@ public class NodeStatisticsBasic implements NodeStatisticsIntf {
 		
 	}
 
+
+	@Override
+	public void addFieldValues(BasicStatisticalDescription basicStatisticalDescription) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

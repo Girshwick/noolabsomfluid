@@ -773,7 +773,7 @@ public class SomFluid
 		SomDataObject _somDataObject;
 		
 		
-		_somDataObject = new SomDataObject(sfProperties) ;
+		_somDataObject = new SomDataObject(sfProperties,sfFactory.getSfProperties()) ;
 		
 		_somDataObject.setFactory(sfFactory);
 		_somDataObject.setOut(out);
