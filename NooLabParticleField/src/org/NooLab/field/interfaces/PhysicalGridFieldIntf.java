@@ -1,5 +1,8 @@
 package org.NooLab.field.interfaces;
 
+import org.NooLab.field.repulsive.components.data.SurroundResults;
+
+
 // import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
 
 
@@ -11,6 +14,8 @@ public interface PhysicalGridFieldIntf {
 	void close();
 
 
+
+	
 
 	public int getWidth() ;
 
