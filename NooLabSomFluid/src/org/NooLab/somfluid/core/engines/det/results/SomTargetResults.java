@@ -279,7 +279,7 @@ public class SomTargetResults {
 									out.print(2,"...going to validate the SomLattice using "+(dataSampler.getValidationSet().size())+" records...") ;
 				double recsSelectedRatio = 0;
 				int repeaz = 0;
-				while (repeaz <= 1) {
+				while (repeaz <= 3) {
 
 					sampleValidator = new SampleValidator( dataSampler.getValidationSet() ) ;
 					sampleValidator.perform();
@@ -667,6 +667,7 @@ if (v>0.3){
 				int vFP = nodeFP;
 				int vFN = nodeFN;
 				double ppvVTotal = 0.0;
+				
 				for (int i=0;i<nodesImpliedRisks.size();i++){
 					nirsk = nodesImpliedRisks.getItem(i) ;
 					double vppv = nirsk.getDistance() ;

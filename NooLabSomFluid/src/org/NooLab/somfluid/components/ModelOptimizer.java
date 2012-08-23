@@ -19,6 +19,7 @@ import org.NooLab.utilities.logging.*;
 import org.NooLab.utilities.nums.NumUtilities;
 
 import org.NooLab.field.FieldIntf;
+import org.NooLab.field.repulsive.components.data.SurroundResults;
 import org.NooLab.math3.exception.NoDataException;
 import org.NooLab.math3.exception.NullArgumentException;
 import org.NooLab.math3.stat.correlation.SpearmansCorrelation;
@@ -2017,6 +2018,14 @@ if (bestHistoryIndex==0){
 				z = 0;
 			}
 		}
+	}
+
+
+
+	@Override
+	public void selectionEventRouter(SurroundResults results, VirtualLattice somLattice) {
+		 
+		somLattice.handlingRoutedSelectionEvent(results);
 	}
 
 	

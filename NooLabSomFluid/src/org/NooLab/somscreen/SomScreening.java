@@ -875,6 +875,11 @@ if ((specialInterestVariables!=null) &&
 							stoppingCriteriaSatisfied = true;
 						}
 						
+					if ((z>10) && (z%8==0)){
+						// we take the best model and check its selection size rather progressively
+						// TODO: the deviation from selection size should contribute to the score of the models 
+						dedicatedSelectionSizeCheck( 1 );
+					}
 					timeSinceStart =  (System.currentTimeMillis() - startTime);
 					hoursFraction = (double)timeSinceStart/((double)(1000 *60 * 60) );
 					
@@ -915,6 +920,17 @@ if ((specialInterestVariables!=null) &&
 			screeningIsRunning = false;
 		}
 		
+		
+		/**
+		 * this checks th top five of the model for the requested selection check
+		 * 
+		 * @param mode
+		 */
+		private void dedicatedSelectionSizeCheck( int topNCount) {
+			
+			
+		}
+
 		
 		/**
 		 * from SomScreen 2 on, we may meet added variables that have been derived by the sprite process;</br>

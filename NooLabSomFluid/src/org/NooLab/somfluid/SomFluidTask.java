@@ -37,7 +37,7 @@ public class SomFluidTask 	implements
 	
 	String description="" ;
 	
-	int startingMode = -1;
+	int startingMode = 1;
 	
 	int callerStatus = 0;
 	 
@@ -69,6 +69,8 @@ public class SomFluidTask 	implements
 	boolean isStandbyActive =false;
 
 	private int counter=-1;
+
+	private boolean activateDataStreamReceptor;
  
 	 
 	
@@ -555,6 +557,32 @@ public class SomFluidTask 	implements
 		}
 		
 		return rB;
+	}
+
+
+
+	public boolean activateDataStreamReceptor() {
+		 
+		return activateDataStreamReceptor;
+	}
+	public boolean isActivateDataStreamReceptor() {
+		return activateDataStreamReceptor;
+	}
+	
+	public void setActivateDataStreamReceptor(boolean flag) {
+		activateDataStreamReceptor = flag;
+	}
+
+	@Override
+	public boolean activatedDataStreamReceptor() {
+		return activateDataStreamReceptor ;
+		
+	}
+
+	@Override
+	public void activateDataStreamReceptor(boolean flag) {
+		activateDataStreamReceptor = flag;
+		
 	}
 	 
 }

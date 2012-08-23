@@ -4,16 +4,21 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.NooLab.itexx.storage.DataStreamProviderIntf;
+import org.NooLab.itexx.storage.TexxDataBaseSettings;
+import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
 import org.NooLab.somfluid.app.SomAppProperties;
 import org.NooLab.somfluid.app.SomFluidAppPropertiesAbstract;
 import org.NooLab.somfluid.components.AlgorithmDeclarationsLoader;
 import org.NooLab.somfluid.components.DataFilter;
 import org.NooLab.somfluid.core.engines.det.ResultRequests;
-import org.NooLab.somfluid.core.nodes.LatticeProperties;
+
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
 import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
+
  
+import org.NooLab.somfluid.properties.AstorSettings;
 import org.NooLab.somfluid.properties.DataUseSettings;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
@@ -24,9 +29,11 @@ import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
 import org.NooLab.utilities.files.DFutils;
+import org.NooLab.utilities.resources.ResourceContent;
+import org.NooLab.utilities.resources.ResourceLoader;
 
 
-											//  as usual, we offer particular views on this container
+					
 public class SomFluidProperties 
 									extends
 												SomFluidAppPropertiesAbstract
@@ -43,9 +50,10 @@ public class SomFluidProperties
 	
 	transient static SomFluidProperties sfp; 
 	
+	public final static int _SRC_TYPE_DB   = DataStreamProviderIntf._DSP_SOURCE_DB ;  // = 1
+	public final static int _SRC_TYPE_TCP  = DataStreamProviderIntf._DSP_SOURCE_TCP;  // = 2
+	public final static int _SRC_TYPE_FILE = DataStreamProviderIntf._DSP_SOURCE_FILE ;// = 3
 	
-	public final static int _SRC_TYPE_FILE = 1;
-	public final static int _SRC_TYPE_DB   = 3;
 	public final static int _SRC_TYPE_OBJ  = 5;
 	public final static int _SRC_TYPE_XSTREAM = 12;
 	public final static int _SRC_TYPE_ONLINE  = 100;
@@ -74,9 +82,11 @@ public class SomFluidProperties
 	// that is for _SOMTYPE_MONO only ! 
 	
 	DataUseSettings dataUseSettings = new DataUseSettings() ;
-	transient VariableSettingsHandlerIntf variableSettings; // TODO all getters and setters should be contained in interface... 
+	transient VariableSettingsHandlerIntf variableSettings; 
+	// TODO all getters and setters should be contained in interface... 
  
-	// LatticeProperties latticeProps;
+	
+	// 
 	
 	// lattice
 	int somType = -1; // mandatory 
@@ -113,7 +123,6 @@ public class SomFluidProperties
 
 	
 
-
 	
 
 
@@ -122,6 +131,10 @@ public class SomFluidProperties
 	// ========================================================================
 	public SomFluidProperties(){
 		super();
+		
+		astorSettings = new AstorSettings(this);
+	 
+		databaseSettings = new TexxDataBaseSettings( dbAccessDefinition );
 		
 	}
 	// ========================================================================
@@ -272,13 +285,7 @@ public class SomFluidProperties
 	
 	
 	
-	public void setFactoryParent(SomFluidFactory factory) {
-		sfFactory = factory;
-	}
-	
-	public SomFluidFactory getSfFactory() {
-		return sfFactory;
-	}
+
 	// ------------------------------------------------------------------------
 	
 
@@ -386,16 +393,7 @@ public class SomFluidProperties
 	}
 
 
-	/**
-	 * 
-	 * @param sourceType 1=full data file, 5=profiles for simulation
-	 * @param filename
-	 */
-	public void setDataSource(int sourcetype, String locatorname) {
-		// 
-		this.sourceType = sourcetype;
-		dataSrcFilename = locatorname ; 
-	}
+
 
 	/**   */
 	public boolean addDataSource(int sourcetype, String locatorname) {
@@ -432,16 +430,7 @@ public class SomFluidProperties
 		this.dataSrcFilename = dataSrcFilename;
 	}
 
-
-	public int getSourceType() {
-		return sourceType;
-	}
-
-
-	public void setSourceType(int sourceType) {
-		this.sourceType = sourceType;
-	}
-
+ 
 
 	public int getDataUptakeControl() {
 		return dataUptakeControl;
@@ -508,7 +497,8 @@ public class SomFluidProperties
 	}
 
 	/**
-	 * if node grow beyond that number of records, they will be split; this could provoke bagging or growing, if allowed
+	 * if node grow beyond that number of records, they will be split; 
+	 * besides splitting, this could also provoke bagging or growing, if allowed
 	 * 
 	 * @param count
 	 */
@@ -538,8 +528,9 @@ public class SomFluidProperties
 	public void setAutoSomBags(boolean flag) {
 		modelingSettings.getSomBagSettings().setAutoSomBags( flag );
 	}
-
-	public void setMultipleWinners(int winnocount) {
+	
+	/** set to 1 if there is only 1 Winner in the search for the BMU */
+	public void setWinnersCountMultiple(int winnocount) {
 		// 
 		modelingSettings.setWinningNodesCount( winnocount ) ;
 		
@@ -549,6 +540,7 @@ public class SomFluidProperties
 	public void setActivationOfGrowing(boolean flag) {
 		modelingSettings.setActivationOfGrowing(flag);
 	}
+	
 	public void setGrowthMode(int growthMode, double... params) {
 		double[] parameters ;
 		
@@ -596,6 +588,15 @@ public class SomFluidProperties
 		modelingSettings.getValidationSettings().setSampleSizeAutoAdjust(flag) ;
 	}
 	
+	/**
+	 * p1:n repeats for out-of-sample validation
+	 * p2+=sample sizes to keep aside for validation 
+	 *     1. for within-process (during evolutionary optimization)
+	 *     2. for cross-validation (third sample = radical out-of-sample validation
+	 *                
+	 * @param repeats
+	 * @param params...
+	 */
 	public void setValidationParameters( int repeats, double... params) {
 		setValidationParameters( ValidationSettings._VALIDATE_SINGLE_SAMPLE_PROB, repeats, params);
 	}
@@ -807,6 +808,12 @@ public class SomFluidProperties
 	}
 
 
+	public AstorSettings getAstorSettings() {
+		
+		return astorSettings;
+	}
+
+
 	public void setModelingSettings(ModelingSettings modelingSettings) {
 		this.modelingSettings = modelingSettings;
 	}
@@ -899,6 +906,10 @@ public class SomFluidProperties
 	}
 
 
+	/**
+	 * this allows to spread references instead of copies of vectors, which saves a lot of memory
+	 * ...especially important for Astor
+	 */
 	@Override
 	public boolean isAssignatesHomogeneous() {
 		 
@@ -906,10 +917,96 @@ public class SomFluidProperties
 	}
 
 
+	// ....................................................
+	// the next 4 methods are very helpful for Astor
+	public void addFieldExclusionByIndex(int fieldIndex) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	public void setFieldExclusionByIndexFrom(int fromIndex) {
+		 
+		
+	}
+
+
+	public void setFieldExclusionByBetween(int fromIndex, int toIndex) {
+		 
+		
+	}
+
+	public void setFieldExclusionByIndexFrom(String fieldLabel, int offset) {
+		 
+		
+	}
 
 	
+	public void setFieldExclusionByIndexUntil( String fieldLabel ) {
+		// we first have to determine the index of the field, which we 
+		// most likely don't know yet right at the beginning
+		
+	}
+
+
+	public void setFieldExclusionByIndexUntil(int fIndex) {
+		 
+		
+	}
+
+	// ....................................................
 
   
+	public TexxDataBaseSettingsIntf getDatabaseSettings() {
+		return databaseSettings;
+	}
+
+
+	public void setDatabaseSettings(TexxDataBaseSettings dbSettings) {
+		this.databaseSettings = dbSettings;
+	}
+
+
+	public void setDatabaseDefinitionResource(String dbdefResource) {
+		 
+		dbDefinitionResource = dbdefResource;
+	}
+
+
+	public void getDatabaseDefinitionInfo( ) throws Exception{
+
+		dbDefinitionResource ="texx-db-definition-xml" ;
+		String cfgResourceJarPath="org/NooLab/somfluid/resources/sql/";
+		String xmlstr ="" ; 
+		
+		DFutils fileutil = new DFutils();
+		
+		 
+		xmlstr = ResourceContent.getConfigResource( this.getClass(), cfgResourceJarPath, dbDefinitionResource ) ;
+		 
+		dbAccessDefinition.getDatabaseDefinitionInfo(xmlstr) ;
+		
+		
+	}
+	
+	private String getConfigResource( String resourcePath ) throws Exception{
+		
+		
+		
+		String xmlstr = "" ;
+		boolean rB;
+		
+		ResourceLoader rsrcLoader = new ResourceLoader();   
+		rB = rsrcLoader.loadTextResource( this.getClass(), resourcePath  ) ;
+		if (rB){  
+			xmlstr = rsrcLoader.getTextResource();
+			
+		}else{
+			throw(new Exception("unable to load resources ("+resourcePath+")")) ;
+		}
+		
+		return xmlstr ;
+	}
 
 	
 	

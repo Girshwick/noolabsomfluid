@@ -10,12 +10,8 @@ import org.NooLab.field.fixed.components.FixedFieldParticlesIntf;
 import org.NooLab.field.interfaces.FixedNodeFieldEventsIntf;
 import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
 import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
-import org.NooLab.field.repulsive.RepulsionField;
 import org.NooLab.field.repulsive.components.data.SurroundResults;
-import org.NooLab.field.repulsive.intf.main.*;
 import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
-import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
-import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidTask;
@@ -26,7 +22,6 @@ import org.NooLab.somfluid.env.data.* ;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.engines.det.results.*;
 import org.NooLab.somfluid.core.engines.det.adv.SomBags;
-import org.NooLab.somfluid.core.nodes.LatticeProperties;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.data.*;
@@ -929,8 +924,6 @@ public class SomTargetedModeling    implements
 	@Override
 	public void onSelectionRequestCompleted( Object resultsObj ) {
 		
-		// TODO: this should be immediately forked into objects, since the requests could be served in parallel
-		//       XXX XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    URGENT  abc124 
 		
 		SurroundResults results, clonedResults;
 		String str ;
@@ -938,50 +931,9 @@ public class SomTargetedModeling    implements
 		
 		results = (SurroundResults)resultsObj;  
 		
-		if (results==null){
-			out.printErr(2, "event <onSelectionRequestCompleted()> received message with <resultsObj>, but container was empty!") ;
-		}else{
-			out.print(4, "event <onSelectionRequestCompleted()> received message with <resultsObj> for guid "+results.getGuid()+"... ") ;
-		}
-		/*
-		 *  here we have to use a message queue running in its own process, otherwise
-		 *  the SurroundRetrieval Process will NOT be released...
-		 *  We have a chain of direct calls
-		 *  
-		 */
+		this.somHost.selectionEventRouter(results,somLattice);
 		
-		// we have to prepare the results in the particlefield!
-		// we need the list of lists: 
-		// for each particle he have a list of indexes ArrayList<Long> getIndexesOfAllDataObject()
-		particleIndexes = results.getParticleIndexes();
-		
-		clonedResults = (SurroundResults) sob.decode( sob.encode(results) );
-					if ((clonedResults==null) || (clonedResults.getParticleIndexes()==null)){
-						return ;
-					}
-											int n = clonedResults.getParticleIndexes().length   ;
-											str = clonedResults.getGuid() ;
-												
-											out.print(5, "particlefield delivered a selection (n="+n+") for GUID="+str);
-	
-		
-		// this result will then be taken as a FiFo by a digesting process, that
-		// will call the method "digestParticleSelection(results);"
-		// yet, it is completely decoupled, such that the current thread can return and finish
-		
-		if (somLattice.selectionResultsQueueDigesterAlive()==false){
-											out.print(3, "restarting selection-results queue digester...");
-			somLattice.startSelectionResultsQueueDigester(-1);
-			out.delay(50);
-		}
-		
-		ArrayList<SurroundResults> rQueue = somLattice.getSelectionResultsQueue(); 
-		// rQueue.add( clonedResults );
-		somLattice.addResultsToWaitingQueue(clonedResults );
-		// .getSelectionResultsQueue().add( clonedResults );
-		
-		//out.print(2, "size of rQueue : "+rQueue.size());
-		return; 
+		 
 	}
 
 

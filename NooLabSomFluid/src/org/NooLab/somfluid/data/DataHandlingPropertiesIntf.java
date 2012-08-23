@@ -4,6 +4,7 @@ package org.NooLab.somfluid.data;
 
 public interface DataHandlingPropertiesIntf {
 
+	
 	public String getDataSrcFilename() ;
 
 	public boolean addDataSource(int sourceType, String filename) ;

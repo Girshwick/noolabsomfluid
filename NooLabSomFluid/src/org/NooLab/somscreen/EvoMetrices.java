@@ -127,7 +127,9 @@ public class EvoMetrices implements Serializable{
 	 */
 	public EvoMetrices(EvoMetrices templEvoMetrices, boolean inclObjects) {
 		
-		
+		if (templEvoMetrices==null){
+			templEvoMetrices = new EvoMetrices(somHost, 0);
+		}
 		somHost = templEvoMetrices.somHost;
 		sfFactory = somHost.getSfFactory() ;
 		somData  = somHost.getSomDataObj() ;

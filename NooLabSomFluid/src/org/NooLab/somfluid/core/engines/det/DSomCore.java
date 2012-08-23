@@ -102,6 +102,9 @@ public class DSomCore {
 		// ... dSom.somData;
 		out = dSom.out;
 		
+		if (out==null){
+			out = somProcess.getSfProperties().getSfFactory().getOut() ;
+		}
 		// out.print(2, "requesting neighborhood for <11> from particle field via Som-Lattice");
 		// dSom.somLattice.getNeighborhoodNodes(11) ; out.delay(200);
 		// dSom.somLattice.getNeighborhoodNodes(15) ;

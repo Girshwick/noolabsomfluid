@@ -85,6 +85,8 @@ public class Variables implements Serializable, VariablesIntf{
 	public Variables( Variables vars ) {
 		Variable item ;
 		
+		strgutil = new StringsUtil();
+		
 		initialUsedVariablesStr = new ArrayList<String>() ;
 		usageIndicationVector = new ArrayList<Double>() ;
 		absoluteAccessible = new ArrayList<Integer>();
@@ -351,6 +353,12 @@ public class Variables implements Serializable, VariablesIntf{
 		} // i ->
 		removeWildcardedLabels(absoluteFieldExclusions) ; //
 		
+		if (variableSettings==null){ 
+			// should not occur    
+			return;
+		}
+		
+		if (variableSettings.getTargetVariableCandidates() != null)	
 		for (int i=0; i< variableSettings.getTargetVariableCandidates().size();i++){
 			vlabel = variableSettings.getTargetVariableCandidates().get(i) ;
 			if ((vlabel.startsWith("*")) || (vlabel.endsWith("*"))){
@@ -392,7 +400,13 @@ public class Variables implements Serializable, VariablesIntf{
 		}
 		if (getTargetVariable()!=null){ targetVariableLabel = getTargetVariable().getLabel() ;}
 		
+		
+		
+		
+		
 		vlabel = "" ;
+		
+		if (variableSettings.getTargetVariableCandidates() != null)	
 		for (int i=0; i< variableSettings.getIdVariableCandidates().size();i++){
 			
 			vlabel = variableSettings.getIdVariableCandidates().get(i) ;
@@ -424,6 +438,7 @@ public class Variables implements Serializable, VariablesIntf{
 			}
 		} // i ->
 		this.setIdLabel( variableSettings.getIdVariable() );
+		
 		
 		ArrayList<String> targetedVariables = getAllTargetedVariablesStr();
 		for (int i=0;i<targetedVariables.size();i++){
@@ -1348,6 +1363,9 @@ if (varLabel.contains(pL)){
 		// items ArrayList<Variable>
 		Variable item;
 		
+		if ((varLabel==null) || (varLabel.length()==0)){
+			return -1;
+		}
 		
 		for (int i=0;i<items.size();i++){
 			
@@ -1358,6 +1376,9 @@ if (varLabel.contains(pL)){
 				index=i;
 				break ;
 			}else{   
+				if (strgutil==null){
+					strgutil = new StringsUtil();
+				}
 				hb = strgutil.matchSimpleWildcard( varLabel, item.getLabel()) ;
 				if (hb){
 					index = i;

@@ -9,9 +9,9 @@ import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivity;
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivityIntf;
+import org.NooLab.somfluid.core.categories.extensionality.BasicSimpleStatisticalDescription;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamics;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
-import org.NooLab.somfluid.core.categories.extensionality.NodeStatisticsFactory;
 import org.NooLab.somfluid.core.categories.imports.ExtensionalityDynamicsImportIntf;
 import org.NooLab.somfluid.core.categories.imports.IntensionalitySurfaceImportIntf;
 import org.NooLab.somfluid.core.categories.imports.MetaNodeConnectivityImportIntf;
@@ -20,6 +20,7 @@ import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurface;
 import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
+import org.NooLab.somfluid.core.engines.NodeStatisticsFactory;
 import org.NooLab.somfluid.core.engines.NodeStatisticsIntf;
 
 import org.NooLab.somfluid.data.Variable;
@@ -80,6 +81,7 @@ public abstract class AbstractMetaNode  extends
 	Random nRandom ;
 	
 	PrintLog out ;
+	private BasicStatisticalDescription bsd;
 	
 	
 	// ========================================================================
@@ -260,10 +262,10 @@ public abstract class AbstractMetaNode  extends
 		nodeStats.setFieldValues( (ArrayList<BasicStatisticalDescriptionIntf>) NodeStatisticsFactory.getBasicStatisticalDescription(somType)  );
 		/*
 		if (this.somType == FieldIntf._SOMTYPE_MONO){
-			nodeStats.setFieldValues( (ArrayList<BasicStatisticalDescriptionIntf>) NodeStatisticsFactory.getBasicStatisticalDescription(somType)  );
+			nodeStats.set FieldValues( (ArrayList<BasicStatisticalDescriptionIntf>) NodeStatisticsFactory.getBasicStatisticalDescription(somType)  );
 		}
 		if (this.somType == FieldIntf._SOMTYPE_PROB){
-			nodeStats.setFieldValues( (ArrayList<BasicStatisticalDescriptionIntf>) NodeStatisticsFactory.getBasicStatisticalDescription(somType)  );
+			nodeStats.set FieldValues( (ArrayList<BasicStatisticalDescriptionIntf>) NodeStatisticsFactory.getBasicStatisticalDescription(somType)  );
 		}
 		*/
 		
@@ -311,8 +313,22 @@ if (v0!=vv){
 			}else{
 
 			}
+
+
+			if (this.somType == FieldIntf._SOMTYPE_MONO){
 			
-			nodeStats.getFieldValues().add( new BasicStatisticalDescription(false) ) ;
+				bsd = new BasicStatisticalDescription(false);
+				ArrayList<BasicStatisticalDescription> fvalues = (ArrayList<BasicStatisticalDescription>) nodeStats.getFieldValues();
+				fvalues.add( bsd ) ;
+				// ( (ArrayList<BasicStatisticalDescriptionIntf>) NodeStatisticsFactory.getBasicStatisticalDescription(somType)  );
+			}
+			if (this.somType == FieldIntf._SOMTYPE_PROB){
+				BasicSimpleStatisticalDescription bssd = new BasicSimpleStatisticalDescription();
+				ArrayList<BasicSimpleStatisticalDescription> fvalues = (ArrayList<BasicSimpleStatisticalDescription>) nodeStats.getFieldValues();
+				fvalues.add( bssd ) ;
+
+			}
+			
 			
 			nodeStats.setVariables(vars) ;
 		} // i-> all vector positions

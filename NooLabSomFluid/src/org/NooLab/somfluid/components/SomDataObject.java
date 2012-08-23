@@ -6,10 +6,13 @@ import java.util.*;
 
 
 
+import org.NooLab.itexx.storage.TexxDataBaseSettings;
+import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
 import org.NooLab.somfluid.SomDataDescriptor;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.app.SomAppTransformer;
+import org.NooLab.somfluid.astor.SomDataStreamer;
 import org.NooLab.somfluid.components.variables.SomVariableHandling;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.core.engines.det.SomMapTable;
@@ -22,6 +25,8 @@ import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.data.DataFileReceptorIntf;
 import org.NooLab.somfluid.env.data.DataReceptor;
+import org.NooLab.somfluid.env.data.SomTexxDataBaseHandler;
+import org.NooLab.somfluid.env.data.db.DataBaseAccessDefinition;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
@@ -57,6 +62,8 @@ import org.NooLab.utilities.xml.*;
 public class SomDataObject 	implements      Serializable,
 										//	used for read access, e.g. by nodes and other applications
 											DataSourceIntf,
+										//  other stuff except data source access
+											SomDataObjectIntf,
 									    //  all objects that need to be storable should implement this interface
 											PersistentAgentIntf{
 
@@ -74,6 +81,10 @@ public class SomDataObject 	implements      Serializable,
 	FileDataSource filesource;
 	transient XmlFileRead xmlFile ;
 	
+	TexxDataBaseSettingsIntf databaseSettings ;
+	DataBaseAccessDefinition dbAccessDefinition;
+	SomDataStreamer somDataStreamer ;
+	SomTexxDataBaseHandler somTexxDbHandler ;
 	
 	// main variables / properties ....
 	transient SomFluidFactory sfFactory ;
@@ -134,6 +145,7 @@ public class SomDataObject 	implements      Serializable,
 		data = new DataTable( this, true ); // true: isnumeric, Som data objects always contain numeric data
 		
 	 
+		somTexxDbHandler = new SomTexxDataBaseHandler(this) ; 
 	}
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 	 
@@ -195,12 +207,12 @@ public class SomDataObject 	implements      Serializable,
 	}
 	
 	/**
-	 * this is used in the context of Associative Storage
+	 * this is used in the context of Associative Storage ???
 	 * 
 	 * @param sfProperties2
 	 * @return
 	 */
-	public static SomDataObject openSomData(SomFluidProperties sfProperties2) {
+	public static SomDataObject openSomDataSource(SomFluidProperties sfProperties2) {
 	
 		return null;
 	}
@@ -1443,6 +1455,36 @@ public class SomDataObject 	implements      Serializable,
 	 */
 	public void setDataReceptor(DataFileReceptorIntf datareceptor) {
 		this.dataReceptor = datareceptor;
+	}
+
+
+	public TexxDataBaseSettingsIntf getDatabaseSettings() {
+		return databaseSettings;
+	}
+
+
+	public void setDatabaseSettings(TexxDataBaseSettingsIntf texxDbSettings ) {
+		this.databaseSettings = texxDbSettings;
+	}
+
+
+	public DataBaseAccessDefinition getDbAccessDefinition() {
+		return dbAccessDefinition;
+	}
+
+
+	public void setDbAccessDefinition(DataBaseAccessDefinition dbAccessDefinition) {
+		this.dbAccessDefinition = dbAccessDefinition;
+	}
+
+
+	public SomDataStreamer getSomDataStreamer() {
+		return somDataStreamer;
+	}
+
+
+	public void setSomDataStreamer(SomDataStreamer somDataStreamer) {
+		this.somDataStreamer = somDataStreamer;
 	}
 
 

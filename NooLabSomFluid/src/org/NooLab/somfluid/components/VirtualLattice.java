@@ -17,6 +17,7 @@ import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
+import org.NooLab.utilities.objects.StringedObjects;
  
 import org.NooLab.field.repulsive.components.data.SurroundResults;
  
@@ -43,6 +44,7 @@ import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.communication.LatticeFutureVisorIntf;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
+import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;
 import org.NooLab.somfluid.util.NumUtils;
  
 
@@ -111,8 +113,10 @@ public class VirtualLattice implements LatticeIntf{
 
 	private int dataSize;
 	
+	StringedObjects sob = new StringedObjects();
 	PrintLog out = new PrintLog(2,true);
 
+	
 	private boolean _DEBUG = false;
 	// ========================================================================
 	public VirtualLattice( SomProcessIntf parent, LatticePropertiesIntf latticeProps, int svlIndex ){
@@ -207,8 +211,8 @@ public class VirtualLattice implements LatticeIntf{
 		ArrayList<Integer> useIndexes ;
 		variables = somData.variables ;
 		
-		ArrayList<BasicStatisticalDescription> bsds;
-		BasicStatisticalDescription bsd ;
+		ArrayList<BasicStatisticalDescriptionIntf> bsds;
+		BasicStatisticalDescriptionIntf bsd ;
 		
 		reCalc = false;
 		// 
@@ -220,7 +224,7 @@ public class VirtualLattice implements LatticeIntf{
 			extRecCount = node.getExtensionality().getListOfRecords().size();
 			if (extRecCount > 0) {
 				// node.getSimilarity().getUseIndicatorArray();
-				bsds = node.getExtensionality().getStatistics().getFieldValues();
+				bsds = (ArrayList<BasicStatisticalDescriptionIntf>) node.getExtensionality().getStatistics().getFieldValues();
 				for (int f=0;f<useIndexes.size();f++){
 					ix = useIndexes.get(f);
 					fc = bsds.get(ix).getCount();
@@ -243,7 +247,7 @@ public class VirtualLattice implements LatticeIntf{
 				// like: [7, 8, 10] , without TV !
 
 				extRecCount = node.getExtensionality().getListOfRecords().size();
-				bsds = node.getExtensionality().getStatistics().getFieldValues();
+				bsds = (ArrayList<BasicStatisticalDescriptionIntf>) node.getExtensionality().getStatistics().getFieldValues();
 				if (extRecCount > 0) {
 					
 					// all fields (variables)...
@@ -1016,6 +1020,8 @@ public class VirtualLattice implements LatticeIntf{
 
 	private SurroundResults getGuidItemFromResultsQueue(String qGuid) {
 		SurroundResults r,_results = null;
+		int k=0;
+		r=null;
 		
 		for (int i=0;i<selectionResultsQueue.size();i++){
 			r = selectionResultsQueue.get(i);
@@ -1024,7 +1030,7 @@ public class VirtualLattice implements LatticeIntf{
 				break;
 			}
 		}
-		
+		k=k+1-1;
 		return _results;
 	}
 
@@ -1685,6 +1691,60 @@ public class VirtualLattice implements LatticeIntf{
 	 */
 	public int getDataSize() {
 		return dataSize;
+	}
+
+	public void handlingRoutedSelectionEvent(SurroundResults results) {
+		// TODO: this should be immediately forked into objects, since the requests could be served in parallel
+		//       XXX XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    URGENT  abc124 
+
+		SurroundResults clonedResults;
+		String str ;
+		int[] particleIndexes;
+		
+		if (results==null){
+			out.printErr(2, "event <onSelectionRequestCompleted()> received message with <resultsObj>, but container was empty!") ;
+		}else{
+			out.print(4, "event <onSelectionRequestCompleted()> received message with <resultsObj> for guid "+results.getGuid()+"... ") ;
+		}
+		/*
+		 *  here we have to use a message queue running in its own process, otherwise
+		 *  the SurroundRetrieval Process will NOT be released...
+		 *  We have a chain of direct calls
+		 *  
+		 */
+		
+		// we have to prepare the results in the particlefield!
+		// we need the list of lists: 
+		// for each particle he have a list of indexes ArrayList<Long> getIndexesOfAllDataObject()
+		particleIndexes = results.getParticleIndexes();
+		
+		clonedResults = (SurroundResults) sob.decode( sob.encode(results) );
+					if ((clonedResults==null) || (clonedResults.getParticleIndexes()==null)){
+						return ;
+					}
+											int n = clonedResults.getParticleIndexes().length   ;
+											str = clonedResults.getGuid() ;
+												
+											out.print(5, "particlefield delivered a selection (n="+n+") for GUID="+str);
+	
+		
+		// this result will then be taken as a FiFo by a digesting process, that
+		// will call the method "digestParticleSelection(results);"
+		// yet, it is completely decoupled, such that the current thread can return and finish
+		
+		if (selectionResultsQueueDigesterAlive()==false){
+											out.print(3, "restarting selection-results queue digester...");
+			startSelectionResultsQueueDigester(-1);
+			out.delay(50);
+		}
+		
+		ArrayList<SurroundResults> rQueue = getSelectionResultsQueue(); 
+		// rQueue.add( clonedResults );
+		addResultsToWaitingQueue(clonedResults );
+		// .getSelectionResultsQueue().add( clonedResults );
+		
+		//out.print(2, "size of rQueue : "+rQueue.size());
+		return; 
 	}
 
 	

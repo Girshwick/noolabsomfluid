@@ -55,6 +55,11 @@ public class DSomDataPerceptionAbstract {
 		int errorsCount=0;
 		
 		out = dsom.out ;
+		
+		if (out==null){
+			out= somProcess.getSomLattice().getOut();
+		}
+		
 		if (sfProperties.getMultiProcessingLevel()>0){
 			prepareNodeDigester();
 		}

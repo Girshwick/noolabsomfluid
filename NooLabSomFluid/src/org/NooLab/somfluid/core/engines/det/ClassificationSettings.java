@@ -7,6 +7,7 @@ import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.SettingsTransporter;
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.datatypes.ValuePair;
 
 import com.jamesmurty.utils.XMLBuilder;
 
@@ -137,6 +138,8 @@ public class ClassificationSettings implements Serializable{
 	transient ArrUtilities arrutil = new ArrUtilities ();
 
 	private int targetGroupDefinitionLevel;
+
+	
 	
 	// ========================================================================
 	public ClassificationSettings(ModelingSettings modelingSettings){
@@ -212,6 +215,40 @@ public class ClassificationSettings implements Serializable{
 		String[] labels = new String[intervalBorders.length+1] ;
 		return setTargetGroupDefinition(intervalBorders, labels);
 	}
+	
+	
+	public boolean setTargetGroupDefinition( ArrayList<ValuePair> tvGroupIntervals){
+		return setTargetGroupDefinition( tvGroupIntervals, new ArrayList<String>()) ;
+	}
+	
+	public boolean setTargetGroupDefinition( ArrayList<ValuePair> tvGroupIntervals, 
+			                                 ArrayList<String> tvGroupLabels){
+		double[] intervalBorders ;
+		ValuePair vp;
+		int t = Math.max(2,2*tvGroupIntervals.size()) ;
+		
+		intervalBorders = new double[t];
+		if (tvGroupIntervals.size()==0){
+			intervalBorders[0] = 0.0;
+			intervalBorders[1] = 0.5;
+		}else{
+			
+			for (int i=0;i<tvGroupIntervals.size();i++){
+				vp = tvGroupIntervals.get(i) ;
+				intervalBorders[i*2]   = vp.getValue1() ;
+				intervalBorders[i*2+1] = vp.getValue2() ;
+			}
+		}
+		if ((tvGroupLabels.size()>0) && (tvGroupLabels.size()<=tvGroupIntervals.size())){
+			TGlabels = arrutil.changeArrayStyle(tvGroupLabels, "");
+		}
+		
+		
+		return setTargetGroupDefinition( intervalBorders);
+	}
+	
+	
+	
 	
 	public boolean setTargetGroupDefinition(double[] intervalBorders, String[] labels){
 		
@@ -370,6 +407,10 @@ public class ClassificationSettings implements Serializable{
 
 	public void setTGlabels(String[] tGlabels) {
 		TGlabels = tGlabels;
+	}
+	public void setTGlabels(ArrayList<String> tglabels) {
+
+		TGlabels  = arrutil.changeArrayStyle( tglabels, "");
 	}
 
 	/**
@@ -544,6 +585,9 @@ public class ClassificationSettings implements Serializable{
 	public int getTargetGroupDefinitionLevel() {
 		return targetGroupDefinitionLevel;
 	}
+
+
+
  
 
 	

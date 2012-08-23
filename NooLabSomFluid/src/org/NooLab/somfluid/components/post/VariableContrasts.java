@@ -29,6 +29,10 @@ public class VariableContrasts implements Serializable{
 		return items.size();
 	}
 	
+	public void clear() {
+		items.clear();
+	}
+
 	public VariableContrast getItemByLabel(String varlabel){
 		VariableContrast vci = null;
 		String vlabel;

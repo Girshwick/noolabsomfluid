@@ -9,7 +9,9 @@ import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
 import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidTask;
+import org.NooLab.somfluid.components.DataSourceIntf;
 import org.NooLab.somfluid.components.SomDataObject;
+import org.NooLab.somfluid.components.SomDataObjectIntf;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
@@ -105,9 +107,12 @@ public class LatticePreparation {
 		 									}
 		for (int i=0;i<initialNodeCount;i++){
 			
-			mnode = new MetaNode( somLattice, somDataObject  ); 
+			mnode = new MetaNode( somLattice, (DataSourceIntf) somDataObject  ); 
 			somLattice.addNode(mnode) ;
-			
+						
+											if(initialNodeCount>20000){
+												out.printprc(2, i, initialNodeCount, (int) (((double)initialNodeCount)/(5.0)), "");
+											}
 											out.print(4,"Node <"+i+">, serial = "+mnode.getSerialID());
 			try{
 				// requires NodesInformer

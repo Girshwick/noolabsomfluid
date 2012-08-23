@@ -33,7 +33,7 @@ import com.jamesmurty.utils.XMLBuilder;
 
 
 
-public class ModelingSettings implements Serializable{
+public class ModelingSettings extends SomDynamicsAbstract implements Serializable{
 
 	private static final long serialVersionUID = -464934381782562062L;
 
@@ -44,50 +44,12 @@ public class ModelingSettings implements Serializable{
 	public static final int _CANONIC_BOTTOM = -1;
 	public static final int _CANONIC_NONE   =  0;
 
-	/** 
-	 * the number of nodes remains constant, each split must be accompanied by a merge
-	 */
-	public static final int _SOM_GROWTH_NONE      = -1;
-	
-	public static final int _SOM_GROWTH_PRESELECT =  2;
-	
-	/** 
-	 * number of nodes may change, lattice remains 2D
-	 */
-	public static final int _SOM_GROWTH_LATERAL   =  2;
-	
-	/** 
-	 * nodes may outgrow into 3D, replacing the extensional list by a further SOM,
-	 * that inherits the connections to the nodes neighborhood;
-	 * such an offspring may separate completely later;
-	 * it inherits the target variable, and the structure of the profile vector etc...
-	 * actually, it represents just a sampling device, 
-	*/
-	public static final int _SOM_GROWTH_VERTICAL  =  3;
-	/**
-	 * The node may embed adaptively a SOM;
-	 * such a SOM remains completely hidden  
-	 */
-	public static final int _SOM_GROWTH_EMBED     =  5;
-	/**
-	 * lateral, and local outgrowth into 3D
-	 */
-	public static final int _SOM_GROWTH_FULLOUT   =  7;
-	/**
-	 * lateral, local outgrowth into 3D, and embedding
-	 */
-	public static final int _SOM_GROWTH_FULL      =  9;
-	
-	/**
-	 * applies any, based on default values;
-	 */
-	public static final int _SOM_GROWTH_CTRL_AUTO  = 21;
 	
 	// object references ..............
 	
 	// 
 	ClassesDictionary classesDictionary;
-	transient DataSampler dataSampler;
+	
 
 	//various setting sub-domains
 
@@ -109,16 +71,11 @@ public class ModelingSettings implements Serializable{
 	/** parameters for validation, such like sample sizes COOS validation , block sampling (important for time series)  */
 	ValidationSettings validationSettings;
 
-	/** for idealization processes */
-	CrystalizationSettings crystalSettings;
 	
 	/** e.g. parameters about controlling NVE */
 	DataTransformationSettings transformationSettings ;
 	
 	
-	
-	// our central random object for creating random numbers
-	Random random; // TODO: re-init on loading the settings from xml! 
 	
 	
 	// main variables / properties ....
@@ -166,14 +123,7 @@ public class ModelingSettings implements Serializable{
 	boolean activationOfGrowing = true ;
 	 
 	// sominternals ...................
-	int clusterMerge = 1 ;
-	/** 
-	 * respects the minimal cluster size and minimalSplitSize, whatever comes first;
-	 * splitting nodes occurs only in the third pass 
-	 */
-	int clusterSplit = 1 ;
-	/** the minimal size of nodes before they are considered to be split */
-	int minimalSplitSize = 15; 
+	
 	
 	/** 
 	 * values: <=0  : off; </br>
@@ -188,7 +138,7 @@ public class ModelingSettings implements Serializable{
 	
 	
 	
-	Growth growth = new Growth();
+	
 	   
 	int restrictionForSelectionSize = -1;
 
@@ -230,8 +180,6 @@ public class ModelingSettings implements Serializable{
 	private ArrayList<String> groupDesignVariablesRequest = new ArrayList<String>();
 		
 	
-	private int initialAutoVariableSelection=0 ;
-	ArrayList<String> initialVariableSelection = new ArrayList<String>();
 
 	private boolean isExtendedDiagnosis = false;
 
@@ -243,6 +191,9 @@ public class ModelingSettings implements Serializable{
 
 	private boolean performCanonicalExploration;
 		
+	private int canonicalReductionLimit;
+
+	private double coverageByCasesFraction;
 
 	
 	// values <=1 -> low priority
@@ -270,6 +221,9 @@ public class ModelingSettings implements Serializable{
 	 */
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 	public ModelingSettings(){
+		
+		super();
+		
 		 
 		classifySettings = new ClassificationSettings(this) ;
 		
@@ -280,12 +234,12 @@ public class ModelingSettings implements Serializable{
 		somBagSettings = new SomBagSettings(this) ;
 		validationSettings = new ValidationSettings(this) ;
 		
-		crystalSettings = new CrystalizationSettings(this) ;
+		
 		
 		/** e.g. parameters about NVE */
 		transformationSettings = new DataTransformationSettings(this)  ;
 		
-		setRandomSeed();
+		
 		threadPriorities[3] = 1 ; // [3] = Som calculations
 	}
 	
@@ -515,9 +469,7 @@ public class ModelingSettings implements Serializable{
 		clusterSplit = clustersplit;
 	}
 
-	public Growth getGrowth() {
-		return growth;
-	}
+	
 
 	public int getMaxSomEpochCount() {
 		return maxSomEpochCount;
@@ -755,20 +707,9 @@ public class ModelingSettings implements Serializable{
 
 	
 	// ....................................................
-	// see also the local class "Growth"
-	public void setGrowth(Growth growth) {
-		this.growth = growth;
-	}
 	
-	public void setActivationOfGrowing(boolean flag) {
-		activationOfGrowing = flag;
-	}
-	public boolean isActivationOfGrowing() {
-		return activationOfGrowing;
-	}
-	public boolean getActivationOfGrowing() {
-		return activationOfGrowing;
-	}
+	
+	
 	// ....................................................
 
 	
@@ -960,43 +901,6 @@ public class ModelingSettings implements Serializable{
 		this.blacklistedVariablesRequest = blacklist;
 	}
 
-	public void setInitialAutoVariableSelection(int mode) {
-		// 
-		initialAutoVariableSelection = mode;
-	}
-
-	/**
-	 * @return the initialAutoVariableSelection
-	 */
-	public int getInitialAutoVariableSelection() {
-		return initialAutoVariableSelection;
-	}
-
-	public void setInitialVariableSelection(String[] strings) {
-		
-		initialVariableSelection = new ArrayList<String>( Arrays.asList(strings));
-		
-	}
-	/**
-	 * @return the initialVariableSelection
-	 */
-	public ArrayList<String> getInitialVariableSelection() {
-		return initialVariableSelection;
-	}
-
-	/**
-	 * @param initialVariableSelection the initialVariableSelection to set
-	 */
-	public void setInitialVariableSelection(
-			ArrayList<String> initialVariableSelection) {
-		this.initialVariableSelection = initialVariableSelection;
-	}
-
-	public void addInitialVariableSelection(String[] strings) {
-		
-		ArrayList<String> varitems = new ArrayList<String>( Arrays.asList(strings));
-		initialVariableSelection.addAll(varitems);
-	}
 
  
 
@@ -1073,9 +977,47 @@ public class ModelingSettings implements Serializable{
 
 	public void setCanonicalReductionLimit(int preferredMinimumSize) {
 		//
-		
+		canonicalReductionLimit = preferredMinimumSize;
 	}
-	
+
+
+	public boolean isActivationOfGrowing() {
+		return activationOfGrowing;
+	}
+
+	public void setActivationOfGrowing(boolean activationOfGrowing) {
+		this.activationOfGrowing = activationOfGrowing;
+	}
+
+	public int getCanonicalReductionLimit() {
+		return canonicalReductionLimit;
+	}
+
+	/**
+	 * maximum value is 0.5, if [0.5,1] it will be set to 1-x, if >1 it will be set to 0.2
+	 * 
+	 * if validation is requested, and the number of records/cases would be too low,
+	 * this setting will be overruled by an adaptive value
+	 * 
+	 * @param value
+	 */
+	public void setCoverageByCasesFraction(double value) {
+		// 
+		// 
+		if ((value<0) || (value>1)){
+			value=0.2;
+		}
+		
+		if ((value>0.5) && (value<=1)){
+			value = 1.0-value;
+		}
+		coverageByCasesFraction = value;
+	}
+
+	public double getCoverageByCasesFraction() {
+		return coverageByCasesFraction;
+	}
+
 	
 	
 }

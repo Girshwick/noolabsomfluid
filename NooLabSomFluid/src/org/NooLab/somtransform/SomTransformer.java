@@ -283,6 +283,10 @@ public class SomTransformer
 
 		transformationModel.setOriginalColumnHeaders();
 		
+		if (somData.getNormalizedDataTable()==null){
+			return;
+		}
+		
 		transformationModel.setDerivedColumnHeaders( new ArrayList<String>( somData.getNormalizedDataTable().getColumnHeaders() )); 
 
 		

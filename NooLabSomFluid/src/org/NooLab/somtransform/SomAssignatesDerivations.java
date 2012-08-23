@@ -200,7 +200,10 @@ public class SomAssignatesDerivations  implements Serializable{
 		if (transformationModel==null){
 			return;
 		}
-		
+		if ((derivationTrees==null) || (derivationTrees.size()==0)){
+			return;
+		}
+			
 		int nn = derivationTrees.get(0).collectedVariables.size();
 		if (nn>0){
 			nn=nn+1-1;

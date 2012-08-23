@@ -5,6 +5,11 @@ import java.util.Observable;
 import java.util.Observer;
 
 import org.NooLab.field.interfaces.FixedNodeFieldEventsIntf;
+import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
+import org.NooLab.field.repulsive.components.data.SurroundResults;
+import org.NooLab.itexx.storage.DataStreamProvider;
+import org.NooLab.itexx.storage.DataStreamProviderIntf;
+import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidTask;
@@ -53,9 +58,12 @@ public class SomAstor
 	
 	private DSom dSom;
 	
+	PhysicalGridFieldIntf particleField ;
 	private LatticePropertiesIntf latticeProperties;
-	private NodesInformer nodesinformer;
 	private VirtualLattice somLattice;
+	
+	private NodesInformer nodesinformer;
+	
 	private boolean isRunning;
 
 	Thread astorThrd;
@@ -63,6 +71,8 @@ public class SomAstor
 	
 	StringedObjects sob = new StringedObjects();
 	PrintLog out;
+	private boolean userBreak;
+	private boolean streamReceptorSwitchedOn = false ;
 	
 	// ========================================================================
 	public SomAstor( SomHostIntf somhost, SomFluidFactory sfFactory,
@@ -92,7 +102,7 @@ public class SomAstor
 	public void prepareAstor() throws Exception{
 		
 		// properties contains DB properties
-		somDataObj = SomDataObject.openSomData(sfProperties);
+		somDataObj = SomDataObject.openSomDataSource(sfProperties);
 		// now activate listener, router and receiver
 		
 		if (somDataObj==null){
@@ -109,6 +119,9 @@ public class SomAstor
 		
 		somLattice = latticePreparation.getLattice();
 		
+		particleField = somHost.getSomFluid().getParticleField( ) ;
+		particleField.registerEventMessaging(this) ;
+		 
 		astorThrd = new Thread(this,"astorThrd") ;
 	}
 	
@@ -118,12 +131,24 @@ public class SomAstor
 	public void prepare( ArrayList<Integer> usedVariables) throws Exception{
 		
 		int ix;
-		String tvlabel = null;
+		
+		ArrayList<String> fields = new ArrayList<String>();
+		
 		ArrayList<Double> usageVector =new ArrayList<Double>();
 		
 		Variables variables = somDataObj.getVariables() ;
 		Variables vars = new Variables();
 		Variable v;
+		
+		
+		if (sfProperties.getSourceType() == DataStreamProviderIntf._DSP_SOURCE_DB){
+			TexxDataBaseSettingsIntf dbs ;
+			
+			dbs = sfProperties.getDatabaseSettings();
+			fields = dbs.getTableFields();
+			//dbAccessDefinition
+		} // DB?
+		
 		
 		if (usedVariables.size()==0){
 			
@@ -200,7 +225,7 @@ public class SomAstor
 		
 											out.print(3, "lattice going to be configured : "+somLattice.toString());
 		somLattice.getSimilarityConcepts().setUsageIndicationVector(usageVector) ;
-		somLattice.getSimilarityConcepts().setIndexTargetVariable( variables.getIndexByLabel(tvlabel) );
+		// somLattice.getSimilarityConcepts().setIndexTargetVariable( variables.getIndexByLabel(tvlabel) );
 		somLattice.getSimilarityConcepts().setIndexIdColumn( variables.getIdColumnIndex() ) ;
 		
 		somLattice.setSomData(somDataObj) ; 
@@ -278,12 +303,12 @@ public class SomAstor
 	    									out.print(2, "initializing nodes (n="+n+")...");
 	    for (int i=0;i<n;i++){
 	    									if ((i>500) || ( (n*cc*rc)>5000000)){
-	    										out.printprc(2, i, n, n/5, "");
+	    										out.printprc(2, i, n, n/10, "");
 	    									}
 	    	
 	    	initializeNodeWithRandomValues(i) ;
 	    }
-	    
+	    									out.printprc(2, n, n, n/5, "");	    
 	    n=0;
 		 					
 	}
@@ -295,6 +320,23 @@ public class SomAstor
 		dSom.performAstor();
 	}
 	
+	@Override
+	public void update(Observable senderObj, Object msg) {
+		 
+		out.printErr(2, "Observer-update msg received in SomAstor, \n"+
+				        "  sender = "+latticeProperties.toString()+ "\n"+
+				        "  msg    = "+msg.toString())  ;
+		
+		if (senderObj instanceof DSom){
+			
+		}
+		if (senderObj instanceof DataStreamProvider){
+			
+		}
+		
+	}
+
+
 	public String start() {
 		
 		String guid  = GUID.randomvalue() ;
@@ -326,27 +368,111 @@ public class SomAstor
 			e.printStackTrace();
 		}
 		
-		while (isRunning==true){
+		// start the stream receptor via observer
+		streamReceptorSwitchedOn  = true;
+		
+		//
+		out.print(2, "\n\nAstor SOM is in stream receiver mode now.");
+		while ((isRunning==true) && (userBreak==false)){
 			
 			PrintLog.Delay(1000);
 		}
+		out.printErr(2, "");
 	}
 	
 	@Override
-	public void onSelectionRequestCompleted(Object results) {
+	public SomDataObject getSomDataObject() {
+		
+		return this.somDataObj ;
+	}
+
+	@Override
+	public String getNeighborhoodNodes(int nodeindex, int surroundN) {
+		//
+		
+		int particleindex=nodeindex;
+		
+		// we need a map that translates between nodes and particles
+		
+		particleField.setSelectionSize( surroundN ) ;
+		
+		// asking for the surrounding, -> before start set the selection radius == new API function
+		String guid = particleField.getSurround( particleindex, 1, surroundN, true); 
+		
+		// will immediately return, the selection will be sent 
+		// through event callback to "onSelectionRequestCompleted()" below
+		
+ 		return  guid;
+	}
+
+	@Override
+	public SomFluidAppGeneralPropertiesIntf getSfProperties() {
+		
+		return sfProperties;
+	}
+
+	@Override
+	public LatticePropertiesIntf getLatticeProperties() {
+		
+		return latticeProperties;
+	}
+
+	@Override
+	public VirtualLattice getSomLattice() {
+		
+		return somLattice;
+	}
+
+	@Override
+	public ArrayList<Double> getUsageIndicationVector(boolean inclTV) {
+
+		ArrayList<Double> uv = somLattice.getSimilarityConcepts().getUsageIndicationVector();
+		
+		if (inclTV==false){
+			for (int i=0;i<uv.size();i++){
+				if (uv.get(i)<0){
+					uv.set(i, 0.0);
+				}
+			}
+		}
+		return uv;
+	}
+
+	@Override
+	public ArrayList<Integer> getUsedVariablesIndices() {
+
+		ArrayList<Integer>  usedVariablesIndices = new ArrayList<Integer>();
+		ArrayList<Double> uv= new ArrayList<Double>();
+		
+		if (somLattice!=null){
+			uv = somLattice.getSimilarityConcepts().getUsageIndicationVector() ;
+		}
+		
+		usedVariablesIndices = (ArrayList<Integer>) somDataObj.getVariables().transcribeUseIndications(uv) ;
+		return usedVariablesIndices;
+	}
+
+	@Override
+	public void setUsedVariablesIndices(ArrayList<Integer> usedVariables) {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
+	public void onSelectionRequestCompleted(Object results) {
+	 
+		this.somHost.selectionEventRouter((SurroundResults) results,somLattice);
+	}
+
+	@Override
 	public void onAreaSizeChanged(Object observable, int width, int height) {
-		// TODO Auto-generated method stub
+		 
 		
 	}
 
 	@Override
 	public void onActionAccepted(int action, int state, Object param) {
-		// TODO Auto-generated method stub
+		 
 		
 	}
 
@@ -358,63 +484,18 @@ public class SomAstor
 
 	@Override
 	public void onCalculationsCompleted() {
-		// TODO Auto-generated method stub
 		
+		out.printErr(2, "SomAstor received event <onCalculationsCompleted>") ;
 	}
 
-	@Override
-	public SomDataObject getSomDataObject() {
-		// TODO Auto-generated method stub
-		return null;
+
+	public boolean isUserBreak() {
+		return userBreak;
 	}
 
-	@Override
-	public String getNeighborhoodNodes(int index, int surroundN) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
-	@Override
-	public SomFluidAppGeneralPropertiesIntf getSfProperties() {
-		// TODO Auto-generated method stub
-		return null;
+	public void setUserBreak(boolean userBreak) {
+		this.userBreak = userBreak;
 	}
-
-	@Override
-	public LatticePropertiesIntf getLatticeProperties() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public VirtualLattice getSomLattice() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public ArrayList<Double> getUsageIndicationVector(boolean inclTV) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public ArrayList<Integer> getUsedVariablesIndices() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void setUsedVariablesIndices(ArrayList<Integer> usedVariables) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void update(Observable dsomInstance, Object results) {
-		 
-		
-	}
-	
 
 }

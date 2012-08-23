@@ -116,7 +116,6 @@ public class SomModelDescription implements Serializable{
 		
 		// is this copying correct ??? 
 		variableContributions = new VariableContributions( somHost, evometrices);
-		
 		variableContrasts = new VariableContrasts(somHost);
 		
 		outresult = moptiParent.outresult ;
@@ -635,6 +634,8 @@ public class SomModelDescription implements Serializable{
 			contriChkThrd = new Thread(this, "contchkThrd") ;
 		}
 		
+		
+		
 		/**
 		 * performs an investigation of the potential of individual variables given a base model, which usually
 		 * will be the best available model;</br> 
@@ -657,7 +658,7 @@ public class SomModelDescription implements Serializable{
 			 
 			String selectedVariable,str;
 			boolean isNewBest ;
-			int  smode=1,ix, currentBestHistoryIndex=-1;
+			int  smode=1,ix, currentBestHistoryIndex=-1, initialLoopCount=-1,bestModelHistoryIndex , ccLoopCount=-1;
 			
 			SomQualityData bestSqData = new SomQualityData();
 			ArrayList<String> baseMetric = new ArrayList<String>(), bestMetric = new ArrayList<String>();
@@ -667,8 +668,13 @@ public class SomModelDescription implements Serializable{
 			
 			ModelProperties results;
 			Variable variable;
-			EvoMetrices _evometrices ;// = new EvoMetrices( variableContributions.evometrices, false ); 
+			EvoMetrices _evometrices = null ;// = new EvoMetrices( variableContributions.evometrices, false ); 
 			 
+			
+			initialLoopCount = evoMetrices.getCurrentBaseMetrikIndex();
+			initialLoopCount = evoMetrices.getExploredMetrices().size()-1 ;
+			ccLoopCount = initialLoopCount ;
+			
 			
 			Variables variables = somData.getVariables() ;
 			System.gc();
@@ -677,154 +683,192 @@ public class SomModelDescription implements Serializable{
 												System.out.println();
 												out.printErr(2, "\n...SomModelDescription, dedicatedVariableCheck(): a posteriori test for contribution per variable, base metric: { }...");
 				  								System.out.println();
-				  								
-				  								 
-					baseMetricIndexes = variables.getIndexesForLabelsList(currentVariableSelection) ; 
-					baseMetric = new ArrayList<String>(currentVariableSelection);
-					
-					bestMetric = new ArrayList<String>(baseVariableSelection) ;
-					previousUseVector = variables.getUseIndicationForLabelsList( baseMetric ) ;
-					
-					_evometrices = new EvoMetrices(somHost, 0 ); 
-					
-					
-					// _evometrices.setCurrentBaseMetrik( evoMetrices.getBestResult() );
-					_evometrices.setCurrentBaseEvoMetrik( evoMetrices.getBestResult() );
-					variableContributions.setBaseScore(evoMetrices.getBestResult().getActualScore()) ;
-					variableContributions.setBaseMetric( baseVariableSelection );
-					
-					variableContributions.setBestSqData( evoMetrices.getEvmItems().get(0).getSqData() );
-					
-					
-					
-					int z=0;
-					int i=0, di=0 ;
-					
-					while (i<baseMetric.size()){
-						z++;
-						 
-						// this variable we remove, then we check the results, the difference provides the contribution
-						// there are 2*3 types of contributions: affecting TP, FP or both, either positively or negatively
-						// additionally we may distinguish between pure TP, pure FP efficacy
-						selectedVariable = baseMetric.get(i) ;
+				  			
+				  	boolean canonicalAdoption = true;
+				  	int outperformingContributionTextIndex = -1;
+				  	ArrayList<String> outperformingMetric = new ArrayList<String>(); 
+				  	
+				  	while (canonicalAdoption){
+				  		
+				  		canonicalAdoption = false;
+				  		outperformingContributionTextIndex = -1;
+				  		
+
+						baseMetricIndexes = variables.getIndexesForLabelsList(currentVariableSelection) ; 
+						baseMetric = new ArrayList<String>(currentVariableSelection);
 						
-						int _ix = variables.getIndexByLabel(selectedVariable);
-						variable = variables.getItem(_ix);
+						bestMetric = new ArrayList<String>(baseVariableSelection) ;
+						previousUseVector = variables.getUseIndicationForLabelsList( baseMetric ) ;
 						
-						boolean hb = (variable.isIndexcandidate() || (_ix==variables.getTvColumnIndex()) ||
-									  variable.isTVcandidate() || variable.isTV() || variable.isID() || 
-									  variables.getBlacklistLabels().indexOf(selectedVariable)>=0 );
-						if ((hb) || (variables.openForInspection(variable)==false)){
-							di++;
-							i++; continue;
-						}
+						_evometrices = new EvoMetrices(somHost, 0 ); 
 						
+						
+						// _evometrices.setCurrentBaseMetrik( evoMetrices.getBestResult() );
+						_evometrices.setCurrentBaseEvoMetrik( evoMetrices.getBestResult() );
+						variableContributions.setBaseScore(evoMetrices.getBestResult().getActualScore()) ;
+						variableContributions.setBaseMetric( baseVariableSelection );
+						
+						variableContributions.setBestSqData( evoMetrices.getEvmItems().get(0).getSqData() );
+						
+						
+						
+						int z=0;
+						int i=0, di=0 ;
+						
+						while (i<baseMetric.size()){
+							z++;
+							ccLoopCount++;
+							
+							// this variable we remove, then we check the results, the difference provides the contribution
+							// there are 2*3 types of contributions: affecting TP, FP or both, either positively or negatively
+							// additionally we may distinguish between pure TP, pure FP efficacy
+							selectedVariable = baseMetric.get(i) ;
+							
+							int _ix = variables.getIndexByLabel(selectedVariable);
+							variable = variables.getItem(_ix);
+							
+							boolean hb = (variable.isIndexcandidate() || (_ix==variables.getTvColumnIndex()) ||
+										  variable.isTVcandidate() || variable.isTV() || variable.isID() || 
+										  variables.getBlacklistLabels().indexOf(selectedVariable)>=0 );
+							if ((hb) || (variables.openForInspection(variable)==false)){
+								di++;
+								i++; continue;
+							}
+							
+													
+							currentVariableSelection.clear();
+							currentVariableSelection.addAll( baseMetric );
+							
+							ix = currentVariableSelection.indexOf( selectedVariable );
+							currentVariableSelection.remove( ix ) ;
 												
-						currentVariableSelection.clear();
-						currentVariableSelection.addAll( baseMetric );
-						
-						ix = currentVariableSelection.indexOf( selectedVariable );
-						currentVariableSelection.remove( ix ) ;
-											
+													
+							uv = variables.getUseIndicationForLabelsList(currentVariableSelection) ;
+							proposedSelection = (ArrayList<Integer>) variables.transcribeUseIndications( currentVariableSelection ) ;
+										        Collections.sort(proposedSelection);
+							av = variables.determineAddedVariables( previousUseVector, uv, false);
+							rv = variables.determineRemovedVariables( previousUseVector, uv,false);
+							
+												out.printErr(2,	"...checking contribution for variable (index:"+(variables.getIndexByLabel(selectedVariable))+
+																", "+(i+1-di)+" of "+(baseMetric.size()-di)+"): "+
+																selectedVariable+"\n");
 												
-						uv = variables.getUseIndicationForLabelsList(currentVariableSelection) ;
-						proposedSelection = (ArrayList<Integer>) variables.transcribeUseIndications( currentVariableSelection ) ;
-									        Collections.sort(proposedSelection);
-						av = variables.determineAddedVariables( previousUseVector, uv, false);
-						rv = variables.determineRemovedVariables( previousUseVector, uv,false);
+							          System.gc(); out.delay(10) ;  										
+							results = performSingleRun(z); 
+							  
+							   
+							// ..................................................
+							
+							// EvoMetrik.SomQualityData.sqdata still = null here... 
+							// 
+							
+							if (results.getTrainingSample().getObservationCount()<8 ){ 
+								i++;
+								continue;
+							}
+							// _evometrices is shortcut for "variableContributions.evometrices"
+							isNewBest = _evometrices.registerResults( z, results , uv, smode) ; 
+							
+							// adapting the evoweights
+							// calls "evoBasics.getEvoTasks().updateEvoTaskItem", 
+							// for the respective variable index positions, then renormalizeParameters();
+							_evometrices.registerMetricChangeEffects(av, rv, true);
+							_evometrices.registerMetricAsExplored(uv);
+							
+													Collections.sort(proposedSelection);
+													str = arrutil.arr2text(proposedSelection);
+													out.printErr(1, "proposed Selection: "+str+"\n") ;	
 						
-											out.printErr(2,	"...checking contribution for variable (index:"+(variables.getIndexByLabel(selectedVariable))+
-															", "+(i+1-di)+" of "+(baseMetric.size()-di)+"): "+
-															selectedVariable+"\n");
-											
-						          System.gc(); out.delay(10) ;  										
-						results = performSingleRun(z); 
+							// logging for the contribution table
+							Variable v = somData.getVariables().getItemByLabel( selectedVariable ) ; 
+							VariableContribution vc = new VariableContribution( variableContributions, v );
+							
+							int resultsAvailable= 1;
+							// one of them is null???
+							if (variableContributions==null){
+								str = "variableContributions = null";  out.printErr(2, str) ;
+								resultsAvailable= 0;
+							}
+							if (resultsAvailable== 0){
+								out.printErr(2, "proposed selection has been skipped...") ;
+								i++;
+								continue;
+							}
+							
+							
+							EvoMetrik em = _evometrices.getItems().get( _evometrices.size()-1) ;
+							double _cScore = em.getSqData().getScore() ;
+							
+							results.sqData = new SomQualityData( em.getSqData() );
+							
+							double scdv = variableContributions.getBaseScore() - _cScore ; // results.sqData.getScore();
+							vc.setScoreDelta(scdv) ;
+							 
+							vc.setSqData(new SomQualityData( results.sqData )) ; 
+							
+							variableContributions.getItems().add(vc);
+
+							
+							int zn = somProcess.getSomLattice().nodes.size();
+							zn = somProcess.getSomLattice().nodes.size();
+							
+							somProcess.clear();
+							 
+							
+							if (isNewBest){
+								bestSqData = new SomQualityData( em.getSqData() );
+							}
+							if ((isNewBest) || (z<=1)){
+								
+								bestMetric = variables.getLabelsForUseIndicationVector( somData.getVariables(), _evometrices.getBestResult().getUsageVector()) ;
+								currentBestHistoryIndex = ccLoopCount;
+								// we should at least restart the final descriptive analysis: contribution
+								outperformingContributionTextIndex = z-1; // TODO: is this pointing to the correct evometrik ??
+								outperformingMetric = currentVariableSelection;
+								
+							}
+
+							
+							System.gc();
+							i++;
+						} // i-> all items from provided list
 						  
-						   
-						// ..................................................
-						
-						// EvoMetrik.SomQualityData.sqdata still = null here... 
+					
+						if (baseMetric.size()>0) {
+							currentVariableSelection.clear();
+							currentVariableSelection.addAll( baseMetric ) ;
+						}
+					
+						// integrating metrices  , TODO: does this work ?
+						_evometrices = evoBasics.integrateEvoMetricHistories( variableContributions.getEvometrices(), 
+																			  _evometrices, ccLoopCount );
 						// 
 						
-						if (results.getTrainingSample().getObservationCount()<8 ){ 
-							i++;
-							continue;
-						}
-						// _evometrices is shortcut for "variableContributions.evometrices"
-						isNewBest = _evometrices.registerResults( z, results , uv, smode) ; 
 						
-						// adapting the evoweights
-						// calls "evoBasics.getEvoTasks().updateEvoTaskItem", 
-						// for the respective variable index positions, then renormalizeParameters();
-						_evometrices.registerMetricChangeEffects(av, rv, true);
-						_evometrices.registerMetricAsExplored(uv);
-						
-												Collections.sort(proposedSelection);
-												str = arrutil.arr2text(proposedSelection);
-												out.printErr(1, "proposed Selection: "+str+"\n") ;	
-					
-						if ((isNewBest) || (z<=1)){
-							
-							bestMetric = variables.getLabelsForUseIndicationVector( somData.getVariables(), _evometrices.getBestResult().getUsageVector()) ;
-							currentBestHistoryIndex = z-1;
-						}
-						
-						// logging for the contribution table
-						Variable v = somData.getVariables().getItemByLabel( selectedVariable ) ; 
-						VariableContribution vc = new VariableContribution( variableContributions, v );
-						
-						int resultsAvailable= 1;
-						// one of them is null???
-						if (variableContributions==null){
-							str = "variableContributions = null";  out.printErr(2, str) ;
-							resultsAvailable= 0;
-						}
-						if (resultsAvailable== 0){
-							out.printErr(2, "proposed selection has been skipped...") ;
-							i++;
-							continue;
-						}
-						
-						
-						EvoMetrik em = _evometrices.getItems().get( _evometrices.size()-1) ;
-						double _cScore = em.getSqData().getScore() ;
-						
-						results.sqData = new SomQualityData( em.getSqData() );
-						
-						double scdv = variableContributions.getBaseScore() - _cScore ; // results.sqData.getScore();
-						vc.setScoreDelta(scdv) ;
-						 
-						vc.setSqData(new SomQualityData( results.sqData )) ; 
-						
-						variableContributions.getItems().add(vc);
-						
-						int zn = somProcess.getSomLattice().nodes.size();
-						zn = somProcess.getSomLattice().nodes.size();
-						
-						somProcess.clear();
-						 
-						
-						if (isNewBest){
-							bestSqData = new SomQualityData( em.getSqData() );
-						}
-						 
-						System.gc();
-						i++;
-					} // i-> all items from provided list
-					  
-				
-				if (baseMetric.size()>0){
-					currentVariableSelection.clear();
-					currentVariableSelection.addAll( baseMetric ) ;
-				}
-				
-				// integrating metrices  
-				_evometrices = evoBasics.integrateEvoMetricHistories(variableContributions.getEvometrices(), _evometrices, 0);
-				
+				  		if (outperformingContributionTextIndex>0){
+				  			// adopt currentVariableSelection
+				  			
+				  			bestModelHistoryIndex = outperformingContributionTextIndex ;
+				  			currentVariableSelection = outperformingMetric;
+				  			
+				  			// clear contribution structure
+				  			variableContributions.clear();
+				  			variableContrasts.clear() ;
+
+				  			evoBasics.setBestModelHistoryIndex(bestModelHistoryIndex);
+				  			
+				  			// bestSqData.g
+				  			
+				  			outperformingMetric.clear();
+				  			canonicalAdoption = true;
+				  			
+				  		}
+				  	} // -> canonicalAdoption = false... repeats if a new best metric would be found
+				  	
 				variableContributions.setEvometrices( _evometrices );
 				ArrayList<EvoMetrik> ems = _evometrices.getItems(); 
 				
-				// -> to main list of evo-devo-history ....
+				// -> to main list of evo-devo-history .... TODO: check if this is also sorting !!!
 				evoMetrices = evoBasics.integrateEvoMetricHistories( evoMetrices, _evometrices, 0);
 				
 				/*
