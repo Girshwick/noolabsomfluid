@@ -414,13 +414,13 @@ public class ArrUtilities {
 	}
     
     
-	public String[] changeArrayStyle( Vector<String> strvec , String e ){
+	public String[] changeArrayStyle( ArrayList<String> arrayList , String e ){
 		String[] strarr ;
 		 
-		strarr = new String[strvec.size()];
-		if (strvec.size() > 0) {
-			for (int i = 0; i < strvec.size(); i++) {
-				strarr[i] = strvec.get(i);
+		strarr = new String[arrayList.size()];
+		if (arrayList.size() > 0) {
+			for (int i = 0; i < arrayList.size(); i++) {
+				strarr[i] = arrayList.get(i);
 			}
 		}
 

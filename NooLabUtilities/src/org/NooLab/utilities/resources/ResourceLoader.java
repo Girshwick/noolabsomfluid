@@ -38,22 +38,28 @@ public class ResourceLoader {
 
 				
 				istr = hostclz.getResourceAsStream( internalFilepath );
-				istr = hostclz.getResourceAsStream( "org/NooLab/somtransform/resources/builtinscatalog-xml.txt" );
+				// istr = hostclz.getResourceAsStream( "org/NooLab/somtransform/resources/builtinscatalog-xml.txt" );
 				
 			    classLoader = Thread.currentThread().getContextClassLoader();
 			    // istr = classLoader.getResourceAsStream("org/NooLab/somtransform/resources/builtinscatalog-xml.txt");
 			    // input = classLoader.getResourceAsStream("org/NooLab/somtransform/resources/builtinscatalog-xml");
 			    
 			    istr = classLoader.getResourceAsStream(internalFilepath);
-
-				
+			    
+			    if (istr==null){
+			    	classLoader = hostclz.getClassLoader();
+			    	istr = classLoader.getResourceAsStream(internalFilepath);
+			    }
+			    if (istr==null){
+			    	istr = hostclz.getResourceAsStream(internalFilepath) ;
+			    }
 				//classLoader.getResourceAsStream ("your/app/package/config.properties");
 
 				if (istr!=null){
 					textResource = convert(istr);
+					rB=true;
 				}
 				
-				rB=true;
 				
 			} catch (Exception e) {
 				e.printStackTrace();
