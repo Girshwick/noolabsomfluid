@@ -6,9 +6,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.NooLab.field.FieldIntf;
+import org.NooLab.itexx.storage.DataStreamProviderIntf;
+import org.NooLab.itexx.storage.TexxDataBaseSettings;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.data.VariableSettingsHandler;
 import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
+import org.NooLab.somfluid.properties.AstorSettings;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.util.XmlStringHandling;
@@ -43,7 +46,14 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 	ClassificationSettings cs;
 	PersistenceSettings ps;
 
+	AstorSettings astorSettings ;
+	TexxDataBaseSettings databaseSettings;
+	
 	VariableSettingsHandlerIntf variableSettings ;
+
+	
+	
+	
 	
 	String algorithmsConfigPath ="" ;
 	
@@ -69,6 +79,8 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 	transient ArrUtilities arrutil = new ArrUtilities();
 	transient XmlStringHandling xMsg = new XmlStringHandling() ;
 
+	String dbDefinitionResource = "";
+
 	
 
 	
@@ -78,6 +90,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 
 		ms = sfProperties.getModelingSettings();
 		cs = ms.getClassifySettings() ;
+		ps = sfProperties.getPersistenceSettings() ;
 		
 		out.setPrefix("[SomFluid-init]");
 	}
@@ -100,15 +113,15 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 										// sth like "D:/data/projects/"
 		
 		
-		// data
-		ps.setIncomingDataClassifyFirst(false);						// interesting for nested systems...
+		 
+		 
 		
 		ps.setProjectName( SomFluidStartup.getLastProjectName() );	// will be used also for output files
 		            // sth like "bank2" , i.e. the simple name of a folder where all the project files are located 
 		
 		ps.setKeepPreparedData(true); 								// includes persistence of transformer model
 		ps.autoSaveSomFluidModels(true);
-		ps.setExportTransformModelAsEmbeddedObj(true);
+		 
 		
 		sfProperties.addDataSource( srctype, dataSourceName);       // if the persistence settings are available, the relative path will be used
 		
@@ -117,31 +130,8 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 						
 		sfProperties.setDataUptakeControl(0);                       // if negative, the data won't load automatically into the SOM
 		
-		cs.addExtendedResultRequest( ClassificationSettings._XREQ_MISCLASSIFICATIONS_FULL ) ;
-		cs.addExtendedResultRequest( ClassificationSettings._XREQ_ROC_FULL) ;
-		cs.addExtendedResultRequest( ClassificationSettings._XREQ_OPTIMALCUTS,3, 0.95 ) ;
-		
-		ArrayList<ValuePair> tvgs = variableSettings.getTvGroupIntervals();
-		int n=tvgs.size();
-		ValuePair vp;
-		// [TGS] mode = single
-		// cs.setSomTargetMode(ClassificationSettings._TARGETMODE_SINGLE ) ; 
-		if (variableSettings.getSomModelingMode().toLowerCase().startsWith("single")){
-			for (int i = 0; i < n; i++) {
-				vp = tvgs.get(i);
-				// setSingleTargetDefinition("raw", 0.1, 0.41, "intermediate");
-				cs.addSingleTargetGroupDefinition( vp.getValue1(), vp.getValue2() );
-				
-			}
-		}
-		
-		
-		ms.setExtendedDiagnosis( true ) ;  							// activates some post-calculation investigations a la SPELA
-																	// ParetoPopulationExplorer, SomModelDescription, Coarseness, MultiCrossValidation, MetricsStructure 
-
-		
-		sfProperties.setMaxL2LoopCount(5) ;							// a supremum, if>1 invokes somsprite and somscreen for optimizing the feature vector
-		
+		 
+	  
 		sfProperties.setRestrictionForSelectionSize(678) ;			// no more than [N] nodes will be selected as neighborhood
 					// that means, if the SOM grows beyond a certain size, a symmetry break will occur in the map ;
 		   			// if the size of a SOM grows to  sqrt(mapsize) > 3.5*sqrt(n/pi)
@@ -153,44 +143,10 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		sfProperties.removeGrowthMode( ModelingSettings._SOM_GROWTH_LATERAL); 
 		sfProperties.setGrowthSizeAdaptationIntensity( 5 ) ;			   // 5=normal == default, 1=greedy -> large nodes, rather small lattice, 10=allowing sparsely filled nodes 
 				
-	
-		
-		sfProperties.addSurrogatedSimulationData( 0.21, 0.3, 1 ) ; 		   // amount of records as in fraction, amount of noise as fraction of stdev per variable
-																		   // this results in a more robust model, since small differences are prevented from being overweighted
-		
-		sfProperties.surrogateAppMode( surrogateActivated,1,0 ) ; 						   // global on/off, initial modeling on/off, optimizing on/off 
-
+ 
 		sfProperties.setAbsoluteRecordLimit(-1); // 435
 		
-		// variableSettings.setSomModelingMode(itemstr);
-		String somTM = variableSettings.getSomModelingMode();
-		if (somTM==null)somTM="" ;
-		if (somTM.length()>0){
-			somTM = somTM.trim().toLowerCase();
-		}
-		if (somTM.startsWith("si")){
-			targetMode =  ClassificationSettings._TARGETMODE_SINGLE;
-		}
-		if (somTM.startsWith("mu")){
-			targetMode =  ClassificationSettings._TARGETMODE_MULTI ;
-		}
-		if ((somTM.startsWith("va")) || (somTM.startsWith("quant"))){ // variance or quantil = outliers 
-			targetMode =  ClassificationSettings._TARGETMODE_VARIANCE_QUANT ;
-		}
-		if (somTM.startsWith("reg")){ // regression : squared distances
-			targetMode =  ClassificationSettings._TARGETMODE_REGR ;
-		}
-	 
-		cs.setTargetMode(targetMode) ;
-		
-		/*
-		classifySettings.getTargetMode() <- 
-		((sfProperties.getSomType() == SomFluidProperties._SOMTYPE_MONO ) &&
-		sfProperties.getModelingSettings().setTvLabelAuto("TV") ;
-		 */
-
-		
-		
+	   
 		
 		sfProperties.setGlueInstanceType(1);
 		sfProperties.setMessagingActive(false) ;					    // if true, the SomFluidFactory will start the glueClient ;
@@ -203,16 +159,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		
 		assimilateVariableSettings();
 		
-		
-		
-		if (publishAppActive){
-			if ((publishAppBasepath.trim().length()==0) || (publishAppBasepath.indexOf("/")<0)){
-				// ???
-			}
-		}
-		sfProperties.getOutputSettings().publishApplicationPackage( publishAppActive );
-		sfProperties.getOutputSettings().setPublishingLocation( publishAppBasepath );
-
+		  
 		
 		sfProperties.setShowSomProgress( SomFluidProperties._SOMDISPLAY_PROGRESS_BASIC ) ;
 		
@@ -229,50 +176,78 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 	
 	@Override
 	public String checkForVariableDescriptionFile(int type) {
+
+		return checkForVariableDescriptionFile(type, "");
+	}
 		
+	@Override
+	public String checkForVariableDescriptionFile(int type, String cfgfilepath) {
+
 		String availableDescrFile = "" ;
 		String datafolder ="" ;
+		String filename ="", dfolder="",folder ="" ;
+		
+		String[] mandys ;
+		
 		boolean rB;
+		
+		
 		try {
 		
-			String filename ="", dfolder="",folder = SomFluidStartup.getProjectBasePath();
-			
-			folder = fileutil.createpath( folder, SomFluidStartup.lastProjectName ) ;
-			dfolder = fileutil.createpath( folder, "data/description");
-			
-			if (fileutil.direxists(dfolder)==false){
-				return "";
-			}
-		
-			filename = SomFluidStartup.getLastDataSet() ;
-			
-			if ((filename.indexOf("/")<0) && (filename.indexOf("\\")<0)){
-				datafolder = fileutil.createpath( folder, "data/raw");
-				filename = fileutil.createpath( datafolder, filename); 
-			}
-			if (fileutil.fileexists(filename)){
-				// bankn_d2-variables.txt
-				File f= new File(filename);
-				filename = f.getName();
-				String ext = StringsUtil.getExtensionFromFilename(filename,1); // 0 = without dot, 1 = with dot
-				int p = filename.lastIndexOf(ext) ;
-				if (p>0){
-					filename = filename.substring(0,p) ;
-				}
-				filename = filename+"-variables.txt" ;
+			if ((cfgfilepath.length()==0) || (DFutils.fileExists(cfgfilepath)==false)){
 				
-				filename = fileutil.createpath( dfolder, filename);
+				mandys = new String[]{ "[id", "[tv"};
+				
+				folder = SomFluidStartup.getProjectBasePath();
+				
+				folder = fileutil.createpath( folder, SomFluidStartup.lastProjectName ) ;
+				dfolder = fileutil.createpath( folder, "data/description");
+				
+				if (fileutil.direxists(dfolder)==false){
+					return "";
+				}
+			
+				filename = SomFluidStartup.getLastDataSet() ;
+				
+				if ((filename.indexOf("/")<0) && (filename.indexOf("\\")<0)){
+					datafolder = fileutil.createpath( folder, "data/raw");
+					filename = fileutil.createpath( datafolder, filename); 
+				}
+				
 				
 				if (fileutil.fileexists(filename)){
+					// bankn_d2-variables.txt
+					File f= new File(filename);
+					filename = f.getName();
+					String ext = StringsUtil.getExtensionFromFilename(filename,1); // 0 = without dot, 1 = with dot
+					int p = filename.lastIndexOf(ext) ;
+					if (p>0){
+						filename = filename.substring(0,p) ;
+					}
+					filename = filename+"-variables.txt" ;
 					
-					
+					filename = fileutil.createpath( dfolder, filename);
+				}	
+			} // filepath was "" ?
+			else{
+				mandys = new String[]{ "[id", "[word"};
+				
+				
+				
+			}
+			
+			
+			if (fileutil.fileexists(filename)){
+				
 					String fc = fileutil.readFile2String( filename) ;
 					int n= strgutil.frequencyOfStrings(fc, new String[]{"[","]"}); 
-					if ((n>0) && (n%2==0)){
+					int nt = strgutil.frequencyOfStrings(fc, new String[]{"<",">"});
+					
+					if ((n>0) && (n%2==0) && (nt<6)){
 						fc= fc.toLowerCase();
-						rB = fc.indexOf("[tv")>0;
-						if (rB){
-							rB = fc.indexOf("[id")>0;
+						rB = fc.indexOf(mandys[0])>0;
+						if ((rB) && (mandys.length>1)){
+							rB = fc.indexOf(mandys[1])>0;
 						}
 					} else{
 						// xml ?
@@ -281,7 +256,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 					}
 					
 					availableDescrFile = filename;
-				}
+				
 			}
 			
 			
@@ -310,6 +285,64 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 	
 		// rB = loadVariableSettingsFromXmlFile(filename);
 		
+		if (rB){
+			this.sfProperties.setVariableSettings(variableSettings) ;
+
+			// we have to transfer the group-settings++ to classifySettings...
+			
+			ClassificationSettings cs = sfProperties.getModelingSettings().getClassifySettings() ;
+			ModelingSettings ms = sfProperties.getModelingSettings() ;
+			
+			
+			// blacklists whitelist ... can be introduced only after accessing the data
+			// we need the structure "Variables" for that!
+			
+			variableSettings.getBlackListedVariables();
+			sfProperties.setAbsoluteFieldExclusions( variableSettings.getAbsoluteExclusions() );
+			
+			ms.addInitialVariableSelection( variableSettings.getInitialSelection() );
+			ms.setBlacklistedVariablesRequest( variableSettings.getBlackListedVariables() );
+
+			
+			if ((sfProperties.getSomType() == FieldIntf._SOMTYPE_MONO ) ){ // && (cs.getTargetMode() == ClassificationSettings._TARGETMODE_MULTI)
+				
+				
+				String tv = variableSettings.getTargetVariable();
+				
+				if ((tv!=null) && (tv.length()>0)){
+					cs.setActiveTargetVariable(tv) ;
+				}
+				if (variableSettings.getTargetVariableCandidates().indexOf(tv)<0){
+					variableSettings.getTargetVariableCandidates().add(tv);
+				}
+				cs.setTGlabels( variableSettings.getTargetVariableCandidates() );
+				ms.setTargetVariableCandidates( variableSettings.getTargetVariableCandidates() );
+				                                variableSettings.getTvGroupLabels() ;
+				ArrayList<ValuePair> tvgints = variableSettings.getTvGroupIntervals() ;
+				cs.setTargetGroupDefinition( tvgints );
+				// labels of tg group.. ?
+				
+				// (cs.getTargetMode() == ClassificationSettings._TARGETMODE_MULTI)
+				
+				String modmodeStr = variableSettings.getSomModelingMode();
+				int modmode=-1 ;
+				if (strgutil.isNumericX(modmodeStr)){
+					modmode = Integer.parseInt(modmodeStr) ;
+				}else{
+					if (tvgints.size()>0){
+						modmode= ClassificationSettings._TARGETMODE_SINGLE;
+					}
+				}
+				cs.setTargetMode( modmode );
+				
+					// cs.setTargetGroupDefinition( new double[]{0.28, 0.62, 1.0});	// applies only to MULTI mode, at least 2 values are required (for 1 group interval)
+					cs.setTargetGroupDefinitionAuto(false);							//  - if [0,1] AND if _TARGETMODE_MULTI , then the target groups will be inferred from the data
+																					//  - TODO in this case, one should be able to provide a "nominal column" that indeed contains the "names"
+					// cs.setTargetGroupDefinitionExclusions( new double[]{0.4} );		// these values are NOT recognized as belonging to any of the target groups, == singular dot-like holes in the intervals
+				
+			}
+
+		}
 		return rB ;
 	}
 	
@@ -734,7 +767,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 			}
 			sfProperties.setInitialNodeCount(nodeCount);                    // initial size; yet it does not matter much since the SomFluid could grow anyway
 			
-			sfProperties.setMultipleWinners(1) ; 							   // max 5, if=1 == default = single winner
+			sfProperties.setWinnersCountMultiple(1) ; 							   // max 5, if=1 == default = single winner
 		       // only the best winner will be actually updated by the data ;
 			   // the further winners only update their profile
 			   // in most cases, a singular winner (n=1) provides the best results
@@ -746,8 +779,10 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		// som map as associative storage: no target variable, but some choice of internal consistency / contrast measures
 		// modes of working: plain, +3-sigma, +internal variance (combined with 3-sigma)
 		// important: list of indices, list of profile columns or column numbers such as [3,12-65, 120-all], 
-		if (description.startsWith("map")){
+		if (description.startsWith("astor")){
+			
 			sfProperties.setSomType( FieldIntf._SOMTYPE_PROB ) ;
+			sfProperties.setInstanceType( FieldIntf._INSTANCE_TYPE_ASTOR ) ;  
 			
 			if ((nodecount!=null) && (nodecount.length>0)){
 				nodeCount = nodecount[0] ;	
@@ -783,15 +818,41 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		targetMode = targetmode;
 	}
 
+	public void setDatabaseDefinitionResource( String alias) {
+		setDatabaseDefinitionResource("" ,  alias);
+	}
+	@Override
+	public void setDatabaseDefinitionResource(String dbDefResource,String alias) {
+		
+		if (dbDefResource.length()==0){
+			dbDefResource = "definition-db-sql-xml" ;
+		}
+		dbDefinitionResource  = dbDefResource ;
+		sfProperties.setDatabaseDefinitionResource( dbDefinitionResource );
+		
+		// analyze for table names, columns
+		try {
+		
+			sfProperties.getDatabaseDefinitionInfo();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
 	
 	@Override
 	public void setDataSourcing(String srcDescription, int activateOnlineMode) {
 		
 		srcDescription = srcDescription.trim().toLowerCase();
 		
-		
-		if (srcDescription.startsWith("file")){
-		
+		if (ps==null){
+			ps = sfProperties.getPersistenceSettings() ;
+		}
+		if (srcDescription.startsWith( DataStreamProviderIntf._DSP_SOURCED_FILE )){// "file"
+			
+			sfProperties.setSourceType( SomFluidProperties._SRC_TYPE_FILE );
 			srctype = SomFluidProperties._SRC_TYPE_FILE;			// alternatives: db (not realized), online learning on continuous stream (not realized)
 			// SomFluidProperties._SRC_TYPE_XONLINE
 			
@@ -814,7 +875,15 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 			}
 			
 		} // "file" ?
-
+		if (srcDescription.startsWith( DataStreamProviderIntf._DSP_SOURCED_DB )){
+			
+			sfProperties.setSourceType( SomFluidProperties._SRC_TYPE_DB );
+			srctype = SomFluidProperties._SRC_TYPE_DB;
+			
+			
+			
+			
+		} // "db"
 		
 		
 		
@@ -878,9 +947,10 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 	}
 
 	
+	
 	@Override
 	public VariableSettingsHandlerIntf getVariableSettingsHandler() {
-
+	
 		if (variableSettings==null){
 			variableSettings = new VariableSettingsHandler();
 		}
@@ -1208,17 +1278,8 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		publishAppActive = flag ;
 		publishAppBasepath = basepath ; 
 	}
-	
 
-	
 
-	
-	
-	
-	
-	
-	
-	
 	
 	
 	

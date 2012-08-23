@@ -72,6 +72,7 @@ public class PhysicalFixedField extends ExternalGridFieldAbstract{
 		if (fixedField!=null){
 			fixedField.registerEventMessaging( eventSink );
 		}   
+		this.eventSink = eventSink ; 
 	}
 	
 	

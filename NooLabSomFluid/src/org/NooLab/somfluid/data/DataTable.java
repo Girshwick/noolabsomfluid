@@ -1469,6 +1469,9 @@ if (r>rc-3){
 	}
 
 	public int getHeadersCount() {
+		if (headersCount<=0){
+			headersCount = columnHeaders.size();
+		}
 		return headersCount;
 	}
 
@@ -1572,6 +1575,9 @@ if (r>rc-3){
 	public int getRowcount() {
 		int r1=0,r2=0,r3=0;
 		
+		if (getColcount()==0){
+			return -1;
+		}
 		if (rowcount<=0){
 			if (getColcount()>0){
 				r1 = dataTable.get(0).size() ;

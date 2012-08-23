@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.components.SomDataObject;
 
+import org.NooLab.somfluid.core.engines.NodeStatisticsFactory;
 import org.NooLab.somfluid.core.engines.NodeStatisticsIntf;
 
 

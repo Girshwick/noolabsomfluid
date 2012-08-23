@@ -13,7 +13,10 @@ import org.NooLab.field.FieldIntf;
 import org.NooLab.field.interfaces.FixedNodeFieldEventsIntf;
 import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
 import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
-import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
+
+import org.NooLab.itexx.storage.DataStreamProvider;
+import org.NooLab.itexx.storage.DataStreamProviderIntf;
+import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
 
 import org.NooLab.somfluid.properties.* ;
 import org.NooLab.somfluid.app.SomAppProperties;
@@ -22,17 +25,17 @@ import org.NooLab.somfluid.app.SomAppValidationIntf;
 import org.NooLab.somfluid.app.SomApplicationEventIntf;
 import org.NooLab.somfluid.astor.SomAStorageQueryHandler;
 import org.NooLab.somfluid.astor.SomAssociativeStorage;
+import org.NooLab.somfluid.astor.SomDataStreamer;
 import org.NooLab.somfluid.components.* ;
   
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 import org.NooLab.somfluid.core.engines.det.results.ModelOptimizerDigester;
 import org.NooLab.somfluid.core.engines.det.results.SimpleSingleModelDigester;
-import org.NooLab.somfluid.core.engines.det.results.SomResultDigesterIntf;
 import org.NooLab.somfluid.data.Variables;
   
 import org.NooLab.somfluid.env.data.*;
 import org.NooLab.somtransform.SomTransformer;
-
+import org.NooLab.itexx.storage.* ;
 
 
 /*
@@ -199,19 +202,53 @@ public class SomFluid
 	private void performAssociativeStorage(SomFluidTask sfTask) throws Exception {
 		 
 		
-		
+		AstorSettings astorSettings ; 
 		SomAssociativeStorage astor ;
 		SomAStorageQueryHandler astorQueryHandler;
+		TexxDataBaseSettingsIntf databaseSettings;
+		DataStreamProvider dataStreamProvider ;
 		
+		
+		astorSettings = sfProperties.getAstorSettings() ;
+		databaseSettings = sfProperties.getDatabaseSettings() ;
+		
+		String dspGuid="";
 		
 		sfTask.setDescription("Astor()") ;
 		sfTask.setSomHost(null) ;
+		 
 		
-		astor = new SomAssociativeStorage( this, sfFactory, sfProperties ); 
+		
+		if (sfTask.activateDataStreamReceptor()){
+			
+			int dspix = DataStreamProviderIntf._DSP_SOURCE_DB;
+			// DataStreamProvider "receives" data from some data source like db, tcp, or file
+			// it is part of iTexxStorage
+			dataStreamProvider = new DataStreamProvider( dspix , databaseSettings, null );
+			
+			/*
+			   The type org.NooLab.itexx.comm.tcp.TexxCommTcpSettingsIntf cannot be resolved. 
+			   It is indirectly referenced from required .class files
+			   
+			 * DataStreamProviderIntf._DSP_SOURCE_DB, 
+					 									 databaseSettings, 
+					 									 sfProperties.getDbAccessDefinition());
+			 */
+			dspGuid = dataStreamProvider.getGuid();
+			 
+		}
+		
+		astor = new SomAssociativeStorage( this, sfFactory, sfTask, sfProperties, dspGuid ); 
 		sfTask.setTaskType( SomFluidTask._TASK_SOMSTORAGEFIELD);
 		
+		int r = astor.prepareDataObject() ;
 		
-		astor.perform() ;
+		if (r==0){
+			astor.setInitialVariableSelection( astorSettings.getInitialVariableSelection() ) ;
+			
+			astor.perform() ;
+		}
+
 		
 	}
 
@@ -527,6 +564,27 @@ public class SomFluid
 
 
 
+	@Override
+	public void statusMessage(String msg) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onCalculationsCompleted() {
+		
+		if (sfFactory.getPhysicalFieldStarted()==0){
+			out.print(2,"Calculations (SomFluid as event mgr) in particle field are going to be completed, please wait...");
+			
+		}
+		
+		
+		// sfFactory.setPhysicalFieldStarted(1);
+		
+		sfFactory.getFieldFactory().setInitComplete(true);
+		
+	}
+
 	// ========================================================================
 	public String addTask(SomFluidTask somFluidTask) {
 		 
@@ -763,6 +821,64 @@ public class SomFluid
 		return null;
 	}
 	
+	public SomDataObject loadDbTable( SomDataStreamer streamer) {
+	
+		SomDataObject somDataObject = null ;
+		
+		somDataObject = createSomDataObject() ;
+		
+		
+		// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> difference to filemode
+		somDataObject.setDatabaseSettings( sfProperties.getDatabaseSettings() );
+		somDataObject.setDbAccessDefinition( sfProperties.getDbAccessDefinition() ) ;
+		somDataObject.setSomDataStreamer( streamer ); 
+		
+		
+		SomTransformer transformer = new SomTransformer( somDataObject, sfProperties );
+		
+		somDataObject.setTransformer(transformer) ;
+		
+		DataReceptor dataReceptor = new DataReceptor( somDataObject );
+		
+		// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> difference to filemode
+		dataReceptor.loadFromDataBase( 1000 );
+		// this is just a seed for the beginning...
+		// in resume mode, we load the Som and the SomDataObj directly
+		// yet, the data table in SomDataObj will not grow beyond 5000 records or so!!!
+		// max and min are also taken from the db, so the global values for normalization are available anyway
+		// de-referencing is done through the database
+		
+		somDataObject.importDataTable( dataReceptor, 1 ); 
+
+		if (somDataObject.getData().getRowcount()<=1){
+			out.printErr(1, "loading data tables did NOT complete successfully. ...stopping.");
+			// this.sfFactory.c
+			somProcessControl.interrupt(0);
+			out.delay(500) ;
+			System.exit(-5) ;
+		}
+
+		
+		// as defined by the user
+		somDataObject.acquireInitialVariableSelection();
+		
+		// 
+		somDataObject.ensureTransformationsPersistence(0);
+											out.print(4, "somDataObject instance @ loadSource : "+somDataObject.toString()) ;
+								
+		 
+		Variables variables = somDataObject.getVariables() ;
+ 
+		variables.setAbsoluteFieldExclusions( sfProperties.getAbsoluteFieldExclusions() );
+		
+		// translating wildcards into accurate labels, also sets id,tv indicators in variable items
+		variables.explicateGenericVariableRequests();
+		
+		return somDataObject;
+	}
+
+	
+	
 	public SomDataObject loadSource( String srcname ) throws Exception{
 		
 		SomDataObject somDataObject;
@@ -925,10 +1041,6 @@ public class SomFluid
 		this.soappTransformer = soappTransformer;
 	}
 
-	public PrintLog getOut() {
-		return out;
-	}
-
 	public void setApplicationMessagePort( SomApplicationEventIntf msgCallbackIntf) {
 		appInformer = msgCallbackIntf;
 	}
@@ -984,26 +1096,8 @@ public class SomFluid
 
 
 	@Override
-	public void statusMessage(String msg) {
+	public void onLayoutCompleted(int flag) {
 		// TODO Auto-generated method stub
-		
-	}
-
-
-
-
-	@Override
-	public void onCalculationsCompleted() {
-		
-		if (sfFactory.getPhysicalFieldStarted()==0){
-			out.print(2,"Calculations (SomFluid as event mgr) in particle field are going to be completed, please wait...");
-			
-		}
-		
-		
-		// sfFactory.setPhysicalFieldStarted(1);
-		
-		sfFactory.getFieldFactory().setInitComplete(true);
 		
 	}
 
@@ -1026,10 +1120,8 @@ public class SomFluid
 		return userBreak;
 	}
 
-	@Override
-	public void onLayoutCompleted(int flag) {
-		// TODO Auto-generated method stub
-		
+	public PrintLog getOut() {
+		return out;
 	}
  
 	

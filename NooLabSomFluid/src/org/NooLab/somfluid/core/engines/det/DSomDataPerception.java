@@ -1042,15 +1042,19 @@ if (extSizeInNeighbors.size()>0){
 		if (kn>6){kn6=6;} else{kn6=kn;}
 		
 		
-		// first we count the empty nodes around the winning BMU, but only, if the BMU is larger than 10; 
-		bmuExtensionSize = somLattice.getNode(wNodeIndex).getExtensionality().getStatistics().getFieldValues().get(1).getCount() ;
+		// first we count the empty nodes around the winning BMU, but only, if the BMU is larger than 10;
+		ArrayList<?> fValues = somLattice.getNode(wNodeIndex).getExtensionality().getStatistics().getFieldValues() ;
+		bmuExtensionSize = ((ExtensionalityDynamicsIntf) fValues.get(1)).getCount() ;
 		// the same value: int n = somLattice.getNode(wNodeIndex).getExtensionality().getCount() ;
 		nec=0;
 		 
 		if (bmuExtensionSize>10){
 			for (int i = 1; i < kn6; i++) { // index 0
+				
 				nodeIndex = nodesPtr.get(i).getIndex() ;
-				crn = somLattice.getNode(nodeIndex).getExtensionality().getStatistics().getFieldValues().get(1).getCount() ;
+				fValues = (ArrayList<?>) somLattice.getNode(nodeIndex).getExtensionality().getStatistics().getFieldValues().get(1) ;
+				
+				crn = ((ExtensionalityDynamicsIntf) fValues).getCount() ;
 				
 				if (crn==0){
 					nec++;

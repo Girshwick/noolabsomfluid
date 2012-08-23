@@ -654,6 +654,7 @@ public class SomAppModelLoader {
 
 			xmlNodeObjects = xMsg.getItemsList(rawXmlStr, "nodes", "node", "index") ;
 			
+			// that's not implemented yet...
 			xmlNodeObjects = xMsg.getSpecifiedConditionalNode( rawXmlStr, 	"//somobjects/som", // path  
 																		"index", 			// attribute containing the condition 
 																		""+somObjIndex ,	// the condition 

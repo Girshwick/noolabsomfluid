@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 
+import org.NooLab.field.repulsive.components.data.SurroundResults;
 import org.NooLab.somfluid.*;
 import org.NooLab.somfluid.data.*;
 import org.NooLab.somfluid.core.SomProcessIntf;
@@ -61,6 +62,8 @@ public class SimpleSingleModel implements SomHostIntf, Serializable{
 		somFluid = somfluid;
 		sfTask = sftask ;
 		sfFactory = factory;
+		
+		
 		
 		sfProperties = sfFactory.getSfProperties() ;
 		modelingSettings = sfFactory.getSfProperties().getModelingSettings();
@@ -349,6 +352,12 @@ public class SimpleSingleModel implements SomHostIntf, Serializable{
 
 	public void setModelingSettings(ModelingSettings modelingSettings) {
 		this.modelingSettings = modelingSettings;
+	}
+
+	@Override
+	public void selectionEventRouter(SurroundResults results, VirtualLattice somLattice) {
+		 
+		somLattice.handlingRoutedSelectionEvent(results);
 	}
  
 	

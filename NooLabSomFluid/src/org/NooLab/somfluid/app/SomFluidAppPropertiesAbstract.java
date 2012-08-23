@@ -1,10 +1,13 @@
 package org.NooLab.somfluid.app;
 
+import org.NooLab.itexx.storage.TexxDataBaseSettings;
 import org.NooLab.somfluid.OutputSettings;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidPluginSettings;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.AlgorithmDeclarationsLoader;
+import org.NooLab.somfluid.env.data.db.DataBaseAccessDefinition;
+import org.NooLab.somfluid.properties.AstorSettings;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.properties.SettingsTransporter;
@@ -33,6 +36,9 @@ public class SomFluidAppPropertiesAbstract
 	protected OutputSettings outputSettings ; 
 	protected ModelingSettings modelingSettings = new ModelingSettings() ;
 	
+	protected AstorSettings astorSettings ;
+	protected TexxDataBaseSettings databaseSettings;
+	
 	protected int glueType = 0;
 	protected int multiProcessingLevel = 0;
 	
@@ -41,14 +47,21 @@ public class SomFluidAppPropertiesAbstract
 	protected int sourceType = -1;
 	protected String dataSrcFilename = "";
 	
+	protected String dbDefinitionResource="";
+	protected DataBaseAccessDefinition dbAccessDefinition = new DataBaseAccessDefinition ();
+	
+	
 	protected String supervisedDirectory = "";
+	
 	
 	transient protected FileOrganizer fileOrganizer;
 	transient DFutils fileutil = new DFutils();
+	
 	// ========================================================================
 	public SomFluidAppPropertiesAbstract(){
 		
 		FileOrganizer fileorg = new FileOrganizer ();
+		
 	}
 	// ========================================================================
 
@@ -58,10 +71,14 @@ public class SomFluidAppPropertiesAbstract
 		return fileOrganizer;
 	}
 	
+	
+	public void setFactoryParent(SomFluidFactory factory) {
+		sfFactory = factory;
+	}
+	
 	@Override
 	public SomFluidFactory getSfFactory() {
-		// TODO Auto-generated method stub
-		return null;
+		return sfFactory;
 	}
 
 	public void setFileOrganizer(FileOrganizer forg) {
@@ -92,6 +109,27 @@ public class SomFluidAppPropertiesAbstract
 	public int getSourceType() {
 	 
 		return sourceType;
+	}
+	 
+
+	public void setSourceType(int sourcetype) {
+		sourceType = sourcetype;
+	}
+	
+	
+	
+	
+	
+	/**
+	 * 
+	 * 
+	 * @param sourceType 1=full data file, 5=profiles for simulation
+	 * @param filename
+	 */
+	public void setDataSource(int sourcetype, String locatorname) {
+		// 
+		sourceType = sourcetype;
+		dataSrcFilename = locatorname ; 
 	}
 
 	@Override
@@ -137,6 +175,10 @@ public class SomFluidAppPropertiesAbstract
 	}
 
 
+
+	public DataBaseAccessDefinition getDbAccessDefinition() {
+		return dbAccessDefinition;
+	}
 
 	@Override
 	public AlgorithmDeclarationsLoader getAlgoDeclarations() {

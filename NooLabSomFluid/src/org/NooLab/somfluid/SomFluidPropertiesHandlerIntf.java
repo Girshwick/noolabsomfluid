@@ -30,7 +30,10 @@ public interface SomFluidPropertiesHandlerIntf {
 	 * @return
 	 */
 	public String checkForVariableDescriptionFile( int type);
-
+	
+	public String checkForVariableDescriptionFile(int type, String filepath);
+	
+	
 	public void initializeDefaultsFromFile( String inifilename);
 
 	public void setDataSourcing(String srcDescription, int activateOnlineMode);
@@ -76,6 +79,11 @@ public interface SomFluidPropertiesHandlerIntf {
 	public void publishApplicationPackage(boolean flag, String basepath);
 
 	public void setGridType(int somGridtypeFixed);
+
+	public void setDatabaseDefinitionResource(String alias);  
+	public void setDatabaseDefinitionResource(String dbDefinitionResource, String alias);
+
+	
 	
 
 }

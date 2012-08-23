@@ -350,13 +350,13 @@ public class SomContainer {
 					v = -1.0;
 					if (f>=0){
 						
-						BasicStatisticalDescription bsd = extens.getStatistics().getFieldValues().get(f);
+						BasicStatisticalDescription bsd = (BasicStatisticalDescription) extens.getStatistics().getFieldValues().get(f);
 						if (nsz != bsd.getCount()){
 							// calculate statistics for the fields in the node !!
 							// is a feature of the somLattice, simply do it for all nodes
 							somLattice.establishProperNodeStatistics() ;
 							extens = node.getExtensionality() ;
-							bsd = extens.getStatistics().getFieldValues().get(f);
+							bsd = (BasicStatisticalDescription) extens.getStatistics().getFieldValues().get(f);
 						}
 					}
 				}
@@ -374,7 +374,7 @@ public class SomContainer {
 							BasicStatisticalDescription bsd ;
 
 							extens = node.getExtensionality() ;
-							bsd = extens.getStatistics().getFieldValues().get(f);
+							bsd = (BasicStatisticalDescription) extens.getStatistics().getFieldValues().get(f);
 							v = bsd.getVariance() ; if (Math.abs(v)<0.000000000001){v=0.0;} str = String.format("%.7f", v) ;
 						}
 						varianceProfile.add( v ) ;

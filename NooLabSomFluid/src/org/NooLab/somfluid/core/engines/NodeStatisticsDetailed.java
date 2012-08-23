@@ -28,31 +28,23 @@ public class NodeStatisticsDetailed implements NodeStatisticsIntf{
 	
 	
 	
-    public void resetFieldStatistics( int n){
-    	
-    	BasicStatisticalDescription basic_stats_element ;
-    	
-    	
-    	basic_stats_element = fieldValues.get(n);
-    	
-    	basic_stats_element.reset();
-    }
-    
-    public void resetFieldStatisticsAll() {
-		//  
-		for (int i=0;i<fieldValues.size();i++){
-			
-			resetFieldStatistics(i);
+    public void setVariables(ArrayList<Variable> variablesList) {
+		int n = 0;
+		
+		if (variables!=null){
+			variables.size();
 		}
 		
+		variables = variablesList;
+		if ((n!=0) && (n!=variables.size())){
+			adjustFieldValuesVectorLen();
+		}
 	}
-    
-	public void addRecordData( ArrayList<Double> vector){
-    	
-    }
-    
-    public void removeRecordData( ArrayList<Double> vector){
-    	BasicStatisticalDescription fieldStats;
+
+
+
+	public void removeRecordData( ArrayList<Double> vector){
+    	BasicStatisticalDescriptionIntf fieldStats;
     	double v, rv;
     	
     	if (fieldValues.size() == vector.size()){
@@ -65,11 +57,20 @@ public class NodeStatisticsDetailed implements NodeStatisticsIntf{
     			    			
     		}// i-> all positions in node structure
     	}
-    	
-    	
+
     }
     
     // ------------------------------------------------------------------------
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public void setFieldValues(ArrayList<?> fieldvalues) {
+		if (fieldvalues!=null){
+			this.fieldValues = (ArrayList<BasicStatisticalDescription>) fieldvalues;
+		}
+	}
+
+
 
 	public ArrayList<BasicStatisticalDescription> getFieldValues() {
 		return fieldValues;
@@ -81,19 +82,10 @@ public class NodeStatisticsDetailed implements NodeStatisticsIntf{
 
 
 
-	public void setVariables(ArrayList<Variable> variablesList) {
-		int n = 0;
-		
-		if (variables!=null){
-			variables.size();
-		}
-		
-		variables = variablesList;
-		if ((n!=0) && (n!=variables.size())){
-			adjustFieldValuesVectorLen();
-		}
-	}
-    
+	// ========================================================================
+	
+	
+	
 	private void adjustFieldValuesVectorLen(){
 		int n, vn;
 		
@@ -115,12 +107,39 @@ public class NodeStatisticsDetailed implements NodeStatisticsIntf{
 
 
 
-	@SuppressWarnings("unchecked")
-	@Override
- 	public void setFieldValues(ArrayList<?> fieldvalues) {
-		if (fieldvalues!=null){
-			this.fieldValues = (ArrayList<BasicStatisticalDescription>) fieldvalues;
+	public void resetFieldStatistics( int n){
+		
+		BasicStatisticalDescription basic_stats_element ;
+		
+		
+		basic_stats_element = fieldValues.get(n);
+		
+		basic_stats_element.reset();
+	}
+
+
+
+	public void resetFieldStatisticsAll() {
+		//  
+		for (int i=0;i<fieldValues.size();i++){
+			
+			resetFieldStatistics(i);
 		}
+		
+	}
+
+
+
+	public void addRecordData( ArrayList<Double> vector){
+		
+	}
+
+
+
+	@Override
+	public void addFieldValues(BasicStatisticalDescription basicStatisticalDescription) {
+		// TODO Auto-generated method stub
+		
 	}
 
 

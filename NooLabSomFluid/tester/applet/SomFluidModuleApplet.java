@@ -442,7 +442,7 @@ class SomModuleInstance implements 	Runnable,
 				
 		sfProperties.setActivationOfGrowing( true );                       // activates/deactivates growing without removing the settings, default=true
 		
-		sfProperties.setMultipleWinners(1) ; 							   // max 5, if=1 == default = single winner
+		sfProperties.setWinnersCountMultiple(1) ; 						   // max 5, if=1 == default = single winner
 																	       // only the best winner will be actually updated by the data ;
 																		   // the further winners only update their profile
 																		   // in most cases, a singular winner (n=1) provides the best results

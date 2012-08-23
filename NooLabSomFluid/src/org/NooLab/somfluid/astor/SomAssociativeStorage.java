@@ -3,6 +3,9 @@ package org.NooLab.somfluid.astor;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import org.NooLab.field.FieldIntf;
+import org.NooLab.field.repulsive.components.data.SurroundResults;
+import org.NooLab.itexx.storage.DataStreamProviderIntf;
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
@@ -103,18 +106,27 @@ public class SomAssociativeStorage implements SomHostIntf, ProcessCompletionMsgI
 	private SomAstor somAstor;
 	
 	private ArrayList<Integer> usedVariables = new ArrayList<Integer>();
+	private boolean somprocessCompleted = false;
+	
+	String dataStreamProviderGuid="" ;
+	
 	
 	// ========================================================================
-	public SomAssociativeStorage( SomFluid somfluid, SomFluidFactory factory,
-								  SomFluidProperties properties) {
+	public SomAssociativeStorage( SomFluid somfluid, 
+								  SomFluidFactory factory, 
+								  SomFluidTask sftask,
+								  SomFluidProperties properties, 
+								  String dspGuid) {
 		
 		somFluid = somfluid ;
 		sfFactory = factory ;
 		sfProperties = properties;
 		
+		this.sfTask = sftask;
+		
 		latticeProps  = new LatticeProperties();
 		
-	
+		dataStreamProviderGuid = dspGuid;
 		
 	}
 	// ========================================================================
@@ -191,59 +203,117 @@ public class SomAssociativeStorage implements SomHostIntf, ProcessCompletionMsgI
 	}
 
 	
+	public int prepareDataObject() {
+		
+		int sz = 0,limit = -1;
+		int result = -1;
+		
+		try {
+
+			
+			if (sfProperties.getSourceType() == DataStreamProviderIntf._DSP_SOURCE_DB){
+
+				
+				if ( sfFactory.getInstanceType() == FieldIntf._INSTANCE_TYPE_ASTOR){
+					limit = 1000 ;
+					somDataStreamer = new SomDataStreamer( sfProperties ) ;
+				}else{
+					limit = 80000 ; ;
+				}
+				result = -5 ;
+				somDataObj = somFluid.loadDbTable( somDataStreamer );
+				result = -6 ;
+				
+				sz = somDataObj.getData().getRowcount();
+			}
+			
+			if (sfProperties.getSourceType() == DataStreamProviderIntf._DSP_SOURCE_FILE){
+
+				if (sfTask.getResumeMode() >= 1) {
+
+				}
+				
+				result = -5 ;
+				somDataObj = somFluid.loadSource(""); 
+				result = -6 ;
+				
+				sz = somDataObj.getData().getRowcount();
+				
+			} // file
+
+			if (sz>3){
+				result = 0 ;
+			}
+		} catch (Exception e) {
+			result = -17;
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	public void setDataObject(SomDataObject sdo) {
+		somDataObj = sdo;
+	}
+
+	@Override
+	public void selectionEventRouter(SurroundResults results, VirtualLattice somLattice) {
+		 
+		somLattice.handlingRoutedSelectionEvent(results);
+	}
+
 	@Override
 	public void processCompleted(Object processObj, Object msg) {
-		// TODO Auto-generated method stub
-		
+		 
+		somprocessCompleted = true;
 	}
 	@Override
 	public void onTargetedModelingCompleted(ModelProperties results) {
-		// TODO Auto-generated method stub
+		 
 		
 	}
 	@Override
 	public SomFluidTask getSfTask() {
-		// TODO Auto-generated method stub
-		return null;
+		
+		return sfTask;
 	}
 	@Override
 	public SomFluidFactory getSfFactory() {
-		// TODO Auto-generated method stub
-		return null;
+		
+		return sfFactory;
 	}
 	@Override
 	public SomFluid getSomFluid() {
-		// TODO Auto-generated method stub
-		return null;
+		
+		return somFluid;
 	}
 	@Override
 	public SomFluidProperties getSfProperties() {
-		// TODO Auto-generated method stub
-		return null;
+		
+		return sfProperties;
 	}
 	@Override
 	public ModelProperties getSomResults() {
-		// TODO Auto-generated method stub
+
 		return null;
 	}
 	@Override
 	public SomDataObject getSomDataObj() {
-		// TODO Auto-generated method stub
-		return null;
+		// 
+		return somDataObj;
 	}
 	@Override
 	public SomProcessIntf getSomProcess() {
-		// TODO Auto-generated method stub
-		return null;
+		
+		return somProcess;
 	}
 	@Override
 	public ModelProperties getResults() {
-		// TODO Auto-generated method stub
+		
 		return null;
 	}
 	@Override
 	public String getOutResultsAsXml(boolean asHtmlTable) {
-		// TODO Auto-generated method stub
+		
 		return null;
 	}
 

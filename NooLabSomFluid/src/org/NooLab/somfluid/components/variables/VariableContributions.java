@@ -61,6 +61,12 @@ public class VariableContributions implements Serializable{
 	}
 
 
+	public void clear() {
+
+		items.clear();		
+	}
+
+
 	@SuppressWarnings("unchecked")
 	public void sort(int direction) {
 		 

@@ -10,6 +10,7 @@ import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 import org.NooLab.utilities.logging.PrintLog;
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.components.*;
 import org.NooLab.somfluid.core.categories.connex.*;
 import org.NooLab.somfluid.core.categories.extensionality.*;
@@ -24,6 +25,7 @@ import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.env.communication.*;
 
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
+import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;
  
 
 
@@ -543,7 +545,7 @@ if ((_new_w<0) || (_new_w>1.04)){
 		boolean calcThis ;
 		
 		NodeStatisticsIntf  nodeStats ;
-		BasicStatisticalDescription fieldStats ;
+		BasicStatisticalDescriptionIntf fieldStats = null ;
 		
 		ArrayList<Double> usevector,weightvector , nodeProfile ;
 		
@@ -598,11 +600,17 @@ if ((_new_w<0) || (_new_w>1.04)){
 					nodeProfile.set(w, 1.0) ;  
 				}
 				
+				if (somType == FieldIntf._SOM_GRIDTYPE_FLUID){
+					fieldStats = (BasicStatisticalDescription) nodeStats.getFieldValues().get(w);
+				}
+				if (somType == FieldIntf._SOM_GRIDTYPE_FIXED){
+					BasicSimpleStatisticalDescription bssd;
+					
+					fieldStats = (BasicStatisticalDescriptionIntf) (nodeStats.getFieldValues().get(w));
+				}
 				
-				fieldStats = nodeStats.getFieldValues().get(w);
-				
-								if (nodeStats.getFieldValues().size()< w){
-									nodeStats.getFieldValues().add( new BasicStatisticalDescription(false)) ;
+								if ((somType == FieldIntf._SOM_GRIDTYPE_FLUID) && (nodeStats.getFieldValues().size()< w)){
+									nodeStats.addFieldValues( new BasicStatisticalDescription(false)) ;
 								}
 											err = 5;
 				// work on the variable only if allowed
