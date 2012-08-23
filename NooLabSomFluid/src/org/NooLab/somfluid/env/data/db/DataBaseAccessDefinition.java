@@ -21,9 +21,13 @@ public class DataBaseAccessDefinition
 													Serializable,
 													DataBaseAccessDefinitionIntf {
 
+	String databaseName="" ;
 	XColumns xColumns = new XColumns();
-	XColumn xColumn;
+	
+	transient private XColumn xColumn;
+	
 	String user="", password="";
+	
 	
 	//=========================================================================
 	public DataBaseAccessDefinition(){
@@ -31,8 +35,8 @@ public class DataBaseAccessDefinition
 	}
 	//=========================================================================
 	
-	
-	public void getDatabaseDefinitionInfo(String xmlstr) throws Exception{
+	// <texx><database name="randomwords">
+	public void getDatabaseDefinitionInfo(String xmlstr, String dbname) throws Exception{
 		 
 		XmlStringHandling xMsg = new XmlStringHandling(); 
 		Vector<Object> nodelist,nodeDbObjs ;
@@ -61,9 +65,10 @@ public class DataBaseAccessDefinition
 	                 <user name="RG" />
 			 */
 
-			if (str.contentEquals("randomwords")){
+			if (str.contentEquals( dbname )){// e.g."randomwords"
 				dbNodeObj = nodeDbObjs.get(i);
 			
+				databaseName = dbname;
 				user = xMsg.getSpecifiedConditionalInfo(xmlstr, "//database", "name", "randomwords", "/access/user", "name");
 				password = xMsg.getSpecifiedConditionalInfo(xmlstr, "//database", "name", "randomwords", "/access/user", "password");
 				// str = xMsg.getSpecifiedConditionalInfo(xmlstr, "/texx/database", "name", "randomwords", "/access/user", "name"); these two versions also work! 
@@ -135,6 +140,36 @@ public class DataBaseAccessDefinition
 	}
 	public XColumns getxColumns() {
 		return xColumns;
+	}
+
+
+	public String getUser() {
+		return user;
+	}
+
+
+	public void setUser(String user) {
+		this.user = user;
+	}
+
+
+	public String getPassword() {
+		return password;
+	}
+
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+
+	public String getDatabaseName() {
+		return databaseName;
+	}
+
+
+	public void setDatabaseName(String databaseName) {
+		this.databaseName = databaseName;
 	}
 	
 	

@@ -80,8 +80,8 @@ public interface SomFluidPropertiesHandlerIntf {
 
 	public void setGridType(int somGridtypeFixed);
 
-	public void setDatabaseDefinitionResource(String alias);  
-	public void setDatabaseDefinitionResource(String dbDefinitionResource, String alias);
+	public void setDatabaseDefinitionResource(String alias, String dbname);  
+	public void setDatabaseDefinitionResource(String dbDefinitionResource, String alias, String dbname);
 
 	
 	

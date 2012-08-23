@@ -55,12 +55,12 @@ public class SomAppTransformer
 	public SomAppTransformer( SomDataObject sdo, SomAppProperties properties){
 		super( sdo, properties);              // = SomFluidAppGeneralPropertiesIntf
 		
-		 
+		
 		soappProperties = properties;
 		soappTransforms = new SomAppTransforms( this ) ; // 
 		
 		if (sdo==null){
-			somData = new SomDataObject(soappProperties); // we will fill the data later
+			somData = new SomDataObject(soappProperties,properties.getSfFactory().getSfProperties()); // we will fill the data later
 		}else{
 			somData = sdo; 
 		}
