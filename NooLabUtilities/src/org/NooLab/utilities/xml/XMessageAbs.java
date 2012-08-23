@@ -970,6 +970,7 @@ public abstract class XMessageAbs {
  
 	/**
 	 * <b>not yet implemented !!</b>
+	 * use instead:  setBasicConditionLocation(), then getItemsList
 	 * 
 	 * @param rawXmlMsg
 	 * @param domainSpecs
@@ -1119,6 +1120,35 @@ public abstract class XMessageAbs {
 		xqueryBasicCondition = "";
 	}
 	 
+	/**
+	 * any further query will be conditional to this location as a base !!!</br></br>
+	 * 
+	 * Example: </br>
+	 * let us assume that there is a tag  &lt;table name="abc"&gt;.</br>
+	 * within this tag we find a section defined by the tag    &lt;astor&gt; ... &lt;/astor&gt;. </br></br> 
+	 * The query would look like this (tnStr refers to "abc"): </br></br>
+	 * &nbsp;&nbsp;&nbsp; setBasicConditionLocation( xmlstr,  "//table", "name", tnStr , "/astor");</br></br>
+	 *   
+	 * Next, let us assume, that inside &lt;astor&gt; there is a section &lt;core&gt; which itself contains a list of
+	 * items</br>
+	 * &nbsp;&nbsp;&lt;item id="1" ... /&gt; </br>
+	 * &nbsp;&nbsp;&lt;item id="2" ... /&gt; </br>
+	 * &nbsp;&nbsp;&lt;item id="3" ... /&gt; </br></br> 
+	 * 
+	 * In this case we would be interested in the nodes described by the "item" tag. </br>
+	 * Given the conditional anchor as defined above we could access them by </br></br>
+	 * &nbsp;&nbsp;&nbsp;xMsg.getItemsList(xmlstr, "//core", "item", "");</br></br>
+	 *   
+	 * As a result, we can access any kind of list of tags relative to (=inside of) </br>
+	 * a tag that contains a particular value for one of its attributes.  
+	 * 
+	 * @param rawXmlMsg   the xml string
+	 * @param domainSpecs   the name of the tag containing the attribute that shall serve as condition
+	 * @param condAttrSpecs   the attribute that shall serve as condition
+	 * @param condition       the value of the attribute = the value of the condition
+	 * @param dataTagSpecs    the sub tag inside the conditionally selected tag domainSpecs
+	 * @return
+	 */
 	public int setBasicConditionLocation( String rawXmlMsg, 
 										     String domainSpecs, 
 										     String condAttrSpecs,
