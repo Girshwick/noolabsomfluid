@@ -332,7 +332,7 @@ public class SomAppModelLoader {
 		return rB;
 	}
 
-	private SomAppTransformer loadSomAppTransformer(ModelCatalogItem mcItem) {
+	private SomAppTransformer loadSomAppTransformer(ModelCatalogItem mcItem) throws Exception {
 		
 		int r;
 		SomAppTransformer soappT ;

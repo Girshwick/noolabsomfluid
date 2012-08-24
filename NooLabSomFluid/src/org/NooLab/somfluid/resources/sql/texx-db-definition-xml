@@ -25,53 +25,53 @@
                  for inferring the virtual path  
               -->
             <core>
-              <item id="1" name="id" quality="id" sema="cid" /> 
-              <item id="2" name="contextid" quality="id" sema="context" /> 
-              <item id="3" name="docid" quality="id" sema="document" />
-              <item id="4" name="wordlabel" quality="label" sema="word" />
-              <item id="5" name="randomcontext" quality="data" sema="data" />
+              <item id="1" name="id" quality="id" sema="id" pos="1" /> 
+              <item id="2" name="contextid" quality="id" sema="context" pos="3" /> 
+              <item id="3" name="docid" quality="id" sema="document" pos="4" />
+              <item id="4" name="wordlabel" quality="label" sema="word" pos="5" />
+              <item id="5" name="randomcontext" quality="data" sema="data" pos="99" />
          	</core>
          	
          	<extension> 
-         	  <item id="1" name="relfrequency" quality="value" sema="data" />   
-              <item id="2" name="distanceMean" quality="value" sema="data" />
-              <item id="3" name="distanceStDev" quality="value" sema="data" />
-              <item id="4" name="groupsCount" quality="value" sema="data" />
-              <item id="5" name="saliency" quality="value" sema="data" />
+         	  <item id="1" name="relfrequency" quality="value" sema="data" pos="10" />   
+              <item id="2" name="distanceMean" quality="value" sema="data" pos="11" />
+              <item id="3" name="distanceStDev" quality="value" sema="data" pos="12" />
+              <item id="4" name="groupsCount" quality="value" sema="data" pos="13" />
+              <item id="5" name="saliency" quality="value" sema="data" pos="14" />
 	        </extension>
          </astor>
           
          <fields>
             <field id="1"  label="id"          type="long" />
             <field id="2"  label="contextid"   type="long" />
-            <field id="3"  label="varianttype" type="long" />
+            <field id="3"  label="varianttype" type="int" />
             <field id="4"  label="docid"       type="long" />
-            <field id="5"  label="version"     type="long" />
-            <field id="6"  label="vcontent"    type="long" />
-            <field id="7"  label="entitytype"  type="long" />
-            <field id="8"  label="entityid"    type="long" />
-            <field id="9"  label="wordlabel"   type="long" />
-            <field id="10" label="storlabel"   type="long" />
-            <field id="11" label="compoundlabel" type="long" />
-            <field id="12" label="contexttype"   type="long" />
-            <field id="13" label="contexttype"   type="long" />
-            <field id="14" label="contextparam"  type="long" />
-            <field id="15" label="weight"      type="long" />
-            <field id="16" label="asymmetry"   type="long" />
+            <field id="5"  label="version"     type="string" />
+            <field id="6"  label="vcontent"    type="int" />
+            <field id="7"  label="entitytype"  type="int" />
+            <field id="8"  label="entityid"    type="int" />
+            <field id="9"  label="wordlabel"   type="string" />
+            <field id="10" label="storlabel"   type="string" />
+            <field id="11" label="compoundlabel" type="string" />
+            <field id="12" label="contexttype"   type="int" />
+            <field id="13" label="contexttype"   type="int" />
+            <field id="14" label="contextparam"  type="int" />
+            <field id="15" label="weight"      type="double" />
+            <field id="16" label="asymmetry"   type="double" />
             <field id="17" label="createtime"  type="long" />
-            <field id="18" label="status"      type="long" />
+            <field id="18" label="status"      type="int" />
             <field id="19" label="idcindex"    type="long" />
             <field id="20" label="fpindex"     type="long" />
             <field id="21" label="storindexes" type="long" />
-            <field id="22" label="storLabelGuid" type="long" />
-            <field id="23" label="reserved_01"   type="long" />
-            <field id="24" label="frequency"     type="long" />
-            <field id="25" label="relfrequency"  type="long" />
-            <field id="26" label="distanceMean"  type="long" />
-            <field id="27" label="distanceStDev" type="long" />
-            <field id="28" label="groupsCount"   type="long" />
-            <field id="29" label="saliency"      type="long" />
-            <field id="30" label="randomcontext" type="long" />
+            <field id="22" label="storLabelGuid" type="string" />
+            <field id="23" label="reserved_01"   type="string" />
+            <field id="24" label="frequency"     type="double" />
+            <field id="25" label="relfrequency"  type="double" />
+            <field id="26" label="distanceMean"  type="double" />
+            <field id="27" label="distanceStDev" type="double" />
+            <field id="28" label="groupsCount"   type="int" />
+            <field id="29" label="saliency"      type="double" />
+            <field id="30" label="randomcontext" type="string" />
             
             <!--      
 					  id             IDENTITY AUTO_INCREMENT PRIMARY KEY,

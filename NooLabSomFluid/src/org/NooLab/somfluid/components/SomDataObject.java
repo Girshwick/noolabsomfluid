@@ -6,6 +6,7 @@ import java.util.*;
 
 
 
+import org.NooLab.itexx.storage.DataStreamProviderIntf;
 import org.NooLab.itexx.storage.TexxDataBaseSettings;
 import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
 import org.NooLab.somfluid.SomDataDescriptor;
@@ -84,7 +85,7 @@ public class SomDataObject 	implements      Serializable,
 	transient TexxDataBaseSettingsIntf databaseSettings ;
 	transient DataBaseAccessDefinition dbAccessDefinition;
 	transient SomDataStreamer somDataStreamer ;
-	transient SomTexxDataBase somTexxDbHandler ;
+	transient SomTexxDataBase somTexxDb ;
 	
 	// main variables / properties ....
 	transient SomFluidFactory sfFactory ;
@@ -112,7 +113,9 @@ public class SomDataObject 	implements      Serializable,
 
 	int maxColumnCount ;
 	int maxRecordCount = -1 ;
+	int inits =-1;
 	
+	boolean databaseConnection = false;
 	boolean dataAvailable=false ;
 	
 	// read mode = random, serial, block (begin, end) ?
@@ -126,9 +129,9 @@ public class SomDataObject 	implements      Serializable,
 	
 
 	// helper objects .................
-	transient StringsUtil strgutil = new StringsUtil();
-	transient DFutils fileutil = new DFutils () ; 
-	//transient ArrUtilities utils = new ArrUtilities();
+	transient public StringsUtil strgutil = new StringsUtil();
+	transient public DFutils fileutil = new DFutils () ; 
+	transient public ArrUtilities arrutil = new ArrUtilities();
 	
 	transient PrintLog out = new PrintLog(2,true) ;
 	// transient arrutil
@@ -137,7 +140,7 @@ public class SomDataObject 	implements      Serializable,
 		
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 	 
-	public SomDataObject( DataHandlingPropertiesIntf datahandleProps, SomFluidProperties sfProps){
+	public SomDataObject( DataHandlingPropertiesIntf datahandleProps, SomFluidProperties sfProps) throws Exception{
 		
 		dataHandlingProperties = datahandleProps;
 		
@@ -145,26 +148,46 @@ public class SomDataObject 	implements      Serializable,
 		missingValues = new MissingValues(this);
 		data = new DataTable( this, true ); // true: isnumeric, Som data objects always contain numeric data
 		
-		init();
+		if (init()==false){
+			throw(new Exception("initializing data base failed while preparing SomDataObject."));
+		}
 	}
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 	 
 	
-	public void setFactory(SomFluidFactory factory) {
+	public void setFactory(SomFluidFactory factory) throws Exception {
 		sfFactory = factory;
 		sfProperties = sfFactory.getSfProperties() ;
-		init();
+		if (init()==false){
+			throw(new Exception("initializing data base failed while preparing SomDataObject."));
+		}else{
+			databaseConnection = true;
+		}
 	}
-	private void init(){
+	
+	
+	private boolean init() throws Exception{
+		boolean dbOk = false;
 		
+		if (inits<0){
+			databaseConnection = false;
+			inits++;
+			modelingSettings = sfProperties.getModelingSettings() ;
+			classifySettings = modelingSettings.getClassifySettings() ; 
+			
+			databaseSettings = sfProperties.getDatabaseSettings() ;
+			dbAccessDefinition = sfProperties.getDbAccessDefinition() ;
+			
+			dbOk = true;
+			if (sfProperties.getSourceType()== DataStreamProviderIntf._DSP_SOURCE_DB){
+				somTexxDb = new SomTexxDataBase(this, sfProperties);
+				dbOk = somTexxDb.prepareDatabase("randomwords");
+			}
+		}else{
+			dbOk= true;
+		}
 		
-		modelingSettings = sfProperties.getModelingSettings() ;
-		classifySettings = modelingSettings.getClassifySettings() ; 
-		
-		databaseSettings = sfProperties.getDatabaseSettings() ;
-		dbAccessDefinition = sfProperties.getDbAccessDefinition() ;
-		
-		somTexxDbHandler = new SomTexxDataBase(this,sfProperties) ; 
+		return dbOk;
 	}
 
 	/**
@@ -1472,6 +1495,14 @@ public class SomDataObject 	implements      Serializable,
 	}
 
 
+	public boolean isDatabaseConnection() {
+		return databaseConnection;
+	}
+	public boolean getDatabaseConnection() {
+		return databaseConnection;
+	}
+
+
 	public void setDatabaseSettings(TexxDataBaseSettingsIntf texxDbSettings ) {
 		this.databaseSettings = texxDbSettings;
 	}
@@ -1494,6 +1525,11 @@ public class SomDataObject 	implements      Serializable,
 
 	public void setSomDataStreamer(SomDataStreamer somDataStreamer) {
 		this.somDataStreamer = somDataStreamer;
+	}
+
+
+	public SomTexxDataBase getSomTexxDb() {
+		return somTexxDb;
 	}
 
 
@@ -1533,6 +1569,11 @@ public class SomDataObject 	implements      Serializable,
 
 	public void setVariableLabels(ArrayList<String> variableLabels) {
 		this.variableLabels = variableLabels;
+	}
+
+
+	public SomFluidProperties getSfProperties() {
+		return sfProperties;
 	}
 
 

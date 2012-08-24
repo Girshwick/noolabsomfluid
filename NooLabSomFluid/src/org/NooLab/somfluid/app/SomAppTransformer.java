@@ -52,7 +52,7 @@ public class SomAppTransformer
 	 
 	
 	// ========================================================================
-	public SomAppTransformer( SomDataObject sdo, SomAppProperties properties){
+	public SomAppTransformer( SomDataObject sdo, SomAppProperties properties) throws Exception{
 		super( sdo, properties);              // = SomFluidAppGeneralPropertiesIntf
 		
 		

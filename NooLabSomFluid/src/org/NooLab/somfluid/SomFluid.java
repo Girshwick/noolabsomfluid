@@ -34,6 +34,7 @@ import org.NooLab.somfluid.core.engines.det.results.SimpleSingleModelDigester;
 import org.NooLab.somfluid.data.Variables;
   
 import org.NooLab.somfluid.env.data.*;
+import org.NooLab.somfluid.env.data.db.DataBaseAccessDefinition;
 import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.itexx.storage.* ;
 
@@ -773,9 +774,18 @@ public class SomFluid
 		SomDataObject _somDataObject;
 		
 		
-		_somDataObject = new SomDataObject(sfProperties,sfFactory.getSfProperties()) ;
+		try{
+			
+
+			_somDataObject = new SomDataObject(sfProperties,sfFactory.getSfProperties()) ;
+			
+			_somDataObject.setFactory(sfFactory);
+				
+		}catch(Exception e){
+			e.printStackTrace();
+			return null;
+		}
 		
-		_somDataObject.setFactory(sfFactory);
 		_somDataObject.setOut(out);
 		 
 		_somDataObject.prepare();
@@ -823,15 +833,34 @@ public class SomFluid
 	
 	public SomDataObject loadDbTable( SomDataStreamer streamer) {
 	
+		DataBaseAccessDefinition dbAccess;
+		
 		SomDataObject somDataObject = null ;
 		
-		somDataObject = createSomDataObject() ;
+		 
 		
+		try {
+			
+			dbAccess = sfProperties.getDbAccessDefinition() ;
+			
+			if ((dbAccess==null) || (dbAccess.getxColumns()==null) || (dbAccess.getxColumns().getItems().size()==0)){
+				sfProperties.getDatabaseDefinitionInfo("randomwords");
+			}
+			
+		} catch (Exception e) {
+
+			e.printStackTrace();
+			return null;
+		}
+		
+		somDataObject = createSomDataObject() ;
 		
 		// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> difference to filemode
 		somDataObject.setDatabaseSettings( sfProperties.getDatabaseSettings() );
 		somDataObject.setDbAccessDefinition( sfProperties.getDbAccessDefinition() ) ;
 		somDataObject.setSomDataStreamer( streamer ); 
+		
+		
 		
 		
 		SomTransformer transformer = new SomTransformer( somDataObject, sfProperties );

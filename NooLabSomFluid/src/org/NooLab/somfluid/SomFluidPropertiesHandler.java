@@ -232,7 +232,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 			else{
 				mandys = new String[]{ "[id", "[word"};
 				
-				
+				filename = cfgfilepath;
 				
 			}
 			
@@ -819,7 +819,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 	}
 
 	public void setDatabaseDefinitionResource( String alias, String dbname) {
-		setDatabaseDefinitionResource("" ,  alias);
+		setDatabaseDefinitionResource("" ,  alias, dbname);
 	}
 	@Override
 	public void setDatabaseDefinitionResource(String dbDefResource,String alias , String dbname) {
