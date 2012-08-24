@@ -17,8 +17,8 @@ public interface FieldIntf {
 	public static final int _SOM_GRIDTYPE_FIXED = 1 ;
 	public static final int _SOM_GRIDTYPE_FLUID = 2 ;
 
-	public final static int _SOMTYPE_PROB = 1; // probabilistic storage, using internal criteria, e.g. variance, exceptionality
-	public final static int _SOMTYPE_MONO = 2; // modeling using operationalization of external criteria 
+	public final static int _SOMTYPE_MONO = 3; // modeling using operationalization of external criteria 
+	public final static int _SOMTYPE_PROB = 5; // probabilistic storage, using internal criteria, e.g. variance, exceptionality
 
 	
 	
