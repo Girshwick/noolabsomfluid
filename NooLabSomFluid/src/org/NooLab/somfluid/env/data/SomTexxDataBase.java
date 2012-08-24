@@ -4,8 +4,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
 
 import org.NooLab.itexx.storage.ConnectorClientIntf;
 import org.NooLab.itexx.storage.DatabaseMgmt;
@@ -13,14 +17,19 @@ import org.NooLab.itexx.storage.DbConnector;
 import org.NooLab.itexx.storage.DbLogin;
 import org.NooLab.itexx.storage.MetaData;
 import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
+import org.NooLab.itexx.storage.randomwords.iciql.Contexts;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
+import org.NooLab.somfluid.data.DataTable;
+import org.NooLab.somfluid.data.DataTableCol;
+import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.env.data.db.DataBaseAccessDefinition;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.objects.StringedObjects;
+import org.NooLab.utilities.strings.StringsUtil;
 
 import org.h2.jdbc.JdbcSQLException;
 import org.h2.server.Service;
@@ -70,8 +79,8 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 	DataBaseHandler dbHandler ;
  
 	
-	String user = "RG";
-	String password = "rg" ;
+	String user = "sa";
+	String password = "sa" ;
 	
 	Class parent;
 	String databaseFile="";
@@ -88,7 +97,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 
 
 	private TexxDataBaseSettingsIntf dbSettings;
- 
+	StringsUtil strgutil = new StringsUtil(); 
 	
 	// ========================================================================
 	public SomTexxDataBase(SomDataObject somdataobj, SomFluidProperties props){
@@ -101,7 +110,8 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		
 		dbAccess = sfProperties.getDbAccessDefinition() ;
 		user = 	dbAccess.getUser() ;
-		password = "rg" ;
+		password = "sa" ;
+		user = "sa" ;
 		databaseName = dbAccess.getDatabaseName() ; // "randomwords";
 		
 		dbSettings = sfProperties.getDatabaseSettings() ;
@@ -216,7 +226,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 			// String docoservUrl = connection.
 			// "jdbc:h2:tcp://localhost/~/docoserv"
 			// :nio
-			String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_STOR );
+			String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT );
 			String _db_dir = DFutils.createPath( h2Dir, "storage/") ; // storageDir;
 
 			if (_db_dir.endsWith("/")){
@@ -363,7 +373,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 				}
 			}
 			//  
-			String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_STOR) ;
+			String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT) ;
 			h2Dir = DFutils.createPath(h2Dir, "storage/") ;
 			out.delay(300);
 			databaseFile = connect( databaseName, h2Dir, servermodeFlag ) ;
@@ -447,7 +457,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 			
 		} catch (Exception e) {
 			r = -7;
-			out.printlnErr(1, "Potential Problem met in createServer(): "+ e.getMessage());
+			out.printlnErr(1, "Potential problem met in createServer(): "+ e.getMessage());
 		}
 		//createTcpServer(args).start();
 
@@ -502,20 +512,291 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		
 	}
 
-	public ArrayList<String> retrieve(String string, ArrayList<String> requestFields, int i) {
+	public DataTable retrieve(String string, ArrayList<String> requestFields, int limitcount) {
+		
+		DataTable  dataTable = null;
 		
 		ArrayList<String> resultLines = new ArrayList<String>() ;
 		String sql, fieldLabelsStr ; 
+		int n=0, df;
+
+		Contexts c,iciContext;
+		Contexts rowObj;
+		List<Contexts> rows = null;
+		
 		
 		fieldLabelsStr = somData.arrutil.arr2text( requestFields, ",");
+		if (fieldLabelsStr.endsWith(",")){
+			fieldLabelsStr = fieldLabelsStr.substring(0,fieldLabelsStr.length()-1);
+		}
+		// fieldLabelsStr = fieldLabelsStr.replace("relfrequency,",""); // TODO XXXXXXXXXXXXXX abc124 : remove this for the new structure !!!
+		
+		// issue it through iciql because resultset is nicer to deal with
 		// defining the SQL statement, that we will issue, like so
-		sql = "SELECT "+fieldLabelsStr+ " LIMIT 1000";
+		sql = "SELECT "+fieldLabelsStr+  " FROM CONTEXTS LIMIT 1000;";
 		// dealing with the result set, expanding the randomcontext content into List<Double> 
+		// sql = "SELECT * FROM CONTEXTS LIMIT 1000";
 		
+		try{
+			
+			iciContext = new Contexts(); // the iciQL alias
+			c = iciContext;
+			
+			if (iciDb==null){
+				open();
+			} 
+			// rows = iciDb.executeQuery(Contexts.class, sql); rows = iciDb.from(c).limit(limitcount).select(); rows = iciDb.executeQuery(Contexts.class, sql);
+			// 
+			 								out.print(2, "retrieving records from the database..."); 
+			rows = iciDb.from(c).limit(limitcount).select();
+			
+ 			PreparedStatement prep = connection.prepareStatement( sql );
+			ResultSet rs = prep.executeQuery();
+			/*
+			Long cid;
+		    // Fetch each row from the result set
+			int rz=0;
+		    while (rs.next()) {
+		    	rz++;
+		        // Get the data from the row using the column index
+		        String s = rs.getString("wordlabel");
+
+		        // Get the data from the row using the column name
+		        cid = rs.getLong("contextid");
+		    }
+			*/
+			n = rows.size();
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 		
-		return resultLines;
+		if (n==0){
+			return null;
+		}
+		
+		// -> ArrayList<String>
+		/* 
+		  	we need to create a datatable representation and to fill the Variables structure
+		  	Vector<Variable> variables = new Vector<Variable>();
+	        DataTable datatable ;
+	     */
+		dataTable = new DataTable(somData, false);
+		
+		dataTable.setTablename("randomwords-"+limitcount);
+		
+		String colHeader, rcStr, istr, format;
+		int _dataformat,rcLength, datacolumn=-1;
+		Long idvalue;
+		DataTableCol col;
+		
+		rcStr = rows.get(1).randomcontext;
+		if (rcStr.endsWith(";")){
+			rcStr=rcStr.substring(0,rcStr.length()) ;
+		}
+		rcLength = strgutil.frequencyOfStr(rcStr, ";")+1 ;
+		
+		for (int i=0;i<requestFields.size();i++){
+			
+			colHeader = requestFields.get(i);
+			if (colHeader.toLowerCase().contentEquals("randomcontext")){
+				colHeader = "rcLength";
+				datacolumn = i;
+			}
+
+			col = new DataTableCol(dataTable,i);
+			col.hasHeader = false;
+			
+			dataTable.getDataTable().add(col) ;
+
+			dataTable.getColumnHeaders().add( colHeader);
+		}
+
+		for (int i=0;i<rcLength;i++){
+			
+			format = String.format("%%0%dd", 4);
+			istr = String.format(format, (i+1));
+
+			colHeader = "rgr_"+ istr  ;
+			
+			col = new DataTableCol(dataTable,i);
+			col.hasHeader = false;
+			
+			dataTable.getDataTable().add(col) ;
+
+			dataTable.getColumnHeaders().add( colHeader);
+		}
+		
+		// remove colHeader = "rcLength";
+		
+		String datastr ;
+		String[] datastrvalues;
+		
+		for (int i=0;i<n;i++){
+			
+			rowObj = rows.get(i) ;
+			
+			// [id, contextid, docid, wordlabel, relfrequency, distanceMean, distanceStDev, groupsCount, saliency, randomcontext]
+			// _setvalue uses the header strings for determining the index of the respective column
+			_setValue( dataTable, (Long)(long)i, "id" );
+			
+			_setValue( dataTable, rowObj.contextid ,    "contextid" );
+			_setValue( dataTable, rowObj.docid ,        "docid" );
+			_setValue( dataTable, rowObj.wordlabel ,    "wordlabel" );
+			_setValue( dataTable, rowObj.relfrequency , "relfrequency" );
+			_setValue( dataTable, rowObj.distanceMean , "distanceMean" );
+			_setValue( dataTable, rowObj.distanceStDev, "distanceStDev" );
+			_setValue( dataTable, rowObj.groupsCount ,  "groupsCount" );
+			_setValue( dataTable, rowObj.saliency ,     "saliency" );
+			
+			df = dataTable.getColumn(1).getDataFormat();
+			df = dataTable.getColumn(2).getDataFormat();
+			df = dataTable.getColumn(3).getDataFormat();
+			df=df+1-1;
+			
+			datastr = rowObj.randomcontext;
+			datastrvalues = datastr.split(";");
+			double[] datavalues = strgutil.changeArrayType(datastrvalues, 0.0, false) ;
+			
+			// ArrUtilities.changeArraystyle(datavalues) ;
+			int ix;
+			
+			for (int d=0;d<datavalues.length;d++){
+				ix = datacolumn+1+d;
+				col = dataTable.getColumn(ix);
+				col.addValue( datavalues[d]);
+				col.setFormat( DataTable.__FORMAT_NUM) ;
+			}
+			
+		}// i-> all rows
+	  
+		// we have to fill the row perspective
+		dataTable.createRowOrientedTable() ;
+		
+		return dataTable;
+	}
+
+	
+	private void _setValue( DataTable dataTable, Long idvalue, String colheader ){
+		
+		int _dataformat, ix;
+		DataTableCol col, col2 ;
+		
+		if (idvalue==null)idvalue=0L;
+		
+		col = dataTable.getColumn(colheader) ;
+		ix = col.getIndex() ;
+		col2 = dataTable.getDataTableColumn(ix) ;
+		
+		col.setNumeric( true );
+		col.addValue( 1.0*idvalue) ;
+		if (col.getDataFormat()<0){
+			_dataformat = _determineFormat(idvalue.getClass(), colheader);
+			col.setDataFormat(_dataformat) ;
+		}
+	}
+	
+	private void _setValue( DataTable dataTable, Integer ivalue, String colheader ){
+		
+		int _dataformat ;
+		DataTableCol col ;
+		
+		if (ivalue==null)ivalue=-1;
+		
+		col = dataTable.getColumn(colheader) ;
+		
+		col.setNumeric( true );
+		col.addValue( ivalue) ;
+		if (col.getDataFormat()<0){
+			_dataformat = _determineFormat(ivalue.getClass(), colheader);
+			col.setDataFormat(_dataformat) ;
+		}
+
+	}
+	
+	private void _setValue( DataTable dataTable, String strvalue, String colheader ){
+		
+		int _dataformat ;
+		DataTableCol col ;
+		
+		if (strvalue==null)strvalue="";
+		
+		col = dataTable.getColumn(colheader) ;
+		
+		col.setNumeric( false );
+		col.addValueStr(strvalue) ;
+		
+		if (col.getDataFormat()<0){
+			_dataformat = _determineFormat(strvalue.getClass(), colheader);
+			col.setDataFormat(_dataformat) ;
+		}
+
+	}
+	
+	private void _setValue( DataTable dataTable, Double value, String colheader ){
+		
+		int _dataformat ;
+		DataTableCol col ;
+		
+		if (value==null)value=-1.0;
+		
+		col = dataTable.getColumn(colheader) ;
+		
+		col.setNumeric( true );
+		col.addValue( value) ;
+		
+		if (col.getDataFormat()<0){
+			_dataformat = _determineFormat(value.getClass(), colheader);
+			col.setDataFormat(_dataformat) ;
+		}
+
+	}
+	
+	
+	private int _determineFormat(Class clzz, String fieldName) {
+		// mimicking _dataformat = column.determineFormat(tableHasHeader) ;
+		 
+		String cn;
+		int formatVal = DataTable.__FORMAT_STR ;
+		
+		cn = clzz.getSimpleName() ;
+		
+		if (cn.toLowerCase().contains("long")){
+		
+			if (fieldName.toLowerCase().endsWith("id")){
+				formatVal = DataTable.__FORMAT_ID ;
+			}else{
+				formatVal = DataTable.__FORMAT_INT ;
+			}
+			
+		}// LONG
+		
+		if (cn.toLowerCase().startsWith("int")){
+			formatVal = DataTable.__FORMAT_INT ;
+		}
+		
+		if (cn.toLowerCase().contains("double")){
+			formatVal = DataTable.__FORMAT_NUM ;
+		}
+		
+		if (cn.toLowerCase().contains("string")){
+			formatVal = DataTable.__FORMAT_STR;
+		}
+		// 
+		return formatVal;
 	}
 	
  
 	
 }
+
+
+
+
+
+
+
+
+
+
+

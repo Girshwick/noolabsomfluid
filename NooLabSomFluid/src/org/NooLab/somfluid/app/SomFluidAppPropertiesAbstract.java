@@ -39,6 +39,9 @@ public class SomFluidAppPropertiesAbstract
 	protected AstorSettings astorSettings ;
 	protected TexxDataBaseSettings databaseSettings;
 	
+	protected int somInstanceType = 0 ; // SOM astor
+	protected int somGridType = -1;  // fixed fluid
+	
 	protected int glueType = 0;
 	protected int multiProcessingLevel = 0;
 	
@@ -251,5 +254,14 @@ public class SomFluidAppPropertiesAbstract
 	
 		return 0;
 	}
+
+	public int getSomGridType() {
+		return somGridType;
+	}
+
+	public void setSomGridType(int somGridType) {
+		this.somGridType = somGridType;
+	}
+	
 	
 }

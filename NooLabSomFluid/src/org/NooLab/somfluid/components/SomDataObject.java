@@ -636,7 +636,14 @@ public class SomDataObject 	implements      Serializable,
 		ContainerStorageDevice storageDevice ;
 		storageDevice = new ContainerStorageDevice();
 		
+		if (DFutils.fileExists(filepath)==false){
+			throw(new Exception("File for stored object not found!"));
+		}
 		Object obj = storageDevice.loadStoredObject( filepath) ;
+		
+		if (obj==null){
+			throw(new Exception("loading stored object failed!"));
+		}
 		
 		sdo = (SomDataObject)obj ;
 		sdo.data.setSomData(sdo);
@@ -1009,6 +1016,7 @@ public class SomDataObject 	implements      Serializable,
 			// there is none, it will insert one as column 0
 											out.print(2, "importDataTable() into SomDataObject...");
 			data.importTable(datatable, importSettings);
+			// == DataTable
 											out.print(2, "importDataTable() into SomDataObject done.");
 			vectorSize = variables.size() ;
 			
@@ -1622,8 +1630,12 @@ public class SomDataObject 	implements      Serializable,
 	}
 
 
+	/**
+	 * this method establishes the data linkage to the stream provider 
+	 * 
+	 */
 	public void establishDataLinkage() {
-		// TODO Auto-generated method stub
+		// 
 		
 	}
 

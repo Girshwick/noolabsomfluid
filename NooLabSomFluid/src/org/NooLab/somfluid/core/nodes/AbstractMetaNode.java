@@ -76,6 +76,7 @@ public abstract class AbstractMetaNode  extends
 	int openLatticeFutureTask = -1 ;
 	
 	int somType = 0;
+	int gridType = 0;
 	
 	StatisticSample sampler;
 	Random nRandom ;
@@ -92,6 +93,7 @@ public abstract class AbstractMetaNode  extends
 		
 		
 		somType = virtualLattice.getLatticeProperties().getSomType() ;
+		gridType = virtualLattice.getLatticeProperties().getSomGridType();
 		
 		numID = SerialGuid.numericalValue() ;
 		

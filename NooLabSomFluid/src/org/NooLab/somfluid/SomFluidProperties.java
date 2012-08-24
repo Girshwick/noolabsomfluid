@@ -73,8 +73,7 @@ public class SomFluidProperties
 	public static final String _STORAGE_XML = "SomFluid-properties.xml";
 	
 	
-	private int somInstanceType = 0 ;
-	private int somGridType = -1;
+	
 		
 	/** <0: don't load, 0: immediate uptake; >0:delayed uptake (in millis) */
 	int dataUptakeControl = -1 ;
@@ -880,16 +879,7 @@ public class SomFluidProperties
 			groupDesignVariables = new ArrayList<String>(list);
 		}
 	}
-
-
-	public void setSomGridType(int somGridtype) {
-		
-		somGridType = somGridtype ;
-		
-		// latticeProps.setSomType(somGridtype) ;
-		// setSomType(somGridtype);
-	}
-
+ 
 
 	public int getSomInstanceType() {
 		return somInstanceType;
@@ -1007,6 +997,8 @@ public class SomFluidProperties
 		
 		return xmlstr ;
 	}
+
+
 
 	
 	

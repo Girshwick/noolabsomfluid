@@ -599,16 +599,18 @@ if ((_new_w<0) || (_new_w>1.04)){
 					_old_pv = 1.0;
 					nodeProfile.set(w, 1.0) ;  
 				}
-				
-				if (somType == FieldIntf._SOM_GRIDTYPE_FLUID){
+				 
+				if (gridType == FieldIntf._SOM_GRIDTYPE_FLUID){ // =2
 					fieldStats = (BasicStatisticalDescription) nodeStats.getFieldValues().get(w);
 				}
-				if (somType == FieldIntf._SOM_GRIDTYPE_FIXED){
+				if (gridType == FieldIntf._SOM_GRIDTYPE_FIXED){ // =1
 					BasicSimpleStatisticalDescription bssd;
-					
+					 
 					fieldStats = (BasicStatisticalDescriptionIntf) (nodeStats.getFieldValues().get(w));
 				}
-				
+				if ((gridType <=0) || (gridType>=4)){
+					throw(new Exception("unknown type of grid, the node can not collect statistics about records.")) ;
+				}
 								if ((somType == FieldIntf._SOM_GRIDTYPE_FLUID) && (nodeStats.getFieldValues().size()< w)){
 									nodeStats.addFieldValues( new BasicStatisticalDescription(false)) ;
 								}
@@ -649,8 +651,11 @@ if ((_new_w<0) || (_new_w>1.04)){
 							// ( fieldValue derives indeed from  "dataNewRecord" !) 
 							nodeProfile.set(w, fieldValue );
 											err = 12;							
-							fieldStats.clear();
-							fieldStats.introduceValue( fieldValue );
+							if (fieldStats!=null){
+								fieldStats.clear();
+								fieldStats.introduceValue( fieldValue );
+							}
+							
 							_new_pv = fieldValue;
 
 						} else {

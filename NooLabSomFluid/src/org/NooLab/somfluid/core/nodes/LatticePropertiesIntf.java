@@ -8,6 +8,9 @@ public interface LatticePropertiesIntf {
 	
 	public void setInitialNodeCount(int nodeCount) ;
 
+	public int getSomGridType(); // fluid or fixed
+	public void setSomGridType(int gridtype); 
+	
 	/** mono or prob */ 
 	public int getSomType();
 	
