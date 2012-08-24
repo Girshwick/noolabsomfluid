@@ -311,11 +311,21 @@ class SomApplication implements SomApplicationIntf{
 	}
 
 	public SomDataObject createSomDataObject() {
-		SomDataObject _somDataObject;
+		SomDataObject _somDataObject = null;
 		
-		_somDataObject = new SomDataObject( soappProperties, sfFactory.getSfProperties()) ;
 		
-		_somDataObject.setFactory(sfFactory);
+		
+		try {
+			
+			_somDataObject = new SomDataObject( soappProperties, sfFactory.getSfProperties()) ;
+			_somDataObject.setFactory(sfFactory);
+			
+		} catch (Exception e) {
+			
+			e.printStackTrace();
+			return null;
+		}
+
 		_somDataObject.setOut(out);
 		
 		_somDataObject.reestablishObjects();

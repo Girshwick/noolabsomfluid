@@ -2,15 +2,24 @@ package org.NooLab.somfluid.env.data.db;
 
 public class XColumn {
 
+	public int index = 0 ;
 	
-	public String table;
+	public String table="";
 	
-	public String domain;
+	public String domain="";
 	
-	public String id;
-	public String name;
-	public String quality;
-	public String sema;
+	public String id ="";
+	public String name ="";
+	public String quality ="";
+	public String sema ="";
+
+	public int pos = 0;
+	
+	// ..............................
+	
+	double min = -1, max = -1;
+	int emptyCount = 0;
+	
 
 	// ------------------------------------------------------------------------	
 	public XColumn(){
@@ -32,6 +41,18 @@ public class XColumn {
 
 	public void setDomain(String domain) {
 		this.domain = domain;
+	}
+
+	public int getPos() {
+		return pos;
+	}
+
+	public void setPos(int pos) {
+		this.pos = pos;
+	}
+
+	public int getIndex() {
+		return index;
 	}
 
 	public String getId() {
