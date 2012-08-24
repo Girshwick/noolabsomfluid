@@ -154,9 +154,9 @@ public class NicAddresses {
 	 * returns a collection of ipAddresses
 	 * @return
 	 */
-	public static Vector<String> get(){
+	public static ArrayList<String> get(){
 
-		Vector<String> ipAddresses = new Vector<String>(); 
+		ArrayList<String> ipAddresses = new ArrayList<String>(); 
 		
 		List<NetworkInterface> niclist ;
 		List<InetAddress> addrlist ; 

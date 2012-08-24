@@ -15,6 +15,8 @@ import java.util.TreeMap;
 import java.util.Vector;
 
 
+import org.NooLab.utilities.datatypes.IndexDistance;
+import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.strings.*;
 
@@ -2562,7 +2564,69 @@ public class ArrUtilities {
 		
 		return index;
 	}
-  
+
+
+	public ArrayList<String> makeItemsUnique(ArrayList<String> items) {
+		ArrayList<String> uniqued = new ArrayList<String>(); 
+		
+		for (int i=0;i<items.size();i++){
+			
+			if (uniqued.indexOf(items.get(i))<0){
+				uniqued.add( items.get(i)) ;
+			}
+			
+		}//->
+		
+		return uniqued;	
+	}
+
+
+	/**
+	 * second list provides the sorting for the first list.
+	 * list need not contain the same items.
+	 * If a value is not detected, it is treated acc to mode
+	 * 
+	 * @param values
+	 * @param sorting
+	 * @param mode  0=insert unknowns 1=move unknowns to the end
+	 * @return
+	 */
+	public ArrayList<String> alignStringList(ArrayList<String> values, ArrayList<String> sorting, int mode) {
+		ArrayList<String> outList =new ArrayList<String>(); 
+		int p,d=0;
+		String str;
+		IndexedDistances ixds = new IndexedDistances();
+		
+		
+		for (int i=0;i<values.size();i++){
+			
+			str = values.get(i) ;
+			p = sorting.indexOf(str) ; 
+			
+			if (p<0){
+				if (mode==0){
+					d++;
+				}else{
+					d++;
+					p = sorting.size()+1+d;
+				}
+			}
+			ixds.add( new IndexDistance(p+d,p+d,(double)(p+d),str));
+			
+		}// i->
+		
+		ixds.sort(1);
+		
+		for (int i=0;i<ixds.size();i++){
+			str = ixds.getItem(i).getGuidStr();
+			outList.add( str);
+		}
+		
+		values.clear() ;
+		return outList;
+	}
+ 
+	
 	
 }
 
