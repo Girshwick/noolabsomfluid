@@ -55,7 +55,7 @@ public class VirtualLattice implements LatticeIntf{
 
 	public static final double __DEFAULT_NODE_INIT_STDEV = 0.16;
 
-	int somType ;
+	int somType=0 , gridType=0;
 	LatticePropertiesIntf latticeProperties;
 
 	ArrayList<MetaNode> nodes = new ArrayList<MetaNode>();
@@ -125,6 +125,7 @@ public class VirtualLattice implements LatticeIntf{
 		somProcessParent = parent;
 		
 		somType = latticeProps.getSomType();  
+		gridType = latticeProps.getSomGridType() ;
 		
 		extensionalityDynamics = new ExtensionalityDynamics(somData, somType) ; 
 		 

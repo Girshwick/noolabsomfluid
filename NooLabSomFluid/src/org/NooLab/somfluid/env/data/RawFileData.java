@@ -41,7 +41,7 @@ public class RawFileData {
 	int maxColumnCount;
 	int maxRecordCount = -1;
 
-	Vector<Variable> variables = new Vector<Variable>();
+	ArrayList<Variable> variables = new ArrayList<Variable>();
 
 	DataTable datatable ;
 
@@ -56,15 +56,19 @@ public class RawFileData {
 
 	ArrUtilities utils = new ArrUtilities();
 
-	PrintLog out = new PrintLog(2,true) ;
+	PrintLog out  ;
 
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-	public RawFileData( SomDataObject somdata, PrintLog outprn) {
+	public RawFileData( SomDataObject somdata ) {
 		
 		somData = somdata;
 		datatable = new DataTable( somData, true); 		 
-		out = outprn;
+		out = somData.getOut() ;
+		
+		if (out==null){
+			out = new PrintLog(2,true);
+		}
 	}
 
 	public int readRawDatafromFile(String filename) {
@@ -262,6 +266,21 @@ public class RawFileData {
 
 		return datatable;
 
+	}
+
+	public void produceFromTableLines(ArrayList<String> linesOfTable) throws Exception {
+
+		int n;
+		if (linesOfTable==null){
+			throw(new Exception("list of raw table rows is null."));
+		}
+		n = linesOfTable.size();
+		if (n<3){
+			throw(new Exception("list of raw table rows is empty (n="+n+")."));
+		}
+
+		
+		
 	}
 
 }

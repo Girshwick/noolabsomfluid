@@ -27,6 +27,7 @@ import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.communication.LatticeFutureVisor;
 import org.NooLab.somfluid.env.communication.NodeTask;
 import org.NooLab.somfluid.env.communication.NodesInformer;
+import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somscreen.linear.SimpleExplorationClustering;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
 import org.NooLab.utilities.logging.LogControl;
@@ -58,6 +59,8 @@ public class SomAstor
 	
 	private DSom dSom;
 	
+	ModelingSettings modset ;
+	
 	PhysicalGridFieldIntf particleField ;
 	private LatticePropertiesIntf latticeProperties;
 	private VirtualLattice somLattice;
@@ -84,6 +87,7 @@ public class SomAstor
 		this.somHost = somhost;
 		 
 		somDataObj = somHost.getSomDataObj() ;
+		modset = sfProperties.getModelingSettings();
 		
 		out = somhost.getSomFluid().getOut() ;
 		
@@ -101,16 +105,20 @@ public class SomAstor
 	
 	public void prepareAstor() throws Exception{
 		
-		// properties contains DB properties
-		somDataObj = SomDataObject.openSomDataSource(sfProperties);
-		// now activate listener, router and receiver
 		
 		if (somDataObj==null){
-			somDataObj = SomDataObject.loadSomData(sfProperties);
+			throw(new Exception("The data object provided to Astor was empty.\n"));
 		}
-		somDataObj.establishDataLinkage();
-		nodesinformer = new NodesInformer ();
 		
+		
+		
+		
+		// now activate listener, router and receiver
+		
+		somDataObj.establishDataLinkage();
+		
+		
+		nodesinformer = new NodesInformer ();
 		
 		latticeProperties = (LatticePropertiesIntf)sfProperties;
 		
@@ -217,9 +225,15 @@ public class SomAstor
 		ProfileVectorIntf pv = somLattice.getNode(0).getIntensionality().getProfileVector();
 		varin = pv.getVariables() ;
 
-		if (variables.getTargetVariable()==null){
-			// change modeling mode !!
-			throw(new Exception("Requested modeling mode was <targeted>, but no target variable has been found."));
+		if (variables.getTargetVariable()!=null){
+			// inform about modeling mode !!
+			String tvstr = variables.getTargetVariable().getLabel();
+			out.print(2, "Requested modeling mode was <astor>, the provided target variable <"+tvstr+"> will be excluded from the list of active fields.");
+			
+			vars = modset.getVariables();
+			vars.addBlacklistLabel( tvstr);
+			variables.setTargetVariable(null) ;
+			// TODO: also all tv candidates
 		}
 		
 		

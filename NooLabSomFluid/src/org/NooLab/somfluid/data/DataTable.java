@@ -89,20 +89,22 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 	private transient String tablename="";
 	// main variables / properties ....
 	
+	ArrayList<String> columnHeaders = new ArrayList<String>() ;
+	
 	// our table consists of a list of columns
 	ArrayList<DataTableCol> dataTable = new ArrayList<DataTableCol>() ; 
+	// rows are secondary, but filled first 
+	ArrayList< ArrayList<Double> > dataTableRows = new ArrayList< ArrayList<Double>>() ;
+
+	int[] formats ;
+	
 	
 	// the transposed table is always a numeric table, where previous column headers are replaced by enumeration 
 	ArrayList<DataTableCol> transposedTable = new ArrayList<DataTableCol>() ;
 	
-	ArrayList< ArrayList<Double> > dataTableRows = new ArrayList< ArrayList<Double>>() ;
-	
-	ArrayList<String> columnHeaders = new ArrayList<String>() ; 
-	
-	int[] formats ;         
 	
 	private Map<Double,Integer> indexValueMap = new TreeMap<Double,Integer>();
-										// consider Apache's TreeBidiMap ...
+	// consider Apache's TreeBidiMap ...
 	
 	int colcount;
 	int rowcount;
@@ -483,7 +485,7 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 		
 		
 		ArrayList<Integer> potentialNVEcols  ;  
-		ArrayList<String> sdl  ;
+		ArrayList<String> sdl = new ArrayList<String>()  ;
 		
 		// there are problems with empty cells... the resulting column is too short
 		
@@ -526,9 +528,12 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 			// check format of columns
 															if (out!=null){ out.print(3,"\ncheck format of columns...");};
 															int outlevel=3;
-			indexColPresent = false;												
-			for (i=0;i<n;i++){  // TODO make this multi-digested if there are many variables (n>80), and many rows, such that even scanrow is large...
-															
+			indexColPresent = false;		 // TODO: put this to the importsettings !!! or check the first 3 columns 										
+			for (i=0;i<n;i++){  
+				// TODO this is pure read access, -> make this multi-digested if there are 
+				// many variables (n>80), and many rows, such that even scanrow is large...
+			// in this loop, also check whether the first rows contain num if the hasheader = false
+				
 															if (n>120)outlevel=2;
 															if (out!=null){ out.printprc(outlevel, i, n, n/10, "") ;};
 				column = importTable.getColumn(i) ;
@@ -536,11 +541,16 @@ public class DataTable implements Serializable, PersistentAgentSerializableIntf{
 if (i>=9){
 	nn=0; 
 }
+				int _df =  importTable.getColumn(i).dataFormat ;
+					// _df =  importTable.getDataTable().get(i).dataFormat ;
+				_dataformat = _df;
 				// determine format, should take into account __MV_TEXTUAL ("M.V.") as a marker:
-				_dataformat = column.determineFormat(tableHasHeader) ;
-				/*
-
-					check whether there is a unique ID as integer
+				if (_df<0){
+					_dataformat = column.determineFormat(tableHasHeader) ;
+				}
+				
+				
+				/*	check whether there is a unique ID as integer
 					// should not be done here
 					NVE : config: max number of groups  
 				 */
@@ -553,7 +563,7 @@ if (i>=9){
 			} // i->n all columns of import table
 			 
 															if (out!=null){ out.print(outlevel,"\nimporting columns...");};
-			// nve will be applied as a dedicated transformation algorithm
+			// nve NOT here!! nve will be applied as a dedicated transformation algorithm
 			i=0;  
 			// TODO make this multi-digested ... items are completely independent
 			
@@ -564,7 +574,7 @@ if (i>=9){
 				// column = translateMvToNum(column); not necessary, will be accomplished elsewhere ("makeNumeric()")
 				column.dataFormat = formats[i]; 
 															if (out!=null){ out.printprc(outlevel, i, n, n/5, "") ;};
-														
+                sdl.clear() ;						
 				if (formats[i]== DataTable.__FORMAT_ORGINT){
 					// sort the data, and check for "groups" within the organizational codes 
 					// could also be a date without dots, like so: 20080923
@@ -647,7 +657,11 @@ if (i>=9){
 				
 				
 				column.setFormat(formats[i]);
-				column.makeNumeric( tableHasHeader ) ;
+				if ((sdl.size()>110) && (formats[i] >= DataTable.__FORMAT_STR)){
+					// nothing, or optional: considering the similarity to the "averaged string"
+				}else{
+					column.makeNumeric( tableHasHeader ) ;
+				}
 			
 				
 				// introduce into this table: structure is created, values copied
@@ -765,7 +779,7 @@ if (getTablename().contains("normalized")){
 			
 			System.gc();
 			out.delay(50) ;
-											out.print(2, "creating row-oriented table, going to arrange "+rc+" normalized records into rows.") ;
+											out.print(2, "creating row-oriented table, going to arrange "+rc+" records into rows.") ;
 
 										 
             						 
@@ -784,6 +798,7 @@ if (getTablename().contains("normalized")){
 					
 					useCol=true;
 					if (alignedByVariables>=1){
+						// useCol=true; ?
 					}
 
 					if (useCol) {

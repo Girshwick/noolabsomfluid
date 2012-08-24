@@ -6,7 +6,6 @@ public interface BasicStatisticalDescriptionIntf {
 
 	void clear();
 
-	void introduceValue(double fieldValue);
 
 	double getMean();
 
@@ -14,6 +13,9 @@ public interface BasicStatisticalDescriptionIntf {
 
 	void reset();
 
+	
+	void introduceValue(double fieldValue);
+	
 	void introduceValues(ArrayList<Double> fieldValues);
 
 }

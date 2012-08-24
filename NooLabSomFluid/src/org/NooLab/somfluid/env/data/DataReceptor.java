@@ -74,7 +74,7 @@ public class DataReceptor implements //
 		
 		loadedProfileFile = filename;
 		
-		rawFileProfileData = new RawFileData(  somData, out ) ;
+		rawFileProfileData = new RawFileData(  somData ) ;
 		
 		profilesTable = rawFileData.getDataTable(); 
 		
@@ -89,7 +89,7 @@ public class DataReceptor implements //
 		
 		loadedFile = filename;
 		
-		rawFileData = new RawFileData(  somData, out ) ;
+		rawFileData = new RawFileData(  somData ) ;
 		
 		rawFileData.readRawDatafromFile( filename );
 		
@@ -163,22 +163,25 @@ public class DataReceptor implements //
 			excludeds = (ArrayList<String>) CollectionUtils.intersection( fieldLabels , excludeds) ;
 			// 2. remove them
 			requestFields = (ArrayList<String>) CollectionUtils.disjunction( fieldLabels , excludeds) ;
+			// unfortunately requestFields is now sorted
+			requestFields = arrutil.alignStringList( requestFields, fieldLabels,0); // second list provides the sorting
 			
-			ArrayList<String> linesOfTable = somData.getSomTexxDb().retrieve("randomwords", requestFields, 1000);
-			 
-			// -> rawFileData
-
-			// issue it through iciql because resultset is nicer to deal with
 			
+			dataTable = somData.getSomTexxDb().retrieve("randomwords", requestFields, 1000);
+			
+			// note, that the docid is = timestamp if the doc is directly digested 
+			  
+			
+			// -> rawFileData + DataTable datatable ;
 			// determining max and min through db queries for fields, update the XColumn, which 
 			// we will use later in SomTransformer
 			
-			XColumn xc;
+			 
 		}catch(Exception e){
-			
+			e.printStackTrace();
 		}
 		k=k+1-1;
-		sql = sql + " ";
+		 
 	}
 	
 	

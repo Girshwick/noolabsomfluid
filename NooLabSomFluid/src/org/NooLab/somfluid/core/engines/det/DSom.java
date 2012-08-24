@@ -6,6 +6,7 @@ import java.util.Observer;
 import java.util.Random;
 
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidMonoTaskIntf;
@@ -125,30 +126,41 @@ public class DSom extends Observable implements DSomIntf{
 		multiprocDispatcher = new MultiprocDispatcher( this ) ;
 		
 		bmuBuffer = new BmuBuffer(this, somData.getRecordCount() ) ;
+		activeTvLabel = "";
 		
-		activeTvLabel = sfProperties.getModelingSettings().getActiveTvLabel() ;
-		if (activeTvLabel.length()>0){
+		// is it some kind of targeted modeling ? -> care for TV
+		if (sfProperties.getSomType() == FieldIntf._SOMTYPE_MONO ){
+			// it SomType (mono, or prob) NOT instance type!
 			
-			activeTvIndex = somData.getVariables().getIndexByLabel( activeTvLabel ) ;
-			if ((activeTvLabel.contains("*")) && (activeTvIndex>=0)){
-				activeTvLabel = somData.getVariables().getItem(activeTvIndex).getLabel() ;
-			}
-			if (activeTvIndex>=0){
-				somData.getVariables().setTvColumnIndex(activeTvIndex) ;
-			}else{
-				activeTvIndex = somData.getVariables().getTvColumnIndex() ;
-				activeTvLabel = somData.getVariables().getItem(activeTvIndex).getLabel() ; 
-			}
-			
-			try {
-				somData.getVariables().addTargetedVariableByLabel(activeTvLabel ) ;
+			activeTvLabel = sfProperties.getModelingSettings().getActiveTvLabel() ;
+			if (activeTvLabel.length()>0){
 				
-			} catch (Exception e) {
-			
-				e.printStackTrace();
+				activeTvIndex = somData.getVariables().getIndexByLabel( activeTvLabel ) ;
+				if ((activeTvLabel.contains("*")) && (activeTvIndex>=0)){
+					activeTvLabel = somData.getVariables().getItem(activeTvIndex).getLabel() ;
+				}
+				if (activeTvIndex>=0){
+					somData.getVariables().setTvColumnIndex(activeTvIndex) ;
+				}else{
+					
+					
+						activeTvIndex = somData.getVariables().getTvColumnIndex() ;
+						activeTvLabel = somData.getVariables().getItem(activeTvIndex).getLabel() ; 
+					 
+				}
+				
+				try {
+					if (sfProperties.getSomType() < FieldIntf._INSTANCE_TYPE_ASTOR ){
+						somData.getVariables().addTargetedVariableByLabel(activeTvLabel ) ;
+					}
+					
+				} catch (Exception e) {
+				
+					e.printStackTrace();
+				}
 			}
-		}
-		
+			
+		} // is it some kind of targeted modeling ?
 		
 		out = sdo.getOut() ;
 		

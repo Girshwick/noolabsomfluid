@@ -9,7 +9,8 @@ public class LatticeProperties implements LatticePropertiesIntf{
 	
 	/** mono or prob */
 	int somType=0;
-
+	int gridType=0;
+	
 	private boolean isAssignatesHomogeneous = true;
 	
 	@Override
@@ -44,6 +45,16 @@ public class LatticeProperties implements LatticePropertiesIntf{
 
 	public void setAssignatesHomogeneous(boolean isAssignatesHomogeneous) {
 		this.isAssignatesHomogeneous = isAssignatesHomogeneous;
+	}
+
+	@Override
+	public int getSomGridType() {
+		return gridType;
+	}
+
+	@Override
+	public void setSomGridType(int gridtype) {
+		gridType = gridtype;
 	}
 
 }

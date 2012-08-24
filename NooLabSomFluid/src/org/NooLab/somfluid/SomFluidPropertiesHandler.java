@@ -799,11 +799,13 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 	@Override
 	public void setGridType(int somGridtype) {
 		// 
-		 
 		sfProperties.setSomGridType( somGridtype ) ; 
-		
+	}
+	public int getGridType() {
+		return sfProperties.getSomGridType() ;
 	}
 
+		
 	@Override
 	public void setSomTargetMode(int targetmode) {
 		

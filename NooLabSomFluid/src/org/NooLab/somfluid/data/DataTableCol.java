@@ -655,7 +655,9 @@ if (i>=1385){
 	}
 
 	public void setMaxScanRows( int maxscanrows) {
-		 
+		 if (this.size()<maxscanrows){
+			 maxscanrows = size()-2;
+		 }
 		this.maxScanRows = maxscanrows;
 	}
 
@@ -720,10 +722,19 @@ if (i>=1385){
 		String cn = clazz.getSimpleName() ;
 		T obj;
 		
-		if (cn.contentEquals("String")){
-			obj = (T) cellValueStr.get(index);
+		
+		if (cn.toLowerCase().contentEquals("string")){
+			if ((cellValueStr.size()==0) || (index>=cellValueStr.size())){
+				obj = (T) "";
+			}else{
+				obj = (T) cellValueStr.get(index);
+			}
 		}else{
-			obj = (T) cellValues.get(index)  ;
+			if ((cellValues.size()==0) || (index>=cellValues.size())){
+				obj = (T)((Double)(-1.0));
+			}else{
+				obj = (T) cellValues.get(index)  ;
+			}
 		}
 		return  obj;
 	}
