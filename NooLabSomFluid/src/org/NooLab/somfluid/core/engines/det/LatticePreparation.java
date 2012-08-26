@@ -98,7 +98,7 @@ public class LatticePreparation {
 	private void createVirtualLattice( VirtualLattice somLattice, PhysicalGridFieldIntf particleField, int initialNodeCount, boolean showNodeCount) {
 		
 		MetaNode mnode;
-		long idbase;
+		long idbase, uniqueNodeNumId;
 		FieldParticleIntf particle=null;
 		
 		somDataObject = somHost.getSomDataObj() ;
@@ -107,7 +107,11 @@ public class LatticePreparation {
 		 									}
 		for (int i=0;i<initialNodeCount;i++){
 			
-			mnode = new MetaNode( somLattice, (DataSourceIntf) somDataObject  ); 
+			mnode = new MetaNode( somLattice, (DataSourceIntf) somDataObject ,i+1 ); 
+			//mnode.setSerialID(i+1) ;
+			// for a possible map of index to unique id
+			uniqueNodeNumId = mnode.getNodeNumGuid() ;
+			 
 			somLattice.addNode(mnode) ;
 						
 											if(initialNodeCount>20000){

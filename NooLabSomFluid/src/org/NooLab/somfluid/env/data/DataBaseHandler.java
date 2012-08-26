@@ -32,8 +32,8 @@ public class DataBaseHandler {
 	StringsUtil strgutil = new StringsUtil(); 
 	
 	// ========================================================================
-	public DataBaseHandler(SomTexxDataBase texxDataBase){
-		docoDataBase = texxDataBase ;
+	public DataBaseHandler(SomTexxDataBase texxDB){
+		docoDataBase = texxDB ;
 		connection = docoDataBase.getConnection() ;
 		
 		iDb = docoDataBase.getIciDb() ;

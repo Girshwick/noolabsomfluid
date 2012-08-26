@@ -5,7 +5,7 @@ import java.util.Collection;
 
 import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.astor.SomDataStreamer;
+import org.NooLab.somfluid.astor.stream.SomDataStreamer;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;

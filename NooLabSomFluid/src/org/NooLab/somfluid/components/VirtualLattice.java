@@ -3,11 +3,14 @@ package org.NooLab.somfluid.components;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
 import java.util.Random;
 
 
+import org.apache.commons.collections.BidiMap;
+import org.apache.commons.collections.bidimap.TreeBidiMap;
 import org.math.array.StatisticSample;
 
 
@@ -16,12 +19,14 @@ import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.logging.SerialGuid;
 import org.NooLab.utilities.net.GUID;
 import org.NooLab.utilities.objects.StringedObjects;
  
 import org.NooLab.field.repulsive.components.data.SurroundResults;
  
  
+import org.NooLab.somfluid.astor.query.SomQueryIntf;
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivity;
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivityIntf;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamics;
@@ -46,26 +51,46 @@ import org.NooLab.somfluid.env.communication.LatticeFutureVisorIntf;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;
 import org.NooLab.somfluid.util.NumUtils;
+
  
 
 
 
 
-public class VirtualLattice implements LatticeIntf{
+public class VirtualLattice 
+								implements 
+											LatticeIntf,       // perspective for use within SomFluid
+											SomQueryTargetIntf // perspective used to organize and to address queries to the som
+											                   // it is being used by SomQuery
+											{
 
 	public static final double __DEFAULT_NODE_INIT_STDEV = 0.16;
 
+	boolean _DEBUG = false;
+	
+	// ..........................................
+
+	
+	//SomFluid somFluidParent;
+	SomProcessIntf somProcessParent  ;
+	
+	SomDataObject somData;
+
+	ArrayList<Long> nodeGuids = new ArrayList<Long>();
+	Map<Long,Object> nodeUidMap = new TreeMap<Long, Object>();
+	Map<Long,Long> nodeSerialsMap = new TreeMap<Long, Long>();
+	
+
+	long numGuid = 0L;
+	
+	boolean isInitializing;	
+	
 	int somType=0 , gridType=0;
 	LatticePropertiesIntf latticeProperties;
 
 	ArrayList<MetaNode> nodes = new ArrayList<MetaNode>();
 	
 	Map<Long, Integer> nodeIndexMap = new TreeMap<Long, Integer>() ;
-	
-	//SomFluid somFluidParent;
-	SomProcessIntf somProcessParent  ;
-	
-	SomDataObject somData;
 	
 	OpenLatticeFutures openLatticeFutures = new OpenLatticeFutures();  
 	
@@ -111,24 +136,25 @@ public class VirtualLattice implements LatticeIntf{
 	private double initialRandomDivergence = 0.2;
 	private double stDevForNodeInitialization = __DEFAULT_NODE_INIT_STDEV ;
 
-	private int dataSize;
+	private int dataSize = 0;
+	long latestNodeIndex = -1L;
+	
 	
 	StringedObjects sob = new StringedObjects();
 	PrintLog out = new PrintLog(2,true);
 
 	
-	private boolean _DEBUG = false;
 	// ========================================================================
 	public VirtualLattice( SomProcessIntf parent, LatticePropertiesIntf latticeProps, int svlIndex ){
 		  
 		latticeProperties = latticeProps;
 		somProcessParent = parent;
+		somData = somProcessParent.getSomDataObject() ;
 		
 		somType = latticeProps.getSomType();  
 		gridType = latticeProps.getSomGridType() ;
 		
-		extensionalityDynamics = new ExtensionalityDynamics(somData, somType) ; 
-		 
+		extensionalityDynamics = new ExtensionalityDynamics(somData, somProcessParent, somType) ; 
 		
 		// ..........................................................
 		
@@ -145,7 +171,8 @@ public class VirtualLattice implements LatticeIntf{
 		int seed = 9357;
 		rndInstance.setSeed( seed );
 		statsSampler = new StatisticSample( seed ) ;
-		
+		 
+		numGuid = SerialGuid.numericalValue() ;
 		
 	} 
 	
@@ -1085,14 +1112,14 @@ public class VirtualLattice implements LatticeIntf{
 		} catch (Exception e) {}
 	}
 
-	public MetaNode getNodeByNumId( long nodeID ){
+	public MetaNode getNodeByNumId( long nodeGUID ){
 		
 		MetaNode node= null, _node;
 		
 		// TODO: use a TreeMap for this instead...
 		for (int i=0;i<nodes.size();i++){
 			_node = nodes.get(i);
-			if (_node.getNumID()==nodeID){
+			if (_node.getNodeNumGuid()==nodeGUID){
 				node = _node;
 				break;
 			}
@@ -1598,9 +1625,9 @@ public class VirtualLattice implements LatticeIntf{
 			extensiony = nodes.get(nodeIndex).getExtensionality() ;
 		}
 		if (extensiony==null){
-			extensiony = new ExtensionalityDynamics(somData,somType);
+			extensiony = new ExtensionalityDynamics(somData, somProcessParent, somType);
 		}
-		
+		// extensiony.setProcessHost( somProcessParent );
 		return extensiony;
 	}
 
@@ -1748,6 +1775,70 @@ public class VirtualLattice implements LatticeIntf{
 		return; 
 	}
 
+	public boolean isInitializing() {
+		return isInitializing;
+	}
+	// this is set by the master process, on the level of class DSomCore
+	public void setInitializing(boolean flag) {
+		isInitializing = flag;
+	}
+
+	public long setLatestNodeIndex(long idvalue) {
+		
+		if (latestNodeIndex < idvalue){
+			latestNodeIndex = idvalue;
+		}else{
+			latestNodeIndex = idvalue+1;
+		}
+		
+		return latestNodeIndex;
+	}
+
+	public long getLatestNodeIndex() {
+		return latestNodeIndex;
+	}
+
+	public long getNextNodeSerial() {
+		latestNodeIndex++;
+		return latestNodeIndex;
+	}
+
+	public ArrayList<Long> getNodeGuids() {
+		if (nodeGuids==null){
+			nodeGuids = new ArrayList<Long>();
+		}
+		return nodeGuids;
+	}
+
+	public void createGuidEntries(long serialID, long numID, MetaNodeIntf node) {
+		
+		nodeGuids.add(numID);
+		nodeUidMap.put(numID, (Object)node); // MetaNodeIntf
+		nodeSerialsMap.put(numID, serialID) ;
+	}
+	
+	public MetaNodeIntf getNodeByNumGuid( long numID ){
+		MetaNodeIntf  node=null;
+		
+		try{
+		
+			if (nodeUidMap.containsKey(numID)){
+				node = (MetaNodeIntf) nodeUidMap.get(numID);
+			}
+			
+		}catch(Exception e){
+			
+		}
+		
+		return node;
+	}
+
+	/** this is the (almost) unique identifier pointing to the this lattice as a long
+	 * we need it as a reference in the table that connects nodes and documents 
+	 */
+	public long getNumGuid() {
+		return numGuid;
+	}
 	
 		
 }

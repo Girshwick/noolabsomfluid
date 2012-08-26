@@ -10,6 +10,10 @@ import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidTask;
+import org.NooLab.somfluid.astor.query.SomQueryFactory;
+import org.NooLab.somfluid.astor.query.SomQueryIntf;
+import org.NooLab.somfluid.astor.stream.SomDataStreamer;
+import org.NooLab.somfluid.astor.trans.SomAstorNodeContent;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.SomProcessIntf;
@@ -21,6 +25,7 @@ import org.NooLab.somfluid.core.engines.det.results.ModelProperties;
 import org.NooLab.somfluid.core.nodes.LatticeProperties;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.data.Variables;
+
 import org.NooLab.somsprite.ProcessCompletionMsgIntf;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
 import org.NooLab.somtransform.SomTransformer;
@@ -31,13 +36,45 @@ import org.NooLab.utilities.logging.SerialGuid;
 
 /**
  * 
+ * TODO : the node has to keep 3 indices: the docid, the fingerprint ID of the word and the context ID
+ *        currently, only 1 index is maintained by the extensionality. ???
+ *        ...but we have the listOfRecords, which refers to the global table "randomwords"
+ *        (later we will have several tables, in order to split the query among words according to their initial spelling !!!
+ *         as there are even much, much more contexts than different words ...the figures could easily reach millions...
+ *        
+ *        anyway, from there, we can infer the fingerprint-id 
+ * 
  * This takes the same role as the ModelOptimizer or the SimpleSingleModel
  * 
  * 
  * the idea is to keep most of the infrastructure (DSom+ ... the Lattice, nodes), just the loops provided by
  * ModelOptimizer are abandoned, do not take place.
+ * Instead, other things are organized by it
+ *   - streaming of data for online learning as part of the Astor framework
+ *     class: SomDataStreamer 
+ *   - externalization of references and histograms into a database   
+ *     the histogram creation is running in a separate thread, and does not wait for 
+ *     completion of 
+ *     class: SomAstorNodeContent
+ *   - periodic reorganization of the Network, including growing
+ *   
+ * 		That is, growing never takes place online during a particular modeling,
+ * 		It is just registered that growing could be necessary, then the growth supervisor checks the grid
+ * 		and triggers a reorganization
+ *   
+ *   - persistence (object and XML)
+ *   
+ * --------------------------------------------------------
  * 
- * However, we use a different implementation for the BasicStatistics: without histograms in the node
+ * about online learning
+ * 
+ * note that any record that flows in MUST have some valid ID
+ * the ID in the SOM should refer to the contextid NOT to the table id !!!!!!!!!!!!!!!!!!!!!!!
+ * 
+ * 
+ * --------------------------------------------------------
+ * 
+ * Aster uses a different implementation for the BasicStatistics: without histograms in the node
  * Due to memory issues, we outsource the histograms into a different class, where we can deal 
  * more MEM-efficiently with it,... although we need additional effort to keep it up to date
  *  
@@ -78,8 +115,13 @@ import org.NooLab.utilities.logging.SerialGuid;
  * 
  *  implements 
  */
-public class SomAssociativeStorage implements SomHostIntf, ProcessCompletionMsgIntf{
+public class SomAssociativeStorage 
+									implements 
+												SomHostIntf,
+												SomAstorFrameIntf,
+												ProcessCompletionMsgIntf{
 
+	// objects above
 	SomFluid somFluid ;
 	SomFluidTask sfTask;
 	SomFluidFactory sfFactory;
@@ -87,29 +129,31 @@ public class SomAssociativeStorage implements SomHostIntf, ProcessCompletionMsgI
 	// using observer in its own thread, is part of SomDataObj
 	SomDataStreamer somDataStreamer ; 
 	SomDataObject somDataObj;
-		
-	
 	SomProcessIntf somProcess;
 	
 	SomTransformer somTransformer;
 	
 	SomFluidProperties sfProperties ;
 	
+	// objects below
 	DSom dSom ;
-	
 	VirtualLattice astorSomLattice;
 	LatticePropertiesIntf latticeProps; 
+
+	//
+	SomAstor somAstor;
+	SomAstorNodeContent astorNodeContent;
 	
-	
-	PrintLog out = new PrintLog(2,true);
-	private LatticePropertiesIntf latticeProperties;
-	private SomAstor somAstor;
+	SomQueryIntf somQuery;
 	
 	private ArrayList<Integer> usedVariables = new ArrayList<Integer>();
 	private boolean somprocessCompleted = false;
 	
 	String dataStreamProviderGuid="" ;
+
 	
+	
+	transient PrintLog out = new PrintLog(2,true);
 	
 	// ========================================================================
 	public SomAssociativeStorage( SomFluid somfluid, 
@@ -147,10 +191,28 @@ public class SomAssociativeStorage implements SomHostIntf, ProcessCompletionMsgI
 		 
 		
 		try{
-		
-
+			
+			
 			somAstor = new SomAstor( this, sfFactory, sfProperties, sfTask, serialID);
 			
+			astorSomLattice = somAstor.getSomLattice();
+			
+			// SomQuery abstracts from the "physical" representation of the SOM:
+			// it establishes a common interface for querying a live som (into the SomLattice,  
+			// or into a representation that is externally stored, e.g. in a database or a sequential object store
+			
+			somQuery = SomQueryFactory.getInstance(astorSomLattice);
+			// somQuery.setExternalStorage();
+			
+			int n = Math.max( astorSomLattice.getNodes().size() * 20 ,10000) ;
+			n = 500;
+
+			//<<<<<<<<<<<<<< TODO: DEBUG ONLY, remove this for production 
+			astorNodeContent = new SomAstorNodeContent( this );
+			astorNodeContent.registerObservedSomProcess( somAstor );
+			//>>>>>>>>>>>>>>
+			
+			somAstor.setChangesThreshold(n);
 			
 			somAstor.prepare(usedVariables);
 			
@@ -158,6 +220,11 @@ public class SomAssociativeStorage implements SomHostIntf, ProcessCompletionMsgI
 			
 			out.print(2, "\nSom-Astor  is running , identifier: "+guid) ; 
 
+			// the node content collector should start earliest after initial instantiation of a full L1-SOM,
+			// or after full resume
+			// astorNodeContent = new SomAstorNodeContent( this );
+//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TODO: DEBUG DEACT ONLY , unblock for production !!!!!!!!!!!!!!!!!!			
+			//astorNodeContent.registerObservedSomProcess( somAstor );
 			
 			while (somAstor.isRunning()==true){
 				out.delay(10);
@@ -216,7 +283,7 @@ public class SomAssociativeStorage implements SomHostIntf, ProcessCompletionMsgI
 				
 				if ( sfFactory.getInstanceType() == FieldIntf._INSTANCE_TYPE_ASTOR){
 					limit = 1000 ;
-					somDataStreamer = new SomDataStreamer( sfProperties ) ;
+					somDataStreamer = new SomDataStreamer( this, sfProperties ) ;
 				}else{
 					limit = 80000 ; ;
 				}
@@ -315,6 +382,30 @@ public class SomAssociativeStorage implements SomHostIntf, ProcessCompletionMsgI
 	public String getOutResultsAsXml(boolean asHtmlTable) {
 		
 		return null;
+	}
+
+	public SomDataStreamer getSomDataStreamer() {
+		return somDataStreamer;
+	}
+
+	public VirtualLattice getAstorSomLattice() {
+		return astorSomLattice;
+	}
+
+	public SomAstor getSomAstor() {
+		return somAstor;
+	}
+
+	public SomAstorNodeContent getAstorNodeContent() {
+		return astorNodeContent;
+	}
+
+	public SomQueryIntf getSomQuery() {
+		return somQuery;
+	}
+
+	public ArrayList<Integer> getUsedVariables() {
+		return usedVariables;
 	}
 
 	 

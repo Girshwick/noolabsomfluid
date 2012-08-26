@@ -3,13 +3,24 @@ package org.NooLab.somfluid.core.categories.extensionality;
 import java.util.ArrayList;
 
  
+import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.engines.NodeStatisticsIntf;
+import org.NooLab.utilities.datatypes.ValuePair;
 
 
 
 
 public interface ExtensionalityDynamicsIntf {
 
+	
+	public long getNodeNumGuid();
+	public void setNodeNumGuid(long idValue);
+	
+	public long getNodeSerial();
+	public void setNodeSerial(long idValue);
+	
+	// public void setProcessHost(SomProcessIntf somProcessParent);
+	
 	/**
 	 * @return number of records in this collection of extensions 
 	 */
@@ -20,7 +31,19 @@ public interface ExtensionalityDynamicsIntf {
 	 */
 	public ArrayList<Integer> getListOfRecords() ;
 
+	
+	/**
+	 * @param index
+	 * @param returnMode
+	 * @param informUpstream
+	 * @return
+	 */
+	public int addRecordByIndex( int index, int returnMode , boolean informUpstream) ;
+	public void addRecordByIndex(int indexValues, boolean informUpdatream);
 	public void addRecordByIndex( int index) ;
+	public int addRecordByIndex( int index, int returnMode );
+		
+	
 
 	/**
 	 * @param iindex pointing to the list of the extension, not to the data table!
@@ -62,4 +85,13 @@ public interface ExtensionalityDynamicsIntf {
 	public void setSupport(int n);
 
 	public int getSupport();
+	
+	public ArrayList<ValuePair> getListOfSecondaryId();
+	
+	public void setListOfSecondaryId(ArrayList<ValuePair> listOfSecondaryId);
+	
+	public int getCountSecondaryIndex();
+	
+
+	
 }

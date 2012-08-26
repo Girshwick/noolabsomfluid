@@ -62,7 +62,7 @@ public abstract class AbstractMetaNode  extends
 	 
 	
 	long serialID=1;
-	long numID ;
+	long numGUID ;
 	
 	
 	
@@ -86,26 +86,44 @@ public abstract class AbstractMetaNode  extends
 	
 	
 	// ========================================================================
-	public AbstractMetaNode( VirtualLattice vnodes , DataSourceIntf somdata){
+	public AbstractMetaNode( VirtualLattice parentLattice , DataSourceIntf somdata, int nodeindex){
 		super();          // VirtualLattice
 		
-		virtualLattice = vnodes;
+		virtualLattice = parentLattice;
 		
 		
 		somType = virtualLattice.getLatticeProperties().getSomType() ;
 		gridType = virtualLattice.getLatticeProperties().getSomGridType();
 		
-		numID = SerialGuid.numericalValue() ;
-		
 		somData = somdata;
 		
-		
-		// creating a monotonic
-		if (virtualLattice.size()>0){
-			serialID = virtualLattice.getNode( virtualLattice.size()-1).getSerialID()+1 ;
+		numGUID = SerialGuid.numericalValue() ;
+		serialID = nodeindex;
+
+		// the 
+		while (virtualLattice.getNodeGuids().indexOf(numGUID)>=0){
+			PrintLog.Delay(2);
 		}
+		// note that the serial ID is not necessarily unique !
+		virtualLattice.createGuidEntries(serialID,numGUID,(MetaNodeIntf)this);
+		
+		
+		if (serialID>=0){
+			serialID = virtualLattice.setLatestNodeIndex(serialID);
+		}
+		// creating a monotonic
+		if (serialID<0){
+			long sid = virtualLattice.getLatestNodeIndex();
+			if ((sid<0) && (virtualLattice.size() > 0)) {
+				serialID = virtualLattice.getNode(virtualLattice.size() - 1).getSerialID() + 1;
+			}
+		} 
 	
+		// in BasicNodeAbs
 		initializeStructures(serialID);
+		
+		this.extensionality.setNodeNumGuid(numGUID) ;
+		this.extensionality.setNodeSerial(serialID) ;
 		
 		initRandom();
 		
@@ -129,11 +147,11 @@ public abstract class AbstractMetaNode  extends
 	}
 	 
  
-	public AbstractMetaNode(LatticeIntf nodeCollection, DataSourceIntf somdata ) {
+	public AbstractMetaNode(LatticeIntf nodeCollection, DataSourceIntf somdata, int nodeindex ) {
 		super();  
 
 		
-		numID = SerialGuid.numericalValue() ;
+		numGUID = SerialGuid.numericalValue() ;
 		
 		somData = somdata;
 		
@@ -200,15 +218,10 @@ public abstract class AbstractMetaNode  extends
 		return serialID;
 	}
 
-
-
-	public long getNumID() {
-		return numID;
-	}
  
 	// ------------------------------------------------------------------------
 	
-
+	
 	
 	
 	public void setSerialID(long serialID) {
@@ -216,11 +229,17 @@ public abstract class AbstractMetaNode  extends
 	}
 
 
+	public long getNodeNumGuid() {
+		return numGUID;
+	}
+ 
+	// ------------------------------------------------------------------------
+	
 
-
-
-	public void setNumID(long numID) {
-		this.numID = numID;
+	
+	
+	public void setNumGuid(long numGUID) {
+		this.numGUID = numGUID;
 	}
 
 
@@ -369,7 +388,7 @@ if (v0!=vv){
 			
 			this.parent = parent;
 			
-			mNodeAutoThrd = new Thread(this,"mNodeAutoThrd-"+parent.numID) ;
+			mNodeAutoThrd = new Thread(this,"mNodeAutoThrd-"+parent.numGUID) ;
 			// mNodeAutoThrd.start();
 		}
 		@Override

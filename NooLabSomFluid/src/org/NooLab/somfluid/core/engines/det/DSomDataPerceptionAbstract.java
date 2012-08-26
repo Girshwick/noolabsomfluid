@@ -1,6 +1,7 @@
 package org.NooLab.somfluid.core.engines.det;
 
 import java.util.ArrayList;
+import java.util.Observable;
 
  
 import org.NooLab.chord.IndexedItemsCallbackIntf;
@@ -19,7 +20,7 @@ import org.NooLab.utilities.logging.PrintLog;
 
 
 
-public class DSomDataPerceptionAbstract {  
+public class DSomDataPerceptionAbstract extends Observable{  
  
 	
 	protected DSom           parentSom;
@@ -44,6 +45,8 @@ public class DSomDataPerceptionAbstract {
 		parentSom = dsom ;
 		
 		somProcess = parentSom.getSomProcessParent() ;
+		// sth like SomTargetedModeling, or SomAstor, which implement "SomProcessIntf"
+		 
 		
 		somData = dsom.somData ;
 		

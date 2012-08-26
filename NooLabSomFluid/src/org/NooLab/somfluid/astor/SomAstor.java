@@ -16,6 +16,7 @@ import org.NooLab.somfluid.SomFluidTask;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.SomProcessIntf;
+import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.engines.det.LatticePreparation;
@@ -38,13 +39,15 @@ import org.NooLab.utilities.objects.StringedObjects;
 
 /**
  * 
- * This takes the same role as the class "SomTargetedModeling", which is used for targeted modeling
+ * This takes the same role as the class "SomTargetedModeling" (which is used for targeted modeling)
  * 
  * 
  * 
  *
  */
 public class SomAstor 
+						extends
+						            Observable
 						implements  
 								    Observer,
 								    Runnable,
@@ -63,7 +66,7 @@ public class SomAstor
 	
 	PhysicalGridFieldIntf particleField ;
 	private LatticePropertiesIntf latticeProperties;
-	private VirtualLattice somLattice;
+	private VirtualLattice astorLattice;
 	
 	private NodesInformer nodesinformer;
 	
@@ -76,10 +79,19 @@ public class SomAstor
 	PrintLog out;
 	private boolean userBreak;
 	private boolean streamReceptorSwitchedOn = false ;
+	private int delay = 1000 ;
+	private int registeredChanges;
+	private int changesThreshold=0;
+
+
+	ArrayList<Long> changedNodes = new ArrayList<Long> ();
 	
 	// ========================================================================
-	public SomAstor( SomHostIntf somhost, SomFluidFactory sfFactory,
-					 SomFluidProperties sfProperties, SomFluidTask sfTask, long serialID) throws Exception {
+	public SomAstor( SomHostIntf somhost, 
+					 SomFluidFactory sfFactory,
+					 SomFluidProperties sfProperties, 
+					 SomFluidTask sfTask, 
+					 long serialID) throws Exception {
 
 		this.sfProperties = sfProperties;
 		this.sfTask = sfTask;
@@ -97,8 +109,9 @@ public class SomAstor
 	
 	@Override
 	public void clear() {
-		// TODO Auto-generated method stub
-		
+		 
+		isRunning = false;
+		delay=10 ;
 	}
 	// ========================================================================	
 
@@ -125,7 +138,8 @@ public class SomAstor
 		LatticePreparation latticePreparation = new LatticePreparation( this, somHost,sfProperties);
 		latticePreparation.setNodesInformer( nodesinformer ) ;
 		
-		somLattice = latticePreparation.getLattice();
+		astorLattice = latticePreparation.getLattice();
+		
 		
 		particleField = somHost.getSomFluid().getParticleField( ) ;
 		particleField.registerEventMessaging(this) ;
@@ -217,12 +231,12 @@ public class SomAstor
 		
 		init(variables);
 		
-		if (somLattice.getNodes().get(0).getExtensionality().getCount()>0){
-			somLattice.clear();
+		if (astorLattice.getNodes().get(0).getExtensionality().getCount()>0){
+			astorLattice.clear();
 		}
 		
 		ArrayList<Variable> varin, vari = somDataObj.getVariableItems();
-		ProfileVectorIntf pv = somLattice.getNode(0).getIntensionality().getProfileVector();
+		ProfileVectorIntf pv = astorLattice.getNode(0).getIntensionality().getProfileVector();
 		varin = pv.getVariables() ;
 
 		if (variables.getTargetVariable()!=null){
@@ -237,13 +251,13 @@ public class SomAstor
 		}
 		
 		
-											out.print(3, "lattice going to be configured : "+somLattice.toString());
-		somLattice.getSimilarityConcepts().setUsageIndicationVector(usageVector) ;
-		// somLattice.getSimilarityConcepts().setIndexTargetVariable( variables.getIndexByLabel(tvlabel) );
-		somLattice.getSimilarityConcepts().setIndexIdColumn( variables.getIdColumnIndex() ) ;
+											out.print(3, "lattice going to be configured : "+astorLattice.toString());
+		astorLattice.getSimilarityConcepts().setUsageIndicationVector(usageVector) ;
+		// astorLattice.getSimilarityConcepts().setIndexTargetVariable( variables.getIndexByLabel(tvlabel) );
+		astorLattice.getSimilarityConcepts().setIndexIdColumn( variables.getIdColumnIndex() ) ;
 		
-		somLattice.setSomData(somDataObj) ; 
-		somLattice.spreadVariableSettings(); // informs all nodes about the usevector
+		astorLattice.setSomData(somDataObj) ; 
+		astorLattice.spreadVariableSettings(); // informs all nodes about the usevector
 
 	}
 
@@ -259,11 +273,11 @@ public class SomAstor
 		Variables variables = somDataObj.getVariables() ;
 		ArrayList<String> uv = variables.getLabelsForVariablesList(variables) ;	
 		
-    	somLattice.getNode(nodeindex).onDefiningFeatureSet( (Object)sob.encode( (Object)uv ),null);
+    	astorLattice.getNode(nodeindex).onDefiningFeatureSet( (Object)sob.encode( (Object)uv ),null);
     	
     	
     	// we cold provide a mode for asymmetry, or later, a vector of preferred values
-    	somLattice.getNode(nodeindex).onRequestForRandomInit(null); 
+    	astorLattice.getNode(nodeindex).onRequestForRandomInit(null); 
 		
 	}
 	
@@ -280,7 +294,7 @@ public class SomAstor
 		if ((vars==null) || (vars.size()<=1)){
 			return;
 		}
-		if (somLattice==null){
+		if (astorLattice==null){
 			return;
 		}
 											int outlevel=2;
@@ -294,7 +308,7 @@ public class SomAstor
 		// if we won't use all variables, the size of the vectors won't match (intensionality.profilevector.values)
 		System.gc() ;									
 		ArrayList<String> uv = vars.getLabelsForVariablesList(vars) ;			
-	    int n = somLattice.getNodes().size() ;
+	    int n = astorLattice.getNodes().size() ;
 	    
 	    NodeTask initTask = new NodeTask( NodeTask._TASK_RNDINIT  );
 	    
@@ -310,7 +324,7 @@ public class SomAstor
 	    sec.perform() ;
 	    ArrayList<Double> pvalues = sec.getProfiles();
 	    ArrayList<String> pvars = sec.getProfileVariables();
-	    somLattice.setPreferredInitializationValues( pvars,pvalues ); // nothing happens so far ... 
+	    astorLattice.setPreferredInitializationValues( pvars,pvalues ); // nothing happens so far ... 
 	    
 	    // TODO: this could be done in parallel 
 	    
@@ -329,7 +343,7 @@ public class SomAstor
 
 	private void perform() throws Exception {
 		
-		dSom = new DSom( this, somDataObj, somLattice, sfTask );
+		dSom = new DSom( this, somDataObj, astorLattice, sfTask );
 		
 		dSom.performAstor();
 	}
@@ -389,7 +403,8 @@ public class SomAstor
 		out.print(2, "\n\nAstor SOM is in stream receiver mode now.");
 		while ((isRunning==true) && (userBreak==false)){
 			
-			PrintLog.Delay(1000);
+			
+			PrintLog.Delay(delay);
 		}
 		out.printErr(2, "");
 	}
@@ -434,13 +449,13 @@ public class SomAstor
 	@Override
 	public VirtualLattice getSomLattice() {
 		
-		return somLattice;
+		return astorLattice;
 	}
 
 	@Override
 	public ArrayList<Double> getUsageIndicationVector(boolean inclTV) {
 
-		ArrayList<Double> uv = somLattice.getSimilarityConcepts().getUsageIndicationVector();
+		ArrayList<Double> uv = astorLattice.getSimilarityConcepts().getUsageIndicationVector();
 		
 		if (inclTV==false){
 			for (int i=0;i<uv.size();i++){
@@ -458,8 +473,8 @@ public class SomAstor
 		ArrayList<Integer>  usedVariablesIndices = new ArrayList<Integer>();
 		ArrayList<Double> uv= new ArrayList<Double>();
 		
-		if (somLattice!=null){
-			uv = somLattice.getSimilarityConcepts().getUsageIndicationVector() ;
+		if (astorLattice!=null){
+			uv = astorLattice.getSimilarityConcepts().getUsageIndicationVector() ;
 		}
 		
 		usedVariablesIndices = (ArrayList<Integer>) somDataObj.getVariables().transcribeUseIndications(uv) ;
@@ -473,9 +488,47 @@ public class SomAstor
 	}
 
 	@Override
+	public synchronized void nodeChangeEvent(ExtensionalityDynamicsIntf extensionality, int result) {
+		// called via interface from "ExtensionalityDynamics", which is part of the node and holds the indexes of the digested records
+		
+		/* it is also sent to actually referenced implementations of SomProcessIntf :
+		 * 	  - SomTargetedModeling
+		 *    - SomDataObject
+		 *    - SomAppClassifier
+		 */
+		
+		// result is the index value of the record in the datatable (according to the index column)
+		// for registration and handling : fork immediately into container !!
+		long nodeID, uuid ;
+		uuid    = extensionality.getNodeNumGuid();
+		nodeID  = extensionality.getNodeSerial();
+		
+		// we collect the number of changes in order to decide about a trigger
+		
+		changedNodes.add(uuid); // important: using the GUID, not the serial.... the lattice maintains a map from NodeGuid to the node's Object reference
+		registeredChanges++;
+		
+		if ((registeredChanges>200) && (registeredChanges>changesThreshold)){
+			
+			// copy to a clone
+			// ArrayList<Integer> changedNodes 
+			
+			// informing inner class "SomChangeEventObserver" in "SomAstorNodeContent" 
+			// registering via astorNodeContent.registerObservedSomProcess( somAstor ) takes
+			// place in "SomAssociativeStorage"
+			setChanged();
+			this.notifyObservers(changedNodes.clone());  // just for code reference: 138709
+			
+			registeredChanges=0;
+			changedNodes.clear(); 
+		}
+	}
+
+
+	@Override
 	public void onSelectionRequestCompleted(Object results) {
 	 
-		this.somHost.selectionEventRouter((SurroundResults) results,somLattice);
+		this.somHost.selectionEventRouter((SurroundResults) results,astorLattice);
 	}
 
 	@Override
@@ -510,6 +563,22 @@ public class SomAstor
 
 	public void setUserBreak(boolean userBreak) {
 		this.userBreak = userBreak;
+	}
+
+
+	public int getRegisteredChanges() {
+		return registeredChanges;
+	}
+
+
+	public void setRegisteredChanges(int registeredChanges) {
+		this.registeredChanges = registeredChanges;
+	}
+
+
+	public void setChangesThreshold(int limit) {
+		
+		changesThreshold = limit;
 	}
 
 }

@@ -143,12 +143,13 @@ public class DSomCore {
 		}else{
 			// if somtype ...) -> performAstor()
 			
+			dSom.somLattice.setInitializing(true) ;
 			if (modset.getSomType() == FieldIntf._SOMTYPE_PROB ){
 				result = performAstor();
 			}else{
 				result = performDSom();	
 			}
-			
+			dSom.somLattice.setInitializing(false) ;
 		}
 		return result; 
 	}
@@ -170,12 +171,14 @@ public class DSomCore {
 			sfTask = dSom.somTask ; 
 			
 			try {
+				dSom.somLattice.setInitializing(true) ;
 				
 				performDSom();
 				
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+			dSom.somLattice.setInitializing(false) ;
 		}
 		
 		//informing the observer
@@ -492,7 +495,7 @@ public class DSomCore {
 	private int executeSOM() throws Exception{
 		
 		int result = -1;
-		DSomDataPerception somDataPerception = null;
+		DSomDataPerception somDataPerception = null; 
 		double learningRate;
 		
 		int  limitforConsideredRecords = 0, actualRecordCount  ;
@@ -510,8 +513,8 @@ ArrayList<Double>  uv2 = dSom.somLattice.getNode(0).getSimilarity().getUsageIndi
 String str1 = ArrUtilities.arr2Text(uv1, 1);
 String str2 = ArrUtilities.arr2Text(uv2, 1);
 
-out.print(4, "execute SOM, use vectors (int) : "+str1);
-out.print(4, ".                        (sim) : "+str2);
+out.print(5, "execute SOM, use vectors (int) : "+str1);
+out.print(5, ".                        (sim) : "+str2);
 
 
 			absoluteRecordCount = this.dataSampler.getSizeTrainingSet();

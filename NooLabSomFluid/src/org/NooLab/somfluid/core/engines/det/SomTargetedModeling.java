@@ -19,6 +19,7 @@ import org.NooLab.somfluid.components.*;
 import org.NooLab.somfluid.core.*;
 import org.NooLab.somfluid.env.data.* ;
 
+import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.engines.det.results.*;
 import org.NooLab.somfluid.core.engines.det.adv.SomBags;
@@ -249,7 +250,7 @@ public class SomTargetedModeling    implements
 		 									}
 		for (int i=0;i<initialNodeCount;i++){
 			
-			mnode = new MetaNode( somLattice, somDataObject  ); 
+			mnode = new MetaNode( somLattice, somDataObject ,i ); 
 			somLattice.addNode(mnode) ;
 			
 											out.print(4,"Node <"+i+">, serial = "+mnode.getSerialID());
@@ -965,6 +966,20 @@ public class SomTargetedModeling    implements
 	@Override
 	public void onLayoutCompleted(int flag) {
 		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void nodeChangeEvent(ExtensionalityDynamicsIntf extensionality, int result) {
+		
+		// for registration and handling : fork immediately into container !!
+		long nodeID, uuid = extensionality.getNodeNumGuid();
+		uuid   = extensionality.getNodeSerial();
+		
+		/* it is also sent to implementations of SomProcessIntf :
+		 * 	  - SomDataObject
+		 *    - SomAstor
+		 */
 		
 	}
 }

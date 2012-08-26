@@ -1057,7 +1057,7 @@ if (v>0.3){
 						
 						// does the pseudoLattice contain a node with serialID of the native node?
 						nativeNode = somLattice.getNode(bmuIndex) ;
-						nodeID = nativeNode.getNumID() ; 
+						nodeID = nativeNode.getNodeNumGuid() ; 
 						// we have to add the record ix to the pseudoNode; 
 						pseudoNode = pseudoLattice.getNodeByNumId( nodeID ) ;
 						if (pseudoNode==null){
@@ -1066,7 +1066,7 @@ if (v>0.3){
 							 
 							pseudoNode = new MetaNode( pseudoLattice, somData, nativeNode ) ;
 							 
-							pseudoNode.setNumID( nodeID ) ;
+							pseudoNode.setNumGuid( nodeID ) ;
 							pseudoNode.clearData() ;
 							pseudoLattice.addNode(pseudoNode) ; // ??
 						}

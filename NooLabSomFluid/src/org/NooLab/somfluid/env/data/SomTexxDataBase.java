@@ -73,7 +73,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 	Db iciDb;
 	DatabaseMetaData jdbMetaData ;
 	String dbCatalog ;
-	MetaData metaData ; 
+	MetaData nMetaData ; 
 	
 	DbConnector dbConnector ;
 	DataBaseHandler dbHandler ;
@@ -184,7 +184,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		
 		if (databaseUrl.length()==0){
 
-			String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_STOR );
+			String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT );
 			String _db_dir = DFutils.createPath( h2Dir, "storage/") ; // storageDir;
 
 			if (_db_dir.endsWith("/")){
@@ -264,7 +264,8 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 				// connection = DriverManager.getConnection( url, user, password);
 			}
 
-			dbfile = DFutils.createPath(filepath,dbname+".h2.db") ;
+			// filepath
+			dbfile = DFutils.createPath( _db_dir ,dbname+".h2.db") ;
 			
 			File fil = new File(dbfile);
 			if (fil.exists()){
@@ -379,21 +380,30 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 			databaseFile = connect( databaseName, h2Dir, servermodeFlag ) ;
 			
 			
-			
 			rB = databaseFile.length()>0;
 			
 			if (rB){
+															out.print(2, "conn closed ? (1) "+connection.isClosed());
 				
 				dbHandler = new DataBaseHandler( this ) ;
-		
+				
+				if (connection.isClosed()){
+					open();
+					dbHandler.connection = connection;
+				}
+															out.print(2, "conn closed ? (2) "+connection.isClosed());
 		// returns falsely false for randomwords		
-					metaData = dbHandler.getMetadata();
-					metaData.retrieveMetaData();
-					 
-					String str = ArrUtilities.arr2Text( metaData.getTableNames(1),";");
+				nMetaData = dbHandler.getMetadata();
+				
+				if (nMetaData==null){
+					
+				}
+				if (nMetaData!=null){
+					nMetaData.retrieveMetaData();
+					String str = ArrUtilities.arr2Text( nMetaData.getTableNames(1),";");
 
 					out.printErr(2, "Tables : "+str) ;
-				
+				}
 			}
 			
 			if ((connection!=null) && (connection.isClosed()==false)){
@@ -548,6 +558,9 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 			// rows = iciDb.executeQuery(Contexts.class, sql); rows = iciDb.from(c).limit(limitcount).select(); rows = iciDb.executeQuery(Contexts.class, sql);
 			// 
 			 								out.print(2, "retrieving records from the database..."); 
+			if (connection.isClosed()){
+				open();
+			}
 			rows = iciDb.from(c).limit(limitcount).select();
 			
  			PreparedStatement prep = connection.prepareStatement( sql );
