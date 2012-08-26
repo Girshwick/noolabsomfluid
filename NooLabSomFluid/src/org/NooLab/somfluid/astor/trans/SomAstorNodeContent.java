@@ -291,6 +291,7 @@ public class SomAstorNodeContent {
 			
 			records = node.getExtensionRecordsIndexValues();
 			
+			// from here : database stuff, reading randomwords:contexts, writing astornodes::nodecontent-1
 			// this index values should point to the contextid in the table contexts
 			
 			/* from that we update the database astornodes
