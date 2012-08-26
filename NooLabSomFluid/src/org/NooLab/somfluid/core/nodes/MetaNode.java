@@ -138,16 +138,22 @@ public class MetaNode   extends
 	
 	
 	// ------------------------------------------------------------------------
-	public MetaNode( VirtualLattice virtualLatticeNodes, DataSourceIntf somData  ){
-		super(virtualLatticeNodes,  somData );
-		mppLevel = virtualLatticeNodes.getMultiProcessingLevel();
+	public MetaNode( VirtualLattice virtualLattice , DataSourceIntf somData, int index  ){
+		
+		super( virtualLattice,  somData,index );
+		mppLevel = virtualLattice.getMultiProcessingLevel();
+		
 	}
 	
-	public MetaNode(VirtualLattice somlattice, DataSourceIntf somData, MetaNode templateNode ) {
-		super(somlattice,  somData );
+	public MetaNode( VirtualLattice somlattice, DataSourceIntf somData, MetaNode templateNode ) {
+		super(somlattice,  somData,-1 );
 		
+		//  
 		extensionality =  new ExtensionalityDynamics( (ExtensionalityDynamics)templateNode.extensionality, somType ) ;
 		
+		serialID = somlattice.getNextNodeSerial();
+		extensionality.setNodeNumGuid(serialID); // important for upstream information events
+		 
 		intensionality = new IntensionalitySurface( (IntensionalitySurface)templateNode.intensionality ) ;
 		
 		similarity = new Similarity( (Similarity)templateNode.similarity );
@@ -718,7 +724,8 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 				
 			} // w-> across all fields
 			
-			extensionality.addRecordByIndex( recordIndexInTable ) ; 
+			// note that there are several versions!! 
+			extensionality.addRecordByIndex( recordIndexInTable , true) ; // true: SomData are informed 
 			
 			// if everything is ok (err=0, we do not throw exceptions), we finally have to put the values 
 			// from "nodeProfile" (=clone of original vector of the profile in the lattice!)
@@ -1217,6 +1224,7 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 		ExtensionalityDynamicsIntf extensionality;
 		
 		extensionality = virtualLattice.distributeExtensionalityDynamics(serialID);
+		
 		return extensionality;
 	}
 
@@ -1245,15 +1253,6 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 	public int size() {
 		return getExtensionality().getListOfRecords().size();
 	}
-
-
-
-
-
-
-
-
-
 
  
 

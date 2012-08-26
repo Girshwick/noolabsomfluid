@@ -56,14 +56,14 @@ public class SomAppNode
 	
 	//-------------------------------------------------------------------------
 	public SomAppNode( VirtualLattice  nodeCollection , DataSourceIntf somData , int nodindex ){
-		super( nodeCollection, somData ) ;
+		super( nodeCollection, somData,nodindex ) ;
 		index = nodindex;
 	}
 	//-------------------------------------------------------------------------
 
 	
-	public SomAppNode(VirtualLattice soappNodes, SomDataObject somData) {
-		super(soappNodes, somData);
+	public SomAppNode(VirtualLattice soappNodes, SomDataObject somData, int nodindex) {
+		super(soappNodes, somData,nodindex);
 	}
 
 

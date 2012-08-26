@@ -9,6 +9,7 @@ import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.SomProcessIntf;
+import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.data.DataTableCol;
@@ -597,6 +598,12 @@ public class SomAppClassifier implements SomProcessIntf, Serializable{
 		
 		classProcess.classyThrd.interrupt();
 		
+		
+	}
+
+	@Override
+	public void nodeChangeEvent(ExtensionalityDynamicsIntf extensionality, int result) {
+		// TODO Auto-generated method stub
 		
 	}
 	

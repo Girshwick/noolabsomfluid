@@ -13,8 +13,9 @@ import org.NooLab.somfluid.SomDataDescriptor;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.app.SomAppTransformer;
-import org.NooLab.somfluid.astor.SomDataStreamer;
+import org.NooLab.somfluid.astor.stream.SomDataStreamer;
 import org.NooLab.somfluid.components.variables.SomVariableHandling;
+import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.core.engines.det.SomMapTable;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
@@ -1637,6 +1638,27 @@ public class SomDataObject 	implements      Serializable,
 	public void establishDataLinkage() {
 		// 
 		
+	}
+
+	/**
+	 * this comes from  ExtensionalityDynamics, which maintains a list of index values
+	 * that are being collected by the node (MetaNode in VirtualLattice)
+	 *   
+	 * @param extensionality
+	 * @param result
+	 */
+	public void nodeChangeEvent( ExtensionalityDynamicsIntf extensionality, int result) {
+		//  
+		// for registration and handling : fork immediately into container !!
+		long nodeID, uuid;
+		
+		uuid  = extensionality.getNodeNumGuid();
+		nodeID = extensionality.getNodeSerial();
+		
+		/* it is also sent to implementations of SomProcessIntf :
+		 * 	  - SomTargetedModeling
+		 *    - SomAstor
+		 */
 	}
 
 

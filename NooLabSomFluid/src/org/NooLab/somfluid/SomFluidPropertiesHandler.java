@@ -11,6 +11,7 @@ import org.NooLab.itexx.storage.TexxDataBaseSettings;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.data.VariableSettingsHandler;
 import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
+
 import org.NooLab.somfluid.properties.AstorSettings;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
@@ -319,7 +320,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 				ms.setTargetVariableCandidates( variableSettings.getTargetVariableCandidates() );
 				                                variableSettings.getTvGroupLabels() ;
 				ArrayList<ValuePair> tvgints = variableSettings.getTvGroupIntervals() ;
-				cs.setTargetGroupDefinition( tvgints );
+				cs.setTargetGroupDefinition( tvgints, variableSettings.getTvGroupLabels() );
 				// labels of tg group.. ?
 				
 				// (cs.getTargetMode() == ClassificationSettings._TARGETMODE_MULTI)
@@ -498,7 +499,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 			// mode = single
 			itemstr = itemstr.replace("mode","");
 			itemstr = itemstr.replace("=","").trim();
-			variableSettings.setSomModelingMode(itemstr);
+			variableSettings.setSomTargetModelingMode(itemstr);
 			 
 		} // "mode" defined ?
 		

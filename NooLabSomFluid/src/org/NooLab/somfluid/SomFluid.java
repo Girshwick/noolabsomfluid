@@ -25,7 +25,7 @@ import org.NooLab.somfluid.app.SomAppValidationIntf;
 import org.NooLab.somfluid.app.SomApplicationEventIntf;
 import org.NooLab.somfluid.astor.SomAStorageQueryHandler;
 import org.NooLab.somfluid.astor.SomAssociativeStorage;
-import org.NooLab.somfluid.astor.SomDataStreamer;
+import org.NooLab.somfluid.astor.stream.SomDataStreamer;
 import org.NooLab.somfluid.components.* ;
   
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;

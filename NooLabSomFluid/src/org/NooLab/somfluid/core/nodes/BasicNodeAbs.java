@@ -70,8 +70,11 @@ public abstract class BasicNodeAbs implements
 		// IntensionalitySurfaceIntf  intensy = importIntensionalitySurface();
 		// String str = intensy.toString();  // IntensionalitySurface@8f3d27
 		
+		//               in MetaNode, calls its VirtualLattice for an instance via
+		//                            distributeExtensionalityDynamics()
 		extensionality = importExtensionalityDynamics(serialID) ;
-	
+		//extensionality.setNodeSerial(serialID) ;
+		
 		profileVector = intensionality.getProfileVector(); 
 		
 		int nd=0;

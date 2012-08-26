@@ -32,10 +32,10 @@ public interface VariableSettingsHandlerIntf {
 	// ----------------------------------------------------
 	
 
-	public void setSomModelingMode(String itemstr);
+	// public void setSomTargetModelingMode(String modeStr);
 
-	public String setSomModelingMode();
-	
+	 
+	public void setSomTargetModelingMode(String modeStr);
 	
 	
 	public void setTargetVariable(String targetVariable) ;
@@ -109,6 +109,8 @@ public interface VariableSettingsHandlerIntf {
 	public ArrayList<String> getTreatmentDesignVariables() ;
 
 	public void setTvGroupIntervals(ArrayList<ValuePair> tvGroupIntervals) ;
+
+	
 	
 	
 	

@@ -235,12 +235,14 @@ public class ClassificationSettings implements Serializable{
 			
 			for (int i=0;i<tvGroupIntervals.size();i++){
 				vp = tvGroupIntervals.get(i) ;
-				intervalBorders[i*2]   = vp.getValue1() ;
-				intervalBorders[i*2+1] = vp.getValue2() ;
+				intervalBorders[i*2]   = (Double) vp.getValue1() ;
+				intervalBorders[i*2+1] = (Double) vp.getValue2() ;
 			}
 		}
 		if ((tvGroupLabels.size()>0) && (tvGroupLabels.size()<=tvGroupIntervals.size())){
 			TGlabels = arrutil.changeArrayStyle(tvGroupLabels, "");
+		}else{
+			
 		}
 		
 		

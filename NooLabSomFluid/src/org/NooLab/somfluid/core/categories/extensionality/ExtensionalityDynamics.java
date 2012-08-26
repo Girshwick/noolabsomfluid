@@ -4,10 +4,13 @@ import java.util.ArrayList;
 
 
 import org.NooLab.field.FieldIntf;
+import org.NooLab.somfluid.components.DataSourceIntf;
 import org.NooLab.somfluid.components.SomDataObject;
 
+import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.engines.NodeStatisticsFactory;
 import org.NooLab.somfluid.core.engines.NodeStatisticsIntf;
+import org.NooLab.utilities.datatypes.ValuePair;
 
 
 
@@ -37,10 +40,16 @@ import org.NooLab.somfluid.core.engines.NodeStatisticsIntf;
  */
 public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 
-	SomDataObject somData;
+	// SomDataObject somData;
+	DataSourceIntf somData;
+	SomProcessIntf processHost;
 	
 	ArrayList<Integer> listOfRecords = new ArrayList<Integer>();
 	
+	// in case of Astor in WebSom, this could be the the Index of the fingerprint entry of the word
+	// we store the frequency along with it, additionally, we need an external process that is 
+	// unificating multiple entries of the same id-value 
+	ArrayList<ValuePair> listOfSecondaryId = new ArrayList<ValuePair>();
 	
 	/* TODO: needed: 
 	 *          - a statistical description, 
@@ -64,10 +73,13 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 
 	private int support;
 	
+	long nodeNumGuid = -1L, serialId= -1L;
+	
 	// ========================================================================
-	public ExtensionalityDynamics( SomDataObject somdata , int somType){
-		
+	public ExtensionalityDynamics( DataSourceIntf somdata , SomProcessIntf processhost, int somType){
+								   // SomDataObject
 		somData = somdata;
+		processHost = processhost ;
 		
 		statistics = NodeStatisticsFactory.getStatisticsImpl(somType);
 		
@@ -75,26 +87,103 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	}
 	
 	public ExtensionalityDynamics( ExtensionalityDynamics inExtensions, int somType) {
+		
 		somData = inExtensions.somData;
+		processHost = inExtensions.processHost;
+		
 		statistics = inExtensions.getStatistics()  ; 
-		
-		
 		
 	}
 	
 	// ========================================================================
 	 
 
+	@Override
+	public long getNodeNumGuid() {
+		 
+		return nodeNumGuid;
+	}
+
+	@Override
+	public void setNodeNumGuid(long idValue) {
+		 
+		nodeNumGuid = idValue;
+	}
+
+	@Override
+	public long getNodeSerial() {
+		return serialId;
+	}
+
+	@Override
+	public void setNodeSerial(long idValue) {
+		serialId = idValue;
+	}
+
+	@Override
+	public void clear() {
+		
+		try{
+			statistics.resetFieldStatisticsAll();
+			listOfRecords.clear() ;
+			listOfRecords.trimToSize() ;	
+		}catch(Exception e){
+		
+		}
+	
+	}
+
 	public void setListOfRecordsAsTable( ArrayList<Integer> records){
 		listOfRecords = records;
 	}
 
+	
 	public void addRecordByIndex( int index){
+		addRecordByIndex(  index, -1, false) ;
+	}
+	public void addRecordByIndex( int index, boolean informUpstream){
+		addRecordByIndex(  index, 1, informUpstream) ;
+	}
+	/**
+	 * 
+	 * @param index
+	 * @param returnMode 0=size, 1=the inserted index
+	 * @return
+	 */
+	public int addRecordByIndex( int index, int returnMode ){
+		return addRecordByIndex(  index, -1, false) ;
+	}
+	
+	/**
+	 * 
+	 * @param index value to be inserted, it is the global record index in the data table as defined by the active ID column 
+	 * @param returnMode  0=size, 1=the inserted index
+	 * @param informUpstream
+	 * @return
+	 */
+	public int addRecordByIndex( int index, int returnMode , boolean informUpstream){
 		// take it to the list, but only if it is not there yet
+		
+		int size = 0, result=-1;
 		
 		if (listOfRecords.indexOf(index)<0){
 			listOfRecords.add(index) ;
+			// release an event ... ? 
+			size = listOfRecords.size() ;
+			
+			
+			if (returnMode<=0){
+				result = size;
+			}else{
+				result=index;
+			}
+			if ((informUpstream) && (somData!=null)){
+				somData.nodeChangeEvent( (ExtensionalityDynamicsIntf)this, result );
+				processHost.nodeChangeEvent( (ExtensionalityDynamicsIntf)this, result );
+			}
 		}
+		
+		return result;
 	}
 
 	public void removeRecordByIndex( int index){
@@ -111,19 +200,6 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	}
 	
 	@Override
-	public void clear() {
-		
-		try{
-			statistics.resetFieldStatisticsAll();
-			listOfRecords.clear() ;
-			listOfRecords.trimToSize() ;	
-		}catch(Exception e){
-		
-		}
-	
-	}
-
-	@Override
 	public int getRecordItem(int index) {
 		  
 		return listOfRecords.get(index);
@@ -132,6 +208,28 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	public ArrayList<Integer> getListOfRecords(){
 		return listOfRecords ;
 	}
+
+	
+	@Override
+	public ArrayList<ValuePair> getListOfSecondaryId() {
+		return listOfSecondaryId;
+	}
+
+	@Override
+	public void setListOfSecondaryId(ArrayList<ValuePair> idValuePairs) {
+		listOfSecondaryId = idValuePairs;
+	}
+
+	public void addSecondaryIndexValue( long idvalue ){
+		listOfSecondaryId.add( new ValuePair(idvalue, -1) );
+	}
+	
+	@Override
+	public int getCountSecondaryIndex() {
+		return 0;
+	}
+	
+
 
 	@Override
 	public int getCount() {
@@ -204,7 +302,7 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 		return support;
 	}
 
-	public SomDataObject getSomData() {
+	public DataSourceIntf getSomData() {
 		return somData;
 	}
 

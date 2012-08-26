@@ -691,7 +691,7 @@ public class SomAppModelLoader {
 				// this derives from the <MetaNodeIntf>
 				// MetaNode node = new MetaNode(soappObj.soappNodes, somData );
 				
-				SomAppNode node = new SomAppNode(soappObj.soappNodes, somData ); // 161c9d1
+				SomAppNode node = new SomAppNode(soappObj.soappNodes, somData ,i); // 161c9d1
 				
 				Object obj = xmlNodeObjects.get(i) ;
 				xMsg.clearBasicConditionLocation() ;

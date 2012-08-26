@@ -157,15 +157,15 @@ public class VariableSettingsHandler implements VariableSettingsHandlerIntf{
 
 
 	@Override
-	public void setSomModelingMode(String modeStr) {
+	public void setSomTargetModelingMode(String modeStr) {
 		somModelingMode = modeStr;		
 	}
 
 	@Override
-	public String setSomModelingMode() {
+	public String getSomModelingMode() {
 		return somModelingMode;
 	}
-	
+	 
 	
 	public ArrayList<String> getTargetVariableCandidates() {
 		return targetVariableCandidates;
@@ -349,9 +349,7 @@ public class VariableSettingsHandler implements VariableSettingsHandlerIntf{
 		return "";
 	}
 
-	public String getSomModelingMode() {
-		return somModelingMode;
-	}
+	
 
 	public ArrayList<String> getTreatmentDesignVariables() {
 		return treatmentDesignVariables;

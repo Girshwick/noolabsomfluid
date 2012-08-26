@@ -23,5 +23,6 @@
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/database/iciql/iciql-1.0.0.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/database/h2/bin/h2.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/NooLabiTexxStructures"/>
+	<classpathentry kind="src" path="/NooLabiTexxCommBox"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

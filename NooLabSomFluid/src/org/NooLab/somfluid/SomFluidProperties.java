@@ -121,12 +121,7 @@ public class SomFluidProperties
 
 
 	
-
-	
-
-
-	
-	
+ 
 	// ========================================================================
 	public SomFluidProperties(){
 		super();

@@ -35,6 +35,7 @@ public class SomFluidAppPropertiesAbstract
 	/** concerns results */
 	protected OutputSettings outputSettings ; 
 	protected ModelingSettings modelingSettings = new ModelingSettings() ;
+	 
 	
 	protected AstorSettings astorSettings ;
 	protected TexxDataBaseSettings databaseSettings;
