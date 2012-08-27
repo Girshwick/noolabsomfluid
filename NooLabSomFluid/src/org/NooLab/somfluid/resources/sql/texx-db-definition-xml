@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+   
+  <texx>
+	<database name="randomwords">
+	  <!-- this database is owned by Texx ! 
+	       here we just provide the information about table names and colunm labels
+	       such that SomFluid can access it -->
+      <config>
+         <separator name="::" />
+      </config>
+      <!-- comment within the sql script is between pairs of * , i.e.   ** ... ** -->
+
+      <access>
+         <user name="RG" password="rg" />
+      </access>
+      <table name="contexts" >
+         <!-- this table serves as the input for SomStore / Astor, it is important for re-learning ,
+           -->
+           
+          
+         <astor>
+            <!-- actually, this is all we need to know to build the vector for the Astor-SOM ;
+                 all relevant information is encoded in the data of the randomcontext, while the
+                 id's are needed to identify the source, and the label of the word is needed
+                 for inferring the virtual path  
+              -->
+            <core>
+              <item id="1" name="id" quality="id" sema="id" pos="1" /> 
+              <item id="2" name="contextid" quality="id" sema="context" pos="3" /> 
+              <item id="3" name="docid" quality="id" sema="document" pos="4" />
+              <item id="4" name="wordlabel" quality="label" sema="word" pos="5" />
+              <item id="5" name="randomcontext" quality="data" sema="data" pos="99" />
+         	</core>
+         	
+         	<extension> 
+         	  <item id="1" name="relfrequency" quality="value" sema="data" pos="10" />   
+              <item id="2" name="distanceMean" quality="value" sema="data" pos="11" />
+              <item id="3" name="distanceStDev" quality="value" sema="data" pos="12" />
+              <item id="4" name="groupsCount" quality="value" sema="data" pos="13" />
+              <item id="5" name="saliency" quality="value" sema="data" pos="14" />
+	        </extension>
+         </astor>
+          
+         <fields>
+            <field id="1"  label="id"          type="long" />
+            <field id="2"  label="contextid"   type="long" />
+            <field id="3"  label="varianttype" type="int" />
+            <field id="4"  label="docid"       type="long" />
+            <field id="5"  label="version"     type="string" />
+            <field id="6"  label="vcontent"    type="int" />
+            <field id="7"  label="entitytype"  type="int" />
+            <field id="8"  label="entityid"    type="int" />
+            <field id="9"  label="wordlabel"   type="string" />
+            <field id="10" label="storlabel"   type="string" />
+            <field id="11" label="compoundlabel" type="string" />
+            <field id="12" label="contexttype"   type="int" />
+            <field id="13" label="contexttype"   type="int" />
+            <field id="14" label="contextparam"  type="int" />
+            <field id="15" label="weight"      type="double" />
+            <field id="16" label="asymmetry"   type="double" />
+            <field id="17" label="createtime"  type="long" />
+            <field id="18" label="status"      type="int" />
+            <field id="19" label="idcindex"    type="long" />
+            <field id="20" label="fpindex"     type="long" />
+            <field id="21" label="storindexes" type="long" />
+            <field id="22" label="storLabelGuid" type="string" />
+            <field id="23" label="reserved_01"   type="string" />
+            <field id="24" label="frequency"     type="double" />
+            <field id="25" label="relfrequency"  type="double" />
+            <field id="26" label="distanceMean"  type="double" />
+            <field id="27" label="distanceStDev" type="double" />
+            <field id="28" label="groupsCount"   type="int" />
+            <field id="29" label="saliency"      type="double" />
+            <field id="30" label="randomcontext" type="string" />
+            
+            <!--      
+					  id             IDENTITY AUTO_INCREMENT PRIMARY KEY,
+					  contextid      BIGINT, 
+					  varianttype    INT ,         ** any actual context could be transcribed in a similar one, 
+					                                  e.g. through synonyms, language   etc **
+					  docid          BIGINT,       ** the same as in "docoserv", globally unique 
+					   	                              in adhoc mode it is the timestamp ;
+					   	                              it needs foreign key constraint **                                        
+					                                  
+					  version        VARCHAR,      ** general version info  **
+					  vcontent       VARCHAR,      ** content types of the numerical vector: rgaph stat, props, parsed etc... **      
+					  entitytype     INT,          ** indicates the level of the entity, e.g. word or sentence in the case of texts  **  
+					  entityid       BIGINT,       ** if word, the same value as in database "rg-fingerprint" ! 
+					                                  if sentence, then the same value as in ....  **
+					  wordlabel      VARCHAR,      ** note that the fingerprint also uses the storlabel!  
+					                                  thus, the same label can appear multiple times!
+					                                  it is only available for words  **
+					  storlabel      VARCHAR,      ** ; **                               
+					  compoundlabel  VARCHAR,      ** ; **
+					  contexttype    VARCHAR,      ** via random graph, generalized context etc **
+					  contextparam   INT   ,       ** reserved, not used yet **
+					  weight         DOUBLE	,      ** the weight of the whole thing, the weight controls the amplitude **
+					  asymmetry      INT ,         ** [-k +k] needs to be normalized across entries 
+					                                  where k is (n-1)/2  **       
+					  createtime     BIGINT,       ** a timestamp, **               
+					  status         INT,          ** whether the record is fresh, already in SomStore, 
+					                                  or to be deleted (dependent on EraseMode... could be implicit) ** 
+
+					  idcindex       BIGINT ,      ** the context id within the document **    
+					  fpindex        BIGINT ,      ** index of the "compound word" in the table of fingerprints  **
+					  storindexes    VARCHAR,      ** a list [ ; ]  of BIGINT's, pointing to abstract representations of contexts 
+					                                  should be a linked table !!! **
+					  storLabelGuid  VARCHAR(40),  ** ; **
+					  reserved_01    VARCHAR,      ** ; **
+					  frequency      INT ,         ** ; **
+					  relfrequency   DOUBLE,       ** ; **
+					  distanceMean   DOUBLE,       ** ; **
+					  distanceStDev  DOUBLE,       ** ; **
+					  groupsCount    INT ,         ** ; **
+					  saliency       DOUBLE,       ** ; **
+					                                   
+					  randomcontext  VARCHAR       ** the random context, stored as a list of numerical strings [ ; ] ; 
+					                                  it could be of variable length, thus we use a VARCHAR list 
+					                                  this is the important part of the table **
+					  
+					  )
+		    	-->
+         </fields>
+      </table>
+
+     <table name="adhocdocuments" >
+         <!-- this table stores the filenames or urls that are accessed in simple filemode -->
+         
+         <astor>
+           <core>
+              <item id="1" name="docid"       quality="id"   sema="docid" /> 
+              <item id="1" name="filesource"  quality="name" sema="url" />
+              <item id="1" name="local"       quality="name" sema="localname" />
+              
+           </core> 
+           
+         </astor> 
+         
+         
+         <fields>
+           <field id="1"  label="docid"          type="long" />
+           <field id="2"  file="localname"       type="string" />
+         </fields> 
+            <!--
+                      docid          IDENTITY AUTO_INCREMENT PRIMARY KEY,
+					  xid            BIGINT,      ** some kind of external id **
+					  filesource     VARCHAR ,    ** filename or URL **
+					  localname      VARCHAR ,    ** temporary filename ** 
+					  islocal        INT          ** flag whether original source is local **
+			    )
+ 		    -->
+         
+      </table>
+      
+      <table name="positions" >
+         <!-- list of positions of words in documents, requires length of docs to be saved somewhere!!! -->
+         <!--
+                CREATE TABLE  ::tablename:: (  
+					  id             IDENTITY AUTO_INCREMENT PRIMARY KEY,
+					  contextid      BIGINT,  ** needs foreign key constraint **
+					  positions      VARCHAR  ** list of word positions **
+					  )
+            -->
+      </table>
+
+
+    </database> 
+
+     
+  </texx>
