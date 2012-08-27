@@ -1,0 +1,591 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<somtransformer>
+   <project>
+      <name date="6/5/2012 15:39:35" label="bank2" revision="1" version="1.0">
+         <derivationLevel value="0">
+            <sourcetype value="1"/>
+            <identifier name="D:/data/projects/bank2/data/raw/bankn_d2.txt"/>
+            <systemrootdir identifier="D:/data/projects/"/>
+            <extendingsource value="false">
+               <simulation mode="-1" size="3000"/>
+            </extendingsource>
+         </derivationLevel>
+      </name>
+   </project>
+   <sources>
+      <sourcetype value="1"/>
+      <identifier name="D:/data/projects/bank2/data/raw/bankn_d2.txt"/>
+      <size bytes="0" records="0" variables="0"/>
+   </sources>
+   <transformations>
+      <column guid="bd81911f-319b-4200-a028-4feec0c7bf0c" index="0" label="Id">
+         <properties>
+            <id idcolumn="true"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="true"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn>
+               <item id="46fc0b35-32f1-4590-8c87-18d23b65f350"/>
+            </outcolumn>
+         </relations>
+         <algorithms length="2">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="CopyPlain">
+               <parameters>
+                  <outlabel value="Id_c"/>
+               </parameters>
+            </algoritem>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="b3e311b5-e010-4082-b7d0-165652af4a33" index="1" label="Name">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="true"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="0">
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="77fabf18-c2fd-4370-af7f-79fc8afff6e2" index="2" label="KundenNr">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="true"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="0">
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="f0b6db92-069e-4424-88e5-61cd59d91dce" index="3" label="SalesOrg">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="3">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="29" mean="14.7316017" median="15" min="0" variance="53.538352"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="2" name="LinearNormalization"/>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="a6df3580-f163-40cc-95cf-82d26de5b376" index="4" label="Region">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="3">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="46" mean="28.6515152" median="28" min="20" variance="43.2068411"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="2" name="LinearNormalization"/>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="768fab08-032b-4480-a6d4-a35bec549a96" index="5" label="Land">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="3">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="10" mean="2.7171717" median="2" min="1" variance="3.5837888"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="2" name="LinearNormalization"/>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="fcad9594-5a0a-423a-9685-b58ea80d9d75" index="6" label="intern_Rating">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="3">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="6" mean="2.7777778" median="3" min="1" variance="1.0242104"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="2" name="LinearNormalization"/>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="14b15b35-dd1e-428d-a9f7-9d89aadcdf21" index="7" label="Bonitaet">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="3">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="650" mean="327.4709892" median="321.4" min="120" variance="3041.9752099"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="2" name="LinearNormalization"/>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="32edd340-4a00-4ee5-aef6-e2f63f182d50" index="8" label="Bisher">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="3">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="7" mean="2.3032491" median="1" min="1" variance="4.4957656"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="2" name="LinearNormalization"/>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="f09c97c1-b671-4a07-a2a1-6365e7e5e794" index="9" label="Kunde_seit">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn>
+               <item id="b0a73e7b-2fa0-4258-9b56-8a91fc046823"/>
+            </outcolumn>
+         </relations>
+         <algorithms length="2">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="CopyPlain">
+               <parameters>
+                  <outlabel value="Kunde_seit_c"/>
+               </parameters>
+            </algoritem>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="191fb4f9-3558-454f-94f0-7c5944524cc9" index="10" label="Stammkapital">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn>
+               <item id="ef8fdb2a-1d9c-4212-b6dd-f6b3f56a5dca"/>
+            </outcolumn>
+         </relations>
+         <algorithms length="4">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="50000000" mean="652686.5671642" median="50000" min="0" variance="10121836065938.96"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="2" name="LinearNormalization"/>
+            <algoritem index="3" name="CopyPlain">
+               <parameters>
+                  <outlabel value="Stammkapital_c"/>
+               </parameters>
+            </algoritem>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="c865d66a-bee4-4940-bb50-b1e3971d1a8d" index="11" label="Gründungsdatum">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn>
+               <item id="63c0fb73-971a-4aa1-88d3-f6511a2d67b2"/>
+            </outcolumn>
+         </relations>
+         <algorithms length="2">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="CopyPlain">
+               <parameters>
+                  <outlabel value="Gründungsdatum_c"/>
+               </parameters>
+            </algoritem>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="f335fc71-ec9d-49b0-b1a4-634f9870c34d" index="12" label="Anzahl_Mitarbeiter">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="3">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="1201" mean="256.5282828" median="211" min="1" variance="44233.5744526"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="2" name="LinearNormalization"/>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="39332374-6482-4fb4-8ae6-44c03b407bf0" index="13" label="Rechtsform">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn>
+               <item id="aa728039-acef-4162-960b-ea27f166746e"/>
+            </outcolumn>
+         </relations>
+         <algorithms length="2">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="CopyPlain">
+               <parameters>
+                  <outlabel value="Rechtsform_c"/>
+               </parameters>
+            </algoritem>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="19b28bbf-b31b-4fe8-96ce-ae3cc2935368" index="14" label="Branchenscore">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="3">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="225" mean="160.9088542" median="159" min="75" variance="971.8640883"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="2" name="LinearNormalization"/>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="af65de6a-1349-4a25-9f91-817400f657f8" index="15" label="Mahnung_TV">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="true"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="true"/>
+            <derived isderived="false"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="3">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="1" mean="0.0730519" median="0" min="0" variance="0.0502641"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="2" name="LinearNormalization"/>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="46fc0b35-32f1-4590-8c87-18d23b65f350" index="16" label="Id_c">
+         <properties>
+            <id idcolumn="true"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="true"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="true"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="3">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="1386" mean="693.5" median="694" min="1" variance="160082.9166667"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="2" name="LinearNormalization"/>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="b0a73e7b-2fa0-4258-9b56-8a91fc046823" index="17" label="Kunde_seit_c">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="true"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="4">
+            <algoritem index="0" name="DateConverter"/>
+            <algoritem index="1" name="MissingValues"/>
+            <algoritem index="2" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="54718" mean="52653.987699" median="54642" min="36054" variance="11116564.8790097"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="3" name="LinearNormalization"/>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="63c0fb73-971a-4aa1-88d3-f6511a2d67b2" index="18" label="Gründungsdatum_c">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="true"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="4">
+            <algoritem index="0" name="DateConverter"/>
+            <algoritem index="1" name="MissingValues"/>
+            <algoritem index="2" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="54744" mean="53915.2259036" median="54247" min="46975" variance="1009509.4625216"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="3" name="LinearNormalization"/>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="aa728039-acef-4162-960b-ea27f166746e" index="19" label="Rechtsform_c">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="true"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="4">
+            <algoritem index="0" name="NomValEnum">
+               <parameters>
+                  <params>
+                     <set index="0">
+                        <intvalues count="6" list="1;2;4;3;5;6"/>
+                        <numvalues count="6" list="632.0;615.0;76.0;20.0;20.0;6.0"/>
+                        <strvalues count="6" list="PersGes;GmbH;GmbH&amp;Co;KG;KG;OHG;AG"/>
+                     </set>
+                  </params>
+               </parameters>
+            </algoritem>
+            <algoritem index="1" name="MissingValues"/>
+            <algoritem index="2" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="6" mean="1.6844412" median="2" min="1" variance="0.6776323"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="3" name="LinearNormalization"/>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+      <column guid="ef8fdb2a-1d9c-4212-b6dd-f6b3f56a5dca" index="20" label="Stammkapital_als">
+         <properties>
+            <id idcolumn="false"/>
+            <tv tvcolumn="false"/>
+            <idcandidate idccolumn="false"/>
+            <tvcandidate tvccolumn="false"/>
+            <derived isderived="true"/>
+            <format value=""/>
+         </properties>
+         <relations>
+            <export value="true"/>
+            <isExcluded value="false"/>
+            <outcolumn/>
+         </relations>
+         <algorithms length="5">
+            <algoritem index="0" name="MissingValues"/>
+            <algoritem index="1" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="1" mean="0.0130537" median="0.001" min="0" variance="0.0040487"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="2" name="AdaptiveLogShift">
+               <parameters>
+                  <params>
+                     <set index="0">
+                        <label value="0.01"/>
+                     </set>
+                  </params>
+               </parameters>
+            </algoritem>
+            <algoritem index="3" name="StatisticalDescriptionStandard">
+               <datadescription>
+                  <values max="1" mean="0.0615256" median="0" min="0" variance="0.0238612"/>
+               </datadescription>
+               
+            </algoritem>
+            <algoritem index="4" name="LinearNormalization"/>
+            <!--algorithms-->
+         </algorithms>
+      </column>
+   </transformations>
+   <!--all transformations visited ... -->
+</somtransformer>
+

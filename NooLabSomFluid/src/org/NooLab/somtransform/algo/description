@@ -1,0 +1,45 @@
+
+
+
+
+Algorithms are organized as templates through a stack of interfaces, and wrapped by an abstract class;
+
+
+the class "StackedTransformation" provides a method, which is used to create instances
+of algorithm .class files ( "public Object loadAlgoClass()" )
+
+For the built-in package path is used, which is
+   org.NooLab.somtransform.algo
+
+or the package path that is provided by the declaration of the plugin jar-file.
+This declaration file must be defined very early on startup of the application like so
+
+   sfProperties.getPluginSettings().setBaseFilePath("D:/dev/java/somfluid/plugins/", "catalog.xml") ;
+
+the plugin jarfiles are then expected to sit in a relative sub-dir "transforms/" to that
+
+After setting the path to the catalog, the plugins can be loaded. This loading tracks the reference
+to the classloader and provides the algorithm as a ready-made object, that later can be cast into 
+the respective algorithm. 
+
+	lap = new AlgorithmPluginsLoader(sfProperties, true) ;
+	if (lap.isPluginsAvailable()){
+		lap.load() ;
+	}
+     
+In case of plugin algorithm classes, the method "loadAlgoClass()" mentioned above checks does NOT
+check a package path, since the algorithm loader already provides a reference to the the instantiated class.
+Since the jar is scanned for classes as declared in the catalog file, the plugin jar may use ANY package path.
+ 
+  
+on any request to an algorithm, it is first checked whether there is an external version, before
+the built-in version is loaded or used   
+  
+is it possible to load an algorithm 2 times in parallel as different instances ???
+
+
+
+
+
+
+
