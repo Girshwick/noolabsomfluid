@@ -226,6 +226,7 @@ public abstract class AbstractMetaNode  extends
 	
 	public void setSerialID(long serialID) {
 		this.serialID = serialID;
+		extensionality.setNodeSerial(serialID) ;
 	}
 
 
@@ -240,6 +241,7 @@ public abstract class AbstractMetaNode  extends
 	
 	public void setNumGuid(long numGUID) {
 		this.numGUID = numGUID;
+		extensionality.setNodeNumGuid(numGUID) ;
 	}
 
 

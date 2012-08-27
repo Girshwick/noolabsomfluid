@@ -12,6 +12,7 @@ import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidTask;
 import org.NooLab.somfluid.astor.query.SomQueryFactory;
 import org.NooLab.somfluid.astor.query.SomQueryIntf;
+import org.NooLab.somfluid.astor.storage.db.AstorDataBase;
 import org.NooLab.somfluid.astor.stream.SomDataStreamer;
 import org.NooLab.somfluid.astor.trans.SomAstorNodeContent;
 import org.NooLab.somfluid.components.SomDataObject;
@@ -25,6 +26,7 @@ import org.NooLab.somfluid.core.engines.det.results.ModelProperties;
 import org.NooLab.somfluid.core.nodes.LatticeProperties;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somfluid.properties.PersistenceSettings;
 
 import org.NooLab.somsprite.ProcessCompletionMsgIntf;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
@@ -63,6 +65,13 @@ import org.NooLab.utilities.logging.SerialGuid;
  * 		and triggers a reorganization
  *   
  *   - persistence (object and XML)
+
+ *   
+ *  A particular level 2 process is the treatment of the words collected (as contexts) within a L1-node.
+ *  This treatment could take the words enrich them with semantic information from WordNet or Leipzig,
+ *  and performing a secondary analysis, just on the words from a node and its close surround
+ *  The result of this analysis would be ... 
+ *   
  *   
  * --------------------------------------------------------
  * 
@@ -141,6 +150,8 @@ public class SomAssociativeStorage
 	LatticePropertiesIntf latticeProps; 
 
 	//
+	AstorDataBase astorDb;
+	
 	SomAstor somAstor;
 	SomAstorNodeContent astorNodeContent;
 	
@@ -181,7 +192,7 @@ public class SomAssociativeStorage
 	
 	public void perform() throws Exception{
 		
-		
+		PersistenceSettings ps ;
 		long serialID=0;
 		serialID = SerialGuid.numericalValue();
 		
@@ -192,10 +203,32 @@ public class SomAssociativeStorage
 		
 		try{
 			
+			// creating a separate instance of sfp in AstorProperties as a mirror of sfProperties
+			// the sfp inside is INDEPENDENT !!!
+			AstorProperties astorProperties = new AstorProperties(sfProperties);
+
+			ps = astorProperties.getPersistenceSettings() ;
+			ps.setConfigSqlResourceJarPath("org/NooLab/somfluid/astor/resources/sql");
+			ps.setAppNameShortStr("astor") ;
 			
+			// create/care for database, read somid if it is available ...
+			astorDb = new AstorDataBase( astorProperties ) ;
+			
+			astorDb.setInternalCfgStoreName("create-db-sql-xml");
+			// alternative to using "PersistenceSettings" -> astorDb.setCfgResourceJarPath("") ;
+			
+			astorDb.prepareDatabase("astornodes",0) ;
+			   // .................
+			
+			
+			// create the lattice
 			somAstor = new SomAstor( this, sfFactory, sfProperties, sfTask, serialID);
 			
 			astorSomLattice = somAstor.getSomLattice();
+			
+			establishDbRegistration(astorSomLattice);
+			
+			// create/care for database, create entries 
 			
 			// SomQuery abstracts from the "physical" representation of the SOM:
 			// it establishes a common interface for querying a live som (into the SomLattice,  
@@ -208,8 +241,11 @@ public class SomAssociativeStorage
 			n = 500;
 
 			//<<<<<<<<<<<<<< TODO: DEBUG ONLY, remove this for production 
+			                                
 			astorNodeContent = new SomAstorNodeContent( this );
 			astorNodeContent.registerObservedSomProcess( somAstor );
+			
+			
 			//>>>>>>>>>>>>>>
 			
 			somAstor.setChangesThreshold(n);
@@ -248,6 +284,25 @@ public class SomAssociativeStorage
 	}
 	
 
+	private void establishDbRegistration(VirtualLattice somLattice) {
+		
+		long somId ;
+		int r=-1;
+		// note, that the somLattice maintains its own small ini store in order to provide startup persistence !!
+		somId = somLattice.getNumGuid();
+		
+		// if the som-id is unknown to the table, it will create a new entry
+		
+		String nodecontentTable = ""; // for the root SOM, this is empty,
+		                              // for derived offsprings, the names a re created and maintained
+		                              // by "virtualLattice"??
+		r = astorDb.updateSomLatticRegistration(somId,nodecontentTable) ;
+		// 539910151985355102
+		if (r!=0){
+			
+		}
+		
+	}
 	public void setInitialVariableSelection(ArrayList<String>  vs){
 		
 		//ArrayList<Double> initialUsageIndicator = new ArrayList<Double>();
@@ -390,6 +445,10 @@ public class SomAssociativeStorage
 
 	public VirtualLattice getAstorSomLattice() {
 		return astorSomLattice;
+	}
+
+	public AstorDataBase getAstorDb() {
+		return astorDb;
 	}
 
 	public SomAstor getSomAstor() {

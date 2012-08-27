@@ -7,6 +7,9 @@ import java.util.Random;
 
 
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.datatypes.Coord2D;
+import org.NooLab.utilities.datatypes.Coord3D;
+import org.NooLab.utilities.datatypes.Coordinate2D;
 import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 import org.NooLab.utilities.logging.PrintLog;
 
@@ -309,8 +312,20 @@ public class MetaNode   extends
 		if (className.toLowerCase().contains("profilevector")){
 			object = (T) profileVector;
 		}
-		
+		if (className.toLowerCase().contains("coord2d")){
+			Coord2D c2 = new Coord2D();
+			
+			
+			c2.setX(0.0);
+			object = (T) c2;
+		}
+		if (className.toLowerCase().contains("coord3d")){
+			Coord3D c3 = new Coord3D();
+			
+			object = (T) c3;
+		}
 		// size, StatsObject, etc. ....
+		
 		
 		return object;
 	}

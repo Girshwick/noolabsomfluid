@@ -563,8 +563,11 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 			}
 			rows = iciDb.from(c).limit(limitcount).select();
 			
+			/*
  			PreparedStatement prep = connection.prepareStatement( sql );
 			ResultSet rs = prep.executeQuery();
+			*/
+			
 			/*
 			Long cid;
 		    // Fetch each row from the result set

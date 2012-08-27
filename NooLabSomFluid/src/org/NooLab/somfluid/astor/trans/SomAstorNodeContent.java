@@ -1,14 +1,22 @@
 package org.NooLab.somfluid.astor.trans;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.TreeMap;
 
+import org.NooLab.astor.storage.iciql.NodeContent;
+import org.NooLab.astor.storage.iciql.NodeFingerprints;
+import org.NooLab.astor.storage.iciql.SomNames;
+import org.NooLab.itexx.storage.randomwords.iciql.Contexts;
 import org.NooLab.somfluid.astor.SomAssociativeStorage;
 import org.NooLab.somfluid.astor.query.SomQueryIntf;
+import org.NooLab.somfluid.astor.storage.db.AstorDataBase;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.engines.det.DSomCore;
+import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
@@ -62,6 +70,7 @@ public class SomAstorNodeContent {
 	SomAstorNodeContent astorNodeC ;
 	
 	VirtualLattice astorLattice = null ;
+	long somId=-1L;
 	
 	SomChangeEventObserver changeObserver;
 	SomCollector somCollector;
@@ -71,6 +80,7 @@ public class SomAstorNodeContent {
 	transient ArrUtilities arrutil = new ArrUtilities ();
 	transient PrintLog out = new PrintLog(2,true);
 	private SomQueryIntf somQuery;
+	private AstorDataBase astorDb;
 	
 	// ========================================================================
 	public SomAstorNodeContent(SomAssociativeStorage astorHost){
@@ -78,8 +88,95 @@ public class SomAstorNodeContent {
 		
 		this.astorHost = astorHost;
 		
-		changeObserver = new SomChangeEventObserver() ;
+		astorDb = astorHost.getAstorDb();
+		
+ 		changeObserver = new SomChangeEventObserver() ;
 		somCollector = new SomCollector();
+		
+		astorLattice = astorHost.getAstorSomLattice() ;
+		
+		// care for the mapping of the lattice to the database::nodefingerprints
+		
+		establishNodeFingerprints() ;
+		
+	}
+	
+	
+	/**
+	 * here we check whether the nodes of our SOM are registered... 
+	 * 
+	 */
+	private void establishNodeFingerprints() {
+		
+		ArrayList<MetaNode> nodes ;
+		MetaNode node;
+		long[] idValues;
+		long numGuid, _numGuid, _key ;
+		String nodeContentTable ;
+		
+		try{
+			
+			somId = astorLattice.getNumGuid() ;
+			
+			nodes = astorLattice.getNodes();
+		
+			nodeContentTable = "" ; // get it from SomNames
+															out.print(2, "preparing node references: fingerprints and maps...");
+			for (int i=0;i<nodes.size();i++){
+				
+				node = nodes.get(i);
+				
+				// the nodes elf-assign a unique numerical guid...
+				numGuid = node.getNodeNumGuid() ;
+				
+				// ...yet, if we use a database, we will overwrite this guid by the unique LONG value that
+				//    is being assigned by the database !!
+				// 
+				// for a given index position within the lattice, we always will get the same guid ! 
+				idValues = astorDb.updateLatticNodeRegistration( somId,numGuid,i ) ;
+				
+				_key = idValues[0];
+				_numGuid = idValues[1];
+				
+				 // overwriting...
+				if ( numGuid != _numGuid){  
+					node.setSerialID(_key) ;
+					node.setNumGuid(_numGuid) ;
+					
+					 
+					ArrayList<Long> nodeGuids = astorLattice.getNodeGuids() ;  
+					Map<Long,Object> nodeUidMap = astorLattice.getNodeUidMap() ;
+					Map<Long,Long> nodeSerialsMap = astorLattice.getNodeSerialsMap() ;
+					 
+					
+					astorLattice.getNodeGuids().add(_numGuid);
+					int p = astorLattice.getNodeGuids().indexOf(numGuid);
+					if (p>=0){
+						astorLattice.getNodeGuids().remove(p);
+					}
+					if (nodeUidMap.containsKey(numGuid)){
+						nodeUidMap.remove( numGuid ) ;
+					}
+					nodeUidMap.put(_numGuid, node) ;
+					
+					nodeSerialsMap.put(_numGuid, _key) ;
+					if (nodeSerialsMap.containsKey(numGuid)){
+						nodeSerialsMap.remove( numGuid ) ;
+					}
+				 
+				}
+															
+				astorLattice.setLatestNodeIndex(_key) ; // this refers to the runindex
+				// this is important for som processes which include merge and split
+				// actually... merge should never occur in default operation, only in dedicated re-organization...
+			}// i-> all nodes
+																out.print(2, "preparing node references done.");
+		}catch(Exception e){
+			out.printErr(1, "\nProblem in <establishNodeFingerprints()>... \n");
+			e.printStackTrace() ;
+		}
+		
+		_key=0;
 	}
 	// ========================================================================	
 	
@@ -109,6 +206,7 @@ public class SomAstorNodeContent {
 			cheobsThrd.start();
 		}
 
+		@SuppressWarnings("unchecked")
 		@Override
 		public void run() {
 			cheobsIsRunning = true; 
@@ -116,6 +214,7 @@ public class SomAstorNodeContent {
 			while (cheobsIsRunning){
 				
 				if (_changedNodes.size()>0){
+					
 					n1 = _changedNodes.size();
 					_changedNodes = (ArrayList<Long>)arrutil.makeItemsUnique(_changedNodes) ;
 					n2 = _changedNodes.size();
@@ -123,6 +222,7 @@ public class SomAstorNodeContent {
 					
 					if (_changedNodes.size()>0){
 						changedNodes.addAll(_changedNodes);
+						_changedNodes.clear();
 					}
 					
 				}else{
@@ -133,18 +233,18 @@ public class SomAstorNodeContent {
 		}
 
 		@Override
-		public void update(Observable o, Object arg) { // arg has been cloned before sending...
+		public void update(Observable o, Object arrData) { // arrData has been cloned before sending...
 			// observer sending this data could be found by searching the project code for "138709" (it is in SomAstor :: nodeChangeEvent() )
 			
 			String senderName = o.toString().replace("org.NooLab.somfluid.astor.", "") ;
 			
 			out.print(2, "<SomAstorNodeContent::SomChangeEventObserver> received an update message : "+
-					          arg.toString()+" from sender "+
-					          senderName ) ;
+							arrData.toString()+" from sender "+
+					        senderName ) ;
 			
-			if ((arg!=null) && (senderName.contains("SomAstor"))){
+			if ((arrData!=null) && (senderName.contains("SomAstor"))){
 				try{
-					ArrayList<Long> informedAboutNodes = (ArrayList<Long> )arg;
+					ArrayList<Long> informedAboutNodes = (ArrayList<Long> )arrData;
 					if (informedAboutNodes.size()>0){
 						_changedNodes.addAll(informedAboutNodes) ;
 					}
@@ -201,6 +301,7 @@ public class SomAstorNodeContent {
 							changedNode = changedNodes.get(0);
 							if (changedNode>=0){
 								updateCollectionOfNode(changedNode);
+								changedNodes.remove(0) ;
 							}
 							
 						}// changedNodes -> []
@@ -227,7 +328,7 @@ public class SomAstorNodeContent {
 	// ----------------------------------------------------
 	
 	// this creates a new histogram for the documents ???
-	public void updateCollectionOfNode( long changedNodeUid ){
+	public int updateCollectionOfNode( long changedNodeUid ){
 		/*
 		 * the context of this method
 		 * 
@@ -268,16 +369,32 @@ public class SomAstorNodeContent {
 		 * 
 		 * second we need a  
 		 *  
-		 * 
+		 * 			  id             
+					  somid          ** the id of the som as it is stored in the table somnames** 
+					  nodeid         ** the numerical GUID from nodefingerprints **
+					  
+					  docid          ** a particular node may contain various context and various words,
+					                    where word refers to the "center" position of the context**
+					                                                            
+					  fingerprintid  ** if word, the same value as in database "rg-fingerprint" ! 
+					                 	if sentence, then the same value as in ....  **
+					                 	                         
+					  contextid      ** for the same word there might be different contexts **
+
 		 */
 		
+		int result=0, rec;
 		MetaNodeIntf node;
 		ArrayList<Integer> records ;
 		
 		
-		
+		// TODO: should fork into a container immediately !!! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 		// this method is called periodically by the threaded process in class "SomCollector", 
 		// which in turn get active only in case of a sufficient number of node updates (2 updates to the same node count as 2...) 
+		
+		if (astorHost==null){
+			return -9;
+		}
 		
 		try{
 		
@@ -287,17 +404,64 @@ public class SomAstorNodeContent {
 			
 			// the lattice maintains a map from serialIds to object reference of the nodes. 
 			// we need to get the node for a particular changedNodeIndex
+			if (astorLattice==null){
+				return  -1;
+				// throw exception ...
+			}
 			node = astorLattice.getNodeByNumGuid( changedNodeUid );
 			
+			if (node==null){
+				
+				// NodeFingerprints nfp = astorDb.getNodeEntry( changedNodeUid ); 
+				
+				return  -3 ;
+			}
 			records = node.getExtensionRecordsIndexValues();
 			
-			// from here : database stuff, reading randomwords:contexts, writing astornodes::nodecontent-1
+			// from here onwards: database stuff! 
+			
+			// we first need a difference list: we retrieve 
+			// all records for a nodeid
+			
+			
+			// reading randomwords:contexts, writing astornodes::nodecontent-1
 			// this index values should point to the contextid in the table contexts
 			
 			/* from that we update the database astornodes
 				with fields  somid, docid, nodeid, contextid 
 			
+			   astorDb.prepareDatabase("astornodes") ;
 			*/
+			Contexts contxt;
+			long ctxtId,fpindex,docid, _iukey ;
+			
+			 
+			long _somID = somId ;
+			_somID = astorLattice.getNumGuid() ;
+			
+			if ((records!=null) && (records.size()>0)){
+
+				for (int i=0;i<records.size();i++){
+					
+					rec = records.get(i) ;
+			
+					// SELECT * FROM CONTEXTS where CONTEXTID = 34;
+					contxt = astorDb.getContextsEntryByRecId( rec ); 
+					// String wordlabel = (String)ar.get(0) ;
+					
+					if (contxt!=null){
+						docid = contxt.docid;
+						fpindex = contxt.fpindex;
+						ctxtId = contxt.contextid;
+						// changedNodeUid = node's num guid , _somID
+
+						_iukey = astorDb.insertUpdateNodeContent( _somID, changedNodeUid, docid, ctxtId, fpindex);
+					}
+ 					
+				}// i-> all records
+			}// records ?
+			
+			
 			
 			
 		}catch(Exception e){
@@ -305,7 +469,7 @@ public class SomAstorNodeContent {
 		}
 		
 		
-		
+		return result ;
 	}
 	
 	
