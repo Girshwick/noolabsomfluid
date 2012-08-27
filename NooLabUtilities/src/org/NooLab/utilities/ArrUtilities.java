@@ -2566,8 +2566,13 @@ public class ArrUtilities {
 	}
 
 
-	public ArrayList<String> makeItemsUnique(ArrayList<String> items) {
-		ArrayList<String> uniqued = new ArrayList<String>(); 
+	public ArrayList makeItemsUnique(ArrayList items) {
+		ArrayList uniqued = new ArrayList (); 
+		
+		if ((items==null) || (items.size()==0)){
+			return items;
+		}
+		
 		
 		for (int i=0;i<items.size();i++){
 			

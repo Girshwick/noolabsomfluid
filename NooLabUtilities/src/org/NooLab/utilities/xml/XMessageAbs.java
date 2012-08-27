@@ -978,15 +978,48 @@ public abstract class XMessageAbs {
 	 * @param condition
 	 * @param dataTagSpecs
 	 * @return
+	 * @throws Exception 
 	 */
 	public Vector<Object> getSpecifiedConditionalNode(	String rawXmlMsg, 
 															String domainSpecs, 
 															String condAttrSpecs,
 															String condition, 
-															String dataTagSpecs ) {
+															String dataTagSpecs ) throws Exception {
 		
+		String subtag1 ="", previousQueryPrefix, previousXqueryCondition = "" ;
 		
-		return null;
+		clearBasicConditionLocation();
+		previousQueryPrefix = xpathQuery.getQueryPrefix();
+		previousXqueryCondition = xqueryBasicCondition ;
+		xqueryBasicCondition = "" ;
+		
+		subtag1 = dataTagSpecs;
+		int p= subtag1.indexOf("/",3) ;
+		if (p>0){
+			subtag1 = dataTagSpecs.substring(0,p) ;
+			
+			dataTagSpecs = dataTagSpecs.substring(p+1,dataTagSpecs.length());
+			dataTagSpecs = strgutil.trimm(dataTagSpecs, "/");
+			
+			if (subtag1.startsWith("//")){
+				subtag1 = subtag1.substring(2, subtag1.length()) ;
+			}
+			if (subtag1.startsWith("/")){
+				subtag1 = subtag1.substring(1, subtag1.length()) ;
+			}
+		}
+		
+		int r = setBasicConditionLocation(rawXmlMsg, domainSpecs, condAttrSpecs, condition, subtag1);
+		
+		if (r!=0){
+			throw(new Exception("Requested node in xml not found (r="+r+")."));
+		}
+		Vector<Object> nodelist = getItemsList(rawXmlMsg, "//"+dataTagSpecs, "", "");
+		
+		xpathQuery.setQueryPrefix(previousQueryPrefix) ;
+		xqueryBasicCondition = previousXqueryCondition;
+		
+		return nodelist;
 	}
 	
 	
@@ -1165,7 +1198,7 @@ public abstract class XMessageAbs {
     	
     	String xquery , startmarker = "//";
     	// xquery = "//*[@pet='cat']";
-    	
+    	xqueryBasicCondition = "" ;
     	
     	try{
     		domainSpecs = domainSpecs.trim();
@@ -1183,18 +1216,30 @@ public abstract class XMessageAbs {
         	}
         		 //   //property[@id='1'] 
         	
-        	  
+        	
     		xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
     		
         	xmlNodeObj = xpathQuery.getMatchingXmlNode( xquery ) ;
+        	result = -2;
         	
         	if (xmlNodeObj!=null){
         		
-        		xpathQuery.setQueryPrefix(xquery) ;
-        		xqueryBasicCondition = xquery;
-        		result =0;
+        		String nodename = ((Node)xmlNodeObj).getNodeName() ;
+        		
+        		if ((nodename!=null) && (nodename.length()>0)){
+
+            		xpathQuery.setQueryPrefix(xquery) ;
+            		xqueryBasicCondition = xquery;
+            		
+            		if (dataTagSpecs.contains(nodename)){
+            			result =0;
+            		}else{
+            			result =-3;
+            		}
+
+        		}
         	}else{
-        		result=-3;
+        		result=-7;
         	}
         	
         	

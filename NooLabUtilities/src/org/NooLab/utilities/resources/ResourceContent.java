@@ -10,6 +10,9 @@ public class ResourceContent {
 	
 	public static String getConfigResource( Class clzz, String cfgResourceJarPath, String resourceName ) throws Exception{
 		
+		if (cfgResourceJarPath.endsWith("/")==false){
+			cfgResourceJarPath = cfgResourceJarPath+"/" ;
+		}
 		String resourcePath = cfgResourceJarPath + resourceName;
 		
 		String xmlstr = "" ;
