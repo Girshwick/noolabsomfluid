@@ -202,7 +202,10 @@ public class DSomDataPerception
 			// in case of non-target clustering mode, we will have a variance criterion
 			// for instance, learning a property of the SOM itself, like the distance of the record to the
 			// class that represents x% of the data. Here the assignment of what is "target" changes all the time
-			
+
+if (currentEpoch>=3){ 
+	f=f+1-1;
+}
 			int mppLevel = sfProperties.getMultiProcessingLevel() ;
 			// getBestMatchingNodes() should respect minimum fill, if the winner is already filled well 
 			winningNodeIndexes = getBestMatchingNodes( currentRecordIndex, testrecord, 5, boundingIndexList,mppLevel);
@@ -210,9 +213,13 @@ public class DSomDataPerception
 										int wn ;
 										wn = winningNodeIndexes.size() ;
 										if (wn<=0){
-											out.printErr(2, "no bmu found for record <"+currentRecordIndex+">!");
+											out.printErr(3, "no bmu found for record <"+currentRecordIndex+">!");
 										}
 										
+										int bmuIndex = -1;
+										if (winningNodeIndexes.size()>0){
+											bmuIndex = winningNodeIndexes.get(0).getIndex();
+										}
 										
 				         				if ((winningNodeIndexes==null) || (winningNodeIndexes.size()==0)){
 				         					// should not happen, is it an error ? check and count
@@ -223,7 +230,11 @@ public class DSomDataPerception
 
 				         					continue;
 				         				}
-				         				out.print(4, "winning node index: "+ winningNodeIndexes.get(0).getIndex() );
+				         				int _llevel = 5;
+				         				if (currentEpoch>=3){ 
+				         					_llevel=4;
+				         				}
+				         				out.print(_llevel, "winning node index for record <"+currentRecordIndex+">: "+ bmuIndex );
 		        				
             // set calculateAllVariables = true; for all nodes in the last epoch
 
@@ -234,7 +245,6 @@ if ((currentEpoch+1)>=somSteps){
 	int nn;
 	nn=0;
 }
-	
 		    	updateWinningNode( winningNodeIndexes, testrecord, currentRecordIndex, learningRate );
 			
 		    	// this also defines the size of the neighborhood 
@@ -242,6 +252,7 @@ if ((currentEpoch+1)>=somSteps){
 		    	ce = Math.min(ce,somSteps);
 		    	ce = currentEpoch ;
 		    	adoptInfluenceAndReach( sampleRecordIDs.size(), recordsConsidered-1, ce, somSteps ,timeConstant);
+		    	// winningNodeIndexes.clear();
 		    }
 
 		    
@@ -353,7 +364,7 @@ if ((currentEpoch+1)>=somSteps){
  		if (_DEBUG)out.delay(130);
 		 
 		 
-	} // go()
+	} // go() -> back to DSomCore and its Loop across Epochs
 
 	/**
 	 * we exclude any record for which the target variable contains a value <0 = undefined
@@ -957,6 +968,10 @@ if (extSizeInNeighbors.size()>0){
 		// the distances to the winner nodes then is calculated for any of the selected node;
 		// we need this info for determining the influence
 		 
+		if (winningNodeIndexes.size()==0){
+			return nodelist; // which is empty here, yet not null
+		}
+		
 		// the object waits for the returned list
 		// the object needs a callback up to SomFluid, which in turn collects the events from RepulsionField
 		
@@ -1381,8 +1396,11 @@ if (this.currentEpoch==2){
 				node = somLattice.getNode(nodeindex) ;	
 				
 				if (i<=0){
-					int iwn = i;
-					if (this.currentEpoch+1==this.somSteps)iwn=-1;
+					int iwn = i; 
+					if (this.currentEpoch+1==this.somSteps){
+						iwn=-1; // special treatment in the last epoch
+						node.setLearningStageIsFinal(true) ;
+					}
 											if ((i<=1) && (currentEpoch==0)){
 												//
 												/*
@@ -1392,15 +1410,25 @@ if (this.currentEpoch==2){
 												out.printErr(2, ">>>   node UIV : "+str) ;
 												*/
 											}
+int a=2;											
+if ((a==1) && (this.currentEpoch+1==this.somSteps)){
+	int sz= node.getExtensionality().getCount() ;
+	out.print(2,"upating node (ix:"+nodeindex+" , size now = "+sz+"  for guid : "+node.getNodeNumGuid()+" ") ;
+}
+
+					
 					// ... calculate new profile, calculate new variance, CoV
 					node.insertDataAndAdjust( dataNewRecord, recordIndexInTable, 
-											  iwn,currentLearningrate, 
-											  fillingLimitForMeanStyle );
+											  // we need a  method that returns the desired column for this collection
+											  sfProperties.getCollectibleColumn(), // usually, this is recordIndexInTable, and then it will return null 		 
+											  iwn,currentLearningrate,             // upon "null", nothing will be collected
+											  fillingLimitForMeanStyle );          
 					break;
 				}else{
 					// no data insertion, but only adopting the profile in an as-if mode
 					// note, that also the vicinity of those secondary winners will be updated!
 					
+					node.setLearningStageIsFinal(false) ;
 					// for normal updates of profiles, influence is determined by getInfluenceforDistance() in dependency to 
 					// the distance to the winner, here, we reduce the influence of the virtual insert to a portion of the
 					// influence, a standard insert would have, e.g. 0.3

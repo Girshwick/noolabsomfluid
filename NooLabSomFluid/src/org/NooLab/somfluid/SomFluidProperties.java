@@ -104,7 +104,10 @@ public class SomFluidProperties
 	ArrayList<String> groupDesignVariables = new ArrayList<String>() ;
 
 	private int absoluteFieldExclusionsMode;
-
+	
+	private Object collectibleColumn;
+	
+	
 	private int showSomProgressMode;
 
 	private boolean isPluginsAllowed = true;
@@ -119,6 +122,9 @@ public class SomFluidProperties
 
 
 	private boolean isAssignatesHomogeneous=true;
+
+
+	
 
 
 	
@@ -472,6 +478,25 @@ public class SomFluidProperties
 	public void setAutoAdaptResolutionAllowed(int flag) {
 		//  
 		
+	}
+
+	
+
+	public void setCollectibleColumn(Object collectibleColumn) {
+		this.collectibleColumn = collectibleColumn;
+	}
+
+	
+	@Override // from abstract super class
+	public Object getCollectibleColumn() {
+
+		// TODO for Astor: provide the secondary index == ContextId, which
+		//      is from the database.
+		// such, the SOM does not need to refer to a locally available persistent 
+		// table, just to a persistent index that is somehow available
+		
+		// default = 0
+		return collectibleColumn ;
 	}
 
 
@@ -1015,6 +1040,10 @@ public class SomFluidProperties
 		
 		return xmlstr ;
 	}
+
+
+
+	
 
 
 

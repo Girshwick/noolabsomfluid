@@ -249,7 +249,7 @@ public class ProfileVectorMatcher{
 			
 			
 			// for (n = 0; n < somLattice.size(); n++) {
-			for (n = 0; n < nodeCollectionIndexes.size(); n++) {
+			for (n = 0; n < nodeCollectionIndexes.size(); n++) { // all nodes
 				 
 				nodix = nodeCollectionIndexes.get(n);
 				

@@ -40,6 +40,7 @@ import org.NooLab.docserver.storage.db.iciql.Documents;
 import org.NooLab.docserver.storage.db.iciql.Folders;
 import org.NooLab.itexx.storage.ConnectorClientIntf;
 import org.NooLab.itexx.storage.DataBaseCreateCommand;
+import org.NooLab.itexx.storage.DataBaseMaintenance;
 import org.NooLab.itexx.storage.DatabaseMgmt;
 import org.NooLab.itexx.storage.DbConnector;
 import org.NooLab.itexx.storage.DbLogin;
@@ -50,6 +51,8 @@ import org.NooLab.itexx.storage.randomwords.iciql.Contexts;
 
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.astor.AstorProperties;
+import org.NooLab.somfluid.astor.util.FingerPrint;
+import org.NooLab.somfluid.env.data.SomTexxDataBase;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.util.XmlStringHandling;
 import org.NooLab.structures.randomgraph.RawEntityPosition;
@@ -67,6 +70,7 @@ public class AstorDataBase implements ConnectorClientIntf{
 	// "org/NooLab/texx/resources/sql/" ; // trailing / needed !!   
 	
 	AstorProperties astorProperties ;
+	private SomFluidProperties sfProperties;
 	PersistenceSettings ps;
 	
 	private boolean dbFileExists;
@@ -91,8 +95,10 @@ public class AstorDataBase implements ConnectorClientIntf{
 	DbConnector dbConnector ;
 	DataBaseHandler dbHandler ;
 
+	DataBaseMaintenance dataBaseBasics;
+	
 	protected String internalCfgStoreName;
-	private SomFluidProperties sfProperties;
+	
 
 	String user = "";
 	String password = "" ;
@@ -105,6 +111,7 @@ public class AstorDataBase implements ConnectorClientIntf{
 	DFutils fileutil = new DFutils();
 	PrintLog out = new PrintLog(2,false);
 	StringedObjects strObj = new StringedObjects();
+	private SomTexxDataBase randomWordsDb;
 	
 	// ========================================================================
 	public AstorDataBase( AstorProperties astorProps){
@@ -139,6 +146,9 @@ public class AstorDataBase implements ConnectorClientIntf{
 
 		sampler = new StatisticSample(172838);
 		
+		dataBaseBasics = new DataBaseMaintenance( (ConnectorClientIntf)this );
+		
+		out = dataBaseBasics.getOut() ;
 		out.setPrefix("[ASTOR-DB]");
 	}
 
@@ -158,29 +168,6 @@ public class AstorDataBase implements ConnectorClientIntf{
 	}
 	
 	
-	private boolean removeLock(){
-		boolean rB=false;
-		
-		try{
-		
-
-			if (connection==null){
-				ArrayList<String> locks = fileutil.listOfFiles("lock",".db", storageDir);
-				for (int i=0;i<locks.size();i++){
-					String fname = locks.get(i);
-					if (DFutils.fileExists( fname)){
-						fileutil.deleteFile( fname) ;
-					}
-				}
-			}
-			
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-		
-		return rB;
-	}
-
 	public boolean prepareDatabase( String expected, int keepOpenAfterPrepare ) throws Exception {
 		boolean rB=false;
 		String appnameShortStr;
@@ -188,7 +175,8 @@ public class AstorDataBase implements ConnectorClientIntf{
 		try {
 			// remove any lock 
 			if (connection==null){
-				removeLock();
+				dataBaseBasics.removeLock(connection , storageDir);
+				dataBaseBasics.removeLock(connection , getRelocatedH2Dir(storageDir) );
 			}else{
 				return true;
 			}
@@ -210,8 +198,10 @@ public class AstorDataBase implements ConnectorClientIntf{
 			int servermodeFlag=0;
 			if (accessMode.contentEquals("tcp")){
 				// if in server mode
-				String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT) ;// _BASEDIR_QUERY_PROJECT
-				h2Dir = DFutils.createPath(h2Dir, "storage/") ;
+				// String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT) ;// _BASEDIR_QUERY_PROJECT
+				// h2Dir = DFutils.createPath(h2Dir, "storage/") ;
+				
+				getRelocatedH2Dir(storageDir);
 				
 				String dbn  = databaseName;
 				int r = createServer( databaseName,h2Dir) ;
@@ -230,9 +220,11 @@ public class AstorDataBase implements ConnectorClientIntf{
 				}
 			}
 			//  
-			String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT) ;
-			h2Dir = DFutils.createPath(h2Dir, "storage/") ;
-
+			// String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT) ;
+			// h2Dir = DFutils.createPath(h2Dir, "storage/") ;
+			
+			getRelocatedH2Dir(storageDir) ;
+			
 			databaseFile = connect( databaseName, h2Dir, servermodeFlag ) ;
 			
 			
@@ -273,6 +265,22 @@ public class AstorDataBase implements ConnectorClientIntf{
 
 	//             e.g. resourceName = "create-db-sql-xml" ;
 	
+	public String getRelocatedH2Dir(String storageDir){
+		
+		String _h2Dir;
+		try {
+			
+			if ((h2Dir.length()==0) || (DFutils.folderExists(h2Dir)==false) || 
+					(h2Dir.contentEquals(storageDir))){
+				_h2Dir = DatabaseMgmt.setH2BaseDir( storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT);
+				h2Dir = DFutils.createPath( _h2Dir, "storage/") ;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return h2Dir;
+	}
 
 	
 	private void createDatabaseStructure(String dbname) throws Exception {
@@ -285,10 +293,7 @@ public class AstorDataBase implements ConnectorClientIntf{
 		xmlstr = ResourceContent.getConfigResource( this.getClass(), cfgResourceJarPath, internalCfgStoreName ) ;
 		// xmlstr = getConfigResource( internalCfgStoreName); // "create-db-sql-xml");
 		
-		String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT) ;
-		h2Dir = DFutils.createPath(h2Dir, "storage/") ;
-		
-		connect( databaseName,h2Dir) ;
+		connect( databaseName, getRelocatedH2Dir(storageDir) ) ;
 		
 		// get the create statements
 		appshortname = this.astorProperties.getPersistenceSettings().getAppNameShortStr() ;
@@ -302,54 +307,22 @@ public class AstorDataBase implements ConnectorClientIntf{
 		}
 		
 		if ((connection==null) || (connection.isClosed())){
+			String _h2Dir = h2Dir;
+			if (_h2Dir.endsWith("/")){
+				_h2Dir=_h2Dir.substring(0,_h2Dir.length()-1);
+			}
 			
-			h2Dir = h2Dir.substring(0,h2Dir.length()-1);
-			String url = 	"jdbc:h2:tcp://localhost/"+h2Dir+"/"+dbname; 
+			String url = 	"jdbc:h2:tcp://localhost/"+_h2Dir+"/"+dbname; 
 			
 			DbLogin login = new DbLogin(user,password) ; 
 			connection = dbConnector.getConnection(url, login);
 			
 		}
 		
-		create_DbUsers(ccs,connection);
+		dataBaseBasics.createDbUsers(ccs,connection);
 		
 	}
 
-	
-	public void create_DbUsers(ArrayList<DataBaseCreateCommand> ccs, Connection c) throws Exception {
-		
-		ArrayList<DbUser> users ;
-		DbUser dbu;
-		
-		String str="";
-		if (c.isClosed()){
-			open(c);
-		}
-
-		
-		try{
-			DbUser.createDbUser(c, "sa", "sa") ;
-		}catch(Exception e){
-		}
-		
-		for (int i=0;i<ccs.size();i++){
-			if (ccs.get(i).getDomain().toLowerCase().contentEquals("users")){
-				users = ccs.get(i).getUsers();
-				for(int u=0;u<users.size();u++){
-					dbu = users.get(u); ;
-					try{
-						DbUser.createDbUser(c, dbu.getUsername(), dbu.getPassword()) ;
-					}catch(Exception e){
-						out.printErr(1, e.getMessage() + " ...while ettempting to create user <"+ dbu.getUsername()+">.") ;
-					}
-				}
-				break;
-			}
-		}
-		
-		
-	}
-	
 	
 	private int checkStructure(Connection c, String dbname) {
 											// "randomgraph" "randomwords" "rg-fingerprints"
@@ -427,9 +400,14 @@ public class AstorDataBase implements ConnectorClientIntf{
 		
 		try{
 
+			if (dataBaseBasics!=null){
+				dataBaseBasics.disconnect(connection);
+			}
+			
 			jdbMetaData = null;
 			dbCatalog = "";
-			disconnect();
+			
+			
 			if (server != null){
 				server.stop() ;
 			}
@@ -440,33 +418,6 @@ public class AstorDataBase implements ConnectorClientIntf{
 		
 	}
 
-	public void disconnect(){
-		
-		try{
-			
-			if (connection != null){
-				
-				if (connection.isClosed()==false){
-					connection.commit();
-					
-					out.delay(100);
-					
-					connection.close(); 
-				}
-				
-				out.delay(100);
-				if (connection.isClosed()){
-					connection = null;
-				}
-			}
-			
-		}catch( SQLException sx){
-			sx.printStackTrace();
-		}finally {
-	         
-	    }
-		
-	}
 
 	protected void getJdbMeta(Connection c) throws SQLException{
 		jdbMetaData = c.getMetaData();
@@ -498,11 +449,8 @@ public class AstorDataBase implements ConnectorClientIntf{
 		try{
 			
 			if (connection.isClosed()){
-				if ((h2Dir.length()==0) || (DFutils.folderExists(h2Dir)==false)){
-					String _h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT );
-					h2Dir = DFutils.createPath( _h2Dir, "storage/") ; // storageDir;
-				}
-				connect(this.databaseName, h2Dir);
+				
+				connect(this.databaseName, getRelocatedH2Dir(storageDir));
 				c=connection;
 			}
 			iciDb = Db.open(c);
@@ -523,14 +471,14 @@ public class AstorDataBase implements ConnectorClientIntf{
 		
 		if (databaseUrl.length()==0){
 
-			String _h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT );
-			h2Dir = DFutils.createPath( _h2Dir, "storage/") ; // storageDir;
-
-			if (h2Dir.endsWith("/")){
-				h2Dir = h2Dir.substring(0,h2Dir.length()-1);
+			
+			String _h2Dir = getRelocatedH2Dir(storageDir);
+			
+			if (_h2Dir.endsWith("/")){
+				_h2Dir = _h2Dir.substring(0,_h2Dir.length()-1);
 			}
 
-			databaseUrl = 	"jdbc:h2:tcp://localhost/"+ h2Dir+"/"+databaseName; // +";AUTO_SERVER=TRUE" ;
+			databaseUrl = 	"jdbc:h2:tcp://localhost/"+ _h2Dir+"/"+databaseName; // +";AUTO_SERVER=TRUE" ;
 
 		}
 			
@@ -543,7 +491,9 @@ public class AstorDataBase implements ConnectorClientIntf{
 	  	
 	public void startServer( String dbNamePattern ) { 
 		
-		removeLock();
+		dataBaseBasics.removeLock(connection , storageDir);
+		dataBaseBasics.removeLock(connection , getRelocatedH2Dir(storageDir));
+
 		try {
 			prepareDatabase( dbNamePattern,1 );
 		} catch (Exception e) {
@@ -667,20 +617,14 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 			// String docoservUrl = connection.
 			// "jdbc:h2:tcp://localhost/~/docoserv"
 			// :nio
-			String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT );
-			String _db_dir = DFutils.createPath( h2Dir, "storage/") ; // storageDir;
-
-			if (_db_dir.endsWith("/")){
-				_db_dir = _db_dir.substring(0,_db_dir.length()-1);
+			
+			String _h2Dir = getRelocatedH2Dir(storageDir);
+			
+			if (_h2Dir.endsWith("/")){
+				_h2Dir = _h2Dir.substring(0,_h2Dir.length()-1);
 			}
 
-			String url = 	"jdbc:h2:tcp://localhost/"+_db_dir+"/"+dbname; // +";AUTO_SERVER=TRUE" ;
-			url = url.replace("//", "/") ;
-
-			// if (serverMode>=1)
-			{
-				url = 	"jdbc:h2:tcp://localhost/"+_db_dir+"/"+dbname;
-			}
+			String url = 	"jdbc:h2:tcp://localhost/"+_h2Dir+"/"+dbname; // +";AUTO_SERVER=TRUE" ;
 			
 						
 			databaseUrl = "";
@@ -701,8 +645,6 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 				
 				DbLogin login = new DbLogin(user,password) ; // may contain a pool of users
 				connection = dbConnector.getConnection(url, login);
-
-				// connection = DriverManager.getConnection( url, user, password);
 			}
 
 			dbfile = DFutils.createPath(filepath,dbname+".h2.db") ;
@@ -714,10 +656,8 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 				}
 				
 			}
-			
 			 
 			// CALL DATABASE_PATH(); 
-			 
 			
 			if (fil.exists()==false){
 				throw new FileNotFoundException("\nDatabase file not found (err="+err+")\n"+
@@ -727,9 +667,11 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 
 			out.print(1,"database has been started ...");
 			out.print(2,"...its connection url is : "+ databaseUrl) ;
+
 			
 		}catch(JdbcSQLException jx){
-			System.out.println("Connecting to database <"+dbname+"> failed \n"+jx.getMessage() );
+			
+			System.err.println("Connecting to database <"+dbname+"> failed \n"+jx.getMessage() );
 			String lockfile = filepath+"/"+dbname+".lock.db";
 			File fil = new File(lockfile);
 			fil.deleteOnExit();
@@ -760,10 +702,7 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 			
 			if ((connection==null) || (connection.isClosed())){
 				
-				String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT) ;
-				h2Dir = DFutils.createPath(h2Dir, "storage/") ;
-
-				connect( databaseName, h2Dir) ;
+				connect( databaseName, getRelocatedH2Dir(storageDir)) ;
 			}
 
 			if (iciDb==null){
@@ -819,8 +758,17 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 		this.databaseName = databaseName;
 	}
 
+	public void setRandomWordsDb(SomTexxDataBase randomWordsDb) {
+		// 
+		this.randomWordsDb = randomWordsDb;
+	}
+
 	public String getDatabaseUrl() {
 		return databaseUrl;
+	}
+
+	public void setInternalCfgStoreName(String fname) {
+		internalCfgStoreName = fname;
 	}
 
 	public String getCfgResourceJarPath() {
@@ -853,37 +801,6 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 
 	public PrintLog getOut() {
 		return out;
-	}
-
-	public void setInternalCfgStoreName(String fname) {
-		internalCfgStoreName = fname;
-	}
-
-	
-
-	private String createFingerprint(int fpLen, int digits, String separator) {
-		
-		String fpStr="";
-		String profileStr ;
-		double rndVal ;
-		
-		ArrayList<Double> profile = new ArrayList<Double>();
-		
-		
-			
-			
-			for (int i=0;i<fpLen;i++){
-				
-				rndVal = sampler.getNextUniformRandom();
-				profile.add( rndVal ); 
-			}
-			profileStr = ArrUtilities.arr2Text(profile, digits, separator);
-
-			if (profileStr.endsWith(separator)){
-				profileStr = profileStr.substring(0 , profileStr.length()-2) ;
-			}
-			fpStr = profileStr;
-		return fpStr;
 	}
 
 	
@@ -925,7 +842,7 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 					nodecontentTable = "nodecontent" ;
 				}
 				
-				fpString = createFingerprint( 20, 6,";") ; // will be added as prefix to the fingerprints of the nodes 
+				fpString = (new FingerPrint(sampler)).createFingerprint( 20, 6,";") ; // will be added as prefix to the fingerprints of the nodes 
 				s.somid = somId;
 				s.tablename = nodecontentTable;
 				s.timestamp = System.currentTimeMillis() ;
@@ -1011,7 +928,7 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 			}
 			if ((result== -3) || (nods==null) || (nods.size()==0)){
 				
-				fpString = createFingerprint( 50, 6,";") ; // will be added as prefix to the fingerprints of the nodes 
+				fpString = (new FingerPrint(sampler)).createFingerprint( 50, 6,";") ; // will be added as prefix to the fingerprints of the nodes 
 				
 				
 				// iciDb.from(nfp).increment(nfp.id) ; -->> increments by 16 or even 24... so we do it by our own
@@ -1075,13 +992,23 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 		
 		Contexts c = new Contexts();
 		List<Contexts> cs;
+		Db iciDb;
 		
 		try{
 			
+			if (randomWordsDb==null){
+				throw(new Exception("Database <randomwords> is not available, nodecontent for database <astornodes> can't be created.")) ;
+			}
+			iciDb = randomWordsDb.getIciDb() ;
+			
 			if (iciDb.getConnection().isClosed()){      
 				//<<<  wrong database here !!!! points to astornodes, but we need randomwords
-				// --> thus a list of connections...
-				iciDb = Db.open(databaseUrl, user, password);
+				// 
+				 
+				// randomwords should provide a user "astor" !!! user, password);
+				iciDb = dataBaseBasics.iciOpenTolerant( databaseUrl, "sa","sa") ;
+				// a wrapper for:  iciDb = Db.open(databaseUrl, "sa","sa") ;
+				// it retries to open 5 times
 			}	
 			// SELECT * FROM CONTEXTS where CONTEXTID = 34;
 			
@@ -1103,14 +1030,14 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 		 
 		long dbKey=-1L;
 		
-		
 		NodeContent nc = new NodeContent();
 		List<NodeContent> ncs;
 		
 		try{
 			
 			if (iciDb.getConnection().isClosed()){
-				iciDb = Db.open(databaseUrl, user, password);
+				// iciDb = Db.open(databaseUrl, user, password);
+				iciDb = dataBaseBasics.iciOpenTolerant( databaseUrl, user, password);
 			}	
 			
 			// is it already contained?
@@ -1132,16 +1059,14 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
                 nc.docid = docid ;
                 nc.contextid = contextId ;
 				
-                
+                dbKey = iciDb.insertAndGetKey(nc);
+                // iciDb.update(nc);
 			}
 			
 		}catch(Exception e){
 			e.printStackTrace();
 		}
-		
-		
-		
-		
+		 
 		return dbKey;
 	}
 	

@@ -215,7 +215,7 @@ public class SomAppNode
 	}
 	
 	@Override
-	public void insertDataAndAdjust(ArrayList<Double> dataNewRecord, int recordIndexInTable, int ithWinner,
+	public void insertDataAndAdjust(ArrayList<Double> dataNewRecord, int recordIndexInTable, Object collectibleInfo,int ithWinner,
 			double learningrate, int fillingLimitForMeanStyle) {
 		// TODO Auto-generated method stub
 		

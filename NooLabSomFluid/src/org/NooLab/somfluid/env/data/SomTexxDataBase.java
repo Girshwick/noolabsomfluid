@@ -132,9 +132,11 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		
 		try{
 
+			disconnect();
+			
 			jdbMetaData = null;
 			dbCatalog = "";
-			disconnect();
+			
 			if (server != null){
 				server.stop() ;
 			}
@@ -383,7 +385,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 			rB = databaseFile.length()>0;
 			
 			if (rB){
-															out.print(2, "conn closed ? (1) "+connection.isClosed());
+															out.print(3, "conn closed ? (1) "+connection.isClosed());
 				
 				dbHandler = new DataBaseHandler( this ) ;
 				
@@ -391,7 +393,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 					open();
 					dbHandler.connection = connection;
 				}
-															out.print(2, "conn closed ? (2) "+connection.isClosed());
+															out.print(3, "conn closed ? (2) "+connection.isClosed());
 		// returns falsely false for randomwords		
 				nMetaData = dbHandler.getMetadata();
 				

@@ -2,8 +2,8 @@ package org.NooLab.somfluid.core.engines;
 
 import java.util.ArrayList;
 
-import org.NooLab.somfluid.core.categories.extensionality.BasicSimpleStatisticalDescription;
 import org.NooLab.somfluid.data.Variable;
+import org.NooLab.somfluid.util.BasicSimpleStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;
 
@@ -32,9 +32,15 @@ public class NodeStatisticsSimpleBasic implements NodeStatisticsIntf {
 
 	}
 
-	private void resetFieldStatistics(int i) {
+	private void resetFieldStatistics(int n) {
 		// 
+		BasicSimpleStatisticalDescription basic_stats_element ;
 		
+		
+		basic_stats_element = (BasicSimpleStatisticalDescription) fieldValues.get(n);
+		
+		basic_stats_element.reset();
+
 	}
 	
 	@Override

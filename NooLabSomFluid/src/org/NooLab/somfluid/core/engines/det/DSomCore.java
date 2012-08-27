@@ -34,6 +34,7 @@ import org.NooLab.somscreen.SomScreening;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
  
 import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.LogControl;
 import org.NooLab.utilities.logging.PrintLog;
 
@@ -577,7 +578,8 @@ if (currentEpoch>=3){
 	int nn;
 	nn=0;
 }
-				// before (re-)starting, we have to reset the node statistics, and the list of entries, except the weights of the vector
+				// before (re-)starting, we have to reset the node statistics, and the list of entries, 
+				// except the weights of the vector
 				clearNodesExtension( currentEpoch );
 				
 				// sample size is dependent on epoch and number of records
@@ -600,6 +602,10 @@ if (currentEpoch>=3){
 				
 				currentEpoch++;
 				
+				IndexedDistances ixds = dSom.somLattice.getNodeSizes(true);
+				int nz = (int)ixds.getItem(0).getDistance() ;
+				out.printErr(3, "Som-Epoch <"+currentEpoch+">, sample size = "+actualRecordCount+", largest node (ix:"+ixds.getItem(0).getIndex()+") = "+nz) ;
+
 				// consoleDisplay();
 			} // currentEpoch -> maxSomEpochCount 
 				

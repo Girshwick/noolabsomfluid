@@ -27,6 +27,7 @@ import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
 import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.env.communication.*;
 
+import org.NooLab.somfluid.util.BasicSimpleStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;
  
@@ -138,6 +139,7 @@ public class MetaNode   extends
 	
 	/**   ??? */
 	ArrayList<IndexDistanceIntf> listOfQualifiedIndexes = new ArrayList<IndexDistanceIntf>();
+	private boolean learningStageIsFinal = false ;;
 	
 	
 	// ------------------------------------------------------------------------
@@ -183,7 +185,14 @@ public class MetaNode   extends
 
 	public void clearData(){
 		this.extensionality.getListOfRecords().clear();
-		this.extensionality.getStatistics().resetFieldStatisticsAll() ;
+		
+		NodeStatisticsIntf  nodeStats ;
+		
+		// this <nodeStats> is an intf, either detailed for modeling, or simple for astor 
+		nodeStats = extensionality.getStatistics() ;
+		if (nodeStats!=null)nodeStats.resetFieldStatisticsAll();
+		// in one step: this.extensionality.getStatistics().resetFieldStatisticsAll() ;
+		
 	}
 	
 	public void clear(){
@@ -548,21 +557,21 @@ if ((_new_w<0) || (_new_w>1.04)){
 	
 	public void insertDataAndAdjust( ArrayList<Double> dataNewRecord, int recordIndexInTable) {
 
-		insertDataAndAdjust( dataNewRecord,recordIndexInTable,1, 1.0, -1 ) ;
+		insertDataAndAdjust( dataNewRecord,recordIndexInTable,null,1, 1.0, -1 ) ;
 	}
-
 	 
  
-	@Override
+	@Override  // inherited from 
 	public void insertDataAndAdjust( ArrayList<Double> dataNewRecord,
 									 // int nodeIndex,
 									 int recordIndexInTable,
+									 Object collectibleColumnInfo,
 									 int ithWinner,
 									 double learningrate ,
 									 int fillingLimitForMeanStyle) {
 		
-		int nodeExtSize, recordcount=0,_d, err=1;
-		double _old_pv , _new_pv, fieldValue ;
+		int nodeExtSize, recordcount=0,columncount=0,_d, err=1;
+		double _old_pv , _new_pv, fieldValue, inheritedValue ;
 		boolean calcThis ;
 		
 		NodeStatisticsIntf  nodeStats ;
@@ -612,9 +621,9 @@ if ((_new_w<0) || (_new_w>1.04)){
 					fieldValue = 1.0;
 					dataNewRecord.set(w, 1.0) ;  
 				}
+				                                         err = 4;
 				
-											err = 4;
-				_old_pv = nodeProfile.get(w); // saving weight of variable[w] as old weight
+				_old_pv = nodeProfile.get(w); // saving "weight" = profile value of variable[w] as old weight
 				
 				if (nodeProfile.get(w)>1.0){
 					_old_pv = 1.0;
@@ -663,7 +672,8 @@ if ((_new_w<0) || (_new_w>1.04)){
 						// excluding MV ...
 											err = 11;
 					
-						if (recordcount <= 0) {
+						// we replace the profile value only in the pre-last epochs!
+						if ((recordcount <= 0) && (learningStageIsFinal==false)) {
 							// after initialization
 							_old_pv = nodeProfile.get(w);
 
@@ -683,6 +693,14 @@ if ((_new_w<0) || (_new_w>1.04)){
 											err = 14;
 							_new_pv = dataNewRecord.get(w);
 							
+							// in the final step we want to profit from the learnt stuff, thus we do NOT replace
+							// the profile for the first 2 records in the standard way...
+							// instead we create a mixture first
+							if ((recordcount <= 1) && (learningStageIsFinal)){
+								inheritedValue = nodeProfile.get(w) ;
+								fieldValue = ((fieldValue*((double)recordcount+2.0 ))+inheritedValue)/((double)recordcount+3.0);
+							}
+							
 							fieldStats.introduceValue( fieldValue ); // fieldValue = dataNewRecord.get(w); 
 							_new_pv = fieldStats.getMean() ; 
 							// _new_pv will be set as the profile value at pos w (see below)
@@ -701,7 +719,7 @@ if ((_new_w<0) || (_new_w>1.04)){
 						}
 
 						 
-						recordcount++;
+						columncount++;
 						if ((_new_pv > 1.0) && (_new_pv < 1.01)){
 							_new_pv = 1.0 ;
 						}
@@ -740,7 +758,7 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 			} // w-> across all fields
 			
 			// note that there are several versions!! 
-			extensionality.addRecordByIndex( recordIndexInTable , true) ; // true: SomData are informed 
+			extensionality.addRecordByIndex( recordIndexInTable,collectibleColumnInfo, true) ; // true: SomData are informed 
 			
 			// if everything is ok (err=0, we do not throw exceptions), we finally have to put the values 
 			// from "nodeProfile" (=clone of original vector of the profile in the lattice!)
@@ -1262,6 +1280,15 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 	public void setContentSensitiveInfluence(boolean flag) {
 		
 		contentSensitiveInfluence = flag ;
+	}
+
+	public boolean isLearningStageIsFinal() {
+		return learningStageIsFinal;
+	}
+
+	@Override
+	public void setLearningStageIsFinal(boolean learningStageIsFinal) {
+		this.learningStageIsFinal = learningStageIsFinal;
 	}
 
 	@Override

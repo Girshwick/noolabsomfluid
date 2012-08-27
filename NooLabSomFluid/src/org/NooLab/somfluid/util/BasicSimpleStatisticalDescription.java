@@ -1,41 +1,29 @@
-package org.NooLab.somfluid.core.categories.extensionality;
+package org.NooLab.somfluid.util;
 
 import java.util.ArrayList;
 
-import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;
 
-public class BasicSimpleStatisticalDescription implements BasicStatisticalDescriptionIntf{
+public class BasicSimpleStatisticalDescription 
+													extends 
+																BasicStatisticalDescriptionAbstract  
+													implements 
+																BasicStatisticalDescriptionIntf{
 
 	String description = "";
 	String title = "" ;
-	int needForRecalc = 0;
-	int removedValues = 0;
+	 
 	
 	
 	boolean  initialized = false;
 	
-	int      count, mvCount, x_counter;
-
-	double   sum, qsum, qqsum, mean, genMeanP2, median, geoMean, 
-			 adjMean,  // adjusted mean : mean from (arithmet + harmonic)/2 
-			 cov, soval, // sum of values, needed for merging
-			 sovar, // sum of variances
-			 invsum , // sum of inverses (kehrwert) for harmonic means
-			 variance, autocorr, mini, maxi, skewness, kurtosis;
-
-	
-	ArrayList<Double> invalues = new ArrayList<Double>();
+	  
 	
 	// ========================================================================
 	public BasicSimpleStatisticalDescription(){
 		
 	}
 	// ========================================================================
-	
-	public void removeValue(double v) {
-		// TODO Auto-generated method stub
-		
-	}
+ 
 
 	public String getDescription() {
 		return description;
@@ -81,6 +69,63 @@ public class BasicSimpleStatisticalDescription implements BasicStatisticalDescri
 		return count;
 	}
 
+	public double getMean() {
+		return mean;
+	}
+
+	@Override
+	public void clear() {
+		
+		invalues.clear() ;
+	}
+
+
+	@Override
+	public void reset() {
+		
+		
+		count=0; 
+		mvCount=0;
+		x_counter=0;
+	
+		sum=0;
+		qsum=0;
+		qqsum=0;
+		mean=0;
+		genMeanP2=0;
+		median=0;
+		geoMean=0;
+		
+		adjMean=0;  // adjusted mean : mean from (arithmet + harmonic)/2 
+				 cov=0;
+				 soval=0;// sum of values, needed for merging
+				 sovar=0; // sum of variances
+				 invsum=0; // sum of inverses (kehrwert) for harmonic means
+				 variance=0; 
+				 autocorr=0;
+				 mini=0; 
+				 maxi=0;
+				 skewness=0;
+				 kurtosis=0;
+				 
+	
+		
+		invalues.clear() ;
+	}
+
+	@Override
+	public void introduceValues(ArrayList<Double> fieldValues) {
+		
+		if ((fieldValues!=null) && (fieldValues.size()!=0)){
+			invalues.addAll(fieldValues);
+		}
+	}
+
+	@Override
+	public void resetFieldStatisticsAll() {
+		reset();
+	}
+
 	public void setCount(int count) {
 		this.count = count;
 	}
@@ -123,10 +168,6 @@ public class BasicSimpleStatisticalDescription implements BasicStatisticalDescri
 
 	public void setQqsum(double qqsum) {
 		this.qqsum = qqsum;
-	}
-
-	public double getMean() {
-		return mean;
 	}
 
 	public void setMean(double mean) {
@@ -251,32 +292,6 @@ public class BasicSimpleStatisticalDescription implements BasicStatisticalDescri
 
 	public void setInvalues(ArrayList<Double> invalues) {
 		this.invalues = invalues;
-	}
-
-	@Override
-	public void clear() {
-		
-		invalues.clear() ;
-	}
-
-	@Override
-	public void introduceValue(double fieldValue) {
-		// 
-		invalues.add(fieldValue);
-	}
-
-	@Override
-	public void reset() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void introduceValues(ArrayList<Double> fieldValues) {
-		
-		if ((fieldValues!=null) && (fieldValues.size()!=0)){
-			invalues.addAll(fieldValues);
-		}
 	}
 	
 }

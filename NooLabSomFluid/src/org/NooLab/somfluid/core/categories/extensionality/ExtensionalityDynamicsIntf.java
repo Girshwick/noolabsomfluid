@@ -38,13 +38,13 @@ public interface ExtensionalityDynamicsIntf {
 	 * @param informUpstream
 	 * @return
 	 */
-	public int addRecordByIndex( int index, int returnMode , boolean informUpstream) ;
-	public void addRecordByIndex(int indexValues, boolean informUpdatream);
-	public void addRecordByIndex( int index) ;
-	public int addRecordByIndex( int index, int returnMode );
+	public int addRecordByIndex( int index, Object collectibleColumnInfo, int returnMode , boolean informUpstream) ;
+	public void addRecordByIndex(int indexValues, Object collectibleColumnInfo,boolean informUpdatream);
+	public void addRecordByIndex( int index,Object collectibleColumnInfo) ;
+	public int addRecordByIndex( int index, Object collectibleColumnInfo,int returnMode );
 		
 	
-
+	 
 	/**
 	 * @param iindex pointing to the list of the extension, not to the data table!
 	 * @return
@@ -86,9 +86,9 @@ public interface ExtensionalityDynamicsIntf {
 
 	public int getSupport();
 	
-	public ArrayList<ValuePair> getListOfSecondaryId();
+	public ArrayList<Object> getListOfSecondaryId();
 	
-	public void setListOfSecondaryId(ArrayList<ValuePair> listOfSecondaryId);
+	public void setListOfSecondaryId(ArrayList<Object> collectibleObj);
 	
 	public int getCountSecondaryIndex();
 	

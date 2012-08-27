@@ -49,7 +49,7 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	// in case of Astor in WebSom, this could be the the Index of the fingerprint entry of the word
 	// we store the frequency along with it, additionally, we need an external process that is 
 	// unificating multiple entries of the same id-value 
-	ArrayList<ValuePair> listOfSecondaryId = new ArrayList<ValuePair>();
+	ArrayList<Object> listOfSecondaryId = new ArrayList<Object>(); // simple or ValuePair etc.. literally, anything
 	
 	/* TODO: needed: 
 	 *          - a statistical description, 
@@ -138,11 +138,11 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	}
 
 	
-	public void addRecordByIndex( int index){
-		addRecordByIndex(  index, -1, false) ;
+	public void addRecordByIndex( int index, Object collectibleColumnInfo){
+		addRecordByIndex(  index, collectibleColumnInfo, -1, false) ;
 	}
-	public void addRecordByIndex( int index, boolean informUpstream){
-		addRecordByIndex(  index, 1, informUpstream) ;
+	public void addRecordByIndex( int index, Object collectibleColumnInfo,boolean informUpstream){
+		addRecordByIndex(  index, collectibleColumnInfo, 1, informUpstream) ;
 	}
 	/**
 	 * 
@@ -150,8 +150,8 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	 * @param returnMode 0=size, 1=the inserted index
 	 * @return
 	 */
-	public int addRecordByIndex( int index, int returnMode ){
-		return addRecordByIndex(  index, -1, false) ;
+	public int addRecordByIndex( int index, Object collectibleColumnInfo, int returnMode ){
+		return addRecordByIndex(  index, collectibleColumnInfo,-1, false) ;
 	}
 	
 	/**
@@ -161,7 +161,7 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	 * @param informUpstream
 	 * @return
 	 */
-	public int addRecordByIndex( int index, int returnMode , boolean informUpstream){
+	public int addRecordByIndex( int index, Object collectibleColumnInfo,int returnMode , boolean informUpstream){
 		// take it to the list, but only if it is not there yet
 		
 		int size = 0, result=-1;
@@ -171,7 +171,9 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 			// release an event ... ? 
 			size = listOfRecords.size() ;
 			
-			
+			if (collectibleColumnInfo != null){
+				listOfSecondaryId.add( collectibleColumnInfo );
+			}
 			if (returnMode<=0){
 				result = size;
 			}else{
@@ -211,13 +213,13 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 
 	
 	@Override
-	public ArrayList<ValuePair> getListOfSecondaryId() {
+	public ArrayList<Object> getListOfSecondaryId() {
 		return listOfSecondaryId;
 	}
 
 	@Override
-	public void setListOfSecondaryId(ArrayList<ValuePair> idValuePairs) {
-		listOfSecondaryId = idValuePairs;
+	public void setListOfSecondaryId(ArrayList<Object> collectibleObj) {
+		listOfSecondaryId = collectibleObj;
 	}
 
 	public void addSecondaryIndexValue( long idvalue ){
@@ -226,7 +228,7 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	
 	@Override
 	public int getCountSecondaryIndex() {
-		return 0;
+		return listOfSecondaryId.size();
 	}
 	
 
