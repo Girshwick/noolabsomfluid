@@ -203,14 +203,14 @@ public class SomFluid
 	private void performAssociativeStorage(SomFluidTask sfTask) throws Exception {
 		 
 		
-		AstorSettings astorSettings ; 
+		SomFluidSettings somfluidSettings ; 
 		SomAssociativeStorage astor ;
 		SomAStorageQueryHandler astorQueryHandler;
 		TexxDataBaseSettingsIntf databaseSettings;
 		DataStreamProvider dataStreamProvider ;
 		
 		
-		astorSettings = sfProperties.getAstorSettings() ;
+		somfluidSettings = sfProperties.getSomFluidSettings() ;
 		databaseSettings = sfProperties.getDatabaseSettings() ;
 		
 		String dspGuid="";
@@ -245,7 +245,7 @@ public class SomFluid
 		int r = astor.prepareDataObject() ;
 		
 		if (r==0){
-			astor.setInitialVariableSelection( astorSettings.getInitialVariableSelection() ) ;
+			astor.setInitialVariableSelection( somfluidSettings.getInitialVariableSelection() ) ;
 			
 			astor.perform() ;
 		}

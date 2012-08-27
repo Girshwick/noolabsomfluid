@@ -12,7 +12,7 @@ import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.data.VariableSettingsHandler;
 import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
 
-import org.NooLab.somfluid.properties.AstorSettings;
+import org.NooLab.somfluid.properties.SomFluidSettings;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.util.XmlStringHandling;
@@ -47,7 +47,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 	ClassificationSettings cs;
 	PersistenceSettings ps;
 
-	AstorSettings astorSettings ;
+	SomFluidSettings somfluidSettings ;
 	TexxDataBaseSettings databaseSettings;
 	
 	VariableSettingsHandlerIntf variableSettings ;

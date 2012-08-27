@@ -3,6 +3,7 @@ package org.NooLab.somfluid.components;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -18,6 +19,8 @@ import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 import org.NooLab.utilities.datatypes.IndexedDistances;
+import org.NooLab.utilities.files.PathFinder;
+import org.NooLab.utilities.files.StartupProperties;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
 import org.NooLab.utilities.net.GUID;
@@ -56,7 +59,15 @@ import org.NooLab.somfluid.util.NumUtils;
 
 
 
-
+/**
+ * 
+ * this class establishes the environment for the list of nodes that are making up the lattice;</br>
+ *
+ * it establishes its own Guid and knows about it upon restart, by means of a small ini storage
+ * 
+ * 
+ *
+ */
 public class VirtualLattice 
 								implements 
 											LatticeIntf,       // perspective for use within SomFluid
@@ -172,8 +183,13 @@ public class VirtualLattice
 		rndInstance.setSeed( seed );
 		statsSampler = new StatisticSample( seed ) ;
 		 
-		numGuid = SerialGuid.numericalValue() ;
+		 
+		//  
+		numGuid = (Long)(new StartupProperties()).careForInstanceGuid("~lattice", 0, Long.class);
+		//                                              "0" == enum value of instance
 		
+		numGuid = numGuid+1-1;
+		// 521015310199101495
 	} 
 	
 	// constructor for cloning an existing lattice of nodes, INCLUSIVE the nodes !!
@@ -1788,7 +1804,7 @@ public class VirtualLattice
 		if (latestNodeIndex < idvalue){
 			latestNodeIndex = idvalue;
 		}else{
-			latestNodeIndex = idvalue+1;
+			latestNodeIndex = idvalue;
 		}
 		
 		return latestNodeIndex;
@@ -1838,6 +1854,14 @@ public class VirtualLattice
 	 */
 	public long getNumGuid() {
 		return numGuid;
+	}
+
+	public Map<Long, Object> getNodeUidMap() {
+		return nodeUidMap;
+	}
+
+	public Map<Long, Long> getNodeSerialsMap() {
+		return nodeSerialsMap;
 	}
 	
 		

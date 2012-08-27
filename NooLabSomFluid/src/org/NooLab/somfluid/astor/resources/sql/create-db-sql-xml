@@ -1,13 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
    
-  <texx>
+  <astor>
 	<database name="astornodes">
-	  <!-- this database is owned by astor -->
+	  <!-- this database is owned by astor
+	  	   there are 3 tables:
+	  	     somnames, nodecontent, nodefingerprints,
+	   -->
       <config>
          <separator name="::" />
       </config>
       <!-- comment within the sql script is between pairs of * , i.e.   ** ... ** -->
 
+	  <access>
+	     <users>
+	        <user id="1" name="rg" password="rg" properties="" operation="RW" />
+	        <user id="2" name="astor" password="astor"  properties="" operation="RW" />
+	        <user id="3" name="texx" password="texx"  properties="" operation="RW" />
+	        <user id="4" name="sf" password="sf"  properties="" operation="RW" />
+	     </users>
+	  </access>
       <table name="somnames" >
          <!-- this table is important for persistence !!!
               on instantiation, the somLattice has to get its SomID !!!
@@ -16,20 +27,31 @@
          <create>
             <drop active="1" cmd="DROP TABLE IF EXISTS ::tablename::" />
             <text>
-                CREATE TABLE  ::tablename:: (  
-					  id             IDENTITY AUTO_INCREMENT PRIMARY KEY,
-					  somid          BIGINT,      ** it is created by the lattice itself, if the table is empty ** 
-					                                  
-					  tablename      BIGINT       ** the name of the "nodecontent" table(s) where the som can be found **
-					  
+                CREATE TABLE  ::tablename:: (
+                      id             IDENTITY PRIMARY KEY,  
+					  somid          BIGINT,
+					                              ** it is created by the lattice itself, if the table is empty ,
+					                                 a lattice usually knows (by means of its own ini-storage), whether
+					                                 it has a known somid, whether it has offspring SOMs, and which are their names... 
+					                              ** 
+					  tablename      VARCHAR(40), ** the name of the "nodecontent" table(s) where the som can be found **
+					  timestamp      BIGINT,
+					  fingerprint    VARCHAR      ** the numerical vector, which we need for reproducible compression **  
 					  )
 		    </text>	
+		    <!-- large maps create large histograms, possibly in the range of 20'000+ !
+              thus we will need to compress the resulting histograms (that are created for each document), 
+              which will have the dimensionality;
+              compressing is done by random projection;
+              in order to create the same compression for the same input data, we need a
+              numerical representation of the name
+              -->
+		    
          </create>
       </table>
 
 
-
-      <table name="nodecontent-1" >
+      <table name="nodecontent" >
          <!-- this table helps in navigating on behalf of a particular docid, e.g. for
                   - creating the histograms 
                   - creating a sequence of nodes as representations of the sequence of words in a text
@@ -51,7 +73,7 @@
                 CREATE TABLE  ::tablename:: (  
 					  id             IDENTITY AUTO_INCREMENT PRIMARY KEY,
 					  somid          BIGINT,       ** the id of the som as it is stored in the table somnames** 
-					  nodeid         BIGINT ,      ** the numerical GUID **
+					  nodeid         BIGINT ,      ** the numerical GUID from nodefingerprints **
 					  docid          BIGINT,       ** a particular node may contain various context and various words,
 					                                  where word refers to the "center" position of the context**                                        
 					  fingerprintid  BIGINT ,      ** if word, the same value as in database "rg-fingerprint" ! 
@@ -72,19 +94,34 @@
               we also will need to compress the , we have to apply random projection
               for the nodes as we did it for words 
               -->
-              
+         <create>
+            <drop active="1" cmd="DROP TABLE IF EXISTS ::tablename::" />
+            <text>
+                 <!--
+                 -->
+                CREATE TABLE  ::tablename:: (  
+					  
+					  id             IDENTITY PRIMARY KEY ,     
+					  
+					  numguid        BIGINT,
+					                               ** the numerical GUID of the node  **
+					  somid          BIGINT ,      ** the id of the SOM that is hosting the node
+					  								  we need a uniqueness constraint for it		 
+					                               **  
+					  runindex       INT,          ** this index we can use to retrieve the entry on establishing an Astor SomLattice
+					                                  the same node-index will always use the same fingerprint  
+					                               **
+					  locationx      DOUBLE,  
+					  locationy      DOUBLE,  
+					  locationz      DOUBLE,  
+					  fingerprint    VARCHAR(2000) ** if word, the same value as in database "rg-fingerprint" ! 
+					                                  if sentence, then the same value as in ....  **                         
+					  
+					  )
+		    </text>	
+         </create>              
       </table>      
-      <table name="somfingerprints" >
-         <!-- large maps create large histograms, possibly in the range of 20'000+ !
-              thus we will need to compress the resulting histograms (that are created for each document), 
-              which will have the dimensionality;
-              compressing is done by random projection;
-              in order to create the same compression for the same input data, we need a
-              numerical representation of the name
-              -->
-            
-      
-      </table>
+
     </database> 
 
     <!-- further databases here -->
@@ -92,4 +129,4 @@
     
     </database>
      
-  </texx>
+  </astor>

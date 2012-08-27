@@ -30,7 +30,19 @@ public class PersistenceSettings implements Serializable{
 
 	private boolean keepPreparedData;
 
-	private boolean exportTransformModelAsEmbeddedObj = true; 
+	private boolean exportTransformModelAsEmbeddedObj = true;
+
+	private String dbUsername="sa";
+
+	private String dbPassword="sa";
+
+	private String configResourceJarPath="";
+
+	private String internalSqlCfgStoreName = "create-db-sql-xml" ;
+
+	private String appNameShortStr;
+
+	private String databaseName=""; 
 	
 	// ========================================================================
 	public PersistenceSettings(FileOrganizer fileOrg){
@@ -152,7 +164,66 @@ public class PersistenceSettings implements Serializable{
 	}
 
 
+
+	public String getDbUsername() {
+		return dbUsername;
+	}
+
+	public void setDbUsername(String dbUsername) {
+		this.dbUsername = dbUsername;
+	}
+
+	public String getDbPassword() {
+		return dbPassword;
+	}
+
+	public void setDbPassword(String dbPassword) {
+		this.dbPassword = dbPassword;
+	}
+
+	public void setDatabaseName(String databaseName) {
+		this.databaseName = databaseName;
+	}
+
+	public String getDatabaseName() {
+		 
+		return databaseName;
+	}
+
+	public String getDbUser() {  
+		 
+		return dbUsername;
+	}
+
+	public String getDbpassword() {
+		 
+		return dbPassword;
+	}
+
+	public String getConfigSqlResourceJarPath() {
+		 
+		return configResourceJarPath;
+	}
+
+	public void setConfigSqlResourceJarPath(String configResourceJarPath) {
+		this.configResourceJarPath = configResourceJarPath;
+	}
+
+	public String getInternalSqlCfgStoreName() {
+		 
+		return internalSqlCfgStoreName; 
+		 
+	}
+
+	public String getAppNameShortStr() {
+		return appNameShortStr;
+	}
+
+	public void setAppNameShortStr(String appNameShortStr) {
+		this.appNameShortStr = appNameShortStr;
+	}
 	
+
 	
 	
 	

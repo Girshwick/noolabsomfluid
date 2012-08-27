@@ -18,7 +18,7 @@ import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
 import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
 
  
-import org.NooLab.somfluid.properties.AstorSettings;
+import org.NooLab.somfluid.properties.SomFluidSettings;
 import org.NooLab.somfluid.properties.DataUseSettings;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
@@ -29,6 +29,7 @@ import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
 import org.NooLab.utilities.files.DFutils;
+import org.NooLab.utilities.objects.StringedObjects;
 import org.NooLab.utilities.resources.ResourceContent;
 import org.NooLab.utilities.resources.ResourceLoader;
 
@@ -126,7 +127,7 @@ public class SomFluidProperties
 	public SomFluidProperties(){
 		super();
 		
-		astorSettings = new AstorSettings(this);
+		somfluidSettings = new SomFluidSettings(this);
 	 
 		databaseSettings = new TexxDataBaseSettings( dbAccessDefinition );
 		
@@ -141,6 +142,21 @@ public class SomFluidProperties
 	}
 
 
+	public SomFluidProperties(SomFluidProperties sfPropsIn) {
+		// 
+		StringedObjects sob = new StringedObjects();
+		sfp = (SomFluidProperties) sob.decode( sob.encode(sfPropsIn)) ;
+		
+		sfp.persistenceSettings = (PersistenceSettings) sob.decode( sob.encode(sfPropsIn.persistenceSettings)) ;
+		sfp.databaseSettings = (TexxDataBaseSettings) sob.decode( sob.encode(sfPropsIn.databaseSettings)) ;
+		sfp.modelingSettings = (ModelingSettings) sob.decode( sob.encode(sfPropsIn.modelingSettings)) ;
+		
+		
+		
+		getInstance("");
+	}
+
+
 	public static SomFluidProperties getInstance() {
 		 
 		return getInstance("");
@@ -148,7 +164,9 @@ public class SomFluidProperties
 	/**   */
 	public static SomFluidProperties getInstance( String xmlSettingsStack ) {
 	 
-		sfp = new SomFluidProperties();
+		if (sfp==null){
+			sfp = new SomFluidProperties();
+		}
 		
 		if (xmlSettingsStack.length()>0){
 			settingsTransporter = new SettingsTransporter( sfp );
@@ -164,6 +182,11 @@ public class SomFluidProperties
 	}
  
 	
+	public static SomFluidProperties getSfp() {
+		return sfp;
+	}
+
+
 	public void importSettings(){
 		
 	}
@@ -802,9 +825,9 @@ public class SomFluidProperties
 	}
 
 
-	public AstorSettings getAstorSettings() {
+	public SomFluidSettings getSomFluidSettings() {
 		
-		return astorSettings;
+		return somfluidSettings;
 	}
 
 
@@ -893,7 +916,7 @@ public class SomFluidProperties
 
 	/**
 	 * this allows to spread references instead of copies of vectors, which saves a lot of memory
-	 * ...especially important for Astor
+	 * ...especially important for SomFluid
 	 */
 	@Override
 	public boolean isAssignatesHomogeneous() {
@@ -903,7 +926,7 @@ public class SomFluidProperties
 
 
 	// ....................................................
-	// the next 4 methods are very helpful for Astor
+	// the next 4 methods are very helpful for SomFluid
 	public void addFieldExclusionByIndex(int fieldIndex) {
 		// TODO Auto-generated method stub
 		

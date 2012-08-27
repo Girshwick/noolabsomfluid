@@ -1,9 +1,10 @@
-package org.NooLab.somfluid.properties;
+package org.NooLab.somfluid.astor;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.properties.SomDynamicsAbstract;
 
 
 

@@ -163,11 +163,11 @@ public class LatticePreparation {
 			}
 			 
 		}
-		 
+											 
 		double d = particleField.getAverageDistanceBetweenParticles();
 		somLattice.setAveragePhysicalDistance(d);
 		
-											out.print(3, "logical som lattice created.");
+											out.print(2, "logical som lattice created.");
 		// 
 	}
 

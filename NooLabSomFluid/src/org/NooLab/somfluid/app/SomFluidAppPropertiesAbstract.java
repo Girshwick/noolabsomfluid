@@ -7,7 +7,7 @@ import org.NooLab.somfluid.SomFluidPluginSettings;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.AlgorithmDeclarationsLoader;
 import org.NooLab.somfluid.env.data.db.DataBaseAccessDefinition;
-import org.NooLab.somfluid.properties.AstorSettings;
+import org.NooLab.somfluid.properties.SomFluidSettings;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.properties.SettingsTransporter;
@@ -37,7 +37,7 @@ public class SomFluidAppPropertiesAbstract
 	protected ModelingSettings modelingSettings = new ModelingSettings() ;
 	 
 	
-	protected AstorSettings astorSettings ;
+	protected SomFluidSettings somfluidSettings ;
 	protected TexxDataBaseSettings databaseSettings;
 	
 	protected int somInstanceType = 0 ; // SOM astor
