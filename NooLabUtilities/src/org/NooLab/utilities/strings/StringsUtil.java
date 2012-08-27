@@ -3010,6 +3010,13 @@ if (temp.contains("staggers")){
 			
 		}
 		
+		if (rStr.startsWith(removal)){
+			rStr = rStr.substring(removal.length(), rStr.length()) ;
+		}
+		if (rStr.endsWith(removal)){
+			rStr = rStr.substring(0, rStr.length() - removal.length()) ;
+		}
+
 		return rStr ;
 	}
 
