@@ -16,8 +16,8 @@ import org.NooLab.utilities.datetime.DateTimeValue;
 import org.NooLab.utilities.strings.StringsUtil;
 
 import org.NooLab.itexx.storage.DBColumn;
-import org.NooLab.itexx.storage.DocoDbTable;
 import org.NooLab.itexx.storage.MetaData;
+import org.NooLab.itexx.storage.doco.DocoDbTable;
   
  
 

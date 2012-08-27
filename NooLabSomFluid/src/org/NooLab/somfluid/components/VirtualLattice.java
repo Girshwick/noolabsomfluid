@@ -1863,6 +1863,23 @@ public class VirtualLattice
 	public Map<Long, Long> getNodeSerialsMap() {
 		return nodeSerialsMap;
 	}
+
+	public IndexedDistances getNodeSizes( boolean sortList) {
+		// ArrayList<Integer> sizes = new ArrayList<Integer> ();
+		IndexedDistances ixds = new IndexedDistances (); 
+		int n;
+		n=0;
+		
+		for (int i=0;i<nodes.size();i++){
+			n = nodes.get(i).getExtensionality().getCount() ; 
+			ixds.add( new IndexDistance(i,(double)n,"") );
+		}
+		if (sortList){
+			ixds.sort(-1);
+		}
+		
+		return ixds;
+	}
 	
 		
 }

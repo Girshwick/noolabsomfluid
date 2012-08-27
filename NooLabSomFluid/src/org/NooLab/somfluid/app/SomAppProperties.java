@@ -469,6 +469,12 @@ public class SomAppProperties
 		
 	}
 
+	@Override
+	public Object getCollectibleColumn() {
+		//  
+		return null;
+	}
+
 	 
  
 }

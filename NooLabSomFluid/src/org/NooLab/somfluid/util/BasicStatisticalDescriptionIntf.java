@@ -18,4 +18,7 @@ public interface BasicStatisticalDescriptionIntf {
 	
 	void introduceValues(ArrayList<Double> fieldValues);
 
+
+	void resetFieldStatisticsAll();
+
 }

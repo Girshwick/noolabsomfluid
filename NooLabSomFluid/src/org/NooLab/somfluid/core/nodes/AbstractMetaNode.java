@@ -9,7 +9,6 @@ import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivity;
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivityIntf;
-import org.NooLab.somfluid.core.categories.extensionality.BasicSimpleStatisticalDescription;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamics;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.categories.imports.ExtensionalityDynamicsImportIntf;
@@ -24,6 +23,7 @@ import org.NooLab.somfluid.core.engines.NodeStatisticsFactory;
 import org.NooLab.somfluid.core.engines.NodeStatisticsIntf;
 
 import org.NooLab.somfluid.data.Variable;
+import org.NooLab.somfluid.util.BasicSimpleStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;
 import org.NooLab.utilities.logging.PrintLog;

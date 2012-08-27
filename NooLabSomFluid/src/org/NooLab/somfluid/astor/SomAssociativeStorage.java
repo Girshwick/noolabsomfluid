@@ -26,6 +26,7 @@ import org.NooLab.somfluid.core.engines.det.results.ModelProperties;
 import org.NooLab.somfluid.core.nodes.LatticeProperties;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somfluid.env.data.SomTexxDataBase;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 
 import org.NooLab.somsprite.ProcessCompletionMsgIntf;
@@ -155,6 +156,8 @@ public class SomAssociativeStorage
 	SomAstor somAstor;
 	SomAstorNodeContent astorNodeContent;
 	
+	private SomTexxDataBase randomWordsDb;
+	
 	SomQueryIntf somQuery;
 	
 	private ArrayList<Integer> usedVariables = new ArrayList<Integer>();
@@ -165,6 +168,7 @@ public class SomAssociativeStorage
 	
 	
 	transient PrintLog out = new PrintLog(2,true);
+	
 	
 	// ========================================================================
 	public SomAssociativeStorage( SomFluid somfluid, 
@@ -188,7 +192,19 @@ public class SomAssociativeStorage
 	
 	// care for data connection, incoming data link : we are learning incrementally !!
 
-	
+	public void close(){
+		
+		if (somAstor!=null){
+			somAstor.clear(); // also stops the threads
+		}
+		
+		if (astorNodeContent!=null){
+			astorNodeContent.close();
+		}
+		
+		astorDb.close() ;
+		randomWordsDb.close() ;
+	}
 	
 	public void perform() throws Exception{
 		
@@ -202,6 +218,8 @@ public class SomAssociativeStorage
 		 
 		
 		try{
+			
+			randomWordsDb = somDataObj.getSomTexxDb();
 			
 			// creating a separate instance of sfp in AstorProperties as a mirror of sfProperties
 			// the sfp inside is INDEPENDENT !!!
@@ -217,6 +235,7 @@ public class SomAssociativeStorage
 			astorDb.setInternalCfgStoreName("create-db-sql-xml");
 			// alternative to using "PersistenceSettings" -> astorDb.setCfgResourceJarPath("") ;
 			
+			astorDb.setRandomWordsDb(randomWordsDb) ;
 			astorDb.prepareDatabase("astornodes",0) ;
 			   // .................
 			
@@ -445,6 +464,10 @@ public class SomAssociativeStorage
 
 	public VirtualLattice getAstorSomLattice() {
 		return astorSomLattice;
+	}
+
+	public SomTexxDataBase getRandomWordsDb() {
+		return randomWordsDb;
 	}
 
 	public AstorDataBase getAstorDb() {

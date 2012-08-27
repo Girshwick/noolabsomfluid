@@ -17,7 +17,7 @@ import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.net.GUID;
 
-public class SomFluidAppPropertiesAbstract
+public abstract class SomFluidAppPropertiesAbstract
 											implements 
 														SomFluidAppGeneralPropertiesIntf{
 
@@ -60,6 +60,7 @@ public class SomFluidAppPropertiesAbstract
 	
 	transient protected FileOrganizer fileOrganizer;
 	transient DFutils fileutil = new DFutils();
+	private SomFluidProperties sfProperties;
 	
 	// ========================================================================
 	public SomFluidAppPropertiesAbstract(){
@@ -75,10 +76,12 @@ public class SomFluidAppPropertiesAbstract
 		return fileOrganizer;
 	}
 	
-	
 	public void setFactoryParent(SomFluidFactory factory) {
 		sfFactory = factory;
+		sfProperties = sfFactory.getSfProperties();
+	
 	}
+
 	
 	@Override
 	public SomFluidFactory getSfFactory() {
@@ -169,8 +172,19 @@ public class SomFluidAppPropertiesAbstract
 	}
 
 	@Override
+	abstract public Object getCollectibleColumn() ;
+	
+	
+	
+
+
+	/**
+	 * it returns a perspective to SomFluidProperties
+	 * this requires first to provide the reference to the SomFluidFactory !!
+	 */
+	@Override
 	public SomFluidProperties getSelfReference() {
-		return null;
+		return sfProperties;
 	}
 
 	@Override

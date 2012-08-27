@@ -20,7 +20,7 @@ public interface MetaNodeIntf extends NodeObserverIntf {
 	
 	
 	public long getSerialID();
-	
+	public long getNodeNumGuid();
 	
 	public int getActivation() ;
   
@@ -57,6 +57,7 @@ public interface MetaNodeIntf extends NodeObserverIntf {
 	public void insertDataAndAdjust( ArrayList<Double> dataNewRecord,
 			 						 // int nodeIndex,
 			 						 int recordIndexInTable,
+			 						 Object collectibleColumnInfo,
 			 						 int ithWinner,
 			 						 double learningrate,
 			 						 int fillingLimitForMeanStyle);
@@ -80,6 +81,8 @@ public interface MetaNodeIntf extends NodeObserverIntf {
 	public ArrayList<Double> getTargetVariableValues();
  
 	public int size();
+	
+	public void setLearningStageIsFinal(boolean learningStageIsFinal);
 	
 	
 }

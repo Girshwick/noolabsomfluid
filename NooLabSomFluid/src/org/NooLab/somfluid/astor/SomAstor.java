@@ -31,6 +31,7 @@ import org.NooLab.somfluid.env.communication.NodesInformer;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somscreen.linear.SimpleExplorationClustering;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
+import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.LogControl;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
@@ -112,6 +113,8 @@ public class SomAstor
 		 
 		isRunning = false;
 		delay=10 ;
+		
+		
 	}
 	// ========================================================================	
 
@@ -399,6 +402,10 @@ public class SomAstor
 		// start the stream receptor via observer
 		streamReceptorSwitchedOn  = true;
 		
+		IndexedDistances ixds = astorLattice.getNodeSizes(true);
+		int n = (int)ixds.getItem(0).getDistance() ;
+		out.print(2, "largest node (ix:"+ixds.getItem(0).getIndex()+") = "+n) ;
+
 		//
 		out.print(2, "\n\nAstor SOM is in stream receiver mode now.");
 		while ((isRunning==true) && (userBreak==false)){
