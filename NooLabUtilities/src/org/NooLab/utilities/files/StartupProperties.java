@@ -16,7 +16,7 @@ public class StartupProperties {
 	DFutils fileutil = new DFutils();
 	
 	
-	public long retrieveNumGuid( String filename, String propertyName, int instIndex ){
+	public long retrieveNumGuid( String filename, String propertyName, int instIndex , Class clzz){
 		long numGuid = -1L;
 		String binpathPropsFile, binpath;
 		
@@ -24,7 +24,7 @@ public class StartupProperties {
 			propertyName = "guid" ;
 		}
 		
-		binpath = (new PathFinder()).getAppBinPath() ;
+		binpath = (new PathFinder()).getAppBinPath(clzz, false) ;
 		
 		binpathPropsFile = DFutils.createPath(binpath, filename);
 		
@@ -76,7 +76,7 @@ public class StartupProperties {
 	 * @param infotype
 	 * @return
 	 */
-	public Object careForInstanceGuid(String filename, int index, Class infotype) {
+	public Object careForInstanceGuid(String filename, int index, Class infotype, Class caller) {
 
 		String cn = infotype.getSimpleName().toLowerCase() ;
 		long numGuid ;
@@ -92,7 +92,7 @@ public class StartupProperties {
 		
 		if (cn.contains("long")){
 			obj = -1L;
-			numGuid = retrieveNumGuid( filename , "numguid", index);
+			numGuid = retrieveNumGuid( filename , "numguid", index, caller);
 			
 			if (numGuid<0){
 				numGuid = SerialGuid.numericalValue() ;
@@ -118,7 +118,7 @@ public class StartupProperties {
 		
 		if ((store) && (obj!=null)){
 			
-			binpath = (new PathFinder()).getAppBinPath() ;
+			binpath = (new PathFinder()).getAppBinPath(caller,false) ;
 			binpathPropsFile = DFutils.createPath(binpath, filename);
 			
 			createStore( binpathPropsFile, props);

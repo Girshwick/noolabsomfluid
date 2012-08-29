@@ -1,4 +1,4 @@
-package org.NooLab.utilities;
+package org.NooLab.utilities.strings;
 
  
 

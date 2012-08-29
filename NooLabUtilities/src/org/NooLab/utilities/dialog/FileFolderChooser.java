@@ -82,7 +82,8 @@ public class FileFolderChooser {
 				fstr = fstr.substring(ds,fstr.length()) ;
 				fstr = strgutil.trimm(fstr, "/") ;
 				int p = fstr.indexOf("/");
-				if (p>1){
+				
+				if (p>=fstr.length()-2){
 					fstr = selectedFolder.substring(0,ds+p);
 					foldernamestr = fstr ;
 					foldernamestr = strgutil.trimm(foldernamestr, "/");

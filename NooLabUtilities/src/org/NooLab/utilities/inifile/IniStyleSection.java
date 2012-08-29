@@ -1,5 +1,6 @@
 package org.NooLab.utilities.inifile;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
@@ -8,7 +9,11 @@ import org.NooLab.utilities.strings.StringsUtil;
 
 public class IniStyleSection {
 
-	private Vector<String> sectionitems = new Vector<String>();
+	/** the whole line */
+	ArrayList<String> sectionitems = new ArrayList<String>();
+	
+	/** all the keys*/
+	ArrayList<String> sectionKeys = new ArrayList<String>();
 	
 	Map<String,ItemValue> mappedItems = new HashMap<String,ItemValue>();
 	
@@ -38,7 +43,7 @@ public class IniStyleSection {
 	
 	public void addItem(String str){
 		int p= -1;
-		String iL,iV;
+		String iL = "",iV;
 		ItemValue itemvalue;
 		
 		
@@ -52,6 +57,7 @@ public class IniStyleSection {
 			iV = strgutil.cleanInternal(iV);
 			itemvalue = new ItemValue(iV);
 			mappedItems.put(iL, itemvalue) ;
+			 
 			
 		}
 		{
@@ -59,6 +65,10 @@ public class IniStyleSection {
 				str = strgutil.replaceAll(str, " =", "=");
 				str = strgutil.replaceAll(str, "= ", "=");
 				sectionitems.add( str ) ;
+				
+				if (iL.length()>0){
+					sectionKeys.add(iL) ;
+				}
 			}
 		}
 
@@ -111,7 +121,7 @@ public class IniStyleSection {
 		return simple_entries;
 	}
 
-	public Vector<String> getEntries(){
+	public ArrayList<String> getEntries(){
 		return sectionitems;
 	}
 

@@ -1,14 +1,14 @@
 #Fat Jar Configuration File
-#Tue Aug 07 20:31:08 BST 2012
+#Tue Aug 28 16:37:26 BST 2012
 onejar.license.required=true
 manifest.classpath=
 manifest.removesigners=true
 onejar.checkbox=false
 jarname=D\:\\dev\\java\\workspace\\NooLabUtilities.jar
-manifest.mergeall=true
+manifest.mergeall=false
 manifest.mainclass=
-manifest.file=<createnew>
+manifest.file=META-INF\\MANIFEST.MF
 jarname.isextern=true
 onejar.expand=
-excludes=<po|NooLabChord>;<jar|commons-lang3-3.0.jar>;<jar|commons-httpclient-3.1.jar>;<jar|commons-codec-1.4.jar>;<jar|commons-collections-3.2.1.jar>;<jar|commons-io-2.0.1.jar>;<jar|jsoup-1.6.0.jar>;<jar|jtidy-r938.jar>;<jar|jNAT-PMPlib.jar>;<jar|core.jar>;<jar|tika-app-1.2.jar>
+excludes=<jar|commons-lang3-3.0.jar>;<jar|commons-httpclient-3.1.jar>;<jar|commons-codec-1.4.jar>;<jar|commons-collections-3.2.1.jar>;<jar|commons-io-2.0.1.jar>;<jar|jsoup-1.6.0.jar>;<jar|jtidy-r938.jar>;<jar|jNAT-PMPlib.jar>;<jar|core.jar>;<jar|tika-app-1.2.jar>
 includes=
