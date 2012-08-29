@@ -13,13 +13,13 @@ import org.NooLab.itexx.storage.randomwords.iciql.Contexts;
 import org.NooLab.somfluid.astor.SomAssociativeStorage;
 import org.NooLab.somfluid.astor.query.SomQueryIntf;
 import org.NooLab.somfluid.astor.storage.db.AstorDataBase;
-import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.engines.det.DSomCore;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
-import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 
  
 /*

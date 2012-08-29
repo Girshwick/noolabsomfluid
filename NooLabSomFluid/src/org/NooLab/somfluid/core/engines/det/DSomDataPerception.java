@@ -3,17 +3,16 @@ package org.NooLab.somfluid.core.engines.det;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 
 import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.engines.det.results.FrequencyList;
 import org.NooLab.somfluid.core.engines.det.results.FrequencyListGeneratorIntf;
@@ -22,6 +21,7 @@ import org.NooLab.somfluid.core.engines.det.results.ItemFrequency;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.data.DataTable;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
 
 

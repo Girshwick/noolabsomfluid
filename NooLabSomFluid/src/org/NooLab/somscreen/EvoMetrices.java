@@ -6,8 +6,8 @@ import java.util.*;
 
 import org.apache.commons.collections.CollectionUtils;
 
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 
 import org.NooLab.somfluid.*;

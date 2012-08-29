@@ -4,9 +4,9 @@ import java.util.ArrayList;
 
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
 
 public interface SomProcessIntf {

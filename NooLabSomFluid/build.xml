@@ -17,9 +17,8 @@
     <!-- uncomment the above lines to use ANT outside of Eclipse -->
     <target name="main">
         <fatjar.build output="NooLabSomFluid.jar">
-            <fatjar.manifest/>
+            <fatjar.manifest mergemanifests="false" manifestfile="META-INF\MANIFEST.MF"/>
             <fatjar.filesource path="D:\dev\java\workspace\NooLabSomFluid\bin" relpath=""/>
-            <fatjar.filesource path="D:\dev\java\workspace\NooLabCompare\bin" relpath=""/>
         </fatjar.build>
     </target>
 </project>

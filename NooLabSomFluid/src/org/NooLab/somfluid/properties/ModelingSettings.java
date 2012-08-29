@@ -3,7 +3,6 @@ package org.NooLab.somfluid.properties;
 
 
 
-import org.NooLab.utilities.ArrUtilities;
 
 
 import java.io.Serializable;
@@ -25,6 +24,7 @@ import org.NooLab.somfluid.properties.SomBagSettings;
 import org.NooLab.somfluid.properties.SpelaSettings;
 import org.NooLab.somfluid.properties.SpriteSettings;
 import org.NooLab.somfluid.properties.ValidationSettings;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.xml.XmlFileRead;
 
 import com.jamesmurty.utils.XMLBuilder;

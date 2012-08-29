@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import org.NooLab.somfluid.components.DataSourceIntf;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivityIntf;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceIntf;
@@ -12,6 +11,7 @@ import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
 import org.NooLab.somfluid.core.nodes.AbstractMetaNode;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 
 
 

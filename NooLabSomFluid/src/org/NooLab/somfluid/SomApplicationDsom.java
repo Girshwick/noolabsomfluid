@@ -16,10 +16,10 @@ import org.NooLab.somfluid.core.engines.det.results.ValidationSet;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.properties.ModelingSettings;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 
 

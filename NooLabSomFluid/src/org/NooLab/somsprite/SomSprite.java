@@ -10,8 +10,8 @@ import org.NooLab.somfluid.properties.SpriteSettings;
 
 import org.NooLab.somtransform.CandidateTransformation;
 import org.NooLab.somtransform.SomTransformer;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.apache.commons.collections.CollectionUtils;
  
 

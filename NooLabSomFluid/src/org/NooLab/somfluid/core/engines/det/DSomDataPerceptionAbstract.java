@@ -8,9 +8,9 @@ import org.NooLab.chord.IndexedItemsCallbackIntf;
 import org.NooLab.chord.MultiDigester;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
  

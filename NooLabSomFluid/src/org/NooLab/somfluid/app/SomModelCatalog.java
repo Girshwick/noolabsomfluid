@@ -8,9 +8,9 @@ import java.util.Vector;
 import org.NooLab.somfluid.SomApplicationIntf;
 import org.NooLab.somfluid.util.XmlStringHandling;
 import org.NooLab.somtransform.SomFluidXMLHelper;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 import org.apache.commons.collections.CollectionUtils;
 

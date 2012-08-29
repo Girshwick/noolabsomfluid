@@ -38,11 +38,11 @@ import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.somtransform.SomTransformerIntf;
 import org.NooLab.somtransform.TransformationModel;
 
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.files.FileDataSource;
 import org.NooLab.utilities.files.WriteFileSimple;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 import org.NooLab.utilities.xml.*;
 

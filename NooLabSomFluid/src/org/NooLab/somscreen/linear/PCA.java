@@ -6,8 +6,8 @@ import java.util.Collections;
 
 import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.engines.det.SomMapTable;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.math.array.*;

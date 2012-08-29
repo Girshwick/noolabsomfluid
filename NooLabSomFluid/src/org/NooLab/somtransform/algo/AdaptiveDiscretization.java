@@ -21,7 +21,7 @@ import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somtransform.algo.distribution.DistributionBin;
 import org.NooLab.somtransform.algo.distribution.Distributions;
 import org.NooLab.somtransform.algo.distribution.EmpiricDistribution;
-import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.math3.distribution.EmpiricalDistribution;
 
 

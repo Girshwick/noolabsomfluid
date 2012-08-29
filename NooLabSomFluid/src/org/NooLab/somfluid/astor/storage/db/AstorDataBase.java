@@ -22,7 +22,6 @@ import org.math.array.StatisticSample;
 import com.iciql.Db;
 
 
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
@@ -30,6 +29,7 @@ import org.NooLab.utilities.net.GUID;
 import org.NooLab.utilities.objects.StringedObjects;
 import org.NooLab.utilities.resources.ResourceContent;
 import org.NooLab.utilities.resources.ResourceLoader;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 
 

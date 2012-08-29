@@ -6,12 +6,12 @@ import java.util.Observer;
 import java.util.Random;
 
 
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.Coord2D;
 import org.NooLab.utilities.datatypes.Coord3D;
 import org.NooLab.utilities.datatypes.Coordinate2D;
 import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.components.*;
@@ -26,6 +26,7 @@ import org.NooLab.somfluid.core.engines.det.ProfileVectorMatcher;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
 import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.env.communication.*;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 
 import org.NooLab.somfluid.util.BasicSimpleStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;

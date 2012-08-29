@@ -2,12 +2,12 @@ package org.NooLab.somfluid;
 
 import java.util.ArrayList;
 
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
  
 import org.NooLab.utilities.net.GUID;
 import org.NooLab.utilities.objects.StringedObjects;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 import org.NooLab.field.FieldIntf;
 import org.NooLab.field.interfaces.FixedNodeFieldEventsIntf;

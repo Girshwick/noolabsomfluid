@@ -19,8 +19,8 @@ import org.NooLab.somscreen.EvoMetrices;
 import org.NooLab.somscreen.EvoMetrik;
 import org.NooLab.somscreen.SomQualityData;
 import org.NooLab.somtransform.SomFluidXMLHelper;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 import org.apache.commons.lang3.StringUtils;
 

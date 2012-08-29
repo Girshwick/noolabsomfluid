@@ -21,6 +21,7 @@ import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.OptimizerSettings;
 import org.NooLab.somscreen.EvoBasics;
@@ -28,10 +29,10 @@ import org.NooLab.somscreen.EvoMetrices;
 import org.NooLab.somscreen.EvoMetrik;
 import org.NooLab.somscreen.SomQuality;
 import org.NooLab.somscreen.SomQualityData;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 /**
  * 
@@ -442,9 +443,9 @@ public class SomModelDescription implements Serializable{
 			
 			somLattice = somHost.getSomProcess().getSomLattice() ;	
 				
-			for (int n=0;n<somLattice.nodes.size();n++){
+			for (int n=0;n<somLattice.getNodes().size();n++){
 				
-				node = somLattice.nodes.get(n) ;
+				node = somLattice.getNodes().get(n) ;
 				
 				nodesPpv = node.getExtensionality().getPPV() ;
 				nodeRepresentsTarget = (1.0 - nodesPpv <= effectiveECR) ;
@@ -481,7 +482,7 @@ public class SomModelDescription implements Serializable{
 						ntNodeSlot = nontargets.getItem(nt) ;
 						nix = ntNodeSlot.getIndex() ;
 						
-						node = somLattice.nodes.get(nix) ; 
+						node = somLattice.getNodes().get(nix) ; 
 						// the ppv of that node
 						nodesPpv = node.getExtensionality().getPPV() ;
 						
@@ -514,7 +515,7 @@ public class SomModelDescription implements Serializable{
 				
 				if (ntNodeSlot.getSecindex()<=0){ // =1 we put it to the target group
 					// do it
-					node = somLattice.nodes.get(nix) ; 
+					node = somLattice.getNodes().get(nix) ; 
 					recordIndexes.get(1).addAll( node.getExtensionality().getListOfRecords() );
 				}
 			} // all items in ixds catalog
@@ -809,8 +810,8 @@ public class SomModelDescription implements Serializable{
 							variableContributions.getItems().add(vc);
 
 							
-							int zn = somProcess.getSomLattice().nodes.size();
-							zn = somProcess.getSomLattice().nodes.size();
+							int zn = somProcess.getSomLattice().getNodes().size();
+							zn = somProcess.getSomLattice().getNodes().size();
 							
 							somProcess.clear();
 							 

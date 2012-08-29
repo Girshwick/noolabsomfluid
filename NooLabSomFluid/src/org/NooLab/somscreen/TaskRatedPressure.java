@@ -11,9 +11,9 @@ import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.properties.OptimizerSettings;
 
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.apache.commons.collections.CollectionUtils;
 
 

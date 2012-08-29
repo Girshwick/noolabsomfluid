@@ -4,11 +4,11 @@ import java.util.ArrayList;
 
  
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.engines.det.DSomDataPerceptionAbstract;
 import org.NooLab.somfluid.core.engines.det.results.ValidationSet;
 import org.NooLab.somfluid.core.nodes.MetaNode;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.utilities.datatypes.IndexDistanceIntf;
 
 
