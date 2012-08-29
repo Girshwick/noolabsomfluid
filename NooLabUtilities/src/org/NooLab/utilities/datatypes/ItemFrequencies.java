@@ -1,4 +1,4 @@
-package org.NooLab.utilities;
+package org.NooLab.utilities.datatypes;
 
 import java.util.Vector;
 

@@ -1927,15 +1927,26 @@ String string = text1.getData();
     
     public boolean getBool(String str, boolean defaultVal) {
 		boolean rB=defaultVal;
-
-		str = str.toLowerCase();
+		int sval=0;
 		
-		if ((str.length()==0) || (str.startsWith("n")) || (str.startsWith("0")) || (str.startsWith("f"))){
+		str = str.toLowerCase();
+		if (strgutil.isNumericX(str)){
+			sval = getInt(str,0) ;
+			if (sval>1){
+				sval=1;
+			}
+			if (sval<0){
+				sval=0;
+			}
+		}
+		if ((str.length()==0) || (str.startsWith("n")) || 
+			(str.startsWith("0")) || (sval==0) || (str.startsWith("f"))){
 			rB=false;
 		}
 		if ((str.length()>0) && (str.length()<=4) && 
 				( (str.startsWith("j")) || (str.startsWith("y")) || (str.startsWith("d")) || (str.startsWith("w")) ||
-				  (str.startsWith("s")) || (str.startsWith("o")) || (str.startsWith("1")) || (str.startsWith("t"))) ){
+				  (str.startsWith("s")) || (str.startsWith("o")) ||  
+				  (str.startsWith("1")) || (sval>=1) || (str.startsWith("t"))) ){
 			rB=true;
 		}
 		

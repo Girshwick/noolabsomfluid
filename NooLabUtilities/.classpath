@@ -26,5 +26,7 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/NooLabChord"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/processing/core.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/textworx/tika/tika-app-1.2.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/exec/commons-exec-1.1/commons-exec-1.1.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/commons-exec/jlibs-r1753/lib/jlibs-core.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

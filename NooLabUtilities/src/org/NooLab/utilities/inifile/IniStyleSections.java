@@ -33,6 +33,20 @@ public class IniStyleSections {
 		return sections.size();
 	}
 	
+	public IniStyleSection getByName(String name){
+		IniStyleSection section = null ;
+		
+		for (int i=0;i<sections.size();i++){
+			String sectLabel = sections.get(i).name ;
+			if (sectLabel.toLowerCase().contentEquals(name)){
+				section = sections.get(i) ;
+				break;
+			}
+		}
+		
+		return section;
+	}
+	
 	public IniStyleSection get(int index){
 		return sections.get(index) ;
 	}

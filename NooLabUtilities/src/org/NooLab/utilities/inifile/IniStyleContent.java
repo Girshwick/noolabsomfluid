@@ -1,5 +1,6 @@
 package org.NooLab.utilities.inifile;
 
+import java.util.ArrayList;
 import java.util.Vector;
 
 import org.NooLab.utilities.strings.StringsUtil;
@@ -7,24 +8,27 @@ import org.NooLab.utilities.strings.StringsUtil;
 
 public class IniStyleContent {
 
+	String filetext ;
+	
 	IniStyleSections iniSections = new IniStyleSections() ;
 	
-	Vector<String> lines = new Vector<String>();
+	ArrayList<String> lines = new ArrayList<String>();
 
 	StringsUtil strgutil = new StringsUtil();
 	static org.apache.commons.lang3.StringUtils ApacheStrings;	
 	
+	IniStyleContent isc;
 	
-	
+	// --------------------------------------------------------------
 	public IniStyleContent(String text) {
-
-		  
-		splitStr2List();
-		
 		 
-
+		filetext = text;
+		
 	}
-
+	public IniStyleContent() {
+		
+	}
+	
 	public IniStyleContent(Vector<String> text) {
  
 		lines.addAll(text);
@@ -35,6 +39,31 @@ public class IniStyleContent {
 
 		iniSections = getIniStyleSections();
 
+	}
+	// --------------------------------------------------------------
+
+	
+	public void getUp(){
+		
+		splitStr2List();
+		
+		parseforSections();
+	}
+	
+	public IniStyleContent fromIniText(String text) {
+		 
+		isc = new IniStyleContent(text); 
+		isc.getUp();
+		
+		return isc;
+	}
+
+	public  String section(String sectionName, String key) throws Exception{
+		String entryValue = "" ;
+		
+		entryValue = iniSections.getByName(sectionName).getEntry(key) ;
+		
+		return entryValue;
 	}
 
 	private void provideObj( ){
@@ -47,8 +76,21 @@ public class IniStyleContent {
 	}
 
 	private void splitStr2List() {
-		Vector<String>  textlines = new Vector<String>();
+		ArrayList<String>  textlines = new ArrayList<String>();
 		
+		filetext = strgutil.replaceAll(filetext, "\n\r", "\n");
+		filetext = strgutil.replaceAll(filetext, "\r\n", "\n");
+		
+		String[] _lines = filetext.split("\n");
+		
+		for (int i=0;i<_lines.length;i++){
+			String str = _lines[i].trim();
+			if ((str.length()==0) || (str.indexOf(";")==0) || (str.indexOf("#")==0)){
+				
+			}else{
+				textlines.add(str) ;
+			}
+		}
 		lines.addAll(textlines);
 		 
 	}
@@ -72,10 +114,13 @@ public class IniStyleContent {
 			str = lines.get(i).trim();
 			if ((str.indexOf("[")==0) && (str.indexOf("]")>0)){
 				sectionActive = true ;
+				
 				section = new IniStyleSection();
 				name = ApacheStrings.substringBetween(str, "[", "]").trim();
 				section.setName(name);
+				
 				section.setObj(strgutil) ;
+				
 				iniSections.getSections().add(section);
 				 
 			} else{

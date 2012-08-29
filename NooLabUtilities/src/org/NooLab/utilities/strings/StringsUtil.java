@@ -15,7 +15,6 @@ import java.util.regex.*;
 
 // import org.NooLab.utilities.*;
 
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.CallbackForPrcCompletionIntf;
 import org.NooLab.utilities.inifile.*;
 import org.apache.commons.io.IOUtils;
@@ -3029,7 +3028,7 @@ if (temp.contains("staggers")){
 		
 		while ((p>0) && (rstr.length()>0)){
 			p = rstr.indexOf(ending) ;
-			if (p>=rstr.length()-ending.length()){
+			if ((p>=rstr.length()-1-ending.length()) || (rstr.endsWith(ending))){
 				if (p>0){
 					
 					rstr = rstr.substring(0,p);
@@ -3052,7 +3051,13 @@ if (temp.contains("staggers")){
 		return trimright( str, ending,"");
 	}
 	
-	
+	/**
+	 * 
+	 * @param str
+	 * @param regexPattern
+	 * @param scope  either "r" or "L"
+	 * @return
+	 */
 	public String trimX( String str, String regexPattern , String scope){
 		String rstr = str,part;
 		boolean found=true;
@@ -4851,6 +4856,85 @@ if (temp.contains("staggers")){
 		}
 		
 		return rB;
+	}
+
+	/**
+	 * this splits a string by 'splitter', but only outside of pairs of " " !
+	 * 
+	 * @param inStr
+	 * @param splitter
+	 * @return
+	 */
+	public String[] splitQ(String inStr, String splitter) {
+		String[] splits = new String[0];
+		
+		String str, xstr, replstr , placeholder = "?&$<enum>$&?";
+		Map<String,String> selement = new HashMap<String,String>();
+		// replace content of "..."
+		
+		int p1,p2,n, replacesCount=0 ;
+		
+		if (splitter.contains("?")){
+			placeholder = this.replaceAll(placeholder, "?", "#");
+		}
+		if (splitter.contains("$")){
+			placeholder = this.replaceAll(placeholder, "$", "#");
+		}
+		if (splitter.contains("&")){
+			placeholder = this.replaceAll(placeholder, "&", "#"); 
+		}
+		if (splitter.contains("#")){
+			placeholder = this.replaceAll(placeholder, "&", "¨"); 
+		}
+		if (splitter.contains("¨")){
+			placeholder = this.replaceAll(placeholder, "¨", "|"); 
+		}
+		
+		str = inStr;
+		str = this.trimm(str, splitter) ;
+		
+		p1= str.indexOf(splitter);
+		n = this.frequencyOfStr(str, splitter) ;
+		
+		if ((p1>0) && (n%2==0) && (splitter.contains("\"")==false)){
+			
+			boolean found=true;
+			while (found){
+				
+				p1=str.indexOf(splitter);
+				p2=str.indexOf(splitter,p1+1);
+				
+				if ((p1>0) && (p2>p1)){
+					
+					xstr = str.substring(p1,p2);
+					replstr = placeholder.replace("<enum>", ""+(replacesCount+1));
+					selement.put(replstr, xstr);
+					replacesCount++;
+					p1=0;
+				}else{
+					break;
+				}
+				
+			}// ->
+			
+		}// any ?
+		
+		splits = str.split(splitter);
+		
+		for (int i=0;i<replacesCount;i++){
+			
+			str  =splits[i];
+			replstr = placeholder.replace("<enum>", ""+(i+1)) ;// "&$.<enum>.$&"
+			
+			if (str.indexOf(replstr)>0){
+				str = str.replace( replstr , selement.get(replstr));
+				splits[i] = str;
+			}
+			
+		}// ->
+		
+		selement.clear();
+		return splits;
 	}
 
 
