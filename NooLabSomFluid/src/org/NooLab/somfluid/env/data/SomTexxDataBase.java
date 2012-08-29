@@ -25,10 +25,10 @@ import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.env.data.db.DataBaseAccessDefinition;
 import org.NooLab.somfluid.properties.PersistenceSettings;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.objects.StringedObjects;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 
 import org.h2.jdbc.JdbcSQLException;

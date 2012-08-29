@@ -2,7 +2,10 @@ package org.NooLab.somfluid;
 
 import java.io.File;
 
-import org.NooLab.somfluid.app.IniProperties;
+import org.NooLab.somfluid.app.up.FileSelectionDialog;
+import org.NooLab.somfluid.app.up.IniProperties;
+import org.NooLab.somfluid.app.up.MsgDialog;
+import org.NooLab.somfluid.app.up.SomFluidStartup;
 import org.NooLab.utilities.files.DFutils;
 
 
@@ -127,9 +130,9 @@ public class ProjectSpaceMaintenance {
 		
 		
 		MsgDialog msgDialog = sfsup.getMsgDialog();
-		msgDialog.openingMsg = 	"Now you have to select a data source file, \n"+
+		msgDialog.setOpeningMsg("Now you have to select a data source file, \n"+
 								"which will be copied into the project space.\n"+
-								"You also may select this file later.";
+								"You also may select this file later.");
 		
 		if (msgDialog.show()==false){
 			return;

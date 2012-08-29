@@ -8,7 +8,7 @@ import java.util.Vector;
 
 import org.NooLab.somsprite.FunctionCohortParameterSet;
 import org.NooLab.somsprite.FunctionCohortParameters;
-import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 import org.nfunk.jep.EvaluatorVisitor;
 import org.nfunk.jep.JEP;

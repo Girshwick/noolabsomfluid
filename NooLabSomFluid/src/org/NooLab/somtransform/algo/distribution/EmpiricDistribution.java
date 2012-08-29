@@ -22,7 +22,7 @@ import org.apache.commons.math.stat.descriptive.StatisticalSummary;
 
 import org.NooLab.math3.stat.descriptive.DescriptiveStatistics;
 
-import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatistics;

@@ -1,8 +1,8 @@
 package org.NooLab.somfluid.astor.query;
 
 import org.NooLab.somfluid.components.SomQueryTargetIntf;
-import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.nodes.LatticeIntf;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 
 
 /**

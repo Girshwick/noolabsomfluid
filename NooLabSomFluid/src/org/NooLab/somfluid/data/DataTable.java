@@ -17,12 +17,12 @@ import org.NooLab.somfluid.util.Formula;
 import org.NooLab.somtransform.StackedTransformation;
 import org.NooLab.somtransform.TransformationStack;
 import org.NooLab.somtransform.algo.NomValEnum;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.callback.ProcessFeedBackContainer;
 import org.NooLab.utilities.callback.ProcessFeedBackContainerIntf;
 import org.NooLab.utilities.callback.ProcessFeedBackIntf;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 
 

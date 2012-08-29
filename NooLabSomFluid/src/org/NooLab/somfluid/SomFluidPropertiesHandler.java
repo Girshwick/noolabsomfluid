@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import org.NooLab.field.FieldIntf;
 import org.NooLab.itexx.storage.DataStreamProviderIntf;
 import org.NooLab.itexx.storage.TexxDataBaseSettings;
+import org.NooLab.somfluid.app.up.SomFluidStartup;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.data.VariableSettingsHandler;
 import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
@@ -18,10 +19,10 @@ import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.util.XmlStringHandling;
 import org.NooLab.somtransform.SomFluidXMLHelper;
 import org.NooLab.somtransform.algo.externals.AlgorithmPluginsLoader;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.ValuePair;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 
 import com.jamesmurty.utils.XMLBuilder;
@@ -201,7 +202,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 				
 				folder = SomFluidStartup.getProjectBasePath();
 				
-				folder = fileutil.createpath( folder, SomFluidStartup.lastProjectName ) ;
+				folder = fileutil.createpath( folder, SomFluidStartup.getLastProjectName() ) ;
 				dfolder = fileutil.createpath( folder, "data/description");
 				
 				if (fileutil.direxists(dfolder)==false){

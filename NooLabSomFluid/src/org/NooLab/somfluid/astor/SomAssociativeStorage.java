@@ -16,7 +16,6 @@ import org.NooLab.somfluid.astor.storage.db.AstorDataBase;
 import org.NooLab.somfluid.astor.stream.SomDataStreamer;
 import org.NooLab.somfluid.astor.trans.SomAstorNodeContent;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.engines.det.LatticePreparation;
@@ -27,6 +26,7 @@ import org.NooLab.somfluid.core.nodes.LatticeProperties;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.data.SomTexxDataBase;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 
 import org.NooLab.somsprite.ProcessCompletionMsgIntf;
@@ -123,7 +123,7 @@ import org.NooLab.utilities.logging.SerialGuid;
  * This class is just an app-like wrapper, organizing references, processes and classes
  * 
  * 
- *  implements 
+ *  implements  
  */
 public class SomAssociativeStorage 
 									implements 

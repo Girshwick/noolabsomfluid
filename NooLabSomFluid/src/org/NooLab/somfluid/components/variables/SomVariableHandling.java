@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.engines.det.DSomCore;
 import org.NooLab.somfluid.data.DataSampler;
 import org.NooLab.somfluid.data.DataTable;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somtransform.algo.AdaptiveDiscretization;
 import org.NooLab.utilities.logging.PrintLog;

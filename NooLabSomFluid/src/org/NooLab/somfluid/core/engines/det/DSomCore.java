@@ -33,10 +33,10 @@ import org.NooLab.somscreen.SomScreening;
 
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
  
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.LogControl;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 
  
 /**
@@ -605,7 +605,7 @@ if (currentEpoch>=3){
 				IndexedDistances ixds = dSom.somLattice.getNodeSizes(true);
 				int nz = (int)ixds.getItem(0).getDistance() ;
 				out.printErr(3, "Som-Epoch <"+currentEpoch+">, sample size = "+actualRecordCount+", largest node (ix:"+ixds.getItem(0).getIndex()+") = "+nz) ;
-
+				ixds.clear();
 				// consoleDisplay();
 			} // currentEpoch -> maxSomEpochCount 
 				

@@ -12,10 +12,10 @@ import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.engines.det.SomMapTable;
 
 import org.NooLab.somseries.MarkovTable;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 
 /**

@@ -9,6 +9,7 @@ import org.NooLab.somfluid.OutputSettings;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidPluginSettings;
 import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.app.up.IniProperties;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.storage.FileOrganizer;

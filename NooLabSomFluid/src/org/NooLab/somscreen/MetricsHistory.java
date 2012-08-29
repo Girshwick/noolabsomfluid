@@ -7,9 +7,9 @@ import java.util.Map;
 import org.NooLab.somfluid.OutputSettings;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 
 

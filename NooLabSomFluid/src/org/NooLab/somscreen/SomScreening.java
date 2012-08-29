@@ -8,12 +8,12 @@ import java.util.Random;
 import org.apache.commons.collections.CollectionUtils;
 
 
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
  
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 import org.NooLab.somfluid.*;
 import org.NooLab.somfluid.components.*;
@@ -22,6 +22,7 @@ import org.NooLab.somfluid.core.*;
 import org.NooLab.somfluid.core.engines.det.* ;
 import org.NooLab.somfluid.core.engines.det.results.*;
 import org.NooLab.somfluid.data.*;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.*;
 import org.NooLab.somfluid.util.PowerSetSpringSource;
 

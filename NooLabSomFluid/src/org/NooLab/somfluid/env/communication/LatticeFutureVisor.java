@@ -1,6 +1,6 @@
 package org.NooLab.somfluid.env.communication;
 
-import org.NooLab.somfluid.components.VirtualLattice;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 
 
 

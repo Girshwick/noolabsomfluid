@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import org.NooLab.somfluid.components.MissingValues;
 import org.NooLab.somtransform.algo.distribution.EmpiricDistribution;
-import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.apache.commons.math.stat.descriptive.StatisticalSummary;
 
 import flanagan.analysis.Regression;

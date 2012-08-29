@@ -27,16 +27,17 @@ import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.data.*;
 import org.NooLab.somfluid.env.communication.*;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
 
 
 import org.NooLab.somscreen.linear.SimpleExplorationClustering;
 import org.NooLab.somtransform.SomTransformer;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.LogControl;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
 import org.NooLab.utilities.objects.StringedObjects;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.timing.DelayFor;
 
 

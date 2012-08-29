@@ -9,11 +9,12 @@ import org.NooLab.field.FieldIntf;
 import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
 import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
-import org.NooLab.somfluid.app.IniProperties;
 import org.NooLab.somfluid.app.SomAppProperties;
 import org.NooLab.somfluid.app.SomAppUsageIntf;
 import org.NooLab.somfluid.app.SomAppValidationIntf;
 import org.NooLab.somfluid.app.SomApplicationEventIntf;
+import org.NooLab.somfluid.app.up.IniProperties;
+import org.NooLab.somfluid.app.up.SomFluidStartup;
  
  
 import org.NooLab.somfluid.components.*;

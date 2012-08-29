@@ -2,7 +2,7 @@ package org.NooLab.somfluid.astor.util;
 
 import java.util.ArrayList;
 
-import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.math.array.StatisticSample;
 
 

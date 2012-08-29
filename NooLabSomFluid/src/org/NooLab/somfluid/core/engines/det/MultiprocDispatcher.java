@@ -3,7 +3,7 @@ package org.NooLab.somfluid.core.engines.det;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.NooLab.somfluid.components.VirtualLattice;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.apache.commons.collections.BidiMap;
 import org.apache.commons.collections.bidimap.DualHashBidiMap;
 

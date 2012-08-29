@@ -15,11 +15,11 @@ import org.NooLab.somtransform.SomTransformer.SomTransformerInitialization;
 import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
 import org.NooLab.somtransform.algo.intf.AlgorithmParameter;
 import org.NooLab.somtransform.algo.intf.AlgorithmParameters;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.objects.StringedObjects;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 
 public abstract class SomTransformerAbstract implements SomTransformerIntf {

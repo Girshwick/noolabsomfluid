@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
 import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
-import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.engines.det.ProfileVectorMatcher;
@@ -12,6 +11,7 @@ import org.NooLab.somfluid.core.nodes.LatticeProperties;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.data.Variable;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;

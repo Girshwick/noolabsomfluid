@@ -12,8 +12,8 @@ import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
 import org.NooLab.somfluid.env.communication.DataglueReceptorIntf;
 import org.NooLab.somfluid.env.data.db.DataBaseAccessDefinition;
 import org.NooLab.somfluid.env.data.db.XColumn;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 import org.apache.commons.collections.CollectionUtils;
 

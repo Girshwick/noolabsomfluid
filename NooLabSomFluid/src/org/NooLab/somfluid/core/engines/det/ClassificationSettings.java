@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.SettingsTransporter;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.ValuePair;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 import com.jamesmurty.utils.XMLBuilder;
 

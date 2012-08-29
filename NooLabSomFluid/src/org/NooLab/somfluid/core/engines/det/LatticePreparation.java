@@ -12,15 +12,15 @@ import org.NooLab.somfluid.SomFluidTask;
 import org.NooLab.somfluid.components.DataSourceIntf;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.SomDataObjectIntf;
-import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.env.communication.NodesInformer;
-import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 
 

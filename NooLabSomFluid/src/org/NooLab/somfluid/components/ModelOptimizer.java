@@ -11,12 +11,12 @@ import org.math.array.StatisticSample;
 import org.math.array.util.Random;
 
 
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.*;
 import org.NooLab.utilities.nums.NumUtilities;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 import org.NooLab.field.FieldIntf;
 import org.NooLab.field.repulsive.components.data.SurroundResults;
@@ -25,6 +25,7 @@ import org.NooLab.math3.exception.NullArgumentException;
 import org.NooLab.math3.stat.correlation.SpearmansCorrelation;
 import org.NooLab.math3.stat.inference.MannWhitneyUTest;
 import org.NooLab.somfluid.*;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.* ;
 
  

@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 
 import org.NooLab.field.FieldIntf;
@@ -17,7 +17,6 @@ import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.app.SomAppValidationIntf;
 import org.NooLab.somfluid.app.SomValidation;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
 import org.NooLab.somfluid.core.categories.intensionality.IntensionalitySurfaceIntf;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
@@ -28,6 +27,7 @@ import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.data.DataSampler;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
 
 import org.NooLab.somfluid.core.categories.extensionality.* ;

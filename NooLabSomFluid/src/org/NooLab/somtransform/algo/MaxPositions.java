@@ -2,7 +2,7 @@ package org.NooLab.somtransform.algo;
 
 import java.util.ArrayList;
 
-import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 public class MaxPositions {
 

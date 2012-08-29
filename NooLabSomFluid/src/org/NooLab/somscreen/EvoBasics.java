@@ -3,9 +3,9 @@ package org.NooLab.somscreen;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.apache.commons.collections.CollectionUtils;
 
 public class EvoBasics implements Serializable{

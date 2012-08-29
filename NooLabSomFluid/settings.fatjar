@@ -1,14 +1,14 @@
 #Fat Jar Configuration File
-#Thu May 17 01:17:08 CEST 2012
+#Mon Aug 27 22:44:16 BST 2012
 onejar.license.required=true
 manifest.classpath=
 manifest.removesigners=true
 onejar.checkbox=false
 jarname=D\:\\dev\\java\\workspace\\NooLabSomFluid.jar
-manifest.mergeall=true
+manifest.mergeall=false
 manifest.mainclass=
-manifest.file=<createnew>
+manifest.file=META-INF\\MANIFEST.MF
 jarname.isextern=true
 onejar.expand=
-excludes=<po|NooLabChord>;<po|NooLabUtilities>;<po|NooLabChord>;<po|NooLabParticleField>;<po|NooLabUtilities>;<po|NooLabChord>;<po|JMathTools>;<po|JMathTools>;<po|NooLabMathCommonsAdapt>;<jar|commons-lang3-3.0.jar>;<jar|NooLabGlue.jar>;<jar|Jama-1.0.2.jar>;<jar|flanagan.jar>;<jar|commons-math-2.2.jar>;<jar|jsc.jar>;<jar|jep-2.4.1.jar>;<jar|ext-1.1.1.jar>;<jar|core.jar>;<jar|joda-time-2.1.jar>;<jar|commons-lang3-3.0.jar>;<jar|log4j-1.2.16.jar>;<jar|commons-httpclient-3.1.jar>;<jar|commons-codec-1.4.jar>;<jar|commons-collections-3.2.1.jar>;<jar|commons-io-2.0.1.jar>;<jar|jsoup-1.6.0.jar>;<jar|xalan-2.7.1.jar>;<jar|xercesImpl-2.9.1.jar>;<jar|xalan.jar>;<jar|xercesImpl.jar>;<jar|xml-apis.jar>;<jar|tika-app-0.9.jar>;<jar|java-xmlbuilder-0.4.jar>;<jar|jtidy-r938.jar>;<jar|uuid-3.2.jar>;<jar|mjxml.jar>;<jar|xmlenc-0.52.jar>;<jar|xmlParserAPIs-2.6.2.jar>;<jar|serializer.jar>;<jar|javax.servlet.jar>;<jar|jNAT-PMPlib.jar>;<jar|core.jar>;<jar|commons-collections-3.2.1.jar>;<jar|javaGeom-0.10.1.jar>;<jar|javaGeom-0.10.1.jar>;<jar|NooLabChord.jar>;<jar|NooLabGraph.jar>
+excludes=<po|NooLabChord>;<po|NooLabUtilities>;<po|NooLabChord>;<po|NooLabParticleField>;<po|NooLabUtilities>;<po|NooLabChord>;<po|JMathTools>;<po|JMathTools>;<po|NooLabCompare>;<po|NooLabMathCommonsAdapt>;<po|NooLabiTexxStorage>;<po|NooLabUtilities>;<po|NooLabChord>;<po|NooLabiTexxCommBox>;<po|NooLabiTexxStructures>;<po|NooLabiTexxCommBox>;<jar|commons-lang3-3.0.jar>;<jar|NooLabGlue.jar>;<jar|Jama-1.0.2.jar>;<jar|flanagan.jar>;<jar|commons-math-2.2.jar>;<jar|jsc.jar>;<jar|jep-2.4.1.jar>;<jar|ext-1.1.1.jar>;<jar|core.jar>;<jar|joda-time-2.1.jar>;<jar|iciql-1.0.0.jar>;<jar|h2.jar>;<jar|commons-collections-3.2.1.jar>;<jar|commons-lang3-3.0.jar>;<jar|log4j-1.2.16.jar>;<jar|commons-httpclient-3.1.jar>;<jar|commons-codec-1.4.jar>;<jar|commons-io-2.0.1.jar>;<jar|jsoup-1.6.0.jar>;<jar|xalan-2.7.1.jar>;<jar|xercesImpl-2.9.1.jar>;<jar|xalan.jar>;<jar|xercesImpl.jar>;<jar|xml-apis.jar>;<jar|java-xmlbuilder-0.4.jar>;<jar|jtidy-r938.jar>;<jar|uuid-3.2.jar>;<jar|mjxml.jar>;<jar|xmlenc-0.52.jar>;<jar|xmlParserAPIs-2.6.2.jar>;<jar|serializer.jar>;<jar|javax.servlet.jar>;<jar|jNAT-PMPlib.jar>;<jar|tika-app-1.2.jar>;<jar|core.jar>;<jar|commons-collections-3.2.1.jar>;<jar|javaGeom-0.10.1.jar>;<jar|javaGeom-0.10.1.jar>;<jar|NooLabChord.jar>;<jar|NooLabGraph.jar>;<jar|NooLabUtilities.jar>;<jar|NooLabUtilities.jar>
 includes=

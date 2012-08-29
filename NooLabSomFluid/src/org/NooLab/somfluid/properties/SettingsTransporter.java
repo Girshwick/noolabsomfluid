@@ -12,7 +12,7 @@ import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.storage.FileOrganizer;
 
-import org.NooLab.utilities.ArrUtilities;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 import org.NooLab.utilities.xml.XMessageAbs;
 import org.NooLab.utilities.xml.XMessageIntf;

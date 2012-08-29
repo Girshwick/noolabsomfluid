@@ -6,7 +6,6 @@ import java.util.Random;
 import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.components.DataSourceIntf;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.components.VirtualLattice;
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivity;
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivityIntf;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamics;
@@ -23,6 +22,7 @@ import org.NooLab.somfluid.core.engines.NodeStatisticsFactory;
 import org.NooLab.somfluid.core.engines.NodeStatisticsIntf;
 
 import org.NooLab.somfluid.data.Variable;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.util.BasicSimpleStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;

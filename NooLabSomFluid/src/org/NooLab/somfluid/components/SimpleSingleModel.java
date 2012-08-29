@@ -13,6 +13,7 @@ import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 import org.NooLab.somfluid.core.engines.det.SomTargetedModeling;
 import org.NooLab.somfluid.core.engines.det.results.ModelProperties;
 import org.NooLab.somfluid.core.engines.det.results.SomTargetResults;
+import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
