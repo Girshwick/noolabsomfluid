@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Main-Class: 
+Class-Path: org.NooLab.field 
+ 
+Name: org/NooLab/field/
+Specification-Title: physical layer for SOM, either fixed or fluid  
+Specification-Vendor: NooLab
+Specification-Version: 1.3
+Implementation-Title: org.NooLab
+Implementation-Version: 1.8.178
+Implementation-Vendor: NooLab
+Implementation-URL: http://www.theputnamprogram.wordpress.com
+
+Sealed: true

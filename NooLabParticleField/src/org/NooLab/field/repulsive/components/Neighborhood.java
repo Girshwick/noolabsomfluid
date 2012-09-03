@@ -13,9 +13,9 @@ import org.NooLab.field.repulsive.components.data.RequestBorder;
 import org.NooLab.field.repulsive.components.infra.C2DComparable;
 import org.NooLab.field.repulsive.intf.ItemLinkageIntf;
 import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.logging.PrintLog;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 
 

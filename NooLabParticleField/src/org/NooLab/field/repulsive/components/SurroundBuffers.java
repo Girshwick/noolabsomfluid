@@ -910,6 +910,8 @@ public class SurroundBuffers implements Runnable{
 		boolean activated=false;
 		
 		SurroundBuffers sbs;
+
+		private int closedStatus=0;
 		
 		// . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 		public SurroundCalcDigester( SurroundBuffers parent ){
@@ -975,6 +977,12 @@ public class SurroundBuffers implements Runnable{
 
 		public boolean isActivated() {
 			return activated;
+		}
+
+		@Override
+		public int getClosedStatus() {
+			
+			return closedStatus;
 		}
 
 	} // inner class Digester

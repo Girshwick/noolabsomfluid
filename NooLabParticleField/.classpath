@@ -7,9 +7,9 @@
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/logging/log4j-1.2.16.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/geo/javaGeom/javaGeom-0.10.1.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/processing-1.5/modes/java/libraries/NooLabParticleField/library/javaGeom-0.10.1.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/processing-1.5/modes/java/libraries/NooLabParticleField/library/NooLabChord.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/processing-1.5/modes/java/libraries/NooLabParticleField/library/NooLabGraph.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/NooLabUtilities"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JMathTools"/>
+	<classpathentry kind="lib" path="D:/data/iTexx/bin/lib/NooLabUtilities.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/NooLabGraph"/>
+	<classpathentry kind="lib" path="D:/data/iTexx/bin/lib/NooLabChord.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

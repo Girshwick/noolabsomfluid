@@ -23,9 +23,9 @@ import org.NooLab.field.repulsive.intf.ParticleDataHandlingIntf;
 import org.NooLab.field.repulsive.intf.RepulsionFieldsSyncEventsIntf;
 import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
 import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.nums.NumUtilities;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.math.array.StatisticSample;
 
 

@@ -15,8 +15,8 @@ import org.NooLab.field.repulsive.components.topology.CoverageByBars;
 import org.NooLab.graph.TreeLinesIntf;
 
  
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 
 
