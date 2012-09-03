@@ -1,0 +1,11 @@
+
+
+About profiles, weights, usevectors = variable selection, optionally specific for each node
+
+is persistent with the node
+
+
+A proper distinction between the extensional part and the intensional part is established.
+In the intensional part, profiles are distinguished from weights (in standard kohonen, they are not distinguished)
+It is important to understand that what is commonly called "weight" vector is not a weight vector at all. 
+Its the profile vector that describes the intensional mapping of the extensional list.
