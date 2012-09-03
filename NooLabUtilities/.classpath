@@ -2,31 +2,29 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/NooLabChord"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/commons-lang/commons-lang3-3.0-beta/commons-lang3-3.0.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/logging/log4j-1.2.16.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/httpc/htmlunit-2.8/lib/commons-httpclient-3.1.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/commons-codec/commons-codec-1.4/commons-codec-1.4.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/collections/commons-collections-3.2.1.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/org.NooLab/glue/commons-io-2.0.1.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/httpc/htmlparse/jsoup/jsoup-1.6.0.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/httpc/htmlunit-2.8/lib/xalan-2.7.1.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xercesImpl-2.9.1.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xalan/xalan-j_2_7_1/xalan.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xalan/xalan-j_2_7_1/xercesImpl.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xalan/xalan-j_2_7_1/xml-apis.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/nets/nat/jNAT-PMPlib.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/exec/commons-exec-1.1/commons-exec-1.1.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xalan/xalan-j_2_7_1/serializer.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/xml/xmlbuilder/java-xmlbuilder-0.4.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/httpc/htmlparse/tidy/jtidy-r938.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/uuid-3.2.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/mjxml.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xmlenc-0.52.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xmlParserAPIs-2.6.2.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xalan/xalan-j_2_7_1/serializer.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/javax/javax.servlet.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/nets/nat/jNAT-PMPlib.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/NooLabChord"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/processing/core.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/textworx/tika/tika-app-1.2.jar"/>
-	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/exec/commons-exec-1.1/commons-exec-1.1.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/commons-exec/jlibs-r1753/lib/jlibs-core.jar"/>
+	<classpathentry kind="lib" path="D:/data/iTexx/bin/lib/commons-lang3-3.0.jar"/>
+	<classpathentry kind="lib" path="D:/data/iTexx/bin/lib/xml-apis.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/httpc/htmlparse/jsoup/jsoup-1.6.0.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/httpc/htmlparse/tidy/jtidy-r938.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xmlenc-0.52.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/javax/javax.servlet.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xercesImpl-2.9.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/kwa/dev/Eclipse/xlibs/apacheTools/xml/xalan/xalan-j_2_7_1/xalan.jar"/>
+	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xmlParserAPIs-2.6.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -35,10 +35,14 @@ import javax.xml.xpath.XPathFactory;
 
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.strings.StringsUtil;
-import org.jdom.Document;
 
+/*
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
+import org.jdom.input.SAXBuilder;
+*/
+
+// import org.jdom.Document; // is taken from tika.jar !!!
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -46,7 +50,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
-import org.jdom.input.SAXBuilder;
 
 import com.jamesmurty.utils.XMLBuilder;
  
@@ -1569,7 +1572,7 @@ public class XpathQuery {
 	        }
 	    }
 	}
-
+/*
 	public static List<String> getEntryList( Document doc ) {
 		
 	    ArrayList<String> entries = new ArrayList<String>();
@@ -1577,7 +1580,7 @@ public class XpathQuery {
 	    buildEntryList(entries, "/"+root.getNodeName()+"[1]", root );
 	    return entries;
 	}
-
+	*/
 	
 	public void getAbsolutePathsForXmlStr(String xStr){ // 
 	

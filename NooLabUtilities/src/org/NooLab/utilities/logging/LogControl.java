@@ -16,7 +16,12 @@ public class LogControl {
 	
 	public static org.apache.log4j.Level loggerLevel = org.apache.log4j.Level.FATAL;
 	
-	public static final CreateLogging cLogger = new CreateLogging(); 
+	public static final CreateLogging cLogger = new CreateLogging();
+
+	public static void setLevel(int vi) {
+		Level = vi;
+		CreateLogging.setDebugLevel( Level );
+	} 
 	
 	
 }
