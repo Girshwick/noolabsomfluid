@@ -16,9 +16,9 @@ import org.NooLab.field.repulsive.particles.RepulsionFieldParticle;
 import org.NooLab.field.repulsive.particles.RepulsionFieldParticles;
  
 
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 
 /**

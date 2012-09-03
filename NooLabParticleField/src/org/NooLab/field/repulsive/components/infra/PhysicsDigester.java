@@ -22,6 +22,8 @@ public class PhysicsDigester implements IndexedItemsCallbackIntf{
 	RepulsionFieldCore parentField;
 	FluidFieldCollectStatistics statisticsCollector;
 	CompletionEventMessageCallIntf completionObserver ;
+
+	private int closedStatus=0;
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 	public PhysicsDigester(RepulsionFieldCore parent ){
@@ -107,6 +109,11 @@ public class PhysicsDigester implements IndexedItemsCallbackIntf{
 
 	public boolean isActivated() {
 		return activated;
+	}
+
+	@Override
+	public int getClosedStatus() {
+		return closedStatus;
 	}
 
 } //  class Digester

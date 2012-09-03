@@ -8,8 +8,8 @@ import math.geom2d.line.Line2D;
 import math.geom2d.polygon.Polygon2D;
 
 import org.NooLab.field.repulsive.components.topology.ResultObjekt;
-import org.NooLab.utilities.ArrUtilities;
 import org.NooLab.utilities.datatypes.IndexDistance;
+import org.NooLab.utilities.strings.ArrUtilities;
  
 
 
