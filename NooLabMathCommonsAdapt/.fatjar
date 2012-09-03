@@ -1,5 +1,5 @@
 #Fat Jar Configuration File
-#Thu May 10 23:42:27 CEST 2012
+#Sun Sep 02 12:54:09 BST 2012
 onejar.license.required=true
 manifest.classpath=
 manifest.removesigners=true
@@ -10,5 +10,5 @@ manifest.mainclass=
 manifest.file=<createnew>
 jarname.isextern=true
 onejar.expand=
-excludes=<jar|commons-math-2.2.jar>
+excludes=
 includes=
