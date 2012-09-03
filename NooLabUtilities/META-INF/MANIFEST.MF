@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
- 
-
-Name: org/NooLab/utilities/
+Main-Class:  
+Class-Path: org.NooLab.utilities 
+Name: org/NooLab/utilities
 Specification-Title: unified utilities library UUL for NooLab stuff
 Specification-Vendor: NooLab
 Specification-Version: 1.3
@@ -9,3 +9,5 @@ Implementation-Title: org.NooLab
 Implementation-Version: 1.8.178
 Implementation-Vendor: NooLab
 Implementation-URL: http://www.theputnamprogram.wordpress.com
+
+Sealed: true
