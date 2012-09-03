@@ -1,0 +1,14 @@
+#Fat Jar Configuration File
+#Sun Sep 02 19:10:24 BST 2012
+onejar.license.required=true
+manifest.classpath=
+manifest.removesigners=true
+onejar.checkbox=false
+jarname=D\:\\dev\\java\\workspace\\NooLabSomFluid.jar
+manifest.mergeall=true
+manifest.mainclass=
+manifest.file=META-INF\\MANIFEST.MF
+jarname.isextern=true
+onejar.expand=
+excludes=<jar|commons-lang3-3.0.jar>;<jar|Jama-1.0.2.jar>;<jar|flanagan.jar>;<jar|commons-math-2.2.jar>;<jar|jsc.jar>;<jar|jep-2.4.1.jar>;<jar|core.jar>;<jar|NooLabMathCommonsAdapt.jar>;<jar|NooLabUtilities.jar>;<jar|NooLabiTexxCommBox.jar>;<jar|NooLabiTexxStorage.jar>;<jar|NooLabiTexxStructures.jar>;<jar|NooLabParticleField.jar>;<jar|commons-collections-3.2.1.jar>;<jar|commons-lang3-3.0.jar>
+includes=
