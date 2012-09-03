@@ -17,8 +17,16 @@
     <!-- uncomment the above lines to use ANT outside of Eclipse -->
     <target name="main">
         <fatjar.build output="NooLabSomFluid.jar">
-            <fatjar.manifest mergemanifests="false" manifestfile="META-INF\MANIFEST.MF"/>
+            <fatjar.manifest manifestfile="META-INF\MANIFEST.MF"/>
             <fatjar.filesource path="D:\dev\java\workspace\NooLabSomFluid\bin" relpath=""/>
+            <fatjar.filesource path="D:\dev\java\workspace\NooLabChord\bin" relpath=""/>
+            <fatjar.filesource path="D:\dev\java\workspace\JMathTools\bin" relpath=""/>
+            <fatjar.filesource path="D:\dev\java\workspace\NooLabCompare\bin" relpath=""/>
+            <fatjar.filesource path="D:\dev\java\workspace\NooLabMathCommonsAdapt\bin" relpath=""/>
+            <fatjar.filesource path="D:\dev\java\workspace\NooLabiTexxCommBox\bin" relpath=""/>
+            <fatjar.filesource path="D:\dev\java\workspace\NooLabiTexxCommBox\bin" relpath=""/>
+            <fatjar.filesource path="D:\dev\java\workspace\NooLabChord\bin" relpath=""/>
+            <fatjar.jarsource file="C:\Programs\dev\eclipse\xlibs\apacheTools\xml\xalan\xalan-j_2_7_1\xml-apis.jar" relpath=""/>
         </fatjar.build>
     </target>
 </project>

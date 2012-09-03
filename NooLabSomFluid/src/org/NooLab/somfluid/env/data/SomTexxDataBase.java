@@ -26,6 +26,7 @@ import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.env.data.db.DataBaseAccessDefinition;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.utilities.files.DFutils;
+import org.NooLab.utilities.files.PathFinder;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.objects.StringedObjects;
 import org.NooLab.utilities.strings.ArrUtilities;
@@ -63,7 +64,8 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 	
 	String databaseName = "";
 	String configFile = "";
-	String storageDir = "" ; 
+	String storageDir = "", h2Dir="" ;
+	int _DB_TARGET_LOCATING=0;
 	
 	String databaseUrl="";
 
@@ -186,7 +188,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		
 		if (databaseUrl.length()==0){
 
-			String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT );
+			String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, _DB_TARGET_LOCATING); // DatabaseMgmt._BASEDIR_QUERY_PROJECT );
 			String _db_dir = DFutils.createPath( h2Dir, "storage/") ; // storageDir;
 
 			if (_db_dir.endsWith("/")){
@@ -228,7 +230,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 			// String docoservUrl = connection.
 			// "jdbc:h2:tcp://localhost/~/docoserv"
 			// :nio
-			String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT );
+			String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, _DB_TARGET_LOCATING); // DatabaseMgmt._BASEDIR_QUERY_PROJECT );
 			String _db_dir = DFutils.createPath( h2Dir, "storage/") ; // storageDir;
 
 			if (_db_dir.endsWith("/")){
@@ -356,7 +358,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 			int servermodeFlag=0;
 			if (accessMode.contentEquals("tcp")){
 				// if in server mode
-				String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_STOR) ;
+				h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, _DB_TARGET_LOCATING); // DatabaseMgmt._BASEDIR_QUERY_STOR) ;
 				h2Dir = DFutils.createPath(h2Dir, "storage/") ;
 				
 				String dbn  = databaseName;
@@ -376,7 +378,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 				}
 			}
 			//  
-			String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT) ;
+			String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, _DB_TARGET_LOCATING); // DatabaseMgmt._BASEDIR_QUERY_PROJECT) ;
 			h2Dir = DFutils.createPath(h2Dir, "storage/") ;
 			out.delay(300);
 			databaseFile = connect( databaseName, h2Dir, servermodeFlag ) ;
@@ -482,7 +484,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 
 	
 	public String getStorageDir( ){
-		
+		/*
 		String systemroot = sfProperties.getSystemRootDir();
 		String prj = sfProperties.getPersistenceSettings().getProjectName() ;
 		
@@ -490,6 +492,33 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		storageDir = DFutils.createPath(storageDir, "storage/") ;
 		
 		return storageDir ; 
+		*/
+
+		String systemroot = sfProperties.getSystemRootDir();   // [path]/iTexx  
+		
+		if ((systemroot.length()==0) || (DFutils.folderExists(systemroot)==false)){
+			systemroot = (new PathFinder()).getAppBinPath( this.getClass(), false);
+			systemroot = DFutils.getParentDir(systemroot) ;
+			sfProperties.setSystemRootDir(systemroot) ;
+		}
+		
+		String appcontext = sfProperties.getApplicationContext() ; 
+		if (appcontext.contains("itexx")){  // itexx (as service within iTexx) or "standalone" (via applet)
+			storageDir = DFutils.createPath(systemroot, "storage/") ;
+			_DB_TARGET_LOCATING = 0;
+		}else{
+			// the storage is subject of the project
+			String prj = sfProperties.getPersistenceSettings().getProjectName() ;
+			storageDir = DFutils.createPath(systemroot, prj+"/") ;
+			storageDir = DFutils.createPath(storageDir, "storage/") ;
+			
+			_DB_TARGET_LOCATING = 0; // DatabaseMgmt._BASEDIR_QUERY_PROJECT;
+		}
+		out.print(2, "SomTexxDataBase::getStorageDir() : \n"+
+				     "                         - systemroot : "+systemroot+"  \n"+
+				     "                         - storage    : "+storageDir);
+		
+		return storageDir ;
 	}
 	
 	

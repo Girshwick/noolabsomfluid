@@ -1,11 +1,18 @@
 Manifest-Version: 1.0
- 
-
+Main-Class: 
+Class-Path: org.NooLab.somfluid ./lib/NooLabMathCommonsAdapt.jar ./li
+ b/NooLabChord.jar  ./lib/NooLabiTexxCommBox
+ .jar ./lib/NooLabiTexxStorage.jar ./lib/NooLabiTexxStructures.jar ./
+ lib/NooLabGlue.jar ./lib/iciql-1.0.0.jar ./lib/h2.jar ./lib/commons-
+ lang3-3.0.jar ./lib/Jama-1.0.2.jar ./lib/flanagan.jar ./lib/commons-
+ math-2.2.jar ./lib/jsc.jar ./lib/jep-2.4.1.jar ./lib/ext-1.1.1.jar .
+ /lib/joda-time-2.1.jar ./lib/xercesImpl-2.9.1.jar
 Name: org/NooLab/somfluid/
-Specification-Title: SOM library for targeted modeling or Astor SOM, with integrated Transformation 
+Specification-Title: "SOM library for targeted modeling or Astor SOM" 
 Specification-Vendor: NooLab
 Specification-Version: 1.3
 Implementation-Title: org.NooLab
 Implementation-Version: 1.8.178
 Implementation-Vendor: NooLab
 Implementation-URL: http://www.theputnamprogram.wordpress.com
+Sealed: true

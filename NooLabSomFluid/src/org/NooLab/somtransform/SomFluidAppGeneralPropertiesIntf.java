@@ -46,6 +46,7 @@ public interface SomFluidAppGeneralPropertiesIntf {
 
 	SomFluidFactory getSfFactory();
 
+	
 	int getSomType();
 
 	/** the extensionality of the nodes can hold 2 lists:</br> 
@@ -59,6 +60,12 @@ public interface SomFluidAppGeneralPropertiesIntf {
 	 * @return
 	 */
 	public Object getCollectibleColumn();
+
+	String getApplicationContext();
+
+	void setApplicationContext(String appcontext);
+
+	boolean isITexxContext();
 
 	 
 

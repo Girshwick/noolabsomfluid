@@ -8,13 +8,13 @@ import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
 import org.NooLab.utilities.strings.StringsUtil;
 
-import org.NooLab.somfluid.app.SomAppClassifier;
-import org.NooLab.somfluid.app.SomAppModelLoader;
-import org.NooLab.somfluid.app.SomAppProperties;
-import org.NooLab.somfluid.app.SomAppResultAnalyses;
-import org.NooLab.somfluid.app.SomApplicationEventIntf;
 import org.NooLab.somfluid.app.up.IniProperties;
 import org.NooLab.somfluid.app.up.SomFluidStartup;
+import org.NooLab.somfluid.clapp.SomAppClassifier;
+import org.NooLab.somfluid.clapp.SomAppModelLoader;
+import org.NooLab.somfluid.clapp.SomAppProperties;
+import org.NooLab.somfluid.clapp.SomAppResultAnalyses;
+import org.NooLab.somfluid.clapp.SomApplicationEventIntf;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 import org.NooLab.somfluid.env.data.DataReceptor;

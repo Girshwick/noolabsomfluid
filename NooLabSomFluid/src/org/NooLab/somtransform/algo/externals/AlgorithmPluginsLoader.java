@@ -7,7 +7,7 @@ import java.util.Vector;
 
 import org.NooLab.somfluid.SomFluidPluginSettingsIntf;
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.app.SomAppProperties;
+import org.NooLab.somfluid.clapp.SomAppProperties;
 import org.NooLab.somfluid.util.XmlStringHandling;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
 import org.NooLab.utilities.files.DFutils;

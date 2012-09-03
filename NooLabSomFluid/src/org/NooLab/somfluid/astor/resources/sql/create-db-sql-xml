@@ -26,7 +26,7 @@
               -->
          <create>
             <drop active="1" cmd="DROP TABLE IF EXISTS ::tablename::" />
-            <text>
+            <text  name="somnames" >
                 CREATE TABLE  ::tablename:: (
                       id             IDENTITY PRIMARY KEY,  
 					  somid          BIGINT,
@@ -67,11 +67,11 @@
               -->
          <create>
             <drop active="1" cmd="DROP TABLE IF EXISTS ::tablename::" />
-            <text>
-                 <!--
+                 <!-- NO COMMENT INSIDE THE <text>-node !!! 
                  -->
+            <text name="nodecontent" >
                 CREATE TABLE  ::tablename:: (  
-					  id             IDENTITY AUTO_INCREMENT PRIMARY KEY,
+					  id             IDENTITY PRIMARY KEY,
 					  somid          BIGINT,       ** the id of the som as it is stored in the table somnames** 
 					  nodeid         BIGINT ,      ** the numerical GUID from nodefingerprints **
 					  docid          BIGINT,       ** a particular node may contain various context and various words,
@@ -79,8 +79,6 @@
 					  fingerprintid  BIGINT ,      ** if word, the same value as in database "rg-fingerprint" ! 
 					                                  if sentence, then the same value as in ....  **                         
 					  contextid      BIGINT        ** for the same word there might be different contexts **
-					  
-					  
 					  )
 		    </text>	
          </create>
@@ -96,9 +94,7 @@
               -->
          <create>
             <drop active="1" cmd="DROP TABLE IF EXISTS ::tablename::" />
-            <text>
-                 <!--
-                 -->
+            <text name="nodefingerprints">
                 CREATE TABLE  ::tablename:: (  
 					  
 					  id             IDENTITY PRIMARY KEY ,     

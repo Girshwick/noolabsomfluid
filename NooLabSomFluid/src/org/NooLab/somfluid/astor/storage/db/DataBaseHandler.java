@@ -371,6 +371,7 @@ public class DataBaseHandler  {
 			dstr = xMsg.getSpecifiedConditionalInfo(rawXmlMsg, "/table", "name", tnStr, "/create/drop", "cmd");
 			
 			ccStr = xMsg.getTextDataFromConditionalSection(rawXmlMsg, "/table", "name", tnStr, "/create/text") ;
+
 			
 			if (ccStr.length()>0){
 				cc = new DataBaseCreateCommand() ;

@@ -3,9 +3,9 @@ package org.NooLab.somfluid;
 import java.util.ArrayList;
 
 
-import org.NooLab.somfluid.app.SomAppUsageIntf;
-import org.NooLab.somfluid.app.SomAppValidationIntf;
-import org.NooLab.somfluid.app.SomApplicationEventIntf;
+import org.NooLab.somfluid.clapp.SomAppUsageIntf;
+import org.NooLab.somfluid.clapp.SomAppValidationIntf;
+import org.NooLab.somfluid.clapp.SomApplicationEventIntf;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.core.DSomPerception;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;

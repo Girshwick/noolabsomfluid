@@ -36,6 +36,8 @@ public class DSomDataPerceptionAbstract extends Observable{
 	private ProfileVectorMatcher bmuSearch;
 	NodeDigester nodeDigester;
 	
+	 
+	
 	transient protected int errorsCount=0; 
 	transient PrintLog out;
 	
