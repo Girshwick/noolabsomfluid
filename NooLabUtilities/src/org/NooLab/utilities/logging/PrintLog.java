@@ -608,11 +608,15 @@ if ((msg==null) ){
 		this.measureTimeDelta = measureTimeDelta;
 	}
 	
-	public void setPrintLevel(int printLevel) {
+	public void setPrintLevel(int printlevel) {
 		 
-		this.printLevel = printLevel;
+		printLevel = printlevel;
 	}
 
+	public void setLogControlLevel(int level) {
+		 
+		LogControl.Level = level;
+	}
 
 	public int getPrintlevel(){
 		int _level;

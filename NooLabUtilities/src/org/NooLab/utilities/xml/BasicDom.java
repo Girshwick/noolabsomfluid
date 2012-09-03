@@ -13,13 +13,14 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.Vector;
 
-import javax.xml.parsers.*;
+import org.apache.xpath.XPathAPI;
 import org.w3c.dom.*;
 import org.xml.sax.*;
 
-import org.apache.xalan.*;
-import org.apache.xerces.*;
-import org.apache.xpath.XPathAPI;
+import javax.xml.parsers.*;
+
+
+
 
 /**
  * 

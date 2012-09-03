@@ -1024,13 +1024,14 @@ public abstract class XMessageAbs {
 	
 	
 	public String getTextDataFromConditionalSection( String rawXmlMsg, 
-													String domainSpecs, 
-													String condAttrSpecs,
-													String condition, 
-													String dataTagSpecs){
+									 				 String domainSpecs, 
+													 String condAttrSpecs,
+													 String condition, 
+													 String dataTagSpecs){
 
-		String resultInfo = "";
+		String resultInfo = "",uri="", rawNodeValue="", putName =""; 
 		Node pkgNode;
+		int nodeType ;
 		
 		// similar to 
 		// pkgNode = (Node)selectSpecifiedItem(rawXmlMsg, "//sompackages/packages", "package", "name", condition);
@@ -1071,9 +1072,23 @@ public abstract class XMessageAbs {
 
     			// resultInfo = xpathQuery.readNode( xmlNodeObj,dataAttrSpecs ) ;
     		
-    			resultInfo = ((Node)xmlNodeObj).getTextContent();
+    			// resultInfo = ((Node)xmlNodeObj).getTextContent();
+    			Node putTextNode = ((Node)xmlNodeObj).getFirstChild() ;
     			
+    			if (putTextNode.hasAttributes()){
+    				putName = putTextNode.getAttributes().getNamedItem("name").getNodeValue();
+    			}
     			
+    			nodeType = putTextNode.getNodeType();
+    			uri = putTextNode.getNamespaceURI();
+    			rawNodeValue = putTextNode.getNodeValue();
+    			
+    			Text tester = (Text)putTextNode ;
+    			resultInfo = tester.getNodeValue();
+    			
+    			uri=uri+" ";
+    			putName = putName +" " ;
+    			rawNodeValue=rawNodeValue+ " ";
     	}catch(Exception e){
     		
     	}

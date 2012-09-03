@@ -1,5 +1,7 @@
 package org.NooLab.utilities.strings;
 
+
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,11 +14,9 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.regex.*;
 
-
-// import org.NooLab.utilities.*;
-
 import org.NooLab.utilities.CallbackForPrcCompletionIntf;
 import org.NooLab.utilities.inifile.*;
+import org.NooLab.utilities.logging.PrintLog;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.*;
 import org.jsoup.Jsoup;
@@ -106,6 +106,11 @@ public class StringsUtil{  //  implements Serializable
 
 	transient CallbackForPrcCompletionIntf displayCompletion;
 	
+	String lastErrorDescription = "";
+	int lastErr=0;
+	
+	
+	// ========================================================================
   	
 	public void setDisplayCompletion(CallbackForPrcCompletionIntf callbackInstance) {
 		displayCompletion = callbackInstance;
@@ -980,6 +985,9 @@ public class StringsUtil{  //  implements Serializable
 		 */
 	public int indexOfparticles( String str, String[] delimiters, int startpos,
 								 int nth_occurence, boolean any) {
+		 lastErr = -1;
+		   
+		
 		int currpos = 0;
 		int[] allpositions;
 		int pLen, sLen, dLen, p, i = 0, d, count;
@@ -999,7 +1007,7 @@ public class StringsUtil{  //  implements Serializable
 			sLen = str.length();
 			dLen = delimiters.length;
 			count = 0;
-
+			                                     lastErr = -2;
 			for (d = 0; d < dLen; d++) {
 
 				if (!any) {
@@ -1022,7 +1030,7 @@ public class StringsUtil{  //  implements Serializable
 				if (startpos > 0) {
 					i = startpos;
 				}
-
+			                                     lastErr = -3;
 				while (i < sLen) {
 
 					p = str.indexOf(particle, i);
@@ -1055,27 +1063,32 @@ public class StringsUtil{  //  implements Serializable
 				} // i < sLen
 				i=0;
 			} // d -> all particles
-
+			                                     lastErr = -5;
 		} catch (Exception e) {
 			count = -1;
 			e.printStackTrace();
 		}
-
-		currpos = 999999;
+			                                     lastErr = -6;
 		for (d = 0; d < allpositions.length; d++) {
+			currpos = 999999;
 			if ((currpos > allpositions[d]) && (allpositions[d] >= 0)) {
 				currpos = allpositions[d];
 			}
 
-		}
+		}// ->
+			                                     lastErr = -7;
 		int maxPosVal = ArrUtilities.arraymax(allpositions) ;
 		int posOfMin = ArrUtilities.arrayMinPos(allpositions,-1 ) ;
-		    currpos  = allpositions[posOfMin] ;  
+			                                     lastErr = -8;				
+		    if (posOfMin>=0){
+		    	currpos  = allpositions[posOfMin] ;  
+		    }
 		
 		if (currpos >= 999999) {
 			currpos = -1;
 		}
-
+		
+		lastErr = 0;
 		return currpos;
 	}
 
@@ -1109,6 +1122,9 @@ public class StringsUtil{  //  implements Serializable
 			return resultValues;
 		}
 
+		if (startpos<0){
+			startpos=0;
+		}
 		allpositions = new int[delimiters.length];
 		for (d = 0; d < allpositions.length; d++) {
 			allpositions[d] = -1;
@@ -1874,6 +1890,8 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		return str ;
 	}
 
+	
+	
 	public String collapse( StackTraceElement[] items, String separator){
 		String str ="";
 		String istr;
@@ -1909,7 +1927,9 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 			// [any char except blank]-[opt. blank][anychar except num]
 			p = text.indexOf("-");
 			p1=0; p2=-1;
-															displayCompletion.setCompletionPercentage( (double)(0.0)/(double)(text.length()));
+															if (displayCompletion!=null){
+																displayCompletion.setCompletionPercentage( (double)(0.0)/(double)(text.length()));
+															}
 			while ((p>1) && (p<text.length()-2)){
 				
 															if (displayCompletion!=null){
@@ -2009,11 +2029,13 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		ArrayList<XMap> parts= new ArrayList<XMap>();
 		XMap xm;
 		
-		String temp,sc1,sc2,sc3 ,sdel, shownDelimiter, effectiveDelimiter = "";
-		int[] pps;
+		String temp,sc1,sc2,sc3 ,sdel, shownDelimiter, effectiveDelimiter = "", origStr="";
+		int[] pps = new int[]{-1};
 		int p = 0,p0,c, dp ;
 		int delimPos ;
 		boolean done=false,hb ;
+		
+		origStr = str;
 		
 		try{
 			p0=0;
@@ -2032,7 +2054,7 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 									   if (displayCompletion!=null){
 										   displayCompletion.setCompletionPercentage( ((double)p)/(double)str.length()) ;
 									   }
-				
+				 
 				// p   = indexOfparticles( str , delimiters ,p0 ) ; // delivers the first pos-value across all particles ???
 				pps = indexFullOfparticles( str , delimiters ,p0 ) ;
 				p = pps[0] ;
@@ -2060,7 +2082,7 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 				// we need the index of the delimiter in the array of delimiters as well...
 				// pfi = firstIndexOfparticles( str , delimiters,p0 ) ;
 				
-				if ((p>=0) && (p<str.length()-1)){
+				if ((p>=1) && (p<str.length()-1)){
 					// check: NOT for numericals !!!
 					// check left-hand and right-hand
 					sc1="";sc2="";sc3="";
@@ -2083,8 +2105,18 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 						if (hb){
 							str = str.substring(0,p+1) + str.substring(p+2,str.length());
 						}
-						 
-						p = indexOfparticles( str , delimiters ,p+2 ) ;
+						try{ 
+							
+							p = indexOfparticles( str , delimiters ,p+2 ) ;
+							
+						}catch(Exception e){
+							String estr = str;
+							int z = Math.min(str.length(),50);
+							estr = estr.substring(0,z);
+							System.out.println("splitting string failed at pos "+(p+2)+"+ \n"+
+									           "string was : "+estr);
+							p=p+2;
+						}
 					}
 				}
 				// the actual split...
@@ -2096,6 +2128,8 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 						c=0;
 					}
 					int pb=p0;
+					if (p0<0)p0=0;
+					
 					temp = str.substring(p0,p+c).trim() ;
 					if ((effectiveDelimiter!=null) && (effectiveDelimiter.length()>0)){
 						p0 = p+c+ effectiveDelimiter.length() - 1;
@@ -2154,6 +2188,13 @@ if (temp.contains("staggers")){
 			
 			
 		}catch(Exception e){
+			int z = Math.min(origStr.length(),200);
+			String estr = "a problem occured while splitting a string... \n"+
+			              "source string          : "+origStr.substring(0,z).replace("\n", "")+" \n"+
+			              "parts collected so far : "+parts.size()+"\n"+
+			              "last position roughly  : "+pps[0]+"\n"+
+			              "presumable error code  : "+lastErr;
+			PrintLog.Print(1, estr);
 			e.printStackTrace();
 		}
 		
