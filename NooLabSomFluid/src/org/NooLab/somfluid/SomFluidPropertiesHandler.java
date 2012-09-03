@@ -55,12 +55,12 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 
 	
 	
-	
-	
 	String algorithmsConfigPath ="" ;
 	
 	private String projectName="", dataSourceName="";
+	
 	String supervisedOnlineFolder="" ;
+	
 	int nodeCount = 3;
 	int srctype = 1;
 	int surrogateActivated = 0;

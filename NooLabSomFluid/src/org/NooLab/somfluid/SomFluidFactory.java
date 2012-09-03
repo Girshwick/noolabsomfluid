@@ -8,15 +8,14 @@ import java.util.Random;
 import org.NooLab.field.FieldIntf;
 import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
 import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
-import org.NooLab.field.repulsive.intf.main.RepulsionFieldIntf;
-import org.NooLab.somfluid.app.SomAppProperties;
-import org.NooLab.somfluid.app.SomAppUsageIntf;
-import org.NooLab.somfluid.app.SomAppValidationIntf;
-import org.NooLab.somfluid.app.SomApplicationEventIntf;
+ 
+ 
 import org.NooLab.somfluid.app.up.IniProperties;
 import org.NooLab.somfluid.app.up.SomFluidStartup;
- 
- 
+import org.NooLab.somfluid.clapp.SomAppProperties;
+import org.NooLab.somfluid.clapp.SomAppUsageIntf;
+import org.NooLab.somfluid.clapp.SomAppValidationIntf;
+import org.NooLab.somfluid.clapp.SomApplicationEventIntf;
 import org.NooLab.somfluid.components.*;
  
 import org.NooLab.somfluid.env.communication.GlueClientAdaptor;
@@ -371,11 +370,16 @@ public class SomFluidFactory  implements 	//
 		return traceInfo;
 	}
 
+	
 	public void saveStartupTrace(int instanceTypeSom, String traceInfo) {
 		
 		String userdir, cfgTraceFile;
 		
-		userdir = fileutil.getUserDir();
+		if (sfProperties.isITexxContext()){
+			userdir = DFutils.createPath( sfProperties.getSystemRootDir(),"bin/");
+		}else{
+			userdir = fileutil.getUserDir(); // ???
+		}
 		
 		cfgTraceFile = fileutil.createpath(userdir, "somfluid-"+instanceTypeSom+".startup") ;
 		

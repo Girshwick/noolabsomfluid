@@ -19,13 +19,13 @@ import org.NooLab.itexx.storage.DataStreamProviderIntf;
 import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
 
 import org.NooLab.somfluid.properties.* ;
-import org.NooLab.somfluid.app.SomAppProperties;
-import org.NooLab.somfluid.app.SomAppUsageIntf;
-import org.NooLab.somfluid.app.SomAppValidationIntf;
-import org.NooLab.somfluid.app.SomApplicationEventIntf;
 import org.NooLab.somfluid.astor.SomAStorageQueryHandler;
 import org.NooLab.somfluid.astor.SomAssociativeStorage;
 import org.NooLab.somfluid.astor.stream.SomDataStreamer;
+import org.NooLab.somfluid.clapp.SomAppProperties;
+import org.NooLab.somfluid.clapp.SomAppUsageIntf;
+import org.NooLab.somfluid.clapp.SomAppValidationIntf;
+import org.NooLab.somfluid.clapp.SomApplicationEventIntf;
 import org.NooLab.somfluid.components.* ;
   
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;

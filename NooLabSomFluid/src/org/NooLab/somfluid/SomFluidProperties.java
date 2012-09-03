@@ -7,8 +7,8 @@ import java.util.Arrays;
 import org.NooLab.itexx.storage.DataStreamProviderIntf;
 import org.NooLab.itexx.storage.TexxDataBaseSettings;
 import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
-import org.NooLab.somfluid.app.SomAppProperties;
-import org.NooLab.somfluid.app.SomFluidAppPropertiesAbstract;
+import org.NooLab.somfluid.clapp.SomAppProperties;
+import org.NooLab.somfluid.clapp.SomFluidAppPropertiesAbstract;
 import org.NooLab.somfluid.components.AlgorithmDeclarationsLoader;
 import org.NooLab.somfluid.components.DataFilter;
 import org.NooLab.somfluid.core.engines.det.ResultRequests;
@@ -72,7 +72,14 @@ public class SomFluidProperties
 
 	public static final String _STORAGE_OBJ = "SomFluid.properties";
 	public static final String _STORAGE_XML = "SomFluid-properties.xml";
-	
+
+
+	public static final String _APP_CONTEXT_ITEXX = "itexx";
+	public static final String _APP_CONTEXT_ALONE = "standalone";
+
+
+	public static final String _APP_COMPLETION_EXIT = "exit" ;
+	public static final String _APP_COMPLETION_SERVICE = "service" ;
 	
 	
 		
@@ -112,11 +119,11 @@ public class SomFluidProperties
 
 	private boolean isPluginsAllowed = true;
 
-	private String algorithmsConfigPath;
+	private String algorithmsConfigPath="";
 
 	
 
-	private String systemRootDir;
+	private String systemRootDir="";
 
 	transient private String currentSettingsXml="";
 
@@ -124,6 +131,7 @@ public class SomFluidProperties
 	private boolean isAssignatesHomogeneous=true;
 
 
+	private String onCompletion="";
 	
 
 
@@ -1040,6 +1048,19 @@ public class SomFluidProperties
 		
 		return xmlstr ;
 	}
+
+
+	public void setOnCompletion(String onCompletion) {
+		
+		this.onCompletion = onCompletion;
+	}
+
+
+	public String getOnCompletion() {
+		return onCompletion;
+	}
+
+
 
 
 

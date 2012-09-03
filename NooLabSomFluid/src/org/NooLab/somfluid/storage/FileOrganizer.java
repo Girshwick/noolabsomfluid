@@ -1,7 +1,7 @@
 package org.NooLab.somfluid.storage;
 
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.app.SomAppProperties;
+import org.NooLab.somfluid.clapp.SomAppProperties;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
 import org.NooLab.utilities.files.DFutils;

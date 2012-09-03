@@ -1,8 +1,8 @@
 package org.NooLab.somfluid;
 
-import org.NooLab.somfluid.app.SomAppModelLoader;
-import org.NooLab.somfluid.app.SomAppResultAnalyses;
-import org.NooLab.somfluid.app.SomApplicationEventIntf;
+import org.NooLab.somfluid.clapp.SomAppModelLoader;
+import org.NooLab.somfluid.clapp.SomAppResultAnalyses;
+import org.NooLab.somfluid.clapp.SomApplicationEventIntf;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.utilities.callback.ProcessFeedBackIntf;
 

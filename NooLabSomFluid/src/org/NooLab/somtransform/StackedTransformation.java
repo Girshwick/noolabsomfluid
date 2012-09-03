@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.NooLab.somfluid.SomFluidPluginSettings;
-import org.NooLab.somfluid.app.SomAppSomObject;
+import org.NooLab.somfluid.clapp.SomAppSomObject;
 import org.NooLab.somtransform.algo.clazz.AlgoClassLoader;
 import org.NooLab.somtransform.algo.intf.AlgoColumnWriterIntf;
 import org.NooLab.somtransform.algo.intf.AlgoMeasurementIntf;

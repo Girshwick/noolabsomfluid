@@ -1,6 +1,6 @@
 package org.NooLab.somfluid;
 
-import org.NooLab.somfluid.app.SomAppProperties;
+import org.NooLab.somfluid.clapp.SomAppProperties;
 
 
 

@@ -9,6 +9,7 @@ import java.util.Random;
 
 import org.NooLab.chord.IndexedItemsCallbackIntf;
 import org.NooLab.chord.MultiDigester;
+
 import org.NooLab.math3.random.RandomDataImpl;
 import org.NooLab.math3.stat.clustering.Cluster;
 import org.NooLab.math3.stat.clustering.EuclideanDoublePoint;
@@ -689,7 +690,7 @@ public class DependencyScreener {
 	}
 
 	// ========================================================================
-	class DScreenerDigester implements Runnable,IndexedItemsCallbackIntf{
+	class DScreenerDigester implements Runnable, org.NooLab.chord.IndexedItemsCallbackIntf{
 		 
 		MultiDigester digester ;
 		ArrayList<int[]> list;

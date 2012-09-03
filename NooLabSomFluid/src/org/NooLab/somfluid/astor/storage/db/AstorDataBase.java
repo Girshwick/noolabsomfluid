@@ -23,6 +23,7 @@ import com.iciql.Db;
 
 
 import org.NooLab.utilities.files.DFutils;
+import org.NooLab.utilities.files.PathFinder;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
 import org.NooLab.utilities.net.GUID;
@@ -77,10 +78,11 @@ public class AstorDataBase implements ConnectorClientIntf{
 	private boolean isOpen;
 	boolean dbRecreated = false;
 	
-	String h2Dir ="" ;
+	 
 	String databaseName = "";
 	String configFile = "";
-	String storageDir = "" ; 
+	String storageDir = "" , h2Dir=""; 
+	int _DB_TARGET_LOCATING=0;
 	
 	String databaseUrl="";
 
@@ -200,9 +202,9 @@ public class AstorDataBase implements ConnectorClientIntf{
 				// if in server mode
 				// String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT) ;// _BASEDIR_QUERY_PROJECT
 				// h2Dir = DFutils.createPath(h2Dir, "storage/") ;
-				
-				getRelocatedH2Dir(storageDir);
-				
+				if (sfProperties.isITexxContext()==false){
+					getRelocatedH2Dir(storageDir);
+				}
 				String dbn  = databaseName;
 				int r = createServer( databaseName,h2Dir) ;
 				if (r!=0){
@@ -222,9 +224,9 @@ public class AstorDataBase implements ConnectorClientIntf{
 			//  
 			// String h2Dir = DatabaseMgmt.setH2BaseDir(storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT) ;
 			// h2Dir = DFutils.createPath(h2Dir, "storage/") ;
-			
-			getRelocatedH2Dir(storageDir) ;
-			
+			if (sfProperties.isITexxContext()==false){
+				getRelocatedH2Dir(storageDir) ;
+			}
 			databaseFile = connect( databaseName, h2Dir, servermodeFlag ) ;
 			
 			
@@ -235,7 +237,7 @@ public class AstorDataBase implements ConnectorClientIntf{
 				
 				dbHandler = new DataBaseHandler( this ) ;
 		
-		// returns falsely false for randomwords		
+		// returns falsely false for randomwords		, for astornodes
 				if ((checkStructure(connection,databaseName) != 0) || (dbRecreated)){ 
 					// connection.close();
 					createDatabaseStructure( databaseName ) ;// usually, it should be taken from the XML
@@ -272,7 +274,7 @@ public class AstorDataBase implements ConnectorClientIntf{
 			
 			if ((h2Dir.length()==0) || (DFutils.folderExists(h2Dir)==false) || 
 					(h2Dir.contentEquals(storageDir))){
-				_h2Dir = DatabaseMgmt.setH2BaseDir( storageDir, DatabaseMgmt._BASEDIR_QUERY_PROJECT);
+				_h2Dir = DatabaseMgmt.setH2BaseDir( storageDir, _DB_TARGET_LOCATING);// DatabaseMgmt._BASEDIR_QUERY_PROJECT);
 				h2Dir = DFutils.createPath( _h2Dir, "storage/") ;
 			}
 		} catch (Exception e) {
@@ -303,7 +305,7 @@ public class AstorDataBase implements ConnectorClientIntf{
 		r = dbHandler.createDataTablesByResource(ccs);
 		
 		if (r!=0){
-			throw(new Exception("createDataTablesByResource() failes, error code = "+r+"\n"));
+			throw(new Exception("createDataTablesByResource() failed, error code = "+r+"\n"));
 		}
 		
 		if ((connection==null) || (connection.isClosed())){
@@ -726,7 +728,7 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 	
 	
 	public String getStorageDir( ){
-		
+		/*
 		String systemroot = sfProperties.getSystemRootDir();
 		String prj = sfProperties.getPersistenceSettings().getProjectName() ;
 		
@@ -734,6 +736,35 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 		storageDir = DFutils.createPath(storageDir, "storage/") ;
 		
 		return storageDir ; 
+		*/
+		
+	String systemroot = sfProperties.getSystemRootDir();   // [path]/iTexx  
+		
+		if ((systemroot.length()==0) || (DFutils.folderExists(systemroot)==false)){
+			systemroot = (new PathFinder()).getAppBinPath( this.getClass(), false);
+			systemroot = DFutils.getParentDir(systemroot) ;
+			sfProperties.setSystemRootDir(systemroot) ;
+		}
+		
+		String appcontext = sfProperties.getApplicationContext() ; 
+		if (appcontext.contains("itexx")){  // itexx (as service within iTexx) or "standalone" (via applet)
+			storageDir = DFutils.createPath(systemroot, "storage/") ;
+			_DB_TARGET_LOCATING = 0;
+		}else{
+			// the storage is subject of the project
+			String prj = sfProperties.getPersistenceSettings().getProjectName() ;
+			storageDir = DFutils.createPath(systemroot, prj+"/") ;
+			storageDir = DFutils.createPath(storageDir, "storage/") ;
+			
+			_DB_TARGET_LOCATING = 0; // DatabaseMgmt._BASEDIR_QUERY_PROJECT;
+		}
+		out.print(2, "SomTexxDataBase::getStorageDir() : \n"+
+				     "                         - systemroot : "+systemroot+"  \n"+
+				     "                         - storage    : "+storageDir);
+		
+		return storageDir ;
+		
+		
 	}
 	
 	private String getDBhomefile( String dbname){
@@ -867,6 +898,19 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 	public long[] updateLatticNodeRegistration( long somId, long numGuid, int runningIndex ) {
 		return updateLatticNodeRegistration( somId, numGuid,runningIndex, -1.0, -1.0, -1.0) ;
 	}
+	
+	/**
+	 * this update of the node's registration is being called from /astor/trans/SomAstorNodeContent ;
+	 * if the node-enum is known for the given som (identified by id) it will return the stored value 
+	 * 
+	 * @param somId
+	 * @param numGuid
+	 * @param runningIndex
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @return
+	 */
 	public long[] updateLatticNodeRegistration( long somId, long numGuid, int runningIndex, double x, double  y, double z) {
 
 
@@ -1028,7 +1072,9 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 
 	public long insertUpdateNodeContent(long somID, long nodeNumGuid, long docid, long contextId, long fpindex) {
 		 
-		long dbKey=-1L;
+		long dbKey=-1L, result=-1L;
+		long _max = 0L;
+		
 		
 		NodeContent nc = new NodeContent();
 		List<NodeContent> ncs;
@@ -1052,8 +1098,30 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 				nc = ncs.get(0);
 			}else{
 				// not known....
-				// out own increment of id ?
+				// our own increment of id :
 				
+				try{
+					List<Object> indexes ;
+					
+					
+					indexes = iciDb.from(nc).select(nc.id) ;
+					if (indexes.size()==0){
+						_max=1L;
+					}else{
+						int n = indexes.size();
+						long lastvalue = (Long)indexes.get(n-1); 
+						_max = lastvalue +1L;	
+					}
+					
+					result = 0;
+					
+				}catch(Exception e){
+					result = -3;
+				}
+				
+				
+				nc.id = _max;
+				// now the data
 				nc.somid = somID  ;
                 nc.nodeid = nodeNumGuid  ;
                 nc.docid = docid ;
