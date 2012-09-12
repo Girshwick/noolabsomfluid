@@ -1,4 +1,4 @@
-package org.NooLab.somfluid.astor.storage.db;
+package org.NooLab.somfluid.app.astor.storage.db;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -39,6 +39,7 @@ import org.NooLab.astor.storage.iciql.NodeFingerprints;
 import org.NooLab.astor.storage.iciql.SomNames;
 import org.NooLab.docserver.storage.db.iciql.Documents;
 import org.NooLab.docserver.storage.db.iciql.Folders;
+
 import org.NooLab.itexx.storage.ConnectorClientIntf;
 import org.NooLab.itexx.storage.DataBaseCreateCommand;
 import org.NooLab.itexx.storage.DataBaseMaintenance;
@@ -51,8 +52,9 @@ import org.NooLab.itexx.storage.randomwords.iciql.Contexts;
 
 
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.astor.AstorProperties;
-import org.NooLab.somfluid.astor.util.FingerPrint;
+import org.NooLab.somfluid.app.astor.AstorProperties;
+import org.NooLab.somfluid.app.astor.util.FingerPrint;
+import org.NooLab.somfluid.app.up.IniProperties;
 import org.NooLab.somfluid.env.data.SomTexxDataBase;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.util.XmlStringHandling;
@@ -737,8 +739,11 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 		
 		return storageDir ; 
 		*/
+		String systemroot ,str;
 		
-	String systemroot = sfProperties.getSystemRootDir();   // [path]/iTexx  
+		str = IniProperties.fluidSomProjectBasePath ;
+		
+		systemroot = sfProperties.getSystemRootDir();   // [path]/iTexx  
 		
 		if ((systemroot.length()==0) || (DFutils.folderExists(systemroot)==false)){
 			systemroot = (new PathFinder()).getAppBinPath( this.getClass(), false);
@@ -758,9 +763,9 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 			
 			_DB_TARGET_LOCATING = 0; // DatabaseMgmt._BASEDIR_QUERY_PROJECT;
 		}
-		out.print(2, "SomTexxDataBase::getStorageDir() : \n"+
-				     "                         - systemroot : "+systemroot+"  \n"+
-				     "                         - storage    : "+storageDir);
+		out.print(2, "AstorSomDataBase::getStorageDir() : \n"+
+				     "                   - systemroot : "+systemroot+"  \n"+
+				     "                   - storage    : "+storageDir);
 		
 		return storageDir ;
 		
