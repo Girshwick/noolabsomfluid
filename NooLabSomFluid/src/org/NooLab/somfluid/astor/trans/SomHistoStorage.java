@@ -1,4 +1,4 @@
-package org.NooLab.somfluid.astor.trans;
+package org.NooLab.somfluid.app.astor.trans;
 
 public class SomHistoStorage {
 
