@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-   
+        
   <astor>
 	<database name="astornodes">
 	  <!-- this database is owned by astor
-	  	   there are 3 tables:
+	  	   there are 3 tables:  
 	  	     somnames, nodecontent, nodefingerprints,
 	   -->
       <config>
