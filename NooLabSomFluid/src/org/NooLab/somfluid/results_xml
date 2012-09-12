@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<somresults>
+   <aspects count="3">
+      <history>
+         <tableheader>
+         <list items="index;step;score;tprate;fprate;ppv;rocauc;rocstp;variableindexes" />
+         </tableheader>
+         <table name="history">
+         <tr>index</td><td>step</td><td>score</td><td>tprate</td><td>fprate</td><td>ppv</td><td>rocauc</td><td>rocstp</td><td>variableindexes</td></tr>
+         <tr>0</td><td>29</td><td>36.429</td><td>0.2925</td><td>0.5571</td><td>0.443</td><td>0.8874</td><td>0.0000</td><td>3 6 14 15 24</td></tr>
+         <tr>1</td><td>27</td><td>39.718</td><td>0.1887</td><td>0.4737</td><td>0.526</td><td>0.9032</td><td>0.0000</td><td>5 6 14 15 24</td></tr>
+         <tr>2</td><td>28</td><td>43.743</td><td>0.3396</td><td>0.6211</td><td>0.379</td><td>0.8747</td><td>0.0000</td><td>5 6 8 14 15</td></tr>
+         <tr>3</td><td>3</td><td>45.896</td><td>0.1604</td><td>0.6852</td><td>0.315</td><td>0.7099</td><td>0.0000</td><td>7 14 15</td></tr>
+         <tr>4</td><td>5</td><td>46.613</td><td>0.2453</td><td>0.5185</td><td>0.481</td><td>0.8972</td><td>0.0000</td><td>6 12 15</td></tr>
+         <tr>5</td><td>25</td><td>46.715</td><td>0.1604</td><td>0.6136</td><td>0.386</td><td>0.8667</td><td>0.0000</td><td>6 14 15 23 24</td></tr>
+         <tr>6</td><td>15</td><td>46.976</td><td>0.1509</td><td>0.7193</td><td>0.281</td><td>0.7003</td><td>0.0000</td><td>7 14 15 23 24</td></tr>
+         <tr>7</td><td>2</td><td>47.186</td><td>0.2642</td><td>0.7544</td><td>0.246</td><td>0.7500</td><td>0.0000</td><td>7 8 14 15</td></tr>
+         <tr>8</td><td>17</td><td>47.720</td><td>0.1981</td><td>0.7273</td><td>0.273</td><td>0.7087</td><td>0.0000</td><td>7 14 15 21 23 24</td></tr>
+         <tr>9</td><td>4</td><td>47.928</td><td>0.1792</td><td>0.7324</td><td>0.268</td><td>0.7403</td><td>0.0000</td><td>14 15 17</td></tr>
+         <tr>10</td><td>11</td><td>47.934</td><td>0.1792</td><td>0.7397</td><td>0.260</td><td>0.7200</td><td>0.0000</td><td>7 14 15 24</td></tr>
+         <tr>11</td><td>18</td><td>48.319</td><td>0.1509</td><td>0.7500</td><td>0.250</td><td>0.6956</td><td>0.0000</td><td>7 14 15 22 23 24</td></tr>
+         <tr>12</td><td>7</td><td>48.374</td><td>0.1792</td><td>0.7324</td><td>0.268</td><td>0.6990</td><td>0.0000</td><td>7 15 20</td></tr>
+         <tr>13</td><td>19</td><td>48.440</td><td>0.1509</td><td>0.7681</td><td>0.232</td><td>0.7153</td><td>0.0000</td><td>7 14 15 23 24 25</td></tr>
+         <tr>14</td><td>20</td><td>48.514</td><td>0.1509</td><td>0.7460</td><td>0.254</td><td>0.7023</td><td>0.0000</td><td>14 15 23</td></tr>
+         <tr>15</td><td>16</td><td>48.792</td><td>0.1509</td><td>0.7612</td><td>0.239</td><td>0.7116</td><td>0.0000</td><td>7 14 15 24 25</td></tr>
+         <tr>16</td><td>14</td><td>48.820</td><td>0.1604</td><td>0.7500</td><td>0.250</td><td>0.7108</td><td>0.0000</td><td>7 14 15 22 24</td></tr>
+         <tr>17</td><td>23</td><td>48.868</td><td>0.2075</td><td>0.7528</td><td>0.247</td><td>0.6781</td><td>0.0000</td><td>14 15 24</td></tr>
+         <tr>18</td><td>24</td><td>48.904</td><td>0.1509</td><td>0.7746</td><td>0.225</td><td>0.7074</td><td>0.0000</td><td>3 14 15 20 23 24</td></tr>
+         <tr>19</td><td>10</td><td>49.160</td><td>0.1887</td><td>0.7727</td><td>0.227</td><td>0.7061</td><td>0.0000</td><td>7 14 15 23</td></tr>
+         <tr>20</td><td>6</td><td>49.420</td><td>0.2642</td><td>0.7407</td><td>0.259</td><td>0.7358</td><td>0.0000</td><td>7 8 15</td></tr>
+         <tr>21</td><td>13</td><td>49.426</td><td>0.2075</td><td>0.7442</td><td>0.256</td><td>0.6959</td><td>0.0000</td><td>7 14 15 21 24</td></tr>
+         <tr>22</td><td>12</td><td>50.272</td><td>0.1604</td><td>0.7792</td><td>0.221</td><td>0.6978</td><td>0.0000</td><td>7 14 15 25</td></tr>
+         <tr>23</td><td>9</td><td>50.478</td><td>0.1698</td><td>0.7778</td><td>0.222</td><td>0.7000</td><td>0.0000</td><td>7 14 15 22</td></tr>
+         <tr>24</td><td>22</td><td>50.654</td><td>0.2736</td><td>0.7583</td><td>0.242</td><td>0.7296</td><td>0.0000</td><td>8 14 15 23</td></tr>
+         <tr>25</td><td>1</td><td>50.766</td><td>0.1698</td><td>0.7955</td><td>0.205</td><td>0.6874</td><td>0.0000</td><td>7 8 10 14 15</td></tr>
+         <tr>26</td><td>8</td><td>51.601</td><td>0.2547</td><td>0.8000</td><td>0.200</td><td>0.6894</td><td>0.0000</td><td>7 14 15 21</td></tr>
+         <tr>27</td><td>21</td><td>53.210</td><td>0.1509</td><td>0.8351</td><td>0.165</td><td>0.6526</td><td>0.0000</td><td>8 15 23 24</td></tr>
+         <tr>28</td><td>26</td><td>54.930</td><td>0.2642</td><td>0.8133</td><td>0.187</td><td>0.6297</td><td>0.0000</td><td>15 22 23</td></tr>
+         </table>
+</history>
+      <contribution>
+         <tableheader>
+         <list items="removed Variable;score delta;rocauc;TP;FP;TN;FN;dTP;dFP;dTN;dFN;PPV;sens;spec;class" />
+         </tableheader>
+         <table name="contribution of variables">
+         <tr>removed Variable</td><td>score delta</td><td>rocauc</td><td>TP</td><td>FP</td><td>TN</td><td>FN</td><td>dTP</td><td>dFP</td><td>dTN</td><td>dFN</td><td>PPV</td><td>sens</td><td>spec</td><td>class</td></tr>
+         <tr>reference: best model</td><td> --- </td><td>0.8874</td><td>31</td><td>39</td><td>950</td><td>75</td><td> </td><td> </td><td> </td><td> </td><td>0.443</td><td>0.292</td><td>0.961</td><td></td></tr>
+         <tr></td></tr>
+         <tr>d1b_Stammkapital_Gruendungsdatum_c</td><td>-4.27</td><td>0.8787</td><td>18</td><td>13</td><td>977</td><td>88</td><td>-13</td><td>-26</td><td>27</td><td>13</td><td>0.581</td><td>0.170</td><td>0.987</td><td></td></tr>
+         <tr>SalesOrg</td><td>-5.02</td><td>0.9003</td><td>18</td><td>17</td><td>972</td><td>88</td><td>-13</td><td>-22</td><td>22</td><td>13</td><td>0.514</td><td>0.170</td><td>0.983</td><td></td></tr>
+         <tr>Branchenscore</td><td>-10.37</td><td>0.8898</td><td>21</td><td>34</td><td>955</td><td>85</td><td>-10</td><td>-5</td><td>5</td><td>10</td><td>0.382</td><td>0.198</td><td>0.966</td><td></td></tr>
+         <tr>intern_Rating</td><td>-12.95</td><td>0.6971</td><td>17</td><td>57</td><td>932</td><td>89</td><td>-14</td><td>18</td><td>-18</td><td>14</td><td>0.230</td><td>0.160</td><td>0.942</td></tr>
+         </table>
+</contribution>
+      <contrast>
+         <tableheader>
+         <list items="Variable;mean TG;mean non-TG;mean all;ratio T/nT;MWU T:nT significance%;MWU T:all sign.%" />
+         </tableheader>
+         <table name="contrast in variables">
+         <tr>Variable</td><td>mean TG</td><td>mean non-TG</td><td>mean all</td><td>ratio T/nT</td><td>MWU T:nT significance%</td><td>MWU T:all sign.%</td></tr>
+         <tr>Mahnung_TV (TV)</td><td>0.076</td><td>0.075</td><td>0.075</td><td>1.009</td><td>10.8069</td><td>0.1433</td></tr>
+         <tr>SalesOrg</td><td>0.512</td><td>0.523</td><td>0.522</td><td>0.979</td><td>64.7782</td><td>0.6773</td></tr>
+         <tr>intern_Rating</td><td>0.247</td><td>0.379</td><td>0.367</td><td>0.651</td><td>0.0000</td><td>0.0000</td></tr>
+         <tr>Branchenscore</td><td>0.735</td><td>0.444</td><td>0.471</td><td>1.654</td><td>0.0000</td><td>0.0000</td></tr>
+         <tr>d1b_Stammkapital_Gruendungsdatum_c</td><td>0.021</td><td>0.006</td><td>0.008</td><td>3.403</td><td>0.0566</td><td>0.0017</td></tr>
+         </table>
+</contrast>
+   </aspects>
+</somresults>

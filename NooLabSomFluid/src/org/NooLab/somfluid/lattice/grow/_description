@@ -1,0 +1,10 @@
+
+
+helper classes for processes that transform or change the lattice itself
+
+- growth by attachment
+- reorganizations of node locations, e.g. by temporarily liquifying the grid
+- stacking sheafs, pullulating,
+- folding
+- sheet division by stretching the distances, using differential adherence 
+  betweens nodes
