@@ -1,4 +1,4 @@
-package org.NooLab.somfluid.astor.trans;
+package org.NooLab.somfluid.app.astor.trans;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -10,9 +10,9 @@ import org.NooLab.astor.storage.iciql.NodeContent;
 import org.NooLab.astor.storage.iciql.NodeFingerprints;
 import org.NooLab.astor.storage.iciql.SomNames;
 import org.NooLab.itexx.storage.randomwords.iciql.Contexts;
-import org.NooLab.somfluid.astor.SomAssociativeStorage;
-import org.NooLab.somfluid.astor.query.SomQueryIntf;
-import org.NooLab.somfluid.astor.storage.db.AstorDataBase;
+import org.NooLab.somfluid.app.astor.SomAssociativeStorage;
+import org.NooLab.somfluid.app.astor.query.SomQueryIntf;
+import org.NooLab.somfluid.app.astor.storage.db.AstorDataBase;
 import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.engines.det.DSomCore;
 import org.NooLab.somfluid.core.nodes.MetaNode;
