@@ -1,4 +1,4 @@
-package org.NooLab.somfluid.astor.query;
+package org.NooLab.somfluid.app.astor.query;
 
 import org.NooLab.somfluid.components.SomQueryTargetIntf;
 import org.NooLab.somfluid.core.nodes.LatticeIntf;

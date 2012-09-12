@@ -1,4 +1,4 @@
-package org.NooLab.somfluid.astor.query;
+package org.NooLab.somfluid.app.astor.query;
 
 
 
