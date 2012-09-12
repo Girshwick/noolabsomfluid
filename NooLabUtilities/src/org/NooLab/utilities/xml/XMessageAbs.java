@@ -511,7 +511,7 @@ public abstract class XMessageAbs {
 		xpathQuery.ensureXmlDoc( rawXmlMsg ) ;
 		
     	root = this.contentRoot ;
-    	
+    	if (root.startsWith("/")){ root = "/"+root;} else{ root = "//"+root;}
     	domainSpecs = domainSpecs.trim();
     	itemSpecs = itemSpecs.trim();
     	

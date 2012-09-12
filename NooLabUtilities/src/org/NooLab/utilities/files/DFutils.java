@@ -797,6 +797,14 @@ public class DFutils extends Thread{
 		return path ;
 	}
 	
+	/**
+	 * 
+	 * trick: slash at the end enforces creation of the folders on the path
+	 * 
+	 * @param pathsnip1
+	 * @param pathsnip2
+	 * @return
+	 */
 	public static String createPath( String pathsnip1, String pathsnip2){
 		
 		return createPath( pathsnip1, pathsnip2, false);
