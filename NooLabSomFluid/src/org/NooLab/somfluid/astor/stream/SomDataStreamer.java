@@ -1,11 +1,11 @@
-package org.NooLab.somfluid.astor.stream;
+package org.NooLab.somfluid.app.astor.stream;
 
 import java.util.Observable;
 import java.util.Observer;
 
 import org.NooLab.itexx.comm.intf.SomTexxObservationIntf;
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.astor.SomAstorFrameIntf;
+import org.NooLab.somfluid.app.astor.SomAstorFrameIntf;
 
 
 

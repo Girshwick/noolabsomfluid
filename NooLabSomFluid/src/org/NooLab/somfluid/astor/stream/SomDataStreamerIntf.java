@@ -1,4 +1,4 @@
-package org.NooLab.somfluid.astor.stream;
+package org.NooLab.somfluid.app.astor.stream;
 
 public interface SomDataStreamerIntf {
 
