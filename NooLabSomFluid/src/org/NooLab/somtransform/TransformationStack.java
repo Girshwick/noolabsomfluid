@@ -7,8 +7,8 @@ import java.util.Arrays;
 import java.util.Map;
 
 import org.NooLab.somfluid.SomFluidPluginSettings;
-import org.NooLab.somfluid.data.DataTable;
-import org.NooLab.somfluid.data.Variable;
+import org.NooLab.somfluid.structures.DataTable;
+import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somtransform.algo.intf.AlgoColumnWriterIntf;
 import org.NooLab.somtransform.algo.intf.AlgoMeasurementIntf;
 import org.NooLab.somtransform.algo.intf.AlgoTransformationIntf;

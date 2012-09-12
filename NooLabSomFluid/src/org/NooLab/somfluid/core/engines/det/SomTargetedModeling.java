@@ -29,6 +29,8 @@ import org.NooLab.somfluid.data.*;
 import org.NooLab.somfluid.env.communication.*;
 import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
+import org.NooLab.somfluid.structures.Variable;
+import org.NooLab.somfluid.structures.Variables;
 
 
 import org.NooLab.somscreen.linear.SimpleExplorationClustering;

@@ -1,12 +1,13 @@
 package org.NooLab.somfluid.clapp;
 
 import org.NooLab.itexx.storage.TexxDataBaseSettings;
+import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
+import org.NooLab.itexx.storage.somfluid.db.DataBaseAccessDefinition;
 import org.NooLab.somfluid.OutputSettings;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidPluginSettings;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.AlgorithmDeclarationsLoader;
-import org.NooLab.somfluid.env.data.db.DataBaseAccessDefinition;
 import org.NooLab.somfluid.properties.SomFluidSettings;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
@@ -41,6 +42,7 @@ public abstract class SomFluidAppPropertiesAbstract
 	protected TexxDataBaseSettings databaseSettings;
 	
 	protected SomFluidProperties sfProperties;
+	
 	protected String applicationContext="";
 
 	protected int somInstanceType = 0 ; // SOM astor
@@ -134,6 +136,10 @@ public abstract class SomFluidAppPropertiesAbstract
 		persistenceSettings = persistencesettings;
 	}
 	
+
+	public TexxDataBaseSettingsIntf getDatabaseSettings() {
+		return databaseSettings;
+	}
 
 	@Override
 	public int getSourceType() {

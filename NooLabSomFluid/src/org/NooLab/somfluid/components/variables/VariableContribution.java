@@ -1,6 +1,6 @@
 package org.NooLab.somfluid.components.variables;
 
-import org.NooLab.somfluid.data.Variable;
+import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somscreen.SomQualityData;
  
 

@@ -1,5 +1,7 @@
 package org.NooLab.somfluid.data;
 
+import org.NooLab.somfluid.structures.DataTable;
+
 public class NveMappings {
 
 	

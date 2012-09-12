@@ -14,14 +14,18 @@ import org.NooLab.field.interfaces.FixedNodeFieldEventsIntf;
 import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
 import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
 
+import org.NooLab.itexx.storage.DataBaseAccessDefinitionIntf;
 import org.NooLab.itexx.storage.DataStreamProvider;
 import org.NooLab.itexx.storage.DataStreamProviderIntf;
+import org.NooLab.itexx.storage.TexxDataBaseSettings;
 import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
 
 import org.NooLab.somfluid.properties.* ;
-import org.NooLab.somfluid.astor.SomAStorageQueryHandler;
-import org.NooLab.somfluid.astor.SomAssociativeStorage;
-import org.NooLab.somfluid.astor.stream.SomDataStreamer;
+import org.NooLab.somfluid.structures.Variables;
+import org.NooLab.somfluid.app.astor.SomAStorageQueryHandler;
+import org.NooLab.somfluid.app.astor.SomAssociativeStorage;
+import org.NooLab.somfluid.app.astor.SomAstorFrameIntf;
+import org.NooLab.somfluid.app.astor.stream.SomDataStreamer;
 import org.NooLab.somfluid.clapp.SomAppProperties;
 import org.NooLab.somfluid.clapp.SomAppUsageIntf;
 import org.NooLab.somfluid.clapp.SomAppValidationIntf;
@@ -31,12 +35,13 @@ import org.NooLab.somfluid.components.* ;
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 import org.NooLab.somfluid.core.engines.det.results.ModelOptimizerDigester;
 import org.NooLab.somfluid.core.engines.det.results.SimpleSingleModelDigester;
-import org.NooLab.somfluid.data.Variables;
   
 import org.NooLab.somfluid.env.data.*;
-import org.NooLab.somfluid.env.data.db.DataBaseAccessDefinition;
 import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.itexx.storage.* ;
+import org.NooLab.itexx.storage.nodes.SomNodesDataConverter;
+import org.NooLab.itexx.storage.nodes.SomTexxProperties;
+import org.NooLab.itexx.storage.somfluid.db.DataBaseAccessDefinition;
 
 
 /*
@@ -108,6 +113,7 @@ public class SomFluid
 	transient DFutils fileutil = new DFutils();
 	transient StringedObjects sob = new StringedObjects();
 	transient PrintLog out = new PrintLog(2, false, "[SomFluid]");
+	
 	
 	// ------------------------------------------------------------------------
 	protected SomFluid( SomFluidFactory factory){
@@ -203,46 +209,148 @@ public class SomFluid
 	private void performAssociativeStorage(SomFluidTask sfTask) throws Exception {
 		 
 		
+		
 		SomFluidSettings somfluidSettings ; 
 		SomAssociativeStorage astor ;
 		SomAStorageQueryHandler astorQueryHandler;
 		TexxDataBaseSettingsIntf databaseSettings;
 		DataStreamProvider dataStreamProvider ;
 		
+		boolean dataIsPrimary = true;
 		
 		somfluidSettings = sfProperties.getSomFluidSettings() ;
 		databaseSettings = sfProperties.getDatabaseSettings() ;
 		
-		String dspGuid="";
+		String str ="",dspGuid="", storagedir="", dbname="";
+		int r, databaseStructureCode = -1 ;
 		
 		sfTask.setDescription("Astor()") ;
 		sfTask.setSomHost(null) ;
 		 
 		
+		// are we going to create a secondary SOM?
+		// then we have to read the "astornodes" database first... creating the input
+		if (sfTask.getSourceDatabaseType() == SomFluidTaskIntf._SOURCE_DB_SOMNODES ){
+			
+			// this is due to a call from SomClients
+			dataIsPrimary = false;
+			
+			str = sfProperties.getApplicationContext() ;
+			sfProperties.setApplicationContext("itexx") ;
+			// now we have to read the nodes database, e.g. astornodes ...
+			// and create a table from that
+			// we do it not in SomFluid, yet, ...we use iTexxStorage
+			
+			ArrayList<ArrayList<?>> histogramTable;
+			long somID ;
+
+			DataBaseAccessDefinition dba = new DataBaseAccessDefinition();
+			SomTexxProperties stxProperties = new SomTexxProperties();
+			SomNodesDataConverter nodesDataConverter;
+
+			
+			dba.setUser( sfProperties.getPersistenceSettings().getDbUser() );
+			dba.setPassword( sfProperties.getPersistenceSettings().getDbPassword() ) ;
+			dba.setDatabaseName( sfTask.getSourceDatabaseName() );
+				str = sfTask.getSourceDatabaseName();
+				
+			stxProperties.setDocSomDatabaseAccessSettings(dba) ;	
+				
+			// probably we need a different dbaccess then after extracting the data from nodes ...
+			stxProperties.setContext( SomFluidProperties._APP_CONTEXT_ITEXX ) ;
+			stxProperties.setDatabaseAccessSettings(dba);
+			
+			// we need the id of the astor SOM (L1) that shall serve as input for L2
+			stxProperties.setSomId( sfTask.getTransferSourceSomId() );
+			// somclients client is initiated through SomAstor, which knows about the somId...
 		
-		if (sfTask.activateDataStreamReceptor()){
+			stxProperties.setNodesSomDataBaseName(  sfTask.getTransferSourceDatabase() ) ;
+			stxProperties.setDocSomDataBaseName(  sfTask.getTransferTargetDatabase() ) ;
+				dbname = sfTask.getTransferTargetDatabase();
+
+			storagedir = DFutils.createPath(sfProperties.getSystemRootDir(),"storage") ;
+				         if (fileutil.listofFiles("", ".db", storagedir).size()==0){
+				        	 throw(new Exception("No data base for SomFluid process in performAssociativeStorage()..."));
+				         }
+			stxProperties.setStorageDir(storagedir) ;
 			
-			int dspix = DataStreamProviderIntf._DSP_SOURCE_DB;
-			// DataStreamProvider "receives" data from some data source like db, tcp, or file
-			// it is part of iTexxStorage
-			dataStreamProvider = new DataStreamProvider( dspix , databaseSettings, null );
+			somID = sfTask.getTransferSourceSomId() ; // the ID of the AstorNodes Som
+			 								out.print(2, "accessing Som Nodes for extracting advanced preparations (histograms etc.)...");
+			nodesDataConverter = new SomNodesDataConverter( stxProperties ) ; 
+			histogramTable = nodesDataConverter.createHistogramTable(somID);
 			
-			/*
-			   The type org.NooLab.itexx.comm.tcp.TexxCommTcpSettingsIntf cannot be resolved. 
-			   It is indirectly referenced from required .class files
+			// this histogram table will be saved into a database
+			// see Texx/randomGraph for this 
+			// texx.txxDataBase.storeDocTable(doctable);
+			r = nodesDataConverter.storeDocTable(histogramTable);
+											out.print(2, "extracting done...");
+			if (r<0){
+				throw(new Exception("Preparing the database for SomFluid process in performAssociativeStorage() failed ...\nSub-process will be stopped.")) ;
+			}
+			TexxDataBaseSettingsIntf dbas = sfProperties.getDatabaseSettings() ;
+			DataBaseAccessDefinitionIntf dbaccess = dbas.getDbAccessDefinition() ;
+			
+			dbas.setDatabaseName("astordocs");
+
+			dbname = "astordocs"; // contains table "randomdocuments", made from histogram upon a primary SOM
+			dbname = sfTask.getSourceDatabaseName();
+
+			dbaccess.setDbUser("sa");
+			dbaccess.setDbpassword("sa");
+			dbaccess.setDatabaseName(dbname) ;
+			
+			// this is called already in SomProducer
+			sfProperties.getDatabaseDefinitionInfo("astordocs",TexxDataBaseSettingsIntf._DATABASE_STRUC_RNDDOCS_L1);
+			// dbas.getDbAccessDefinition().			getDatabaseDefinitionInfo
+			
+			databaseStructureCode = TexxDataBaseSettingsIntf._DATABASE_STRUC_RNDDOCS_L1;
+			dbaccess.setDatabaseStructureCode( databaseStructureCode );
+			
+			sfProperties.setDatabaseSettings((TexxDataBaseSettings) dbas) ;
+			
+			
+			
+		}else{
+		
+					str = str + " " ;
+		
+		    // we accept streaming only if we work on a "data table" that we can read directly, NOT a nodes db!
+		    if ((dataIsPrimary == true) && (sfTask.activateDataStreamReceptor())){
+			
+		    	int dspix = DataStreamProviderIntf._DSP_SOURCE_DB;
+		    	// DataStreamProvider "receives" data from some data source like db, tcp, or file
+		    	// it is part of iTexxStorage
+		    	dataStreamProvider = new DataStreamProvider( dspix , databaseSettings, null );
+			
+		    	/*
+			   	The type org.NooLab.itexx.comm.tcp.TexxCommTcpSettingsIntf cannot be resolved. 
+			   	It is indirectly referenced from required .class files
 			   
-			 * DataStreamProviderIntf._DSP_SOURCE_DB, 
-					 									 databaseSettings, 
-					 									 sfProperties.getDbAccessDefinition());
-			 */
-			dspGuid = dataStreamProvider.getGuid();
-			 
-		}
+		    	  DataStreamProviderIntf._DSP_SOURCE_DB, 
+							databaseSettings, 
+					 		sfProperties.getDbAccessDefinition());
+		    	*/
+				dspGuid = dataStreamProvider.getGuid();
+			
+				TexxDataBaseSettingsIntf dbas = sfProperties.getDatabaseSettings() ;
+				DataBaseAccessDefinitionIntf dbaccess = dbas.getDbAccessDefinition() ;
+			
+				dbas.setDatabaseName("randomwords");  // contains table "contexts" with field "randomcontext"
+				
+				databaseStructureCode = TexxDataBaseSettingsIntf._DATABASE_STRUC_CONTEXTS_L0;
+				dbaccess.setDatabaseStructureCode( databaseStructureCode );
+			}
+		    
+		    // TODO ACTUALLY this should come from the task
+		    dbname = "randomwords"; // contains table "contexts"
+		    databaseStructureCode = TexxDataBaseSettingsIntf._DATABASE_STRUC_CONTEXTS_L0;
+		} // ? else
+		// else ...in normal mode
 		
 		astor = new SomAssociativeStorage( this, sfFactory, sfTask, sfProperties, dspGuid ); 
 		sfTask.setTaskType( SomFluidTask._TASK_SOMSTORAGEFIELD);
 		
-		int r = astor.prepareDataObject() ;
+		r = astor.prepareDataObject( SomAstorFrameIntf._ASTOR_SRCMODE_DB, databaseStructureCode, dbname) ; 
 		
 		if (r==0){
 			astor.setInitialVariableSelection( somfluidSettings.getInitialVariableSelection() ) ;
@@ -646,11 +754,13 @@ public class SomFluid
 						if ((sfTask!=null) && (sfTask.taskDispatched==0) && (sfTask.isCompleted==false) && (sfTask.isExported==false)){
 							out.print(2,"\nworking on task, id = "+sfTask.guidID);
 							int n = sfProperties.getModelingSettings().getOptimizerSettings().getMaxStepsAbsolute();
-							out.print(2,"expected infimum number of explored variable combinations : " +n+"\n");
+							
+							if (sfProperties.isITexxContext()==false){
+								out.print(2,"expected infimum number of explored variable combinations : " +n+"\n");
+							}
 									 
 							sfTask.taskDispatched=1;
 							TaskDispatcher td = new TaskDispatcher(sfTask);
-							 
 							
 							if (td.isWorking==false){
 								out.print(5,"...tdp (91)") ;
@@ -664,7 +774,6 @@ public class SomFluid
 					}else{
 						isWorking=false;
 					}
-					
 					
 				}
 				
@@ -768,7 +877,18 @@ public class SomFluid
 
 	// ========================================================================
 
+	private SomDataObject createSomDataObject(TexxDataBaseSettingsIntf databaseSettings) {
 
+		
+		SomDataObject _somDataObject;
+		
+		_somDataObject = createSomDataObject() ;
+		
+		_somDataObject.setDatabaseSettings( sfProperties.getDatabaseSettings() );
+		_somDataObject.setDbAccessDefinition( sfProperties.getDbAccessDefinition() ) ;
+
+		return _somDataObject;
+	}
 	
 	public SomDataObject createSomDataObject() {
 		SomDataObject _somDataObject;
@@ -831,9 +951,10 @@ public class SomFluid
 		return null;
 	}
 	
-	public SomDataObject loadDbTable( SomDataStreamer streamer) {
+	public SomDataObject loadDbTable( SomDataStreamer streamer, int databaseStructureCode) {
 	
 		DataBaseAccessDefinition dbAccess;
+		
 		
 		SomDataObject somDataObject = null ;
 		
@@ -843,8 +964,22 @@ public class SomFluid
 			
 			dbAccess = sfProperties.getDbAccessDefinition() ;
 			
-			if ((dbAccess==null) || (dbAccess.getxColumns()==null) || (dbAccess.getxColumns().getItems().size()==0)){
-				sfProperties.getDatabaseDefinitionInfo("randomwords");
+			
+			if (databaseStructureCode == TexxDataBaseSettingsIntf._DATABASE_STRUC_CONTEXTS_L0){
+
+				if ((dbAccess==null) || (dbAccess.getxColumns()==null) || (dbAccess.getxColumns().getItems().size()==0)){
+					
+					sfProperties.getDatabaseDefinitionInfo("randomwords",TexxDataBaseSettingsIntf._DATABASE_STRUC_CONTEXTS_L0);
+					 
+				}
+				
+			}
+			if (databaseStructureCode == TexxDataBaseSettingsIntf._DATABASE_STRUC_RNDDOCS_L1){
+				if ((dbAccess==null) || (dbAccess.getxColumns()==null) || (dbAccess.getxColumns().getItems().size()==0)){
+					
+					sfProperties.getDatabaseDefinitionInfo("astordocs", TexxDataBaseSettingsIntf._DATABASE_STRUC_RNDDOCS_L1 );
+					 
+				}
 			}
 			
 		} catch (Exception e) {
@@ -853,15 +988,14 @@ public class SomFluid
 			return null;
 		}
 		
-		somDataObject = createSomDataObject() ;
+		
 		
 		// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> difference to filemode
-		somDataObject.setDatabaseSettings( sfProperties.getDatabaseSettings() );
-		somDataObject.setDbAccessDefinition( sfProperties.getDbAccessDefinition() ) ;
+		somDataObject = createSomDataObject( sfProperties.getDatabaseSettings() ) ;
 		somDataObject.setSomDataStreamer( streamer ); 
 		
-		
-		
+		// correct db defined now ?
+
 		
 		SomTransformer transformer = new SomTransformer( somDataObject, sfProperties );
 		
@@ -870,8 +1004,8 @@ public class SomFluid
 		DataReceptor dataReceptor = new DataReceptor( somDataObject );
 		
 		// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> difference to filemode
-		dataReceptor.loadFromDataBase( 1000 );
-		// this is just a seed for the beginning...
+		dataReceptor.loadFromDataBase( 1000 , databaseStructureCode);
+		// the data loaded there is just a seed for the beginning...
 		// in resume mode, we load the Som and the SomDataObj directly
 		// yet, the data table in SomDataObj will not grow beyond 5000 records or so!!!
 		// max and min are also taken from the db, so the global values for normalization are available anyway
@@ -908,6 +1042,8 @@ public class SomFluid
 
 	
 	
+
+
 	public SomDataObject loadSource( String srcname ) throws Exception{
 		
 		SomDataObject somDataObject;

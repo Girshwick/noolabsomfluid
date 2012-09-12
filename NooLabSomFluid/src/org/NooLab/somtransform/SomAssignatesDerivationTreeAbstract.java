@@ -6,8 +6,8 @@ import java.util.Collections;
 import java.util.Comparator;
 
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.data.Variable;
-import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somfluid.structures.Variable;
+import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.utilities.datatypes.IndexDistance;
 
 

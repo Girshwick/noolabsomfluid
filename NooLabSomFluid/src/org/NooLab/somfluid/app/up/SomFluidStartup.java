@@ -213,6 +213,10 @@ System.out.println("\nStartup binpath "+binpath+"\n");
 		return selectedFolder;
 	}
 	
+	public static void setProjectBasePath(String  dir){
+		IniProperties.fluidSomProjectBasePath = dir;
+	}
+	
 	public static String getProjectBasePath(){
 		String path = IniProperties.fluidSomProjectBasePath;
 		path = StringsUtil.replaceall(path, "\\", "/");

@@ -4,8 +4,8 @@ import java.util.ArrayList;
 
 import org.NooLab.somfluid.components.ModelOptimizer;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.data.Variable;
-import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somfluid.structures.Variable;
+import org.NooLab.somfluid.structures.Variables;
 
 
 

@@ -16,9 +16,9 @@ import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
-import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.env.communication.NodesInformer;
 import org.NooLab.somfluid.lattice.VirtualLattice;
+import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.strings.ArrUtilities;
 

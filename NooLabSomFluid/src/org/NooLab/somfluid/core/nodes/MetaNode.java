@@ -24,10 +24,10 @@ import org.NooLab.somfluid.core.categories.similarity.*;
 import org.NooLab.somfluid.core.engines.NodeStatisticsIntf;
 import org.NooLab.somfluid.core.engines.det.ProfileVectorMatcher;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
-import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.env.communication.*;
 import org.NooLab.somfluid.lattice.VirtualLattice;
 
+import org.NooLab.somfluid.structures.DataTableCol;
 import org.NooLab.somfluid.util.BasicSimpleStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;

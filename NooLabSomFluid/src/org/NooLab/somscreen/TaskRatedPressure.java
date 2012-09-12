@@ -7,9 +7,9 @@ import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.*;
 import org.NooLab.somfluid.core.engines.det.DSom;
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
-import org.NooLab.somfluid.data.Variable;
-import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.properties.OptimizerSettings;
+import org.NooLab.somfluid.structures.Variable;
+import org.NooLab.somfluid.structures.Variables;
 
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;

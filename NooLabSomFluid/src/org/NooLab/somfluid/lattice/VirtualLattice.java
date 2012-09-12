@@ -29,7 +29,7 @@ import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.field.repulsive.components.data.SurroundResults;
  
  
-import org.NooLab.somfluid.astor.query.SomQueryIntf;
+import org.NooLab.somfluid.app.astor.query.SomQueryIntf;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.SomQueryTargetIntf;
 import org.NooLab.somfluid.core.categories.connex.MetaNodeConnectivity;
@@ -48,11 +48,11 @@ import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.core.*;
-import org.NooLab.somfluid.data.DataTable;
-import org.NooLab.somfluid.data.DataTableCol;
-import org.NooLab.somfluid.data.Variable;
-import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.communication.LatticeFutureVisorIntf;
+import org.NooLab.somfluid.structures.DataTable;
+import org.NooLab.somfluid.structures.DataTableCol;
+import org.NooLab.somfluid.structures.Variable;
+import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;
 import org.NooLab.somfluid.util.NumUtils;

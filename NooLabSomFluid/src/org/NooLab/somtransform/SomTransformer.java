@@ -9,15 +9,15 @@ import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.AlgorithmDeclarationsLoader;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.data.DataTable;
-import org.NooLab.somfluid.data.DataTableCol;
-import org.NooLab.somfluid.data.Variable;
-import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.data.NormValueRangesIntf;
 import org.NooLab.somfluid.properties.PersistenceSettings;
  
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.PersistentAgentIntf;
+import org.NooLab.somfluid.structures.DataTable;
+import org.NooLab.somfluid.structures.DataTableCol;
+import org.NooLab.somfluid.structures.Variable;
+import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 
 import org.NooLab.somsprite.AnalyticFunctionSpriteImprovement;

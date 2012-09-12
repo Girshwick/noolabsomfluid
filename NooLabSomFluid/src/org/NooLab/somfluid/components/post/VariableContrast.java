@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import org.NooLab.math3.exception.NoDataException;
 import org.NooLab.math3.exception.NullArgumentException;
 import org.NooLab.math3.stat.inference.MannWhitneyUTest;
-import org.NooLab.somfluid.data.Variable;
+import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.apache.commons.math.exception.ConvergenceException;
 

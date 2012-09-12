@@ -1,8 +1,8 @@
 package org.NooLab.somfluid.core.engines;
 
 import org.NooLab.somfluid.core.engines.det.DSom;
-import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.properties.ModelingSettings;
+import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.utilities.logging.PrintLog;
 
 

@@ -2,7 +2,7 @@ package org.NooLab.somfluid.components;
 
 import java.util.ArrayList;
 
-import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somfluid.structures.Variables;
 
 
 /**

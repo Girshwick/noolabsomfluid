@@ -15,7 +15,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.utilities.logging.PrintLog;
 import org.apache.commons.collections.CollectionUtils;
 

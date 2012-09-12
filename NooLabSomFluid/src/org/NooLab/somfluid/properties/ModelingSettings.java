@@ -17,13 +17,13 @@ import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
 import org.NooLab.somfluid.core.engines.det.ClassesDictionary;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.data.DataSampler;
-import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.properties.CrystalizationSettings;
 import org.NooLab.somfluid.properties.OptimizerSettings;
 import org.NooLab.somfluid.properties.SomBagSettings;
 import org.NooLab.somfluid.properties.SpelaSettings;
 import org.NooLab.somfluid.properties.SpriteSettings;
 import org.NooLab.somfluid.properties.ValidationSettings;
+import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.xml.XmlFileRead;
 

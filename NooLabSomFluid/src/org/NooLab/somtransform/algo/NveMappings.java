@@ -1,6 +1,6 @@
 package org.NooLab.somtransform.algo;
 
-import org.NooLab.somfluid.data.DataTable;
+import org.NooLab.somfluid.structures.DataTable;
 
 public class NveMappings {
 

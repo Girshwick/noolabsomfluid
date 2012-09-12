@@ -23,7 +23,7 @@ import org.NooLab.somfluid.core.categories.similarity.SimilarityCalculator;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.core.engines.det.SomMapTable;
 import org.NooLab.somfluid.core.nodes.ClusterNode;
-import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somsprite.func.SpriteFuncIntf;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.PrintLog;

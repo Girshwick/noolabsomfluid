@@ -3,6 +3,7 @@ package org.NooLab.somscreen;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.properties.*;
+import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.data.*;
 import org.NooLab.somfluid.core.*;
 import org.NooLab.somfluid.core.engines.det.*;

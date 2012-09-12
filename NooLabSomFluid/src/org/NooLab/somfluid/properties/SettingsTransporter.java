@@ -9,8 +9,8 @@ import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.DataFilter;
 import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
-import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.storage.FileOrganizer;
+import org.NooLab.somfluid.structures.Variables;
 
 import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
