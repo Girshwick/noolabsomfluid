@@ -1,4 +1,4 @@
-package org.NooLab.somfluid.astor.storage.db;
+package org.NooLab.somfluid.app.astor.storage.db;
 
 import java.io.File;
 import java.sql.Connection;
