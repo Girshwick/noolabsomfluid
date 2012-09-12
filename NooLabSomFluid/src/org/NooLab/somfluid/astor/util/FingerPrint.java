@@ -1,4 +1,4 @@
-package org.NooLab.somfluid.astor.util;
+package org.NooLab.somfluid.app.astor.util;
 
 import java.util.ArrayList;
 
