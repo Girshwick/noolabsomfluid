@@ -3,7 +3,7 @@ package org.NooLab.somfluid.core.categories.extensionality;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.core.engines.NodeStatisticsIntf;
-import org.NooLab.somfluid.data.Variable;
+import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 
 

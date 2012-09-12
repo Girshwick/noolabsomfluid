@@ -72,9 +72,9 @@ public class PersistenceSettings implements Serializable{
 	}
 
 
-	public void setProjectName(String string) {
+	public void setProjectName(String prjname) {
 		 
-		projectName = string;
+		projectName = prjname;
 		fileOrganizer.update();
 	}
 
@@ -221,6 +221,14 @@ public class PersistenceSettings implements Serializable{
 
 	public void setAppNameShortStr(String appNameShortStr) {
 		this.appNameShortStr = appNameShortStr;
+	}
+
+	public FileOrganizer getFileOrganizer() {
+		return fileOrganizer;
+	}
+
+	public void setFileOrganizer(FileOrganizer fileOrganizer) {
+		this.fileOrganizer = fileOrganizer;
 	}
 	
 

@@ -24,6 +24,8 @@ import org.NooLab.somfluid.core.engines.det.results.*;
 import org.NooLab.somfluid.data.*;
 import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.*;
+import org.NooLab.somfluid.structures.Variable;
+import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somfluid.util.PowerSetSpringSource;
 
 import org.NooLab.somscreen.linear.*;

@@ -64,7 +64,7 @@ public interface SomFluidPropertiesHandlerIntf {
 
 	public void setBooleanAdaptiveSampling(boolean b);
 
-	public String setResultsPersistence(int switchOnOff);
+	public String setResultsPersistence(int switchOnOff, String pathIntermit);
 
 	public void setMaxNumberOfPrototypes(int n);
 
@@ -80,8 +80,8 @@ public interface SomFluidPropertiesHandlerIntf {
 
 	public void setGridType(int somGridtypeFixed);
 
-	public void setDatabaseDefinitionResource(String alias, String dbname);  
-	public void setDatabaseDefinitionResource(String dbDefinitionResource, String alias, String dbname);
+	public void setDatabaseDefinitionResource(String alias, String dbname, int structureCode);  
+	public void setDatabaseDefinitionResource(String dbDefinitionResource, String alias, String dbname, int structureCode);
 
 	
 	

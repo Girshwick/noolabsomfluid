@@ -27,6 +27,10 @@ import org.NooLab.math3.stat.inference.MannWhitneyUTest;
 import org.NooLab.somfluid.*;
 import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.* ;
+import org.NooLab.somfluid.structures.DataTable;
+import org.NooLab.somfluid.structures.DataTableCol;
+import org.NooLab.somfluid.structures.Variable;
+import org.NooLab.somfluid.structures.Variables;
 
  
 import org.NooLab.somfluid.data.*;

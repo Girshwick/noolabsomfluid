@@ -13,6 +13,7 @@ import org.NooLab.utilities.strings.StringsUtil;
 import org.NooLab.somfluid.*;
 import org.NooLab.somfluid.properties.*;
 import org.NooLab.somfluid.data.*;
+import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somfluid.util.*;
 import org.NooLab.somfluid.components.*;
 import org.NooLab.somfluid.core.engines.det.*;

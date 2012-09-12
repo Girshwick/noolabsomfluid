@@ -67,11 +67,11 @@ public class FileOrganizer {
 	}
 
 	public void update(){
-		
+		 
 		rootDir = persistenceSettings.getPathToSomFluidSystemRootDir(); // "D:/data/projects/"
-		projectDirName = persistenceSettings.getProjectName(); // "bank2", defines sub dir 
 		
-		if (projectDirName.length()>0){
+		if ((projectDirName.length()>0) && (sfProperties.isITexxContext()==false)){
+			projectDirName = persistenceSettings.getProjectName(); // "bank2", defines sub dir
 			projectBaseDir = DFutils.createPath( rootDir, projectDirName+"/") ;
 		}
 	}
@@ -154,11 +154,16 @@ public class FileOrganizer {
 		return dir;
 	}
 
-	public String getObjectStoreDir() {
+	public String getObjectStoreDir(String dedicatedDir) {
 
 		String dir="";
-		
-		dir = DFutils.createPath( projectBaseDir, "model/obj/") ;
+		if (DFutils.folderExists(dedicatedDir)){
+			dir = dedicatedDir;
+			projectBaseDir = dir ;
+		}else{
+			dir = projectBaseDir;
+		}
+		dir = DFutils.createPath( dir, "model/obj/") ;
 		
 		return dir;
 	}
@@ -222,12 +227,24 @@ public class FileOrganizer {
 		return rootDir;
 	}
 
+	public void setRootDir( String dir) {
+		rootDir = dir;
+	}
+
+	
+	public void setProjectDirName( String dir) {
+		projectDirName = dir;
+	}
+	
 	public String getProjectDirName() {
 		return projectDirName;
 	}
 
 	public String getProjectBaseDir() {
 		return projectBaseDir;
+	}
+	public void setProjectBaseDir(String dir) {
+		projectBaseDir = dir;
 	}
 
 	public StringsUtil getStrgutil() {

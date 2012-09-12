@@ -4,8 +4,8 @@ import java.util.ArrayList;
 
 import org.NooLab.somfluid.SomDataDescriptor;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
-import org.NooLab.somfluid.data.DataTable;
-import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somfluid.structures.DataTable;
+import org.NooLab.somfluid.structures.Variables;
 
 public interface DataSourceIntf {
 

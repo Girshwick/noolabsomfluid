@@ -3,10 +3,10 @@ package org.NooLab.somtransform;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.data.DataTable;
-import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.env.data.NormValueRangesIntf;
 import org.NooLab.somfluid.storage.FileOrganizer;
+import org.NooLab.somfluid.structures.DataTable;
+import org.NooLab.somfluid.structures.DataTableCol;
 import org.NooLab.somsprite.AnalyticFunctionTransformationsIntf;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 

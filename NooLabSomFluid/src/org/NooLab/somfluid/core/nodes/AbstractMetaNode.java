@@ -21,8 +21,8 @@ import org.NooLab.somfluid.core.categories.similarity.SimilarityIntf;
 import org.NooLab.somfluid.core.engines.NodeStatisticsFactory;
 import org.NooLab.somfluid.core.engines.NodeStatisticsIntf;
 
-import org.NooLab.somfluid.data.Variable;
 import org.NooLab.somfluid.lattice.VirtualLattice;
+import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.util.BasicSimpleStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;

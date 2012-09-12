@@ -13,8 +13,8 @@ import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.data.DataTable;
-import org.NooLab.somfluid.data.Variable;
+import org.NooLab.somfluid.structures.DataTable;
+import org.NooLab.somfluid.structures.Variable;
 
 import org.NooLab.utilities.files.FileDataSource;
 

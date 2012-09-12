@@ -9,10 +9,13 @@ import java.util.*;
 import org.NooLab.itexx.storage.DataStreamProviderIntf;
 import org.NooLab.itexx.storage.TexxDataBaseSettings;
 import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
+import org.NooLab.itexx.storage.docsom.AstorDocSomDataBase;
+import org.NooLab.itexx.storage.docsom.AstorDocSomDataBaseIntf;
+import org.NooLab.itexx.storage.somfluid.db.DataBaseAccessDefinition;
 import org.NooLab.somfluid.SomDataDescriptor;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.astor.stream.SomDataStreamer;
+import org.NooLab.somfluid.app.astor.stream.SomDataStreamer;
 import org.NooLab.somfluid.clapp.SomAppTransformer;
 import org.NooLab.somfluid.components.variables.SomVariableHandling;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
@@ -20,20 +23,19 @@ import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.core.engines.det.SomMapTable;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
 
-import org.NooLab.somfluid.data.DataTable;
-import org.NooLab.somfluid.data.DataTableCol;
 import org.NooLab.somfluid.data.TableImportSettings;
-import org.NooLab.somfluid.data.Variable;
-import org.NooLab.somfluid.data.Variables;
 import org.NooLab.somfluid.env.data.DataFileReceptorIntf;
 import org.NooLab.somfluid.env.data.DataReceptor;
 import org.NooLab.somfluid.env.data.SomTexxDataBase;
-import org.NooLab.somfluid.env.data.db.DataBaseAccessDefinition;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.PersistentAgentIntf;
+import org.NooLab.somfluid.structures.DataTable;
+import org.NooLab.somfluid.structures.DataTableCol;
+import org.NooLab.somfluid.structures.Variable;
+import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.somtransform.SomTransformerIntf;
 import org.NooLab.somtransform.TransformationModel;
@@ -86,7 +88,9 @@ public class SomDataObject 	implements      Serializable,
 	transient TexxDataBaseSettingsIntf databaseSettings ;
 	transient DataBaseAccessDefinition dbAccessDefinition;
 	transient SomDataStreamer somDataStreamer ;
+	
 	transient SomTexxDataBase somTexxDb ;
+	transient AstorDocSomDataBase somAstorDb ;
 	
 	// main variables / properties ....
 	transient SomFluidFactory sfFactory ;
@@ -181,8 +185,21 @@ public class SomDataObject 	implements      Serializable,
 			
 			dbOk = true;
 			if (sfProperties.getSourceType()== DataStreamProviderIntf._DSP_SOURCE_DB){
-				somTexxDb = new SomTexxDataBase(this, sfProperties);
-				dbOk = somTexxDb.prepareDatabase("randomwords");
+				String dbname = "randomwords" ;
+				DataBaseAccessDefinition dbaccess ;
+				
+				dbaccess = sfProperties.getDbAccessDefinition() ;
+				if (dbaccess.getDatabaseName().length()>0){
+					dbname = dbaccess.getDatabaseName();
+				}
+				
+				// if (dbaccess.getDatabaseStructureCode() == TexxDataBaseSettingsIntf._DATABASE_STRUC_CONTEXTS_L0)
+				{
+					somTexxDb = new SomTexxDataBase(this, sfProperties);
+					dbOk = somTexxDb.prepareDatabase(dbname );
+					// , dbaccess.getDatabaseStructureCode() 
+				}
+				
 			}
 		}else{
 			dbOk= true;
@@ -223,19 +240,19 @@ public class SomDataObject 	implements      Serializable,
 		if ((dataHandlingProperties.getDataUptakeControl()>=0)){
 			// load data into SomDataObject
 			
-			filename = dataHandlingProperties.getDataSrcFilename() ;
+			if (sfProperties.isITexxContext()==false){
+				filename = dataHandlingProperties.getDataSrcFilename() ;
 			
-			if (fileutil.fileexists(filename)==false){
-				return;
+				if (fileutil.fileexists(filename)==false){
+					return;
+				}
+			}else{
+				// check dbfile
 			}
-			
-			
 			// now the SomDataObject has a table loaded
 			// only for XML output from transformer,etc... readData(filename);
 			
 		} // getDataUptakeControl >=0 ?
-		
-		
 		
 	}
 	
@@ -632,7 +649,7 @@ public class SomDataObject 	implements      Serializable,
 		ps = sfProperties.getPersistenceSettings() ;
 		 
 		filename = ps.getProjectName()+"-dataobj" + vstr + fileorg.getFileExtension( FileOrganizer._DATAOBJECT ) ;
-		filepath = fileutil.createpath( fileorg.getObjectStoreDir() , filename);
+		filepath = fileutil.createpath( fileorg.getObjectStoreDir("") , filename);
 		
 		ContainerStorageDevice storageDevice ;
 		storageDevice = new ContainerStorageDevice();
@@ -653,7 +670,7 @@ public class SomDataObject 	implements      Serializable,
 		sdo.data.establishObjects(sdo, true);
 		sdo.normalizedSomData.establishObjects(sdo, true);
 		
-		DFutils.reduceFileFolderList( fileorg.getObjectStoreDir(),1,20) ;
+		DFutils.reduceFileFolderList( fileorg.getObjectStoreDir(""),1,20) ;
 		
 		fileorg=null;
 		
@@ -706,7 +723,7 @@ public class SomDataObject 	implements      Serializable,
 		 
 		 
 		filename = ps.getProjectName()+"-dataobj" + vstr + fileorg.getFileExtension( FileOrganizer._DATAOBJECT ) ;
-		filepath = fileutil.createpath( fileorg.getObjectStoreDir() , filename);
+		filepath = fileutil.createpath( fileorg.getObjectStoreDir("") , filename);
 		
 		ContainerStorageDevice storageDevice ;
 		storageDevice = new ContainerStorageDevice();
@@ -716,7 +733,7 @@ public class SomDataObject 	implements      Serializable,
 		storageDevice.storeObject( this, filepath) ; // using a single object is not possible, we have to split it by a dedicated procedure and a dedicated format
 		// abc124 
 		
-		DFutils.reduceFileFolderList( fileorg.getObjectStoreDir(),1,".sdo",20) ;
+		DFutils.reduceFileFolderList( fileorg.getObjectStoreDir(""),1,".sdo",20) ;
 		
 		if (fileutil.fileexists(filepath)==false){
 			result=-3;
@@ -1537,8 +1554,13 @@ public class SomDataObject 	implements      Serializable,
 	}
 
 
+	// TODO: for this return we need an abstracting container... 
 	public SomTexxDataBase getSomTexxDb() {
 		return somTexxDb;
+	}
+	
+	public AstorDocSomDataBase getSomAstorDb() {
+		return somAstorDb;
 	}
 
 
@@ -1660,6 +1682,7 @@ public class SomDataObject 	implements      Serializable,
 		 *    - SomAstor
 		 */
 	}
+
 
 
 	

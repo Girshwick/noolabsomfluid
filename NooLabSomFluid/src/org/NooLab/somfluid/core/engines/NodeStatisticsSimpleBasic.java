@@ -2,7 +2,7 @@ package org.NooLab.somfluid.core.engines;
 
 import java.util.ArrayList;
 
-import org.NooLab.somfluid.data.Variable;
+import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.util.BasicSimpleStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;

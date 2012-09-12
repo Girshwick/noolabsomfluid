@@ -4,8 +4,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.components.*;
-import org.NooLab.somfluid.data.Variable;
-import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somfluid.structures.Variable;
+import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somtransform.algo.intf.AlgorithmIntf;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;

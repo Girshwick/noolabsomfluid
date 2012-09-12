@@ -3,7 +3,7 @@ package org.NooLab.somfluid.core.categories.intensionality;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import org.NooLab.somfluid.data.Variable;
+import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 
 

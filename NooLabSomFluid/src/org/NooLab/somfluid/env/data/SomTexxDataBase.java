@@ -17,14 +17,15 @@ import org.NooLab.itexx.storage.DbConnector;
 import org.NooLab.itexx.storage.DbLogin;
 import org.NooLab.itexx.storage.MetaData;
 import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
+import org.NooLab.itexx.storage.docsom.iciql.Randomdocuments;
 import org.NooLab.itexx.storage.randomwords.iciql.Contexts;
+import org.NooLab.itexx.storage.somfluid.db.DataBaseAccessDefinition;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.data.DataTable;
-import org.NooLab.somfluid.data.DataTableCol;
-import org.NooLab.somfluid.data.Variable;
-import org.NooLab.somfluid.env.data.db.DataBaseAccessDefinition;
 import org.NooLab.somfluid.properties.PersistenceSettings;
+import org.NooLab.somfluid.structures.DataTable;
+import org.NooLab.somfluid.structures.DataTableCol;
+
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.files.PathFinder;
 import org.NooLab.utilities.logging.PrintLog;
@@ -290,7 +291,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 			}
 
 			out.print(1,"database has been started ...");
-			out.print(2,"...its connection url is : "+ databaseUrl) ;
+			out.print(3,"...its connection url is : "+ databaseUrl) ;
 			
 		}catch(JdbcSQLException jx){
 			System.out.println("Connecting to database <"+dbname+"> failed \n"+jx.getMessage() );
@@ -550,10 +551,190 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 	protected void getJdbMeta(Connection c) throws SQLException{
 		jdbMetaData = c.getMetaData();
 		dbCatalog = c.getCatalog() ;
-		
 	}
 
-	public DataTable retrieve(String string, ArrayList<String> requestFields, int limitcount) {
+	
+	//  the requestFields are not yet aligned to the "initialselection" of variableSettings (in sfProperties)
+	public DataTable retrieve( int structureCode, String dbname, ArrayList<String> requestFields, int limitcount) {
+		DataTable  dataTable = null;
+		
+		if (structureCode==1){
+			dataTable = retrieveRandomWords(dbname, requestFields, limitcount) ;
+		}
+		if (structureCode==2){
+			dataTable = retrieveRandomDocs(dbname, requestFields, limitcount) ;
+		}
+		
+		return dataTable ;
+	}
+	
+
+	private DataTable retrieveRandomDocs(String dbname, ArrayList<String> requestFields, int limitcount) {
+		
+		DataTable  dataTable = null;
+		
+
+		ArrayList<String> resultLines = new ArrayList<String>() ;
+		String sql, fieldLabelsStr ; 
+		int n=0, df;
+
+		Randomdocuments c,iciContext;
+		Randomdocuments rowObj;
+		List<Randomdocuments> rows = null;
+		
+		
+		
+		requestFields.add(0, "id") ;
+		
+		fieldLabelsStr = somData.arrutil.arr2text( requestFields, ",");
+		if (fieldLabelsStr.endsWith(",")){
+			fieldLabelsStr = fieldLabelsStr.substring(0,fieldLabelsStr.length()-1);
+		}
+		// 
+		// this would be used with QueryRunner from DbUtils...
+		sql = "SELECT "+fieldLabelsStr+  " FROM RANDOMDOCUMENTS LIMIT "+limitcount+";";
+		// dealing with the result set, expanding the randomcontext content into List<Double> 
+		// sql = "SELECT * FROM CONTEXTS LIMIT 1000";
+		
+		try{
+			
+			iciContext = new Randomdocuments(); // the iciQL alias
+			c = iciContext;
+			
+			if (iciDb==null){
+				open();
+			} 
+			// rows = iciDb.executeQuery(Contexts.class, sql); rows = iciDb.from(c).limit(limitcount).select(); rows = iciDb.executeQuery(Contexts.class, sql);
+			// 
+			 								out.print(2, "retrieving records from the database..."); 
+			if (connection.isClosed()){
+				open();
+			}
+			rows = iciDb.from(c).limit(limitcount).select() ;
+			// using QueryRunner for more elegant SQL ???
+			 
+			n = rows.size();
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
+		if (n==0){
+			return null;
+		}
+		
+		// -> ArrayList<String>
+		/* 
+		  	we need to create a datatable representation and to fill the Variables structure
+		  	Vector<Variable> variables = new Vector<Variable>();
+	        DataTable datatable ;
+	     */
+		dataTable = new DataTable(somData, false);
+		
+		dataTable.setTablename("randomdocuments");
+		
+		String colHeader, rcStr, istr, format;
+		int _dataformat,rcLength, datacolumn=-1;
+		Long idvalue;
+		DataTableCol col;
+		
+		rcStr = rows.get(1).randomdoc;
+		if (rcStr.endsWith(";")){
+			rcStr=rcStr.substring(0,rcStr.length()) ;
+		}
+		rcLength = strgutil.frequencyOfStr(rcStr, ";")+1 ;
+		
+		for (int i=0;i<requestFields.size();i++){
+			
+			colHeader = requestFields.get(i);
+			if (colHeader.toLowerCase().contentEquals("randomdoc")){
+				colHeader = "rcLength";
+				datacolumn = i;
+			}
+
+			col = new DataTableCol(dataTable,i);
+			col.hasHeader = false;
+			
+			dataTable.getDataTable().add(col) ;
+
+			dataTable.getColumnHeaders().add( colHeader);
+		}
+		istr="" ;
+		for (int i=0;i<rcLength;i++){
+			
+			format = String.format("%%0%dd", 4);
+			istr = String.format(format, (i+1));
+
+			colHeader = "rd_"+ istr  ;
+			
+			col = new DataTableCol(dataTable,i);
+			col.hasHeader = false;
+			
+			dataTable.getDataTable().add(col) ;
+
+			dataTable.getColumnHeaders().add( colHeader);
+		}
+		
+		// remove colHeader = "rcLength";
+		
+		String datastr ="";
+		String[] datastrvalues;
+		
+		for (int i=0;i<n;i++){
+			
+			rowObj = rows.get(i) ;
+			// from fieldlabels
+			// [id, docid, somid, markovid, docnvariety, docpvariety, docnvarivar, docpvarivar, rcLength, rd_0001, rd_0002, rd_0003, rd_0004, rd_0005, rd_0006, rd_0007, rd_0008, rd_0009, rd_0010, rd_0011, rd_0012, rd_0013, rd_0014, rd_0015, rd_0016, rd_0017, rd_0018, rd_0019, rd_0020, rd_0021, rd_0022, rd_0023, rd_0024, rd_0025, rd_0026, rd_0027, rd_0028, rd_0029, rd_0030, rd_0031, rd_0032, rd_0033, rd_0034, rd_0035, rd_0036, rd_0037, rd_0038, rd_0039, rd_0040, rd_0041, rd_0042, rd_0043, rd_0044, rd_0045, rd_0046, rd_0047, rd_0048, rd_0049, rd_0050, rd_0051, rd_0052, rd_0053, rd_0054, rd_0055, rd_0056, rd_0057, rd_0058, rd_0059, rd_0060, rd_0061, rd_0062, rd_0063, rd_0064, rd_0065, rd_0066, rd_0067, rd_0068, rd_0069, rd_0070, rd_0071, rd_0072, rd_0073, rd_0074, rd_0075, rd_0076]
+			// _setvalue uses the header strings for determining the index of the respective column
+			_setValue( dataTable, (Long)rowObj.id, "id" );
+			
+			_setValue( dataTable, rowObj.docid , "docid" );
+			_setValue( dataTable, rowObj.somid , "somid" );
+			
+			_setValue( dataTable, 0L , "docid" );
+			
+			_setValue( dataTable, rowObj.docnvariety , "docnvariety" );
+			_setValue( dataTable, rowObj.docnvarivar , "docnvarivar" );
+			_setValue( dataTable, rowObj.docpvariety , "docpvariety" );
+			_setValue( dataTable, rowObj.docpvarivar , "docpvarivar" );
+			
+			_setValue( dataTable, rcLength , "rcLength" );
+			
+			// TODO the other fields also: e.g. docabundance is missing ...
+			
+			df = dataTable.getColumn(1).getDataFormat();
+			df = dataTable.getColumn(2).getDataFormat();
+			df = dataTable.getColumn(3).getDataFormat();
+			df=df+1-1;
+			
+			datastr = rowObj.randomdoc;
+			datastrvalues = datastr.split(";");
+			double[] datavalues = strgutil.changeArrayType(datastrvalues, 0.0, false) ;
+			
+			// ArrUtilities.changeArraystyle(datavalues) ;
+			int ix;
+			
+			for (int d=0;d<datavalues.length;d++){
+				ix = datacolumn+1+d;
+				col = dataTable.getColumn(ix);
+				col.addValue( datavalues[d]);
+				col.setFormat( DataTable.__FORMAT_NUM) ;
+			}
+			
+		}// i-> all rows
+	  
+		// we have to fill the row perspective
+		dataTable.createRowOrientedTable() ;
+		
+		
+		
+		
+		
+		return dataTable ;
+	}
+
+	
+	private DataTable retrieveRandomWords(String dbname, ArrayList<String> requestFields, int limitcount) {
 		
 		DataTable  dataTable = null;
 		
@@ -565,16 +746,14 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		Contexts rowObj;
 		List<Contexts> rows = null;
 		
-		
+		requestFields.add(0, "id") ;
 		fieldLabelsStr = somData.arrutil.arr2text( requestFields, ",");
 		if (fieldLabelsStr.endsWith(",")){
 			fieldLabelsStr = fieldLabelsStr.substring(0,fieldLabelsStr.length()-1);
 		}
-		// fieldLabelsStr = fieldLabelsStr.replace("relfrequency,",""); // TODO XXXXXXXXXXXXXX abc124 : remove this for the new structure !!!
 		
-		// issue it through iciql because resultset is nicer to deal with
 		// defining the SQL statement, that we will issue, like so
-		sql = "SELECT "+fieldLabelsStr+  " FROM CONTEXTS LIMIT 1000;";
+		sql = "SELECT "+fieldLabelsStr+  " FROM CONTEXTS LIMIT "+limitcount+";";
 		// dealing with the result set, expanding the randomcontext content into List<Double> 
 		// sql = "SELECT * FROM CONTEXTS LIMIT 1000";
 		
@@ -593,25 +772,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 				open();
 			}
 			rows = iciDb.from(c).limit(limitcount).select();
-			
-			/*
- 			PreparedStatement prep = connection.prepareStatement( sql );
-			ResultSet rs = prep.executeQuery();
-			*/
-			
-			/*
-			Long cid;
-		    // Fetch each row from the result set
-			int rz=0;
-		    while (rs.next()) {
-		    	rz++;
-		        // Get the data from the row using the column index
-		        String s = rs.getString("wordlabel");
-
-		        // Get the data from the row using the column name
-		        cid = rs.getLong("contextid");
-		    }
-			*/
+			 
 			n = rows.size();
 			
 		}catch(Exception e){
@@ -686,7 +847,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 			// [id, contextid, docid, wordlabel, relfrequency, distanceMean, distanceStDev, groupsCount, saliency, randomcontext]
 			// _setvalue uses the header strings for determining the index of the respective column
 			_setValue( dataTable, (Long)(long)i, "id" );
-			
+			                     // TODO: we need type id in bean Contexts
 			_setValue( dataTable, rowObj.contextid ,    "contextid" );
 			_setValue( dataTable, rowObj.docid ,        "docid" );
 			_setValue( dataTable, rowObj.wordlabel ,    "wordlabel" );

@@ -117,6 +117,8 @@ public class SomFluidProperties
 	
 	private int showSomProgressMode;
 
+	
+	
 	private boolean isPluginsAllowed = true;
 
 	private String algorithmsConfigPath="";
@@ -165,7 +167,15 @@ public class SomFluidProperties
 		sfp.databaseSettings = (TexxDataBaseSettings) sob.decode( sob.encode(sfPropsIn.databaseSettings)) ;
 		sfp.modelingSettings = (ModelingSettings) sob.decode( sob.encode(sfPropsIn.modelingSettings)) ;
 		
+		applicationContext = sfPropsIn.applicationContext ;
+		sfp.applicationContext = sfPropsIn.applicationContext ;
 		
+		this.systemRootDir = sfPropsIn.systemRootDir;
+		sfp.systemRootDir = sfPropsIn.systemRootDir;
+		
+		persistenceSettings = sfp.persistenceSettings;
+		databaseSettings = sfp.databaseSettings ;
+		modelingSettings = sfp.modelingSettings; 
 		
 		getInstance("");
 	}
@@ -260,31 +270,61 @@ public class SomFluidProperties
 	
 	public void save(int target) {
 		
-		String dir,  propertiesFileName;
+		String dir, prjdir="", prjname,propertiesFileName;
 		
-		FileOrganizer fileorg = new FileOrganizer ();
-		fileorg.setPropertiesBase(this);
+		if (fileOrganizer==null){
+			fileOrganizer = new FileOrganizer ();
+			fileOrganizer.setPropertiesBase(this);
+			getPersistenceSettings().setFileOrganizer(fileOrganizer);
+		}
 		
 		DFutils fileutil = new DFutils();
 		
+		String pathitx = "" ;
+		if (applicationContext.contentEquals(SomFluidProperties._APP_CONTEXT_ITEXX) ){
+			pathitx ="" ;
+		}
+		
+		
+		
+		prjname = this.getPersistenceSettings().getProjectName() ;
+		prjdir = fileOrganizer.getProjectDirName() ;
+		
+		if (DFutils.folderExists(prjdir)==false){
+			prjdir="";
+			if (prjname.length()>0){
+				dir = systemRootDir;
+				if (applicationContext.contentEquals(SomFluidProperties._APP_CONTEXT_ITEXX) ){
+					dir = DFutils.createPath( dir , "app/");
+				}
+				dir = DFutils.createPath( dir, "Astor/");
+				dir = DFutils.createPath( dir, prjname+"/");
+			}else{
+				dir = DFutils.createPath( systemRootDir, "shared/");
+			}
+		}else{
+			dir = fileOrganizer.getObjectStoreDir(prjdir); // we could override the projectbasedir ...
+		}
+		 
+			
 		if (target>=1){
 			
-			dir = fileutil.getUserDir();
+			// dir = fileutil.getUserDir();
+			// dir = fileOrganizer.getObjectStoreDir("");
 			propertiesFileName = DFutils.createPath( dir, SomFluidProperties._STORAGE_XML ) ;
 			String xstr = exportSettings();
 			fileutil.writeFileSimple(propertiesFileName,xstr);
 			
 		}else{
-			dir = fileorg.getObjectStoreDir();
-			propertiesFileName = DFutils.createPath( dir, SomFluidProperties._STORAGE_OBJ ) ;
 			
+			propertiesFileName = DFutils.createPath( dir, SomFluidProperties._STORAGE_OBJ ) ;	
 			// now loading the desired properties into a new object;
 			ContainerStorageDevice storageDevice ;
 			storageDevice = new ContainerStorageDevice();
 			
 			storageDevice.storeObject( this,propertiesFileName) ;
 
-			DFutils.reduceFileFolderList( dir,1,".properties",20) ;
+			DFutils.reduceFileFolderList( dir,1,".properties",20) ; 
 		}
 	}
 
@@ -337,6 +377,13 @@ public class SomFluidProperties
 
 	public PersistenceSettings getPersistenceSettings() {
 		
+		if (persistenceSettings==null){
+			if (fileOrganizer == null){
+				fileOrganizer = new FileOrganizer();
+				fileOrganizer.setPropertiesBase(this);
+			}
+			persistenceSettings = new PersistenceSettings( fileOrganizer );
+		}
 		return persistenceSettings;
 	}
 
@@ -429,7 +476,7 @@ public class SomFluidProperties
 	/**   */
 	public boolean addDataSource(int sourcetype, String locatorname) {
 		boolean result=false;
-		String rootpath =""; // e.g.  "D:/data/projects/"
+		String dir="",rootpath =""; // e.g.  "D:/data/projects/"
 		String prjname = "", filename="",relPath;
 		
 		sourceType = sourcetype;
@@ -443,7 +490,15 @@ public class SomFluidProperties
 			relPath = prjname+"/data/raw/";
 			relPath = relPath.replace("//", "/").trim();
 			
-			filename = DFutils.createPath(rootpath.trim(), relPath);
+			
+			
+			if (this.isITexxContext()){ // 
+				
+				dir = DFutils.createPath(rootpath.trim(),""); 
+			}else{
+				dir = rootpath.trim();	
+			}
+			filename = DFutils.createPath(dir, relPath);
 			
 			// "D:/data/projects/bank2/data/raw/bankn_d2.txt" 
 			locatorname = DFutils.createPath( filename,locatorname );
@@ -685,8 +740,10 @@ public class SomFluidProperties
 	
 	public void setInstanceType(int somInstanceType) {
 		 
-		fileOrganizer = new FileOrganizer() ;  
-		persistenceSettings = new PersistenceSettings(fileOrganizer);
+		if (fileOrganizer==null){
+			fileOrganizer = new FileOrganizer() ;  
+			persistenceSettings = new PersistenceSettings(fileOrganizer);
+		}
 		outputSettings = new OutputSettings(persistenceSettings);
 		
 		fileOrganizer.setPropertiesBase(this);
@@ -1014,19 +1071,19 @@ public class SomFluidProperties
 	}
 
 
-	public void getDatabaseDefinitionInfo( String dbname) throws Exception{
+	public void getDatabaseDefinitionInfo( String dbname, int structureCode) throws Exception{
 
-		dbDefinitionResource ="texx-db-definition-xml" ;
+		dbDefinitionResource ="itexx-db-definition-xml" ;
 		String cfgResourceJarPath="org/NooLab/somfluid/resources/sql/";
 		String xmlstr ="" ; 
 		
 		DFutils fileutil = new DFutils();
 		
-		 
-		xmlstr = ResourceContent.getConfigResource( this.getClass(), cfgResourceJarPath, dbDefinitionResource ) ;
-		 
-		dbAccessDefinition.getDatabaseDefinitionInfo(xmlstr,dbname) ;
+		xmlstr = ResourceContent.getConfigResource( this.getClass(), cfgResourceJarPath, dbDefinitionResource ) ; 
 		
+		if (xmlstr.length()>15){ 
+			dbAccessDefinition.getDatabaseDefinitionInfo( xmlstr, dbname, structureCode) ;
+		}
 		
 	}
 	

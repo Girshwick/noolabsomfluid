@@ -106,29 +106,28 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		sfProperties.setAutoAdaptResolutionAllowed(1) ;				// this will allow SomFluid to choose a proper size and a proper 
 																	// number of particles (resolution), dependent on the data 
 
-		 
+		if (sfProperties.isITexxContext()==false){ 
 							// this comes from the out-most application layer (user, or remote control)  
 							String rootFolder = SomFluidStartup.getProjectBasePath(); // IniProperties.fluidSomProjectBasePath ;
 							rootFolder = DFutils.createPath(rootFolder, "/") ;
 							
-		sfProperties.setPathToSomFluidSystemRootDir(rootFolder);	// within this dir all project base directories are located
+		    sfProperties.setPathToSomFluidSystemRootDir(rootFolder);	// within this dir all project base directories are located
 										// sth like "D:/data/projects/"
-		
-		
-		 
+		    
 		 
 		
-		ps.setProjectName( SomFluidStartup.getLastProjectName() );	// will be used also for output files
-		            // sth like "bank2" , i.e. the simple name of a folder where all the project files are located 
+		    ps.setProjectName( SomFluidStartup.getLastProjectName() );	// will be used also for output files
+		            					// sth like "bank2" , i.e. the simple name of a folder where all the project files are located
+		    
+		    sfProperties.addDataSource( srctype, dataSourceName);       // if the persistence settings are available, the relative path will be used
+			
+										// this way we could also provide a file (or database) from an arbitrary location
+										// sfProperties.addDataSource( srctype,"D:/data/projects/bank2/data/raw/bankn_d2.txt"); 
+		}
 		
 		ps.setKeepPreparedData(true); 								// includes persistence of transformer model
 		ps.autoSaveSomFluidModels(true);
 		 
-		
-		sfProperties.addDataSource( srctype, dataSourceName);       // if the persistence settings are available, the relative path will be used
-		
-							// this way we could also provide a file (or database) from an arbitrary location
-							// sfProperties.addDataSource( srctype,"D:/data/projects/bank2/data/raw/bankn_d2.txt"); 
 						
 		sfProperties.setDataUptakeControl(0);                       // if negative, the data won't load automatically into the SOM
 		
@@ -822,11 +821,11 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		targetMode = targetmode;
 	}
 
-	public void setDatabaseDefinitionResource( String alias, String dbname) {
-		setDatabaseDefinitionResource("" ,  alias, dbname);
+	public void setDatabaseDefinitionResource( String alias, String dbname, int structureCode) {
+		setDatabaseDefinitionResource("" ,  alias, dbname,structureCode);
 	}
 	@Override
-	public void setDatabaseDefinitionResource(String dbDefResource,String alias , String dbname) {
+	public void setDatabaseDefinitionResource(String dbDefResource, String alias , String dbname, int structureCode) {
 		
 		if (dbDefResource.length()==0){
 			dbDefResource = "definition-db-sql-xml" ;
@@ -837,7 +836,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		// analyze for table names, columns
 		try {
 		
-			sfProperties.getDatabaseDefinitionInfo(dbname);
+			sfProperties.getDatabaseDefinitionInfo(dbname,structureCode);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -1083,18 +1082,25 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 	 * returns the effective result folder
 	 */
 	@Override
-	public String setResultsPersistence(int i) {
+	public String setResultsPersistence(int switchOnOff, String pathIntermit) {
 		
 		String path;
-		boolean createOutFiles = i>=1;
+		boolean createOutFiles = switchOnOff>=1;
 		
 		
 		sfProperties.getOutputSettings().setWriteResultFiles(createOutFiles);
 		
 		path = sfProperties.getSystemRootDir() ;
 		path = ps.getPathToSomFluidSystemRootDir();
+		
+		
+		
+		if (this.sfProperties.isITexxContext()){
+			path = fileutil.createpath(path, pathIntermit ) ; 
+		}
 		path = fileutil.createpath(path, ps.getProjectName()) ; // bank2\export\results
 		path = fileutil.createpath(path, "export/results/") ;
+		
 		sfProperties.getOutputSettings().setResultfileOutputPath(path) ;     
 				// there is a default ! ...which is based on
 				// sfProperties.setPathToSomFluidSystemRootDir("D:/data/projects/");

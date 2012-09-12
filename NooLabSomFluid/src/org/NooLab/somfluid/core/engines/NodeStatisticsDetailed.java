@@ -4,8 +4,8 @@ package org.NooLab.somfluid.core.engines;
 import java.util.ArrayList;
 import java.util.Vector;
 
-import org.NooLab.somfluid.data.Variable;
-import org.NooLab.somfluid.data.Variables;
+import org.NooLab.somfluid.structures.Variable;
+import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;
  

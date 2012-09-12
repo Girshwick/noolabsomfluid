@@ -20,9 +20,9 @@ import org.NooLab.somfluid.core.engines.det.results.ItemFrequencies;
 import org.NooLab.somfluid.core.engines.det.results.ItemFrequency;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
-import org.NooLab.somfluid.data.DataTable;
 import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
+import org.NooLab.somfluid.structures.DataTable;
 
 
  

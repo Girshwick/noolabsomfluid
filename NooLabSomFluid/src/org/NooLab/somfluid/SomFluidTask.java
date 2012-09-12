@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 import org.NooLab.somfluid.core.engines.det.results.SomResultDigesterIntf;
+import org.NooLab.structures.SomTaskDependProcessIntf;
 import org.NooLab.utilities.net.GUID;
 
 
@@ -71,6 +72,23 @@ public class SomFluidTask 	implements
 	private int counter=-1;
 
 	private boolean activateDataStreamReceptor;
+
+	private String contextMode="";
+
+	transient private SomTaskDependProcessIntf dependentProcess;
+
+	private String sourceDbName = "", 
+	               transferTargetDbName="", transferSourceDbName="" ;
+	
+	
+	private int sourceDbType= -1;
+	private int transferSourceDbType=-1, transferTargetDbType=-1;
+	
+	private long transferSourceSomId=0L;
+
+	private String dataBaseName;
+
+	
  
 	 
 	
@@ -582,7 +600,112 @@ public class SomFluidTask 	implements
 	@Override
 	public void activateDataStreamReceptor(boolean flag) {
 		activateDataStreamReceptor = flag;
+	}
+
+
+	@Override
+	public void setDependencies(SomTaskDependProcessIntf dependency) {
+		dependentProcess = dependency;
+	}
+
+
+
+	@Override
+	public SomTaskDependProcessIntf getDependencies() {
+		return dependentProcess;
+	}
+
+
+
+	@Override
+	public void setApplicationContext(String contextmode) {
+		contextMode = contextmode;
+	}
+
+
+
+	@Override
+	public String getApplicationContext() {
+		return contextMode;
+	}
+
+
+
+	public String getContextMode() {
+		return contextMode;
+	}
+
+
+
+	public void setContextMode(String contextMode) {
+		this.contextMode = contextMode;
+	}
+
+
+	@Override
+	public int getSourceDatabaseType() {
+	 
+		return sourceDbType ;
+	}
+
+	@Override
+	public String getSourceDatabaseName( ) {
+	 
+		return sourceDbName ;  
+	}
+
+
+	/**
+	 * here "source" means the input for the SOM
+	 */
+	@Override
+	public void setSourceDatabase(int sourceDbType, String sourceDbName) {
+		this.sourceDbType = sourceDbType ;
+		this.sourceDbName = sourceDbName ; 
+	}
+
+	@Override
+	public long getTransferSourceSomId() {
+		return transferSourceSomId;
+	}
+
+
+	@Override
+	public String getDataBaseName() {
+		
+		return sourceDbName;
+	}
+	
+	@Override
+	public void setDataBaseName(String dbname) {
+		sourceDbName = dbname;
+	}
+
+ 
+
+	@Override
+	public String getTransferTargetDatabase() {
+		return transferTargetDbName;
+	}
+
+	@Override
+	public void setTransferTargetDatabase(int dbtype, String targetDb) {
+		transferTargetDbName = targetDb; 
+		transferTargetDbType = dbtype;
 		
 	}
-	 
+ 
+	@Override
+	public String getTransferSourceDatabase() {
+		return transferSourceDbName;
+	}
+	
+	@Override
+	public void setTransferSourceDatabase(int dbtype, String targetsrcDbName, long somId) {
+		transferSourceDbName = targetsrcDbName; 
+		transferSourceDbType = dbtype;
+		transferSourceSomId = somId;
+	}
+
+	
 }

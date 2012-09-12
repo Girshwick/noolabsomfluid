@@ -25,6 +25,8 @@ import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.SomPersistence;
 import org.NooLab.somtransform.SomTransformerClientIntf;
+import org.NooLab.structures.SomTaskDependProcessIntf;
+ 
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.resources.ResourceLoader;
@@ -76,7 +78,7 @@ public class SomFluidFactory  implements 	//
 	SomPersistence persistence;
 	
 	//
-	
+	SomTaskDependProcessIntf somTaskdependentProcess ;
 	
 	DataFileReceptorIntf dataReceptor;
 	SomProcessControl somProcessControl ;
@@ -399,7 +401,7 @@ public class SomFluidFactory  implements 	//
 
 		FileOrganizer fileorg = new FileOrganizer ();
 		fileorg.setPropertiesBase(sfProperties);
-		dir = fileorg.getObjectStoreDir();
+		dir = fileorg.getObjectStoreDir("");
 
 		dir = DFutils.createPath( dir, "task/"+stype+"/");
 		
@@ -425,19 +427,22 @@ public class SomFluidFactory  implements 	//
 	 */
 	public void saveTaskTrace( Object sfTask  ) {
 	
+		FileOrganizer fileorg ;
 		String dir="",fileName="";
 		int stype = sfProperties.getSomType();
 
-		FileOrganizer fileorg = new FileOrganizer ();
-	 
-		if (somAppProperties!=null){
-			fileorg.setPropertiesBase(somAppProperties);
-		}else{
-			fileorg.setPropertiesBase(sfProperties);
+		fileorg = sfProperties.getFileOrganizer();
+		if (fileorg == null) {
+			fileorg = new FileOrganizer();
+
+			if (somAppProperties != null) {
+				fileorg.setPropertiesBase(somAppProperties);
+			} else {
+				fileorg.setPropertiesBase(sfProperties);
+			}
 		}
-	 
-		
-		dir = fileorg.getObjectStoreDir();
+		dir = "" ;
+		dir = fileorg.getObjectStoreDir("");
 
 		dir = DFutils.createPath( dir, "task/"+stype+"/");
 		fileName = DFutils.createPath( dir, SomFluidTask._TRACEFILE);
@@ -631,7 +636,7 @@ public class SomFluidFactory  implements 	//
 			descr="A task has been created, type = <_TASK_ASTOR>";
 		}
 		 
-		
+		instanceType = instancetype;
 		out.print(2, descr) ;
 		return somclass;
 	}
@@ -656,14 +661,15 @@ public class SomFluidFactory  implements 	//
 	
 		SomFluidTask somFluidTask ;
 		
-				
+
+		// now heading towards the SomFluid
+		somFluidTask = (SomFluidTask)sfTask;
+
+		
+		sfProperties.setApplicationContext( somFluidTask.getApplicationContext() );
 		saveTaskTrace(sfTask);
 		
 		// First caring about the data, using the transformer module
-		
-		
-		// now heading towards the SomFluid
-		somFluidTask = (SomFluidTask)sfTask;
 		 
 		preparePhysicalParticlesField = 1;
 		if (somFluidTask.taskType.toLowerCase().startsWith("c")){
@@ -909,7 +915,14 @@ public class SomFluidFactory  implements 	//
 
 
 
+	public SomTaskDependProcessIntf getTaskDependenciesObject() {
+		// this is used for instance by Astor application starter for passing the 
+		// parameters for starting the SomClients host
+		somTaskdependentProcess = new SomTaskDependProcess();
+		return somTaskdependentProcess ;
+	}
 
+ 
 	
 	
 	
