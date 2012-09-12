@@ -1,0 +1,83 @@
+
+Technical remark:
+it is very important to start the JVM with the following parameters !!
+-Xmx640m
+-XX:+ExplicitGCInvokesConcurrent
+-XX:+UseConcMarkSweepGC
+
+-------------------------------------------------------------------------------
+
+#!/bin/sh
+CLASSPATH=foo.jar:bar.jar
+JVMARGS=-some_arg
+MYAPP_ARGS=-some_args -for -my -app
+
+java $JVMARGS -classpath $CLASSPATH com.my.domain.myapp $MYAPP_ARGS
+
+-------------------------------------------------------------------------------
+
+
+A SomFluid is a module for a population of SOMs 
+
+SomFluid contains to very different SOM-engines:
+- the probabilistic SOM (pre-specific storage), and 
+- the deterministic SOM (modeling/classification)
+
+small, but important note:
+SomFluid is not concerned with any administrative task, and it also does not
+organize issues around the application of models (or their general life cycle), 
+all of which is done by package NooLabSomOrganizer
+
+
+Environmental Organization
+---------------------------
+Each Instance of SomFluid runs in its own directory, which is labeled by a random GUID;
+This directory contains a small properties files which defines the 
+individual/preferred ID. If such does not exist upon startup, it will be created
+In the MetaNet context, this GUID will be associated with a unique Long value
+
+SomFluid can produce offspring!
+Producing such offspring also creates a small info file
+Offsprings are connected through a Glue MessageBoard. 
+
+Offsprings are created through thinning of networks and pullulation.
+ 
+ 
+ 
+Internal Organization
+--------------------- 
+
+One instance of SomFluid contains exactly 1 instance,
+albeit the topology can be 3-dimensional, and the network may have gaps
+
+
+that can grow in either direction. 
+Yet, "fibers" can detach, such producing another module.
+
+The SomFluid uses the RepulsionField as its "physical" basis.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
