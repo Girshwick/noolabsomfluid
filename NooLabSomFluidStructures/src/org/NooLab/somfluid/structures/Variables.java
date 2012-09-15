@@ -3,8 +3,8 @@ package org.NooLab.somfluid.structures;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
-import org.NooLab.somsprite.AnalyticFunctionSpriteImprovement;
+ 
+
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
@@ -67,8 +67,8 @@ public class Variables implements Serializable, VariablesIntf{
 	 */
 	ArrayList<Integer> 	  absoluteAccessible ;
 	
-	transient StringsUtil strgutil ;
-
+	transient StringsUtil  strgutil ;
+	transient ArrUtilities arrutils = new ArrUtilities();
 
 	
 
@@ -151,9 +151,9 @@ public class Variables implements Serializable, VariablesIntf{
 		targetedVariables.clear();
 	}
 
-	public ArrayList<AnalyticFunctionSpriteImprovement> getKnownTransformations() {
+	public ArrayList<AnalyticFunctionSpriteImprovementIntf> getKnownTransformations() {
 		 
-		ArrayList<AnalyticFunctionSpriteImprovement> knownTransforms = new ArrayList<AnalyticFunctionSpriteImprovement>(); 
+		ArrayList<AnalyticFunctionSpriteImprovementIntf> knownTransforms = new ArrayList<AnalyticFunctionSpriteImprovementIntf>(); 
 	
 		
 		
@@ -297,8 +297,13 @@ public class Variables implements Serializable, VariablesIntf{
 	}
 	
 	
-	
 	public void explicateGenericVariableRequests() {
+		explicateGenericVariableRequests(0) ;
+	}
+	
+	
+	@SuppressWarnings("unchecked")
+	public void explicateGenericVariableRequests(int setUsageIndication) {
 		 
 		String vlabel = "" ;
 		Variable variable;
@@ -449,10 +454,78 @@ public class Variables implements Serializable, VariablesIntf{
 			}
 		}
 		
+// TODO XXX  we need the setting for a secondary variable that is being transported via extension of nodes
+		double indic = ArrUtilities.arraySum( (double[]) arrutils.changeArrayStyle(usageIndicationVector) ) ;
+		ArrayList<String> initSelect, strList;
+		ArrayList<Integer> posits ;
+		String str;
+		
+		if (((setUsageIndication>0) || (indic==0.0)) && (variableSettings.getInitialSelection().size()>0)){
+
+			initSelect = variableSettings.getInitialSelection();
+			if (initSelect.size()>0){
+				resetUseVector();
+			}
+			
+			for (int i=0;i<initSelect.size();i++){
+				
+				str = initSelect.get(i) ;
+				
+				// get all matches, could be wildcard
+				strList = new ArrayList<String>();
+				strList.add(str);
+				
+				explics = explicateWildcardedLabel(str);
+				if ((str.contains("*")==false) && (explics.indexOf(str)<0)){
+					explics.add(str) ;
+				}
+				if (explics.size()>0){
+					// remove potential blacklists , note that removeALl is seriously buggy ... it delivers intersection!
+					ArrayList<String> intersection = (ArrayList<String>) CollectionUtils.intersection(explics, this.blacklistLabels) ;
+					if ((intersection!=null) && (intersection.size()>0)){
+						explics = (ArrayList<String>) CollectionUtils.disjunction(explics, intersection) ; 
+					}
+					// get all positions of explicated request, 
+					posits = this.getIndexesForLabelsList(explics); 
+					
+					if (posits.size()>0){
+						
+						for (int p=0;p<posits.size();p++){
+							this.usageIndicationVector.set( posits.get(p),1.0) ;
+						}
+					}// posits?
+				}// explics
+				
+				
+			}// i-> inSel
+			str="";
+			
+		} // usage indication empty?
+		
+		int[] uses = getUseIndicatorArray();
+		
+		indic = ArrUtilities.arraySum(uses) ;
+		
+		if (indic != initialUsedVariablesStr.size()){
+			strList = getLabelsForUseIndicationVector( this, this.usageIndicationVector) ;
+			if (strList.size()>0){
+				initialUsedVariablesStr = new ArrayList<String>(strList);
+			}
+		}
+		
 		vlabel = "" ;
 	}
 	
 
+	private void resetUseVector() {
+
+		for (int i=0;i<usageIndicationVector.size();i++){
+			usageIndicationVector.set(i,0.0) ;
+		}
+		
+	}
+	
+	
 	private ArrayList<String> explicateWildcardedLabel(String vlabel ) {
 		ArrayList<String> explics = new ArrayList<String>(); 
 		boolean hb;
@@ -729,6 +802,20 @@ if (varLabel.contains(pL)){
 		ArrayList<Integer> ixes ; 
 		ixes = getIndexesForLabelsList( getLabelsForVariablesList( variablesList ) ) ;
 		return ixes;
+	}
+	
+	
+	public ArrayList<Integer> getIndexesForUsageIndication() {
+		
+		ArrayList<Integer> usepositions = new ArrayList<Integer>();
+		
+		for (int i=0;i<this.usageIndicationVector.size();i++){
+			if (usageIndicationVector.get(i)>0.00001){
+				usepositions.add(i) ;
+			}
+		}
+		
+		return usepositions;
 	}
 	
 	
@@ -1159,7 +1246,9 @@ if (varLabel.contains(pL)){
 	}
 
 	public void setUsageIndicationVector(ArrayList<Double> usageIndicationVector) {
+		
 		this.usageIndicationVector = usageIndicationVector;
+		
 	}
 
 	public ArrayList<Variable> getBlackList() {
@@ -1311,6 +1400,11 @@ if (varLabel.contains(pL)){
 		
 		isBlack=false;
 		
+		
+		if ((initialUsedVariablesStr.size()==0) && (this.usageIndicationVector.size()>0)){
+			initialUsedVariablesStr = new ArrayList<String>( getLabelsForUseIndicationVector(this, usageIndicationVector));
+		}
+			
 		for (int i=0;i<items.size();i++){
 			v = items.get(i) ;
 			vlabel = v.getLabel() ;
@@ -1677,6 +1771,8 @@ if (varLabel.contains(pL)){
 	 
 		strgutil = new StringsUtil();
 	}
+
+
 
 
 
