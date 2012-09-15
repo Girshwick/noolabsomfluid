@@ -2,20 +2,23 @@ package org.NooLab.demoiinstances;
 
 
 
+import java.util.ArrayList;
+
 import processing.core.*;
 
 import org.NooLab.field.FieldIntf;
+import org.NooLab.itexx.storage.DataStreamProviderIntf;
+import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
+import org.NooLab.itexx.storage.somfluid.db.DataBaseAccessDefinition;
 import org.NooLab.somfluid.SomFluidFactory;
-import org.NooLab.somfluid.SomFluidIntf;
 import org.NooLab.somfluid.SomFluidMonoResultsIntf;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidPropertiesHandler;
 import org.NooLab.somfluid.SomFluidPropertiesHandlerIntf;
+ 
 import org.NooLab.somfluid.app.up.IniProperties;
 import org.NooLab.somfluid.app.up.SomFluidStartup;
 import org.NooLab.somfluid.clapp.SomApplicationEventIntf;
-import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
-import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
@@ -24,66 +27,48 @@ import org.NooLab.somfluid.tasks.SomFluidMonoTaskIntf;
 import org.NooLab.somfluid.tasks.SomFluidProbTaskIntf;
 import org.NooLab.somfluid.tasks.SomFluidTask;
 import org.NooLab.structures.InstanceProcessControlIntf;
+
 import org.NooLab.utilities.callback.ProcessFeedBackContainerIntf;
-import org.NooLab.utilities.datatypes.IndexDistance;
-import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.LogControl;
 
    
+/*
+ * 
+ * TODO :   reading the database should NOT insert a further column left-most to the table
+ *          if the description file (or a parameter) forbids it: -> new field in VariableSettings
+ *           [structure]
+ *           insertid=0
+ */
+
+
 /**
+ * 
+ * this applet organizes the test of associative storage
+ * particularly the settings and the data flow 
+ * 
+ * 
+ * 
+ * 
  * 
  * Technical remark:
  * it is very important to start the JVM with the following parameters !!
  * 
- * -Xmx640m
- * -XX:+ExplicitGCInvokesConcurrent
- * -XX:+UseConcMarkSweepGC
-
-
- * TODO ? Roc-AuC is too optimistic (not cut at sensitivity=100) (check it!)  
- *      TV columns need complete scan for values ...
- *  	if the last column has only empty cells from row n until last row, cellvalues will be too short
- *      -> correct this through homogenizing the col length, stuffing mv into it... "m.v." as string
- * Later: this applet should start the SomFluid as an external application!!
- * 	      Any communication should be performed through Glue, or "wirelessly" through TCP
- * 
- * 
- * the boot process uses a static object "SomFluidStartup", 
- * which in any must be configured at first, before any other activities can happen
- * 
- * 
- * 
- * note that the SomFluid instance always contains the full spectrum of tools, yet,
- * it behaves as such or such (Som, Sprite, Optimizer, transformer), according to 
- * the request that is shaped via ?.
- * 
- * 
- * nice examples here:  http://technojeeves.com/
- * 
- * 
- * 
- * TODO: missing value portion in extensions update ... 
- *       put used expressions into results
- *	
  *
- *       if "...checking contribution for variable" provides a score that is lower than
- *       the previous best one, the best metric should be changed, 
- *       another 5 models evolutionary calculated, and contribution repeated
- *
- *       
- *       the deviation from selection size should contribute to the score of the models;
- *        
- * 	     			
+   -Xmx1140m
+   -XX:+ExplicitGCInvokesConcurrent
+   -XX:+UseConcMarkSweepGC
 
+	
+ *    				
  */
 
-public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
+public class S1_explicitsettings_SomFluidModuleApplet extends PApplet{
 
 	 
 	private static final long serialVersionUID = 8918471551051086099L;
 	
-	SomModuleInstanceM1 somInstance ;
+	SomModuleInstanceS1 somInstance ;
 	String sourceForProperties = "" ;
 	PApplet applet;
 	
@@ -92,18 +77,6 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 	// for serious modeling, an appropriate value here is always >20!   
 	int _numberOfExploredCombinations  = 31;
 	
-	// further work....
-	// best model when using ALL data (limited exploration without cross-validation stability)
-	// noising data
-	// results: lift factor at TP-0 TP-ECR (actual cost), TP-ECR (effective @ sensitivity constraint)
-	// showing final selection, showing PCA selection, switching on PCA for start
-	// making things parallel: prob. best as per record if there are many
-	// splitting variable selection task
-	// growth
-	// enabling volatile sampling in evo-devo : biased removal, plain removal, 
-	// simulating data from profiles
-	// cluster based 0-models
-
 	
 	public void setup(){
 		 
@@ -111,7 +84,7 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 		background( 208,188,188);
 		 
 		try {
-			SomFluidStartup.setApplicationID("sf", this.getClass());
+			SomFluidStartup.setApplicationID( "astor", this.getClass() );
 		
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
@@ -129,10 +102,11 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 		LogControl.globeScope = 2; // 1=local definitions  default = 2
 		LogControl.Level = 2 ;     // the larger the more detailed logging... (could be really verbose!)
   
-		// testPowerSet();
 		
 	}
-	 
+	
+	
+	
 	public void draw(){
 		background( 208,188,188);
 	}
@@ -279,7 +253,7 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 	private void showKeyCommands(){
 
 		println();
-		println("Welcome to FluidSom!\n");
+		println("Welcome to Astor, the Associative Storage based on FluidSom!\n");
 		println("the following key commands are available for minimalistic user-based control...");
 		println();
 		println("   m  ->  start modeling, start from scratch by importing the data file ");
@@ -334,10 +308,10 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 			somtype = FieldIntf._INSTANCE_TYPE_OPTIMIZER ;
 		}
 		if (somtype<=0){ 
-			somtype = FieldIntf._INSTANCE_TYPE_SOM ;
+			somtype = FieldIntf._INSTANCE_TYPE_ASTOR ;
 		}
 		
-		somInstance = new SomModuleInstanceM1(  
+		somInstance = new SomModuleInstanceS1(  
 			 									SomFluidFactory._GLUE_MODULE_ENV_NONE,
 			 									sourceForProperties ) ;
 		somInstance.setAbsoluteNumberOfExploredCombinations( _numberOfExploredCombinations );
@@ -377,10 +351,10 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
 			somtype = FieldIntf._INSTANCE_TYPE_OPTIMIZER ;
 		}
 		if (somtype>=1){ 
-			somtype = FieldIntf._INSTANCE_TYPE_SOM ;
+			somtype = FieldIntf._INSTANCE_TYPE_ASTOR ;
 		}
 		
-		somInstance = new SomModuleInstanceM1( 	 
+		somInstance = new SomModuleInstanceS1( 	 
 												SomFluidFactory._GLUE_MODULE_ENV_NONE,
 												sourceForProperties ) ;
 		somInstance.setResumeMode(true);
@@ -403,7 +377,7 @@ public class M1_explicitsettings_SomFluidModuleApplet extends PApplet{
  * this object could be instantiated by the glue layer, if there is the correct information available
  * 
  */
-class SomModuleInstanceM1 implements 	Runnable,
+class SomModuleInstanceS1 implements 	Runnable,
 
 										// for messages from the engine to the outer application layers like this module
 										SomApplicationEventIntf{
@@ -413,8 +387,8 @@ class SomModuleInstanceM1 implements 	Runnable,
 	SomFluidProperties sfProperties;
 	SomFluidPropertiesHandlerIntf sfPropertiesDefaults;
 	
-	SomFluidMonoTaskIntf sfTask;
-	SomFluidIntf somFluid;
+	SomFluidProbTaskIntf sfTask;
+	
 	InstanceProcessControlIntf somProcessControl ;
 	
 	int instanceType = FieldIntf._INSTANCE_TYPE_OPTIMIZER;
@@ -426,15 +400,18 @@ class SomModuleInstanceM1 implements 	Runnable,
 	String lastProjectName="" ;
 	
 	// initial number of nodes in the SOM lattice
-	int nodeCount = 47;
-	
+	int nodeCount = 900; // 110000 are possible for 1.2 gigabytes in VM
+	// we need a version with smaller (=minimized) structure for associative storage...
+	// indices about stored / referenced objects could be backed to a database, such the
+	// SOM could host an "infinite" number of documents (...the same database where randomwords is contained)
+	// any de-referencing would result in a join within the same database
 	
 	Thread smiThrd;
 	
 	private boolean resumeMode;
 	
 	// ------------------------------------------------------------------------
-	public SomModuleInstanceM1( int glueMode, String propertiesSource ){
+	public SomModuleInstanceS1( int glueMode, String propertiesSource ){
 		
 		
 		sourceForProperties = propertiesSource;
@@ -482,7 +459,7 @@ class SomModuleInstanceM1 implements 	Runnable,
 		}
 	}
  
-	 
+
 	private void prepareSomOptimizer(){
 	
 		// loads an existing targeted SOM and starts/continues/repeats the optimizing according to the settings 
@@ -493,6 +470,8 @@ class SomModuleInstanceM1 implements 	Runnable,
 		// if this exists, it will be loaded
 		sourceForProperties = "" ;
 		sfProperties = SomFluidProperties.getInstance( sourceForProperties ); // not available
+		
+		defineDataBaseAccesData();
 		
 		// alternatively... load from /resources in jar ...
 		 
@@ -509,8 +488,6 @@ class SomModuleInstanceM1 implements 	Runnable,
 		sfFactory = SomFluidFactory.get(sfProperties);					   // creating the factory; calling without "factorymode" parameter, optimizer will be assumed	
 		 
 		 
-		
-		
 		sfFactory.saveStartupTrace( FieldIntf._INSTANCE_TYPE_SOM, 
 									sfPropertiesDefaults.getStartupTraceInfo() );
 		sfProperties.save();
@@ -523,16 +500,8 @@ class SomModuleInstanceM1 implements 	Runnable,
 		 * different application types use different perspectives onto the task
 		 * 
 		 */
-		
-		sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( FieldIntf._INSTANCE_TYPE_OPTIMIZER ); //  
-		 
-		
-		sfTask.setContinuity( 1,1) ;                // param1: Level of Spela looping: 1=simple model, 2=checking 
-													// param2: number of runs: (1,1) building a stable model, then stop 
-													//                         (2,500) including screening S1, S2, max 500 steps in S2
-													//                         (2,3,500) max 3 levels in S1
-													//      				   (2,0,500) no dependency screening, just evo-optimizing
-													//      
+		  
+		sfTask = (SomFluidProbTaskIntf)sfFactory.createTask( FieldIntf._INSTANCE_TYPE_ASTOR ); //
 		
 		sfTask.setStartMode(1) ;             		// default=1 == starting after producing the FluidSom
 										 			//        <1 == only preparing, incl. 1 elementary run to load the data, 
@@ -540,11 +509,12 @@ class SomModuleInstanceM1 implements 	Runnable,
 										 			//        >100  minimum delay in millis
 		
 		
-		sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( ); 
+		sfTask = (SomFluidProbTaskIntf)sfFactory.createTask( ); 
 		sfTask.setStartMode(1) ;  
-		sfTask.setContinuity(2,0,200);
 		 
-		
+		 
+		sfTask.activateDataStreamReceptor(true) ;   // after learning the initial bunch of data
+													// Astor Som switches to "online learning"
 		
 		try {
 			
@@ -565,43 +535,64 @@ class SomModuleInstanceM1 implements 	Runnable,
 
 	
 	
-	private void explicitlySettingProperties(){
-		
-		ClassificationSettings cs;
-		PersistenceSettings ps;
-		ModelingSettings ms;
+	private void defineDataBaseAccesData() {
 
-
+		DataBaseAccessDefinition dbAccess ;
+		TexxDataBaseSettingsIntf dbSettings ;
+		ArrayList<String> fieldlist ;
 		
 		try {
 			
-			String instance = "som";
+			// reading from  dbDefinitionResource ="texx-db-definition-xml" ;
+			sfProperties.getDatabaseDefinitionInfo("randomwords",1);
 			
-			if (instance.contentEquals("som")){
+			dbAccess = sfProperties.getDbAccessDefinition() ;
+			 
+			dbSettings = sfProperties.getDatabaseSettings() ;
+			
+			fieldlist = dbSettings.getTableFields() ;
+			
+		} catch (Exception e) {
+			
+			e.printStackTrace();
+		}
+		
+	}
+	
+	private void explicitlySettingProperties(){
+		
+		 
+		PersistenceSettings ps;
+		 
 
-				sfPropertiesDefaults.setInstance( "som" ,nodeCount );
-				
-									// alternatively: "map" "transformer", or detailed by constants: 
-									// (SomFluidFactory._INSTANCE_TYPE_OPTIMIZER, SomFluidProperties._SOMTYPE_MONO)
+		String dbDefinitionResource="" ;
+		
+		try {
+			
+			String instance = "astor";
+			
+			if (instance.contentEquals("astor")){
 
-				sfProperties.setSomType( FieldIntf._SOMTYPE_MONO ) ; // either modeling or storage
+				sfPropertiesDefaults.setInstance( "astor" ,nodeCount );
+				//check this !!
+				instanceType = sfProperties.getSomInstanceType() ;
+									
+				sfProperties.setSomType( FieldIntf._SOMTYPE_PROB ) ; // == associative storage = Astor
 				
-				// choose a fixed or a fluid grid; note that gridType and somType are rather different categories!!
-				 sfPropertiesDefaults.setGridType( FieldIntf._SOM_GRIDTYPE_FIXED ) ;
+				// choose a fixed or a fluid grid
+				sfPropertiesDefaults.setGridType( FieldIntf._SOM_GRIDTYPE_FIXED ) ;
 			    //sfPropertiesDefaults.setGridType( FieldIntf._SOM_GRIDTYPE_FLUID) ;
 				
-				 
-				 
-				 
+				
 				// choose a guessing instance: low-resolution grid, speeding the 
 				// node selection in large grids
 				
-				sfProperties.setAbsoluteRecordLimit(-1); // 434) ;
-				 
-				sfProperties.setRestrictionForSelectionSize(678) ;				   // no more than [N] nodes will be selected; that means, if the SOM grows beyond a certain size, 
-				       // a symmetry break will occur
-					   // if the size of a SOM grows to  sqrt(mapsize) > 3.5*sqrt(n/pi)
-				       // then the coarse-som preprocessing will be organized, if it is allowed
+				
+				
+				// this applies only if the instance is of type "som", which includes optimizing of the model
+				// the absolute number of different models that will be checked
+				sfPropertiesDefaults.setOptimizerStoppingCriteria( absoluteNumberOfExploredCombinations ) ;					
+									//	optionally, any of the following parameters ( [n], 21, 100, 0.8)
 
 
 				/* we may create a complete som for classification from externally defined "top-down" profiles
@@ -634,27 +625,27 @@ class SomModuleInstanceM1 implements 	Runnable,
 									// alternatively, defineInitialVariableSettings([filename]);
 									// (re-)creating the file
 									// sfPropertiesDefaults.exportVariableSettings(null, ""); // a dedicated path could be applied
+			 
 			
+			// -------------------------------------------------------------------------------
 			
-			defineSemanticModelingParameters();
-
-			defineGeneralModelingParameters();
-			
-			defineOptimizerParameters() ;
-			
-			defineOutputSettings() ;
-			
-			sfPropertiesDefaults.setDataSourcing( "file",0) ; 						// "file", "db", "xml", [0|1] = online learning switch on/off
+			// "file", "db", "tcp"
+			sfPropertiesDefaults.setDataSourcing( DataStreamProviderIntf._DSP_SOURCED_FILE ,0) ; 						
 			sfPropertiesDefaults.setDataSourceName( IniProperties.dataSource );
-
-			// String folder = sfPropertiesDefaults.getSupervisedDirectory();  		// ... also available: setSupervisedDirectory(""); 
-
 			
+			
+			// ... overruling by setting a database as source 
+			sfPropertiesDefaults.setDataSourcing( DataStreamProviderIntf._DSP_SOURCED_DB ,0) ;
+			// dbDefinitionResource = "texx-db-definition-xml" ; // default
+			sfPropertiesDefaults.setDatabaseDefinitionResource( dbDefinitionResource,"randomwords",1 );
+			 
+			
+			// -------------------------------------------------------------------------------
 			// optional, if there are indeed plugin files ...
 			sfPropertiesDefaults.setAlgorithmsConfigPath( "D:/dev/java/somfluid/plugins/" );
 			
 
-			sfPropertiesDefaults.publishApplicationPackage(true, "D:/data/projects/_classifierTesting");
+			 
 			
 			sfProperties.addFilter( "var",0.3,"<",1,1,true);       
 									// filter that act on the values of observations
@@ -663,6 +654,9 @@ class SomModuleInstanceM1 implements 	Runnable,
 
 			
 			sfPropertiesDefaults.initializeDefaults();
+			
+			
+			sfProperties.setExtendingDataSourceEnabled(true); 
 			
 			
 			// controlling the granularity/verbosity of console messages 
@@ -684,139 +678,14 @@ class SomModuleInstanceM1 implements 	Runnable,
 		/*
 		 * in this folder there will be enumerated sub-folders containing the results
 		 */
-		String resultFolder = sfPropertiesDefaults.setResultsPersistence(1, "");	// optionally: a dedicated path
+		String resultFolder = sfPropertiesDefaults.setResultsPersistence(1,"");	// optionally: a dedicated path
 		       resultFolder = sfPropertiesDefaults.getResultBaseFolder();
 
 		// set ready flag
 		sfProperties.setInitializationOK(true) ;						
 	}
 	
-	
-	private void defineGeneralModelingParameters() {
-		 
-		// 					 default = 1 == using reasoning based upon PCA
-        					int _smode = SomFluidPropertiesHandlerIntf._INIT_VARSELECTION_METHOD_PCA;
-        					
-        sfPropertiesDefaults.setMethodforInitialVariableSelection( _smode); 
-        sfPropertiesDefaults.preferSmallerModels(true,5) ; //TODO: task relate
-
-
-
-		// implicitly activating bagging by maxNodeCount, recordsPerNode
-		// bagging will cause a "super"-model integrating the individual ones, which are in parallel
-		sfPropertiesDefaults.setBagging( 15, 50 ); 		// in combination, these parameters provoke bagging = several som to be built, if the values are exceeded 	
-							// additionally, as option, one may set the absolute number of records beyond which bagging will occur ([],[],6000) 
-	
-		
-		// this applies only to single target models; it will create nested models (mostly just 2) where the first one is a FP=0% model for the anti-target 
-		sfPropertiesDefaults.setBooleanAdaptiveSampling( false ) ;  		// goal: activated as default
-		
-		
-		sfProperties.setWinnersCountMultiple(1) ; 		
-		
-		// Validation
-		sfProperties.setValidationActive( true );						// whether the model should be validated, applies only if SomType = _SOMTYPE_MONO 
-																		// for most validation styles, the validation sample will be drawn before bagging
-																		// if optimizing && validation off, internal quality of SOM will be used for optimization
-		                       
-		sfProperties.setValidationParameters( 20, 46.3 );			    // basic parameters for cross-validation: 
-																		// p1:n repeats p2+=sample sizes to keep aside for validation for inline
-																		// also possible: style of validation
-		sfProperties.setValidationSampleSizeAutoAdjust(true) ;			// will care for the sample such that enough "cases" are present in the samples   
-
-		ModelingSettings ms = sfProperties.getModelingSettings() ; 
-		
-		
-		ms.setCoverageByCasesFraction(0.44);                  			// the minimum fraction of cases that should be considered for calculations of cost
-																		// this affects the sample size of training and validation
-																		// maximum value is 0.5, if [0.5,1] it will be set to 1-x, if >1 it will be set to 0.2
-
-		
-		// TODO:  
-		// sfProperties.checkDerivationsOnRawData(true) ;
-		
-		sfProperties.setSimulationMode( SomFluidProperties._SIM_NONE);
-		
-		
-		
-		// growth of SOM
-		sfProperties.setGrowthMode( ModelingSettings._SOM_GROWTH_PRESELECT);// growth modes can be combined ! PRESELECT -> coarse-som preprocessing 
-		sfProperties.setGrowthMode( ModelingSettings._SOM_GROWTH_LATERAL); //  
-		sfProperties.removeGrowthMode( ModelingSettings._SOM_GROWTH_LATERAL); 
-		sfProperties.setGrowthSizeAdaptationIntensity( 5 ) ;			   // 5=normal == default, 1=greedy -> large nodes, rather small lattice, 10=allowing sparsely filled nodes 
-				
-		sfProperties.setActivationOfGrowing( false );                       // activates/deactivates growing without removing the settings, default=true
-		
-							   // max 5, if=1 == default = single winner
-
-	}
-	
-	private void defineOutputSettings() {
-		
-		sfProperties.getOutputSettings().setResultfileOutputPath("") ;     // there is a default !
-		sfProperties.getOutputSettings().setResultFilenames( _prepareResultFilesMap() ); // there is a default
-		sfProperties.getOutputSettings().setAsXml(false);                  // default = false
-		sfProperties.getOutputSettings().createZipPackageFromResults(true);           // default = true
-
-	}
-	
-	private IndexedDistances _prepareResultFilesMap(){
-		
-		//IndexDistance filmapItem ;
-		IndexedDistances rfMap = new IndexedDistances() ;
-		
-		return rfMap;
-	}
-	
-
-	
-	private void defineOptimizerParameters() {
-		
-		sfProperties.setMaxL2LoopCount(5) ;	
-		
-		// this applies only if the instance is of type "som", which includes optimizing of the model
-		// the absolute number of different models that will be checked
-		sfPropertiesDefaults.setOptimizerStoppingCriteria( absoluteNumberOfExploredCombinations ) ;					
-							//	optionally, any of the following parameters ( [n], 21, 100, 0.8)
-
-		
-		sfProperties.getModelingSettings().getOptimizerSettings().setMaxAvgVariableVisits(21) ;  // required for comparing models across population regarding the variable selections 
-		sfProperties.getModelingSettings().getOptimizerSettings().setDurationHours(0.8) ;        // an absolute time limit in hours 
-		sfProperties.getModelingSettings().getOptimizerSettings().setStepsAtLeastWithoutChange(300) ; // stop if there is no improvement for some time
-
-		
-	}
-	
-	private void defineSemanticModelingParameters() {
-		 
-		ClassificationSettings cs = sfProperties.getModelingSettings().getClassifySettings() ;
-
-		// the next 4 parameters form a group !! and make sense only for targeted SOM
-		
-		cs.setErrorCostRatioRiskPreference( 0.18 );                     // if the ECR is not met by the conditions of a node in a developed SOM, it will NOT be
-		 																// regarded as a part of the positive prediction, thus contributing all contained cases as "false negatives" 	
-		
-		// TODO not implemented yet
-		cs.setPreferredSensitivity( 0.23); 								// if the model does not achieve this portion at ECR, the ECR gets overruled, since the calculation
-																		// of the quality of the data does not make much sense at TP<1%
-																		// in this example, the first criterion for adapting the ECR is the portion of 
-																		// of selected case 
-		// in SomTargetResults 
-		cs.setCapacityAsSelectedTotal( 0.14 );							// since the preferred sensitivity can lead to large amounts of data being selected, which in turn
-																		// leads to an unrealistic or irrelevant description of the model, we use a further 
-																		// threshold: the maximum portion of selected data;
-																		// this is the second criterion for adapting the ECR, it overrules the setPreferredSensitivity()
-																		// this will be overruled only by the data itself: if there are more cases in the data than this defined portion
-		
-																	
-		cs.setEcrAdaptationAllowed(true) ;								// allow for an adaptive ECR; that's important particularly if the initial setting is too generous
-																		// both setCapacityAsSelectedTotal() and setPreferredSensitivity() are affected by this setting
-				
-		cs.addExtendedResultRequest( ClassificationSettings._XREQ_MISCLASSIFICATIONS_FULL ) ;
-		cs.addExtendedResultRequest( ClassificationSettings._XREQ_ROC_FULL) ;
-		cs.addExtendedResultRequest( ClassificationSettings._XREQ_OPTIMALCUTS,3, 0.95 ) ;
-
-	}
+	  
 	 
 	 
 	/**
@@ -830,7 +699,7 @@ class SomModuleInstanceM1 implements 	Runnable,
 		boolean configByFileExcluded=false;
 		String[] filnames = new String[0];
 		
-		ModelingSettings ms = sfProperties.getModelingSettings();
+		
 
 		if ((filenames!=null) && (filenames.length>0)){
 			filnames = new String[ filenames.length];
@@ -838,8 +707,15 @@ class SomModuleInstanceM1 implements 	Runnable,
 		}
 		
 		if ((configByFileExcluded==false) && ((filenames==null) || (filenames.length==0) || (DFutils.fileExists(filenames[0])==false))){
-// >>>>>>>>>>>>>>>>>>>>>>			
-			String filename = sfPropertiesDefaults.checkForVariableDescriptionFile(0) ; // 0 = typology file, 1 = textual description (background information)
+			// String str  =IniProperties.lastProjectName; // = Astor
+			
+			String filepath = DFutils.createPath( IniProperties.fluidSomProjectBasePath, IniProperties.lastProjectName);
+			
+			filepath = DFutils.createPath( filepath , "data/description/");
+			filepath = DFutils.createPath( filepath , "astor-variables.txt");
+			
+			String filename = sfPropertiesDefaults.checkForVariableDescriptionFile(0, filepath) ; 
+			// 0 = typology file, 1 = textual description (background information)
 			
 			if (DFutils.fileExists(filename)){
 				filnames = new String[]{filename};
@@ -850,17 +726,6 @@ class SomModuleInstanceM1 implements 	Runnable,
 			 
 			if (sfPropertiesDefaults.loadVariableSettingsFromFile( filnames[0]) ){
 				// recognizes format by itself, if successful, we may return
-				
-				ClassificationSettings cs = ms.getClassifySettings() ;
-				
-				double[][] tgs = cs.getTargetGroupDefinition();
-				int n=tgs.length;
-				double v=0;
-				if (n>0){
-					v = tgs[0][0];
-					v = tgs[0][1];
-				}
-				v=v+1-1;
 				return;
 			}
 		}
@@ -875,47 +740,15 @@ class SomModuleInstanceM1 implements 	Runnable,
 		// we provide a small interface for dealing with initial variable settings all at once
 		VariableSettingsHandlerIntf variableSettings = sfPropertiesDefaults.getVariableSettingsHandler();
 
-		
-		variableSettings.setInitialSelection( new String[]{"Stammkapital","Bonitaet","Bisher","Branchenscore"});
-		variableSettings.setBlackListedVariables( new String[]{"Name","KundenNr"} ) ;
-		variableSettings.setAbsoluteExclusions( new String[]{"Name","KundenNr","Land","Region"} , 1);
+		variableSettings.setTargetVariables(""); 	
+		variableSettings.setTvGroupLabels("") ;
 
-		//ms.setActiveTvLabel("*TV") ;       			// the target variable; wildcarded templates like "*TV" are possible
-		variableSettings.setTargetVariables("*TV"); 	// of course only if instance = "som" (or transformer! for certain transformations)
-		                    // sometimes, a file  contains several potential target variables, which would act as confounders if not excluded
-							// thus we can mark them all by wildcard... , or by list:
-		// variableSettings.setTargetVariables("Mahnung_TV","*TV"); // in this format, the first item always denotes the active target variable 
-
-		// ===>>> any wildcards will be resolved during import of data
-		
-		// ms.setInitialVariableSelection( new String[]{"Stammkapital","Bonitaet","Bisher","Branchenscore"});
-		// sfProperties.getModelingSettings().setRequestForBlacklistVariablesByLabel( new String[]{"Name","KundenNr"}) ;
-
-		
-																		  // these variables are excluded once and for all -> they won't get transformed either
-																		  // if mode 1+ then they even won't get imported
-		//sfProperties.setAbsoluteFieldExclusions( new String[]{"Name","KundenNr","Land","Region"} , 1);
- 
-		
-		variableSettings.setTvGroupLabels("Label") ;
-		// ms.setTvGroupLabels("Label") ; 	   							// optional, if available this provides the label of the column that contains the labels for the target groups, if there are any
-																		// the only effect will be a "nicer" final output
-		//sfProperties.getModelingSettings().setTvLabelAuto("TV") ; 	// the syllable(s) that will be used to identify the target variable as soon as data are available
-																	    // allows a series of such identifiers
- 	       
-		ClassificationSettings cs = sfProperties.getModelingSettings().getClassifySettings() ;
-		// 
-		if ((sfProperties.getSomType() == FieldIntf._SOMTYPE_MONO ) &&
-			(cs.getTargetMode() == ClassificationSettings._TARGETMODE_MULTI)){
-			
-			// may be defined also by file
-			if (cs.getTargetGroupDefinition().length==0){
-				cs.setTargetGroupDefinition( new double[]{0.28, 0.62, 1.0});	// applies only to MULTI mode, at least 2 values are required (for 1 group interval)
-				cs.setTargetGroupDefinitionAuto(true);							//  - if [0,1] AND if _TARGETMODE_MULTI , then the target groups will be inferred from the data
-																				//  - TODO in this case, one should be able to provide a "nominal column" that indeed contains the "names"
-				cs.setTargetGroupDefinitionExclusions( new double[]{0.4} );		// these values are NOT recognized as belonging to any of the target groups, == singular dot-like holes in the intervals
-			}
-		}
+		sfProperties.addFieldExclusionByIndex(15);
+		sfProperties.setFieldExclusionByIndexFrom(15);
+		sfProperties.setFieldExclusionByIndexUntil(15);
+		sfProperties.setFieldExclusionByIndexFrom("wordlabel", 1); 
+		sfProperties.setFieldExclusionByIndexUntil("wordlabel"); 
+		sfProperties.setFieldExclusionByBetween(2,15);
 
 	}
 

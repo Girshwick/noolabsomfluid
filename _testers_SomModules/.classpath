@@ -6,5 +6,7 @@
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/processing/core.jar"/>
 	<classpathentry kind="src" path="/NooLabSomFluid"/>
 	<classpathentry kind="src" path="/NooLabUtilities"/>
+	<classpathentry kind="src" path="/NooLabParticleField"/>
+	<classpathentry kind="src" path="/NooLabiTexxStorage"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
