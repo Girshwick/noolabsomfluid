@@ -19,6 +19,7 @@ import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.structures.Variables;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.LogControl;
 import org.NooLab.utilities.logging.PrintLog;

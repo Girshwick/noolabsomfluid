@@ -15,7 +15,6 @@ import org.NooLab.somfluid.core.engines.det.ResultRequests;
 
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
-import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
 
  
 import org.NooLab.somfluid.properties.SomFluidSettings;
@@ -27,7 +26,9 @@ import org.NooLab.somfluid.properties.SpriteSettings;
 import org.NooLab.somfluid.properties.ValidationSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
+import org.NooLab.somfluid.structures.VariableSettingsHandlerIntf;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
+import org.NooLab.structures.InstanceProcessControlIntf;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.objects.StringedObjects;
 import org.NooLab.utilities.resources.ResourceContent;
@@ -73,15 +74,7 @@ public class SomFluidProperties
 	public static final String _STORAGE_OBJ = "SomFluid.properties";
 	public static final String _STORAGE_XML = "SomFluid-properties.xml";
 
-
-	public static final String _APP_CONTEXT_ITEXX = "itexx";
-	public static final String _APP_CONTEXT_ALONE = "standalone";
-
-
-	public static final String _APP_COMPLETION_EXIT = "exit" ;
-	public static final String _APP_COMPLETION_SERVICE = "service" ;
-	
-	
+ 
 		
 	/** <0: don't load, 0: immediate uptake; >0:delayed uptake (in millis) */
 	int dataUptakeControl = -1 ;
@@ -112,7 +105,7 @@ public class SomFluidProperties
 
 	private int absoluteFieldExclusionsMode;
 	
-	private Object collectibleColumn;
+	private int collectibleColumn;
 	
 	
 	private int showSomProgressMode;
@@ -281,7 +274,7 @@ public class SomFluidProperties
 		DFutils fileutil = new DFutils();
 		
 		String pathitx = "" ;
-		if (applicationContext.contentEquals(SomFluidProperties._APP_CONTEXT_ITEXX) ){
+		if (applicationContext.contentEquals(InstanceProcessControlIntf._APP_CONTEXT_ITEXX) ){
 			pathitx ="" ;
 		}
 		
@@ -294,7 +287,7 @@ public class SomFluidProperties
 			prjdir="";
 			if (prjname.length()>0){
 				dir = systemRootDir;
-				if (applicationContext.contentEquals(SomFluidProperties._APP_CONTEXT_ITEXX) ){
+				if (applicationContext.contentEquals(InstanceProcessControlIntf._APP_CONTEXT_ITEXX) ){
 					dir = DFutils.createPath( dir , "app/");
 				}
 				dir = DFutils.createPath( dir, "Astor/");
@@ -545,14 +538,14 @@ public class SomFluidProperties
 
 	
 
-	public void setCollectibleColumn(Object collectibleColumn) {
-		this.collectibleColumn = collectibleColumn;
+	public void setCollectibleColumn(int columnIndex) {
+		collectibleColumn = columnIndex;
 	}
 
 	
 	@Override // from abstract super class
-	public Object getCollectibleColumn() {
-
+	public int getCollectibleColumn() {
+		 
 		// TODO for Astor: provide the secondary index == ContextId, which
 		//      is from the database.
 		// such, the SOM does not need to refer to a locally available persistent 
@@ -646,7 +639,7 @@ public class SomFluidProperties
 		modelingSettings.setActivationOfGrowing(flag);
 	}
 	
-	public void setGrowthMode(int growthMode, double... params) {
+	public void setGrowthMode(int[] growthModes, double... params) {
 		double[] parameters ;
 		
 		
@@ -664,13 +657,27 @@ public class SomFluidProperties
 			parameters = new double[0] ; // just preventing a null
 		}
 		
-		modelingSettings.setSomGrowthMode( growthMode ) ;
+		modelingSettings.setSomGrowthMode( growthModes ) ;
 		
 		if (parameters.length>0){
 			modelingSettings.setSomGrowthControlParams(parameters) ;	
 		}
 		
 	}
+	public void setGrowthMode(int gmode) {
+		if (modelingSettings.isGrowthActive()==false){
+			
+		}
+		modelingSettings.setSomGrowthMode( gmode ) ;
+	}
+
+
+	public void addGrowthMode(int gmode) {
+		modelingSettings.setSomGrowthMode( gmode ) ;
+		
+	}
+
+
 	public int[] getGrowthModes(){
 		return null;
 	}
@@ -681,6 +688,17 @@ public class SomFluidProperties
 		
 	}
 	
+	/**
+	 *  1  = greedy -> large nodes, rather small lattice, weak growth
+	 *  5  = normal, 
+	 *  10 = allowing sparsely filled nodes, strong growth
+	 * 
+	 */
+	public void setGrowthSizeAdaptationIntensity(int adaptionintensity) {
+		 
+	}
+
+
 	public void setValidationActive(boolean flag, double... params) {
  		modelingSettings.setValidationActive(flag) ;
 	}
@@ -829,15 +847,6 @@ public class SomFluidProperties
 		
 		
 	}
-
-	/**
-	 *  5=normal, 1=greedy -> large nodes, rather small lattice, 10=allowing sparsely filled nodes
-	 * 
-	 */
-	public void setGrowthSizeAdaptationIntensity(int adaptionintensity) {
-		 
-	}
-
 
 	public void setExtendingDataSourceEnabled(boolean flag) {
 		extendingDataSourceEnabled = flag;

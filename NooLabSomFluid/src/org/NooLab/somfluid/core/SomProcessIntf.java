@@ -22,7 +22,7 @@ public interface SomProcessIntf {
 	
 	public VirtualLattice getSomLattice() ;
 	
-	public void nodeChangeEvent(ExtensionalityDynamicsIntf extensionality, int result);
+	public void nodeChangeEvent(ExtensionalityDynamicsIntf extensionality, long result);
 	
 	public ArrayList<Double> getUsageIndicationVector(boolean inclTV) ;
 	

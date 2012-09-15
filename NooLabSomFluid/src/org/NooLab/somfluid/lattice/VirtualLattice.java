@@ -49,8 +49,8 @@ import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.core.*;
 import org.NooLab.somfluid.env.communication.LatticeFutureVisorIntf;
-import org.NooLab.somfluid.structures.DataTable;
-import org.NooLab.somfluid.structures.DataTableCol;
+import org.NooLab.somfluid.storage.DataTable;
+import org.NooLab.somfluid.storage.DataTableCol;
 import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
@@ -247,13 +247,14 @@ public class VirtualLattice
 	@SuppressWarnings("unchecked")
 	public void establishProperNodeStatistics() {
 		
-		int extRecCount, ix,fix,fc,rix ;
+		int extRecCount, ix,fix,fc ;
+		Long rix;
 		boolean reCalc;
 		MetaNode node;
 		Variables variables;
 		double v;
 		ArrayList<Double> fieldValues = new ArrayList<Double>();
-		ArrayList<Integer> recIndexes;
+		ArrayList<Long> recIndexes;
 		ArrayList<Integer> useIndexes ;
 		variables = somData.getVariables() ;
 		
@@ -311,7 +312,7 @@ public class VirtualLattice
 						recIndexes = node.getExtensionality().getListOfRecords() ;
 						for (int r=0;r<extRecCount;r++){
 							rix = recIndexes.get(r) ;
-							v = dcol.getCellValues().get(rix) ;
+							v = dcol.getCellValues().get( (int)Math.round(1.0*rix) ) ; 
 							fieldValues.add(v) ;
 						} // r->
 						

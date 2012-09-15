@@ -1021,7 +1021,8 @@ if (v>0.3){
 		/** this is applicable only to validation of classification tasks, for regression tasks we need sth different ! */
 		protected void establishPseudoLattice(){
 			
-			int ix, bmuIndex ;
+			int ix ;
+			Integer bmuIndex;
 			double tvVal ;
 			int tp=0,fp=0, fn=0, tn=0, p, tvIndex;
 			long nodeID;
@@ -1030,7 +1031,7 @@ if (v>0.3){
 			SomApplicationResults resultObj;
 			ResultAspect rAspect;
 			MetaNode nativeNode, pseudoNode;
-			ArrayList<Integer> recordIndexes = new ArrayList<Integer>();
+			ArrayList<Long> recordIndexes = new ArrayList<Long>();
 			
 			somValidation.setDSomInstance(dSom) ;
 			somValidation.setSomData(somData) ;
@@ -1053,7 +1054,7 @@ if (v>0.3){
 						bmuIndex = resultObj.topEcrNodes.get(0);
 						
 						recordIndexes.clear();
-						recordIndexes.add( bmuIndex )  ;
+						recordIndexes.add( (long)bmuIndex )  ;
 						
 						// does the pseudoLattice contain a node with serialID of the native node?
 						nativeNode = somLattice.getNode(bmuIndex) ;

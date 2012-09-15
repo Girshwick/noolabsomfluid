@@ -8,8 +8,8 @@ import java.util.Random;
 
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.properties.ModelingSettings;
-import org.NooLab.somfluid.structures.DataTable;
-import org.NooLab.somfluid.structures.DataTableCol;
+import org.NooLab.somfluid.storage.DataTable;
+import org.NooLab.somfluid.storage.DataTableCol;
 import org.apache.commons.collections.*;
 
 

@@ -4,12 +4,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
+
 
 import org.NooLab.itexx.storage.ConnectorClientIntf;
 import org.NooLab.itexx.storage.DatabaseMgmt;
@@ -23,8 +21,9 @@ import org.NooLab.itexx.storage.somfluid.db.DataBaseAccessDefinition;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.properties.PersistenceSettings;
-import org.NooLab.somfluid.structures.DataTable;
-import org.NooLab.somfluid.structures.DataTableCol;
+import org.NooLab.somfluid.storage.DataTable;
+import org.NooLab.somfluid.storage.DataTableCol;
+ 
 
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.files.PathFinder;
@@ -34,7 +33,7 @@ import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 
 import org.h2.jdbc.JdbcSQLException;
-import org.h2.server.Service;
+// import org.h2.server.Service;
 import org.h2.tools.Server;
 import com.iciql.Db;
 
@@ -58,8 +57,8 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 	SomFluidProperties sfProperties ;
 	PersistenceSettings ps;
 	
-	private boolean dbFileExists;
-	private boolean isOpen;
+	// private boolean dbFileExists;
+	// private boolean isOpen;
 	boolean dbRecreated = false;
 	
 	
@@ -85,7 +84,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 	String user = "sa";
 	String password = "sa" ;
 	
-	Class parent;
+	// Class parent;
 	String databaseFile="";
 	
 	DFutils fileutil = new DFutils();
@@ -99,12 +98,12 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 	private DataBaseAccessDefinition dbAccess;
 
 
+	@SuppressWarnings("unused")
 	private TexxDataBaseSettingsIntf dbSettings;
 	StringsUtil strgutil = new StringsUtil(); 
 	
 	// ========================================================================
 	public SomTexxDataBase(SomDataObject somdataobj, SomFluidProperties props){
-		ArrayList<String> fieldlist;
 		
 		somData = somdataobj;
 		sfProperties = props; 
@@ -119,7 +118,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		
 		dbSettings = sfProperties.getDatabaseSettings() ;
 		
-		fieldlist = dbSettings.getTableFields() ;
+		//ArrayList<String> fieldlist = dbSettings.getTableFields() ;
 		
 		
 		getStorageDir();
@@ -211,6 +210,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 	public String connect( String dbname, String filepath) throws FileNotFoundException{
 		return connect( dbname, filepath, 0);
 	}
+	@SuppressWarnings({ "rawtypes", "unused" })
 	public String connect( String dbname, String filepath, int serverMode) throws FileNotFoundException{
 		
 		String dbfile ="";
@@ -342,7 +342,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 
 	public boolean prepareDatabase( String expected) throws Exception {
 		boolean rB=false;
-		String appnameShortStr;
+		
 		 
 		try {
 			// remove any lock 
@@ -461,8 +461,8 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 			r=2; 
 			
 			int port = server.getPort();
-			Service srvc = server.getService();
-			boolean allowOthers = srvc.getAllowOthers() ;
+			// Service srvc = server.getService();
+			// boolean allowOthers = srvc.getAllowOthers() ;
 			
 			if (server.isRunning(true)){
 				out.print(2, "H2 server is running on port "+port) ;
@@ -574,11 +574,11 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		DataTable  dataTable = null;
 		
 
-		ArrayList<String> resultLines = new ArrayList<String>() ;
+		// ArrayList<String> resultLines = new ArrayList<String>() ;
 		String sql, fieldLabelsStr ; 
 		int n=0, df;
 
-		Randomdocuments c,iciContext;
+		Randomdocuments c,iciRDoc;
 		Randomdocuments rowObj;
 		List<Randomdocuments> rows = null;
 		
@@ -598,8 +598,8 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		
 		try{
 			
-			iciContext = new Randomdocuments(); // the iciQL alias
-			c = iciContext;
+			iciRDoc = new Randomdocuments(); // the iciQL alias
+			c = iciRDoc;
 			
 			if (iciDb==null){
 				open();
@@ -634,9 +634,9 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		dataTable.setTablename("randomdocuments");
 		
 		String colHeader, rcStr, istr, format;
-		int _dataformat,rcLength, datacolumn=-1;
-		Long idvalue;
-		DataTableCol col;
+		int rcLength, datacolumn=-1;
+		// Long idvalue;
+		DataTableCol col = null;
 		
 		rcStr = rows.get(1).randomdoc;
 		if (rcStr.endsWith(";")){
@@ -691,7 +691,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 			_setValue( dataTable, rowObj.docid , "docid" );
 			_setValue( dataTable, rowObj.somid , "somid" );
 			
-			_setValue( dataTable, 0L , "docid" );
+			_setValue( dataTable, 0L , "markovid" );
 			
 			_setValue( dataTable, rowObj.docnvariety , "docnvariety" );
 			_setValue( dataTable, rowObj.docnvarivar , "docnvarivar" );
@@ -723,10 +723,23 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 			ix=0;
 		}// i-> all rows
 	  
+		dataTable.setHeadersCount( dataTable.getColumnHeaders().size() ) ;
+		dataTable.setHeaderAvailable(true) ;
+		dataTable.setTableHasHeader(true) ;
+		
+		dataTable.setNumeric(true) ;
+	        n = dataTable.getDataTable().size();	
+		dataTable.setColcount( n );
+		
 		// we have to fill the row perspective
 		dataTable.createRowOrientedTable() ;
 		
-		
+		// dataTable.setColumnTypes(columnTypes) ; ??
+		if (col!=null){
+			n = col.getRowcount();
+		 
+			dataTable.setRowcount(n) ;
+		}
 		
 		
 		
@@ -738,7 +751,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		
 		DataTable  dataTable = null;
 		
-		ArrayList<String> resultLines = new ArrayList<String>() ;
+		// ArrayList<String> resultLines = new ArrayList<String>() ;
 		String sql, fieldLabelsStr ; 
 		int n=0, df;
 
@@ -794,8 +807,8 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		dataTable.setTablename("randomwords-"+limitcount);
 		
 		String colHeader, rcStr, istr, format;
-		int _dataformat,rcLength, datacolumn=-1;
-		Long idvalue;
+		int rcLength, datacolumn=-1;
+		
 		DataTableCol col;
 		
 		rcStr = rows.get(1).randomcontext;
@@ -961,6 +974,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 	}
 	
 	
+	@SuppressWarnings("rawtypes")
 	private int _determineFormat(Class clzz, String fieldName) {
 		// mimicking _dataformat = column.determineFormat(tableHasHeader) ;
 		 

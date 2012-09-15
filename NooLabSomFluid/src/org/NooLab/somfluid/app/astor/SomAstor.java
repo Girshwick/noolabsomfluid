@@ -9,7 +9,6 @@ import org.NooLab.field.interfaces.FixedNodeFieldEventsIntf;
 import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
 import org.NooLab.field.repulsive.components.data.SurroundResults;
 
-import org.NooLab.itexx.ITexxPublicIntf;
 import org.NooLab.itexx.comm.tcp.box.agents.TxpClient;
 import org.NooLab.itexx.comm.tcp.box.infra.DataReceiverIntf;
 import org.NooLab.itexx.comm.tcp.box.infra.DataSenderIntf;
@@ -18,9 +17,7 @@ import org.NooLab.itexx.storage.DataStreamProviderIntf;
 import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
 
 import org.NooLab.somfluid.SomFluidFactory;
-import org.NooLab.somfluid.SomFluidProbTaskIntf;
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.SomFluidTask;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
@@ -37,14 +34,18 @@ import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.structures.Variables;
+import org.NooLab.somfluid.tasks.SomFluidProbTaskIntf;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 import org.NooLab.somscreen.linear.SimpleExplorationClustering;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
+import org.NooLab.structures.ITexxPublicIntf;
 import org.NooLab.structures.SomTaskDependProcessIntf;
 import org.NooLab.utilities.datatypes.IndexedDistances;
 import org.NooLab.utilities.logging.LogControl;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.net.GUID;
 import org.NooLab.utilities.objects.StringedObjects;
+import org.NooLab.utilities.strings.ArrUtilities;
 
 
 /**
@@ -52,6 +53,21 @@ import org.NooLab.utilities.objects.StringedObjects;
  * This takes the same role as the class "SomTargetedModeling" (which is used for targeted modeling)
  * 
  * it is sub to "SomAssociativeStorage"
+ * 
+ * The nodes of the lattice signal that they have been changed, this message is
+ * received by "nodeChangeEvent()" 
+ * 
+ * if number of changes > updatePeriodByChangeCount then the list of changed nodes
+ * will be transferred to the observer of AstorSom, which is the 
+ * inner class "SomChangeEventObserver" in "SomAstorNodeContent"
+ * 
+ * this observer is defined in "SomAssociativeStorage"  by
+ * astorNodeContent.registerObservedSomProcess( somAstor );
+ * 
+ * "SomAstorNodeContent" is running a dedicated process, which will 
+ * update a database 
+ * 
+ * 
  * 
  *
  */
@@ -80,8 +96,9 @@ public class SomAstor
 	
 	private NodesInformer nodesinformer;
 	
-	private boolean isRunning;
-
+	boolean isRunning=false;
+	boolean calculationFinished = false;
+	
 	Thread astorThrd;
 	
 	
@@ -91,11 +108,15 @@ public class SomAstor
 	private boolean streamReceptorSwitchedOn = false ;
 	private int delay = 1000 ;
 	private int registeredChanges;
-	private int changesThreshold=0;
-
+	private int changesThreshold= 10;
+	int updatePeriodByChangeCount = 200;
+	
 
 	ArrayList<Long> changedNodes = new ArrayList<Long> ();
+	private int prepareAbstraction=0;
 	
+	ArrUtilities arrutil = new ArrUtilities(); 
+			
 	// ========================================================================
 	public SomAstor( SomHostIntf somhost, 
 					 SomFluidFactory sfFactory,
@@ -160,7 +181,11 @@ public class SomAstor
 	}
 	
 	
-
+	/**
+	 * note that the input variable "usedVariables" contains the explicit positions!!
+	 * @param usedVariables
+	 * @throws Exception
+	 */
 	@SuppressWarnings("unchecked")
 	public void prepare( ArrayList<Integer> usedVariables) throws Exception{
 		
@@ -186,9 +211,14 @@ public class SomAstor
 		
 		if (usedVariables.size()==0){
 			
+			usedVariables = variables.getIndexesForUsageIndication( );
 		}
+
 		for (int i=0;i<variables.size();i++){
-			if (i>=usageVector.size())usageVector.add(0.0) ;
+			if (i>=usageVector.size()){
+				double usevalue = variables.getUsageIndicationVector().get(i) ;
+				usageVector.add( usevalue ) ;
+			}
 		}
 
 		
@@ -228,6 +258,20 @@ public class SomAstor
 				
 			}
 		}else{
+			double[] indic = (double[]) ArrUtilities.changeArraystyle( somDataObj.getActiveVariables().getUsageIndicationVector() );
+			double avsum = ArrUtilities.arraySum( indic ) ;
+			
+			if ((avsum==0.0) || (variables.getInitialUsageVector().size()>somDataObj.getActiveVariables().size())){
+				
+				somDataObj.getActiveVariables().setUsageIndicationVector( variables.getUsageIndicationVector() ) ;
+			}
+			
+			
+			indic = (double[]) ArrUtilities.changeArraystyle( variables.getUsageIndicationVector() );
+			avsum = ArrUtilities.arraySum( indic ) ;
+			
+			
+			if (avsum==0)
 			for (int i = 0; i < somDataObj.getActiveVariables().size(); i++) {
 				v = somDataObj.getActiveVariables().getItem(i);
 				vars.additem(v );
@@ -237,6 +281,7 @@ public class SomAstor
 				}
 			}
 		}
+		
 		ArrayList<Integer> useIndexes = (ArrayList<Integer>)variables.transcribeUseIndications(usageVector);  
 		
 		variables.setInitialUsageVector( variables.deriveVariableSelection(useIndexes, 0) ) ;
@@ -355,6 +400,8 @@ public class SomAstor
 
 	private void perform() throws Exception {
 		
+		calculationFinished = false;
+		
 		dSom = new DSom( this, somDataObj, astorLattice, sfTask );
 		
 		dSom.performAstor();
@@ -368,7 +415,7 @@ public class SomAstor
 				        "  msg    = "+msg.toString())  ;
 		
 		if (senderObj instanceof DSom){
-			
+			if (((String)(msg.getClass().getSimpleName())).toLowerCase().contains("modelProperties")){}
 		}
 		if (senderObj instanceof DataStreamProvider){
 			
@@ -400,13 +447,20 @@ public class SomAstor
 		  
 		try {
 			perform();
+		
+			// we have to update the rest of the nodes 
+			setChanged();
+			this.notifyObservers(changedNodes.clone());  // just for code reference: 138709
 			
+			out.delay(10000);
 			
 		} catch (Exception e) {
 			
 			isRunning = false;
 			e.printStackTrace();
 		}
+		
+		
 		
 		// start the stream receptor via observer
 		streamReceptorSwitchedOn  = true;
@@ -418,14 +472,20 @@ public class SomAstor
 		
 		try {
 			
-			startDependentProcess();
+			if ((isRunning) && ( prepareAbstraction>=2)){ // 1=just creating the nodes db
+				
+				startDependentProcess();  // TODO: later, we need an explicit list for those processes
+				// we start the L2 Som, or a Markov process LOGICALLY, by feeding data into the queue
+				// physically, the processes already run through the iTexx master
+			}
 			
 		} catch (Exception e) {
-			out.printErr(1, "problem wihle starting dependent Process in SomAstor...\n");
+			out.printErr(1, "problem while starting dependent process in SomAstor...\n");
 			e.printStackTrace();
 		}
 		
 		
+		calculationFinished = true;
 		//
 		out.print(2, "\n\nAstor SOM is in stream receiver mode now.");
 		while ((isRunning==true) && (userBreak==false)){
@@ -558,12 +618,12 @@ public class SomAstor
 
 	@Override
 	public void setUsedVariablesIndices(ArrayList<Integer> usedVariables) {
-		// TODO Auto-generated method stub
+		
 		
 	}
 
 	@Override
-	public synchronized void nodeChangeEvent(ExtensionalityDynamicsIntf extensionality, int result) {
+	public synchronized void nodeChangeEvent( ExtensionalityDynamicsIntf extensionality, long result) {
 		// called via interface from "ExtensionalityDynamics", which is part of the node and holds the indexes of the digested records
 		
 		/* it is also sent to actually referenced implementations of SomProcessIntf :
@@ -583,7 +643,7 @@ public class SomAstor
 		changedNodes.add(uuid); // important: using the GUID, not the serial.... the lattice maintains a map from NodeGuid to the node's Object reference
 		registeredChanges++;
 		
-		if ((registeredChanges>200) && (registeredChanges>changesThreshold)){
+		if ((registeredChanges > updatePeriodByChangeCount) && (registeredChanges>changesThreshold)){
 			
 			// copy to a clone
 			// ArrayList<Integer> changedNodes 
@@ -593,7 +653,7 @@ public class SomAstor
 			// place in "SomAssociativeStorage"
 			setChanged();
 			this.notifyObservers(changedNodes.clone());  // just for code reference: 138709
-			
+			 
 			registeredChanges=0;
 			changedNodes.clear(); 
 		}
@@ -654,6 +714,26 @@ public class SomAstor
 	public void setChangesThreshold(int limit) {
 		
 		changesThreshold = limit;
+	}
+
+
+	public int getPrepareAbstraction() {
+		return prepareAbstraction;
+	}
+
+
+	public void setPrepareAbstraction(int prepareAbstraction) {
+		this.prepareAbstraction = prepareAbstraction;
+	}
+
+
+	public int getUpdatePeriodByChangeCount() {
+		return updatePeriodByChangeCount;
+	}
+
+
+	public void setUpdatePeriodByChangeCount(int updatePeriodByChangeCount) {
+		this.updatePeriodByChangeCount = updatePeriodByChangeCount;
 	}
 
 }

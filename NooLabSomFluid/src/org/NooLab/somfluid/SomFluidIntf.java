@@ -2,6 +2,7 @@ package org.NooLab.somfluid;
 
 
 import org.NooLab.somfluid.core.engines.det.*;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 
 
 

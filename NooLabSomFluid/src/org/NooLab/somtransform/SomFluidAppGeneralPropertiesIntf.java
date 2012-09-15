@@ -59,7 +59,7 @@ public interface SomFluidAppGeneralPropertiesIntf {
 	 * this call here wraps to the original in SomFluidProperties
 	 * @return
 	 */
-	public Object getCollectibleColumn();
+	public int getCollectibleColumn();
 
 	String getApplicationContext();
 

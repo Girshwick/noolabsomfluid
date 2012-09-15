@@ -10,7 +10,7 @@ import org.NooLab.somfluid.core.engines.det.DSomCore;
 import org.NooLab.somfluid.data.DataSampler;
 import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
-import org.NooLab.somfluid.structures.DataTable;
+import org.NooLab.somfluid.storage.DataTable;
 import org.NooLab.somtransform.algo.AdaptiveDiscretization;
 import org.NooLab.utilities.logging.PrintLog;
 

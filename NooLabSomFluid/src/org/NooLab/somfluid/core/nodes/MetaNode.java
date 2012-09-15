@@ -27,7 +27,8 @@ import org.NooLab.somfluid.data.DataHandlingPropertiesIntf;
 import org.NooLab.somfluid.env.communication.*;
 import org.NooLab.somfluid.lattice.VirtualLattice;
 
-import org.NooLab.somfluid.structures.DataTableCol;
+import org.NooLab.somfluid.storage.DataTable;
+import org.NooLab.somfluid.storage.DataTableCol;
 import org.NooLab.somfluid.util.BasicSimpleStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatisticalDescriptionIntf;
@@ -215,10 +216,11 @@ public class MetaNode   extends
 	
 	public void evaluateExtensions() {
 		
-		int ix,np, rcount,rIndex;
+		int ix,np, rcount;
+		int rIndex;
 		double sv, minSimDist=99999999.9, maxSimDist = -1.01;
 		ArrayList<Double> intensNodeProfile, recordVector;
-		ArrayList<Integer> recIndexes;
+		ArrayList<Long> recIndexes;
 		
 		ProfileVectorMatcher recordSorter = new ProfileVectorMatcher(mppLevel,out);
 		ArrayList<Integer>  boundingindexlist = new ArrayList<Integer> ();
@@ -242,10 +244,13 @@ public class MetaNode   extends
 			// the extension of the node contains only the indices that point to 
 			// the underlying table as a record index, not by the index value of in the data record
 			
-			rIndex = extensionality.getRecordItem(i); 
+			rIndex = (int)Math.round(1.0*extensionality.getRecordItem(i)); // could be overflow ... 
+					 if (rIndex<0){
+						 rIndex = rIndex/0;
+					 }
+
 			
-			
-			recordVector = this.somData.getRecordByIndex( rIndex,2) ; // 2 == record from normalized data
+			recordVector = this.somData.getRecordByIndex( (long) rIndex,2) ; // 2 == record from normalized data
 
 			if (recordVector.size()>0){
 				recordSorter.addRecordToCollection(recordVector);
@@ -260,7 +265,10 @@ public class MetaNode   extends
 		
 		for (int i=0;i<listOfQualifiedIndexes.size();i++){
 			ix = listOfQualifiedIndexes.get(i).getIndex() ;
-			rIndex = extensionality.getRecordItem(i);
+			rIndex =  (int)Math.round(1.0*extensionality.getRecordItem(i)); // could be overflow condition
+			if (rIndex<0){
+				rIndex = rIndex/0;
+			}
 			listOfQualifiedIndexes.get(i).setIndex(rIndex) ;
 		}
 		recordSorter.clear();
@@ -291,7 +299,7 @@ public class MetaNode   extends
 		
 		for (int i=0;i<rn;i++){
 			
-			cdix = extensionality.getListOfRecords().get(i) ;
+			cdix = (int)Math.round(1.0*extensionality.getListOfRecords().get(i)) ;
 			double v = colValues.get(cdix);
 			if (v>=0){
 				vs = vs + v ;
@@ -556,24 +564,24 @@ if ((_new_w<0) || (_new_w>1.04)){
 		err=0;
 	}
 	
-	public void insertDataAndAdjust( ArrayList<Double> dataNewRecord, int recordIndexInTable) {
+	public void insertDataAndAdjust( ArrayList<Double> dataNewRecord, long recordIndexInTable) {
 
-		insertDataAndAdjust( dataNewRecord,recordIndexInTable,null,1, 1.0, -1 ) ;
+		insertDataAndAdjust( dataNewRecord,recordIndexInTable,-1L,1, 1.0, -1 ) ;
 	}
 	 
  
 	@Override  // inherited from 
 	public void insertDataAndAdjust( ArrayList<Double> dataNewRecord,
 									 // int nodeIndex,
-									 int recordIndexInTable,
-									 Object collectibleColumnInfo,
+									 long recordIndexInTable,
+									 long collectibleColumnInfo,
 									 int ithWinner,
 									 double learningrate ,
 									 int fillingLimitForMeanStyle) {
 		
 		int nodeExtSize, recordcount=0,columncount=0,_d, err=1;
 		double _old_pv , _new_pv, fieldValue, inheritedValue ;
-		boolean calcThis ;
+		boolean calcThisField ;
 		
 		NodeStatisticsIntf  nodeStats ;
 		BasicStatisticalDescriptionIntf fieldStats = null ;
@@ -647,18 +655,18 @@ if ((_new_w<0) || (_new_w>1.04)){
 								}
 											err = 5;
 				// work on the variable only if allowed
-				calcThis = (usevector.get(w) > 0) || (w==this.similarity.getIndexTargetVariable());
+				calcThisField = (usevector.get(w) > 0) || (w==this.similarity.getIndexTargetVariable());
 				
-				if (calcThis==false) {
+				if (calcThisField==false) {
 					if (calculateAllVariables) {
-						calcThis=true;	
+						calcThisField=true;	
 						// we may update all variables, the distance will be
 						// calc'd only for used ones anyway !
 						if (w == similarity.getIndexTargetVariable()) {
-							calcThis = false; // always to exclude: the index column
+							calcThisField = false; // always to exclude: the index column
 						}
 						if (somData.getVariables().getItem(w).getIsEmpty()>0 ){
-							calcThis = false;
+							calcThisField = false;
 						}
 						// || ( w == similarity.getIndexIdColumn() ))
 						// we include the target variable, so we can see the expected mean value,
@@ -666,7 +674,7 @@ if ((_new_w<0) || (_new_w>1.04)){
 					}
 				}
 											err = 7;
-				if (calcThis) {
+				if (calcThisField) {
 											err = 10;
 											
 					if (((nodeProfile.get(w) >= 0) && ( fieldValue >= 0)) && (fieldValue <= 1)) {
@@ -801,7 +809,7 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 				return ;
 			}
 
-			xDataVector = this.somData.getRecordByIndex(recordIndexInTable, 2);
+			xDataVector = this.somData.getRecordByIndex( (long) recordIndexInTable, 2);
 			
 			rix = extensionality.getListOfRecords().indexOf(recordIndexInTable) ;
 			
@@ -829,9 +837,9 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 	 *  @param quality   <0: the least similar records, >0: the most similar records, 0: all
 	 */
 	@Override
-	public ArrayList<Integer> exportDataFromNode( int countOfRecords, int quality, boolean removeExports) {
+	public ArrayList<Long> exportDataFromNode( int countOfRecords, int quality, boolean removeExports) {
 		
-		ArrayList<Integer> exportedRecords = new ArrayList<Integer>(); 
+		ArrayList<Long> exportedRecords = new ArrayList<Long>(); 
 		ProfileVectorMatcher recordSorter = new ProfileVectorMatcher( mppLevel,out );
 		ArrayList<Integer>  boundingindexlist = new ArrayList<Integer> ();
 		
@@ -858,8 +866,8 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 				// the extension of the node contains only the indices that point to 
 				// the underlying table as a record index, not by the index value of in the data record
 				
-				rIndex = extensionality.getRecordItem(i); 
-				xDataVector = this.somData.getRecordByIndex( rIndex,2) ; // 2 == record from normalized data
+				long rLIndex = extensionality.getRecordItem(i); 
+				xDataVector = this.somData.getRecordByIndex( rLIndex,2) ; // 2 == record from normalized data
 	
 				if (xDataVector.size()>0){
 					recordSorter.addRecordToCollection(xDataVector);
@@ -880,10 +888,10 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 				while ((k >= _AbsoluteMinimumForSplit) && (z<countOfRecords)){
 	
 					ix = sortedRecords.get(k).getIndex();
-					rIndex = extensionality.getRecordItem(ix); 
+					long rLIndex = extensionality.getRecordItem(ix); 
 					
 					if (removeExports){
-						xDataVector = this.somData.getRecordByIndex( rIndex,2) ;
+						xDataVector = this.somData.getRecordByIndex( rLIndex, 2) ;
 						
 						extensionality.removeRecordByIndex( ix );  
 						extensionality.getStatistics().removeRecordData(xDataVector) ;
@@ -893,7 +901,7 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 					}
 					
 					// finally add the index of the record in the data table to the list of exported indexes
-					exportedRecords.add(rIndex);
+					exportedRecords.add(rLIndex);
 					z++; k--;
 				}
 	
@@ -909,25 +917,26 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 	}
 
 	@Override
-	public ArrayList<Integer> exportDataFromNode( double smallestPortion, double largestPortion, int quality, boolean removeExports) {
+	public ArrayList<Long> exportDataFromNode( double smallestPortion, double largestPortion, int quality, boolean removeExports) {
 		// 
-		ArrayList<Integer> exportedRecords = new ArrayList<Integer>();
+		ArrayList<Long> exportedRecords = new ArrayList<Long>();
 		
 		
 		return exportedRecords;
 	}
 
 	@Override
-	public void importDataByIndex(ArrayList<Integer> recordIndexes) {
+	public void importDataByIndex(ArrayList<Long> exportedRecordIndexes) {
+		Long ix;
 		// 
-		int ix, nodesize = 0;
+		int nodesize = 0;
 		ArrayList<Double> dataNewRecord ;
 		
 		nodesize = extensionality.getCount() ;
 		
-		for (int i=0;i<recordIndexes.size();i++){
+		for (int i=0;i<exportedRecordIndexes.size();i++){
 			
-			ix = recordIndexes.get(i) ;
+			ix = exportedRecordIndexes.get(i) ;
 			if (ix>=0){
 				
 				dataNewRecord = somData.getNormalizedDataTable().getRowValuesArrayList(ix) ;
@@ -939,7 +948,7 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 	}
 
 	@Override
-	public ArrayList<Integer> getExtensionRecordsIndexValues() {
+	public ArrayList<Long> getExtensionRecordsIndexValues() {
 		/*
 		ArrayList<Long> recIndexValues=null;
 		
@@ -970,7 +979,8 @@ if ((_new_pv<0) || (_new_pv>1.04)){
 	public ArrayList<Double> getTargetVariableValues() {
 		
 		ArrayList<Double> values = new ArrayList<Double>();
-		int tvIndex, recordIndex;
+		int tvIndex;
+		long recordIndex;
 		double v;
 		
 		tvIndex = this.similarity.getIndexTargetVariable() ;

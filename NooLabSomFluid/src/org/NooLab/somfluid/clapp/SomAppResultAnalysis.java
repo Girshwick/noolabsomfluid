@@ -70,7 +70,7 @@ public class SomAppResultAnalysis 	implements 	Serializable,
 			sbmuIndex = sbmu.getIndex();
 			nodeIndex = sbmu.getIndex() ;
 			MetaNode node = somObject.soappNodes.getNode(nodeIndex) ;
-			node.getExtensionality().getListOfRecords().add(workerindex);
+			node.getExtensionality().getListOfRecords().add((long) workerindex);
 			nodePpv = node.getExtensionality().getPPV();
 			
 			toleratedEcr = soappProperties.getRiskAttitudeByECR();

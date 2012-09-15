@@ -22,7 +22,7 @@ import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
-import org.NooLab.somfluid.structures.DataTable;
+import org.NooLab.somfluid.storage.DataTable;
 
 
  
@@ -133,6 +133,10 @@ public class DSomDataPerception
 		 *   
 		 */
 		
+		ArrayList<Double> rowData = parentSom.somData.getNormalizedDataTable().getDataTableRow(0);
+		ArrayList<Double> xCol    = parentSom.somData.getNormalizedDataTable().getColumn(0).getCellValues() ;
+		
+		
 		int missedSamplingReturn=0;
 		int currentSomSize = 1 ;
 		
@@ -183,7 +187,9 @@ public class DSomDataPerception
 			
 			// currentRecordIndex = ixValMap.get(indexColValue) ;
 			
-			
+if (currentEpoch>=3){ 
+	f=f+1-1;
+}
 			
 			// get the record at the index position we just determined... 
 			// respecting use vector;  (weight vector will be considered later (!) in determining the similarity)
@@ -203,9 +209,7 @@ public class DSomDataPerception
 			// for instance, learning a property of the SOM itself, like the distance of the record to the
 			// class that represents x% of the data. Here the assignment of what is "target" changes all the time
 
-if (currentEpoch>=3){ 
-	f=f+1-1;
-}
+
 			int mppLevel = sfProperties.getMultiProcessingLevel() ;
 			// getBestMatchingNodes() should respect minimum fill, if the winner is already filled well 
 			winningNodeIndexes = getBestMatchingNodes( currentRecordIndex, testrecord, 5, boundingIndexList,mppLevel);
@@ -362,8 +366,12 @@ if ((currentEpoch+1)>=somSteps){
 		 
 		
  		if (_DEBUG)out.delay(130);
-		 
-		 
+ 		// rowData = parentSom.somData.getNormalizedDataTable().getDataTableRow(0);
+ 		xCol    = parentSom.somData.getNormalizedDataTable().getColumn(0).getCellValues() ;
+ 		
+ 		rowData.size();
+ 		double v = rowData.get(0);
+ 		v=v+1-1;
 	} // go() -> back to DSomCore and its Loop across Epochs
 
 	/**
@@ -1115,7 +1123,7 @@ if (extSizeInNeighbors.size()>0){
 		
 		ProfileVectorMatcher bmuSearch;
 		
-		ArrayList<Integer> exportedRecordIndexes = new ArrayList<Integer> () ;
+		ArrayList<Long> exportedRecordIndexes = new ArrayList<Long> () ;
 		
 		MetaNode  node, bmnNode;
 		ArrayList<Double> profilevalues;
@@ -1366,16 +1374,20 @@ if (this.currentEpoch==2){
 		updateWinningNode(	winningNodeIndexes, dataNewRecord,recordIndexInTable, currentLearningrate, -1);
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void updateWinningNode(	ArrayList<IndexDistanceIntf> winningNodeIndexes, 
-									ArrayList<Double> dataNewRecord,
-									int recordIndexInTable, 
+									ArrayList<Double> _dataNewRecord,
+									long recordIndexInTable, 
 									double currentLearningrate,
 									int fillingLimitForMeanStyle) {
 		
-		int nodeindex = -1,   wni ,maxWni ;
+		int  nodeindex = -1,   wni ,maxWni ;
 		MetaNodeIntf node;
 		double relativeInfluence=0.3, sizeFactor=1.0;
-	 
+		int cix;
+		ArrayList<Double> rowData ;
+		ArrayList<Double> dataNewRecord = new ArrayList<Double>( );
+		dataNewRecord = (ArrayList<Double>) _dataNewRecord.clone();
 		
 		try{
 			 
@@ -1396,6 +1408,7 @@ if (this.currentEpoch==2){
 				node = somLattice.getNode(nodeindex) ;	
 				
 				if (i<=0){
+					// first BMU
 					int iwn = i; 
 					if (this.currentEpoch+1==this.somSteps){
 						iwn=-1; // special treatment in the last epoch
@@ -1416,15 +1429,26 @@ if ((a==1) && (this.currentEpoch+1==this.somSteps)){
 	out.print(2,"upating node (ix:"+nodeindex+" , size now = "+sz+"  for guid : "+node.getNodeNumGuid()+" ") ;
 }
 
+					long collectedIndexValue = -1L;
+					cix = sfProperties.getCollectibleColumn();
+					
+					cix = this.somData.getVariables().getIdColumnIndex() ;
+					if (cix>=0){
+						int rix = (int)Math.round( 1.0* recordIndexInTable) ;
+						rowData = parentSom.somData.getNormalizedDataTable().getDataTableRow(rix);
+						recordIndexInTable = (int)Math.round( rowData.get(cix));
+					}
 					
 					// ... calculate new profile, calculate new variance, CoV
 					node.insertDataAndAdjust( dataNewRecord, recordIndexInTable, 
 											  // we need a  method that returns the desired column for this collection
-											  sfProperties.getCollectibleColumn(), // usually, this is recordIndexInTable, and then it will return null 		 
+											  collectedIndexValue, // usually, this is recordIndexInTable, and then it will return null 		 
 											  iwn,currentLearningrate,             // upon "null", nothing will be collected
 											  fillingLimitForMeanStyle );          
 					break;
 				}else{
+					// any other n-ary BMU (n>=2)
+					
 					// no data insertion, but only adopting the profile in an as-if mode
 					// note, that also the vicinity of those secondary winners will be updated!
 					

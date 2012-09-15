@@ -7,7 +7,6 @@ import java.util.Collections;
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.SomFluidTask;
 import org.NooLab.somfluid.components.post.OutResults;
 import org.NooLab.somfluid.components.post.VariableContrast;
 import org.NooLab.somfluid.components.post.VariableContrasts;
@@ -21,9 +20,10 @@ import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.OptimizerSettings;
-import org.NooLab.somfluid.structures.DataTableCol;
+import org.NooLab.somfluid.storage.DataTableCol;
 import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.structures.Variables;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 import org.NooLab.somscreen.EvoBasics;
 import org.NooLab.somscreen.EvoMetrices;
 import org.NooLab.somscreen.EvoMetrik;
@@ -356,7 +356,7 @@ public class SomModelDescription implements Serializable{
 		
 		/** the first list represents the target group, the second one the non-target group, 
 		 * as it is implied by the target variable and the the ECR */
-		ArrayList<ArrayList<Integer>> recordIndexes ;  
+		ArrayList<ArrayList<Long>> recordIndexes ;  
 		ArrayList<String> colHeaders;
 		
 		
@@ -403,9 +403,9 @@ public class SomModelDescription implements Serializable{
 			
 			vn = variableContrasts.size();
 			
-			recordIndexes = new ArrayList<ArrayList<Integer>>();
-			recordIndexes.add( new ArrayList<Integer>()) ;
-			recordIndexes.add( new ArrayList<Integer>()) ;
+			recordIndexes = new ArrayList<ArrayList<Long>>();
+			recordIndexes.add( new ArrayList<Long>()) ;
+			recordIndexes.add( new ArrayList<Long>()) ;
 			
 			colHeaders = somData.normalizedSomData.getColumnHeaders();
 			variableContrasts.setTvIndex( variables.getTvColumnIndex()) ;

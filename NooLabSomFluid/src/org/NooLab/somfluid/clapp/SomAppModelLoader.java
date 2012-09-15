@@ -9,11 +9,11 @@ import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidPluginSettings;
 import org.NooLab.somfluid.app.up.SomFluidStartup;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.core.categories.intensionality.ProfileVectorIntf;
+ 
 import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
-import org.NooLab.somfluid.structures.DataTable;
-import org.NooLab.somfluid.structures.DataTableCol;
+import org.NooLab.somfluid.storage.DataTable;
+import org.NooLab.somfluid.storage.DataTableCol;
 import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somfluid.util.XmlStringHandling;
@@ -918,7 +918,7 @@ public class SomAppModelLoader {
 	private void executeTransformationModel() throws Exception {
 		
 		String varLabel;
-		int ix, tix, rvix,ctvix, rdix,rdcix, popoVarIx;
+		int   rvix,ctvix,  popoVarIx;
 		
 		int[] tformats;
 

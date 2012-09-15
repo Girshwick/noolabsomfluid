@@ -7,7 +7,7 @@ import java.util.Collections;
 
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.structures.DataTable;
+import org.NooLab.somfluid.storage.DataTable;
 import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somtransform.algo.intf.AlgoTransformationIntf;

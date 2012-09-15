@@ -12,9 +12,10 @@ import org.NooLab.itexx.storage.somfluid.db.XColumns;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.app.astor.stream.SomDataStreamer;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
 import org.NooLab.somfluid.env.communication.DataglueReceptorIntf;
-import org.NooLab.somfluid.structures.DataTable;
+ 
+import org.NooLab.somfluid.storage.DataTable;
+import org.NooLab.somfluid.structures.VariableSettingsHandlerIntf;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;

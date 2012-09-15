@@ -15,6 +15,7 @@ import org.NooLab.somfluid.properties.SettingsTransporter;
 import org.NooLab.somfluid.properties.SpriteSettings;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
+import org.NooLab.structures.InstanceProcessControlIntf;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.net.GUID;
 
@@ -62,14 +63,14 @@ public abstract class SomFluidAppPropertiesAbstract
 	
 	protected String supervisedDirectory = "";
 	
-	
+	transient FileOrganizer fileorg;
 	transient protected FileOrganizer fileOrganizer;
 	transient DFutils fileutil = new DFutils();
 	
 	// ========================================================================
 	public SomFluidAppPropertiesAbstract(){
 		
-		FileOrganizer fileorg = new FileOrganizer ();
+		fileorg = new FileOrganizer ();
 		
 	}
 	// ========================================================================
@@ -108,7 +109,7 @@ public abstract class SomFluidAppPropertiesAbstract
 	public boolean isITexxContext() {
 		//
 		boolean rB=false;
-		rB = applicationContext.contentEquals( SomFluidProperties._APP_CONTEXT_ITEXX);
+		rB = applicationContext.contentEquals( InstanceProcessControlIntf._APP_CONTEXT_ITEXX);
 		
 		return rB;
 	}
@@ -201,7 +202,7 @@ public abstract class SomFluidAppPropertiesAbstract
 	}
 
 	@Override
-	abstract public Object getCollectibleColumn() ;
+	abstract public int getCollectibleColumn() ;
 	
 	
 	

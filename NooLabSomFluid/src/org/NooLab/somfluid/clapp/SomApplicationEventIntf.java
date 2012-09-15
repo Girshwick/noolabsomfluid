@@ -2,7 +2,7 @@ package org.NooLab.somfluid.clapp;
 
 import org.NooLab.somfluid.SomFluidMonoResultsIntf;
 // import org.NooLab.somfluid.SomFluidStateDescriptionIntf;
-import org.NooLab.somfluid.SomFluidTask;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 import org.NooLab.utilities.callback.ProcessFeedBackContainerIntf;
 import org.NooLab.utilities.callback.ProcessFeedBackIntf;
 

@@ -323,6 +323,7 @@ public class SettingsTransporter  extends XMessageAbs implements XMessageIntf{
 				
 			msBuilder = msBuilder.e("general");
 			
+			
 					msBuilder = msBuilder
 									.e("variablescount").a("value", ""+ ms.variables.size() ).up()   
 									.e("targetVariableCandidates").a("value", ""+ serializeMonoList(ms.targetVariableCandidates) ).up()  
@@ -335,7 +336,7 @@ public class SettingsTransporter  extends XMessageAbs implements XMessageIntf{
 									.e("autoSomSizing").a("value", ""+ booleanize( ms.autoSomSizing ) ).up()  
 									.e("autoSomDifferentiate").a("value", ""+ booleanize( ms.autoSomDifferentiate ) ).up()  
 									.e("somCrystalization").a("value", ""+ booleanize( ms.somCrystalization ) ).up()  
-									.e("somGrowthMode").a("value", ""+ ms.somGrowthMode ).up() 
+									.e("somGrowthMode").a("value", ""+ serializeMonoList(ms.somGrowthModes) ).up() 
 									.e("somGrowthControl").a("value", ""+ ms.somGrowthControl ).up() 
 									.e("somGrowthControlParams").a("value", ""+ serializeMonoList(ms.somGrowthControlParams) ).up()  
 									.e("activationOfGrowing").a("value", ""+ booleanize(ms.activationOfGrowing) ).up()  

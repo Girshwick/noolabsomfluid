@@ -6,8 +6,8 @@ import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.env.data.NormValueRangesIntf;
 import org.NooLab.somfluid.storage.FileOrganizer;
-import org.NooLab.somfluid.structures.DataTable;
-import org.NooLab.somfluid.structures.DataTableCol;
+import org.NooLab.somfluid.storage.DataTable;
+import org.NooLab.somfluid.storage.DataTableCol;
 import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somsprite.AnalyticFunctionTransformationsIntf;
@@ -931,6 +931,7 @@ if (varLabel.toLowerCase().contains("_c")){
 					
 				} // while ->
 				
+				dataTableNormalized.createRowOrientedTable() ; 
 				
 			}catch(Exception e){
 				out.printErr(1, errmsg);

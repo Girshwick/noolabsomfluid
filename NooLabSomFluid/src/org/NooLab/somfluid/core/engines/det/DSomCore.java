@@ -3,9 +3,7 @@ package org.NooLab.somfluid.core.engines.det;
 import java.util.ArrayList;
 
 import org.NooLab.field.FieldIntf;
-import org.NooLab.somfluid.SomFluidMonoTaskIntf;
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.SomFluidTask;
  
 import org.NooLab.somfluid.app.astor.AstorSomField;
 import org.NooLab.somfluid.components.variables.SomVariableHandling;
@@ -22,10 +20,12 @@ import org.NooLab.somfluid.data.DataSampler;
 import org.NooLab.somfluid.env.communication.LatticeFutureVisor;
 import org.NooLab.somfluid.env.communication.NodeTask;
 import org.NooLab.somfluid.properties.ModelingSettings;
-import org.NooLab.somfluid.structures.DataTable;
-import org.NooLab.somfluid.structures.DataTableCol;
+import org.NooLab.somfluid.storage.DataTable;
+import org.NooLab.somfluid.storage.DataTableCol;
 import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.structures.Variables;
+import org.NooLab.somfluid.tasks.SomFluidMonoTaskIntf;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 import org.NooLab.somscreen.EvoBasics;
 import org.NooLab.somscreen.EvoMetrices;
 import org.NooLab.somscreen.SomQuality;
@@ -504,7 +504,7 @@ public class DSomCore {
 		int  limitforConsideredRecords = 0, actualRecordCount  ;
 		
 		int currentEpoch =0;
-		 
+		int changeEventActive = 0; 
 		
 		try{
 			modset = dSom.modelingSettings ;	
@@ -560,7 +560,9 @@ out.print(5, ".                        (sim) : "+str2);
 											if (displayProgress(0)){
 												out.print(outlevel, "Som learning is starting on "+dataSampler.getTrainingSet().size()+" records from training sample.");
 											}
-											
+		    changeEventActive = 0;
+		    
+		    
 			while ((currentEpoch < somSteps) && (dSom.getUserbreak()==false)) {
 				 	/*
 				 	 _SOMDISPLAY_PROGRESS_NONE  = -1 ;
@@ -580,9 +582,16 @@ if (currentEpoch>=3){
 	int nn;
 	nn=0;
 }
+
+                
+                if (currentEpoch == somSteps-1){
+                	changeEventActive = 1;
+				}
 				// before (re-)starting, we have to reset the node statistics, and the list of entries, 
 				// except the weights of the vector
-				clearNodesExtension( currentEpoch );
+				clearNodesExtension( currentEpoch , changeEventActive );
+				
+				
 				
 				// sample size is dependent on epoch and number of records
 				// adjustSampleAndSteps( currentEpoch, absoluteRecordCount, globalLimit ); // 
@@ -619,7 +628,7 @@ if (currentEpoch>=3){
 			
 		}catch(Exception e){
 			if (LogControl.Level >=2){
-				// e.printStackTrace();
+				 e.printStackTrace();
 			}else{
 				out.printErr(1, e.getMessage());
 			}
@@ -834,7 +843,7 @@ if (currentEpoch>=3){
 
  
 	
-	private void clearNodesExtension( int currentEpoch) {
+	private void clearNodesExtension( int currentEpoch, int changeEventActive) {
 		
 		NodeTask task;
 		LatticeFutureVisor latticeFutureVisor;
@@ -854,7 +863,7 @@ if (currentEpoch>=3){
 				ints = node.getIntensionality() ;
 				
 				ext.clear();
-				
+				ext.setChangeEventIndication(changeEventActive) ;
 			}
 
 		}catch(Exception e){

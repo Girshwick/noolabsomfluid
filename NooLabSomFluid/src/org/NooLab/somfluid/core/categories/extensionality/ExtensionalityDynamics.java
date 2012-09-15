@@ -44,12 +44,12 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	DataSourceIntf somData;
 	SomProcessIntf processHost;
 	
-	ArrayList<Integer> listOfRecords = new ArrayList<Integer>();
+	ArrayList<Long> listOfRecords = new ArrayList<Long>();
 	
 	// in case of Astor in WebSom, this could be the the Index of the fingerprint entry of the word
 	// we store the frequency along with it, additionally, we need an external process that is 
 	// unificating multiple entries of the same id-value 
-	ArrayList<Object> listOfSecondaryId = new ArrayList<Object>(); // simple or ValuePair etc.. literally, anything
+	ArrayList<Long> listOfSecondaryId = new ArrayList<Long>(); // simple or ValuePair etc.. literally, anything
 	
 	/* TODO: needed: 
 	 *          - a statistical description, 
@@ -74,6 +74,7 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	private int support;
 	
 	long nodeNumGuid = -1L, serialId= -1L;
+	private int changeEventIndication;
 	
 	// ========================================================================
 	public ExtensionalityDynamics( DataSourceIntf somdata , SomProcessIntf processhost, int somType){
@@ -98,6 +99,14 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	// ========================================================================
 	 
 
+	@Override
+	public void setChangeEventIndication(int changeEventActive) {
+		 
+		changeEventIndication = changeEventActive;
+	}
+	
+	
+	
 	@Override
 	public long getNodeNumGuid() {
 		 
@@ -133,15 +142,15 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	
 	}
 
-	public void setListOfRecordsAsTable( ArrayList<Integer> records){
+	public void setListOfRecordsAsTable( ArrayList<Long> records){
 		listOfRecords = records;
 	}
 
 	
-	public void addRecordByIndex( int index, Object collectibleColumnInfo){
+	public void addRecordByIndex( long index, long collectibleColumnInfo){
 		addRecordByIndex(  index, collectibleColumnInfo, -1, false) ;
 	}
-	public void addRecordByIndex( int index, Object collectibleColumnInfo,boolean informUpstream){
+	public void addRecordByIndex( long index, long collectibleColumnInfo,boolean informUpstream){
 		addRecordByIndex(  index, collectibleColumnInfo, 1, informUpstream) ;
 	}
 	/**
@@ -150,7 +159,7 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	 * @param returnMode 0=size, 1=the inserted index
 	 * @return
 	 */
-	public int addRecordByIndex( int index, Object collectibleColumnInfo, int returnMode ){
+	public long addRecordByIndex( long index, long collectibleColumnInfo, int returnMode ){
 		return addRecordByIndex(  index, collectibleColumnInfo,-1, false) ;
 	}
 	
@@ -161,25 +170,29 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	 * @param informUpstream
 	 * @return
 	 */
-	public int addRecordByIndex( int index, Object collectibleColumnInfo,int returnMode , boolean informUpstream){
+	public long addRecordByIndex( long index, long collectibleColumnInfo,int returnMode , boolean informUpstream){
 		// take it to the list, but only if it is not there yet
 		
-		int size = 0, result=-1;
+		int size = 0;
+		long result=-1;
 		
 		if (listOfRecords.indexOf(index)<0){
 			listOfRecords.add(index) ;
 			// release an event ... ? 
 			size = listOfRecords.size() ;
 			
-			if (collectibleColumnInfo != null){
-				listOfSecondaryId.add( collectibleColumnInfo );
+			if (collectibleColumnInfo >=0 ){
+				long infoVal = collectibleColumnInfo;
+				if (infoVal>=0){
+					listOfSecondaryId.add( collectibleColumnInfo );
+				}
 			}
 			if (returnMode<=0){
 				result = size;
 			}else{
 				result=index;
 			}
-			if ((informUpstream) && (somData!=null)){
+			if ((informUpstream) && (somData!=null) && (changeEventIndication>0) && (processHost!=null)){
 				somData.nodeChangeEvent( (ExtensionalityDynamicsIntf)this, result );
 				processHost.nodeChangeEvent( (ExtensionalityDynamicsIntf)this, result );
 			}
@@ -202,29 +215,32 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	}
 	
 	@Override
-	public int getRecordItem(int index) {
+	public Long getRecordItem(int index) {
 		  
 		return listOfRecords.get(index);
 	}
 
-	public ArrayList<Integer> getListOfRecords(){
+	public ArrayList<Long> getListOfRecords(){
 		return listOfRecords ;
 	}
 
 	
 	@Override
-	public ArrayList<Object> getListOfSecondaryId() {
+	public ArrayList<Long> getListOfSecondaryId() {
 		return listOfSecondaryId;
 	}
 
 	@Override
-	public void setListOfSecondaryId(ArrayList<Object> collectibleObj) {
+	public void setListOfSecondaryId(ArrayList<Long> collectibleObj) {
 		listOfSecondaryId = collectibleObj;
 	}
 
+	/*
 	public void addSecondaryIndexValue( long idvalue ){
 		listOfSecondaryId.add( new ValuePair(idvalue, -1) );
-	}
+	}   this would be possible if it would be Object....
+	*/
+	
 	
 	@Override
 	public int getCountSecondaryIndex() {
@@ -327,6 +343,8 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 	public void setNpv(double npv) {
 		this.npv = npv;
 	}
+
+
 
 	 
 	

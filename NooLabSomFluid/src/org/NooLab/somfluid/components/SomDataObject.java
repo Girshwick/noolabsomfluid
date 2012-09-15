@@ -7,10 +7,9 @@ import java.util.*;
 
 
 import org.NooLab.itexx.storage.DataStreamProviderIntf;
-import org.NooLab.itexx.storage.TexxDataBaseSettings;
 import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
 import org.NooLab.itexx.storage.docsom.AstorDocSomDataBase;
-import org.NooLab.itexx.storage.docsom.AstorDocSomDataBaseIntf;
+
 import org.NooLab.itexx.storage.somfluid.db.DataBaseAccessDefinition;
 import org.NooLab.somfluid.SomDataDescriptor;
 import org.NooLab.somfluid.SomFluidFactory;
@@ -30,12 +29,15 @@ import org.NooLab.somfluid.env.data.SomTexxDataBase;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
+import org.NooLab.somfluid.storage.DataTable;
+import org.NooLab.somfluid.storage.DataTableCol;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.PersistentAgentIntf;
-import org.NooLab.somfluid.structures.DataTable;
-import org.NooLab.somfluid.structures.DataTableCol;
 import org.NooLab.somfluid.structures.Variable;
+import org.NooLab.somfluid.structures.VariableSettingsHandlerIntf;
 import org.NooLab.somfluid.structures.Variables;
+
+
 import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.somtransform.SomTransformerIntf;
 import org.NooLab.somtransform.TransformationModel;
@@ -304,7 +306,7 @@ public class SomDataObject 	implements      Serializable,
 	}
 	
 
-	public void registerDataReceptor(DataFileReceptorIntf datareceptor) {
+	public void registerDataReceptor(DataFileReceptorIntf datareceptor){
 		dataReceptor = datareceptor;
 		
 	}
@@ -963,7 +965,7 @@ public class SomDataObject 	implements      Serializable,
 	 *            = 2 : normalized data
 	 */
 	@Override
-	public ArrayList<Double> getRecordByIndex(int rIndex , int sourceType) {
+	public ArrayList<Double> getRecordByIndex( long rIndex , int sourceType) {
 		
 		ArrayList<Double> recordData = new ArrayList<Double>(); 
 		DataTable tdata;
@@ -985,7 +987,7 @@ public class SomDataObject 	implements      Serializable,
 		
 		try{
 			
-			recordData = tdata.getDataTableRow(rIndex) ;
+			recordData = tdata.getDataTableRow( (int)Math.round(1.0*rIndex)) ;
 			
 		}catch(Exception e){
 			e.printStackTrace() ;
@@ -1050,6 +1052,8 @@ public class SomDataObject 	implements      Serializable,
 			actualizeVariables();
 			vectorSize = variables.size() ;
 			
+			VariableSettingsHandlerIntf vsi;
+			 
 			variables.setVariableSettings( sfProperties.getVariableSettings() ); 
 			// --- transforming data ------------------------------------------
 			
@@ -1078,16 +1082,17 @@ public class SomDataObject 	implements      Serializable,
 			// normalizing data: only now the data are usable
 			// note that index columns and string columns need to be excluded
 			// which we can do via the format[] value : use only 1<= f <= 7, exclude otherwise
-			
+					out.delay(400);
 			// normalizedSomData = transformer.normalizeData(variables);   
 			somTransformerIntf.normalizeData(); // just adding everywhere LinNorm, caring for output data
-			
+				    out.delay(400);
 			// creating the usable table as an instance of DataTable
 			// creates columns by copying out-data from transformation stack into columns (list of columns = of DataTable)  
 			normalizedSomData = somTransformerIntf.writeNormalizedData() ; 
 			normalizedSomData.setName("normalized table");
 			
-			if (applyExtendedPreparations>0){
+			// where is the request for this ?
+			if (applyExtendedPreparations>1){ // should be actually ">0"
 			// shifting distributions (kurtosis, skewness), 
  			// splitting (deciling) variables based on histogram splines, outlier compression, NVE (thus quite expensive) 
  			// this also extends the basic transformer model
@@ -1101,6 +1106,7 @@ public class SomDataObject 	implements      Serializable,
 				normalizedSomData = transformer.writeNormalizedData() ; 
 				normalizedSomData.setName("normalized table");
 				*/
+				
 			}
 			
 			somTransformerIntf.createDataDescriptions();
@@ -1117,7 +1123,7 @@ public class SomDataObject 	implements      Serializable,
 			out.print(2, "clearing memory done.");
 			
 			// unloading raw data into a tmp binary... due to problems with heap space
-			// TODO XXX  YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+			// TODO always care for heap settings, especially in production jar!
 			
 			// OutOfMemoryError for large tables...
 			normalizedSomData.createRowOrientedTable( ) ;
@@ -1669,7 +1675,7 @@ public class SomDataObject 	implements      Serializable,
 	 * @param extensionality
 	 * @param result
 	 */
-	public void nodeChangeEvent( ExtensionalityDynamicsIntf extensionality, int result) {
+	public void nodeChangeEvent( ExtensionalityDynamicsIntf extensionality, long result) {
 		//  
 		// for registration and handling : fork immediately into container !!
 		long nodeID, uuid;
@@ -1682,10 +1688,15 @@ public class SomDataObject 	implements      Serializable,
 		 *    - SomAstor
 		 */
 	}
+ 
+
+	public void updateVariableLabels() {
+		
+		this.variableLabels = new ArrayList<String>( variables.getLabelsForVariablesList(variables) );
+	}
 
 
 
-	
 
 
 	

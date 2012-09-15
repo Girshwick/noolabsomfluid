@@ -48,6 +48,7 @@ import org.NooLab.itexx.storage.DbConnector;
 import org.NooLab.itexx.storage.DbLogin;
 import org.NooLab.itexx.storage.DbUser;
 import org.NooLab.itexx.storage.MetaData;
+import org.NooLab.itexx.storage.docsom.iciql.Randomdocuments;
 import org.NooLab.itexx.storage.randomwords.iciql.Contexts;
 
 
@@ -116,6 +117,8 @@ public class AstorDataBase implements ConnectorClientIntf{
 	PrintLog out = new PrintLog(2,false);
 	StringedObjects strObj = new StringedObjects();
 	private SomTexxDataBase randomWordsDb;
+
+	private boolean prepareFingerprints=true;
 	
 	// ========================================================================
 	public AstorDataBase( AstorProperties astorProps){
@@ -172,11 +175,13 @@ public class AstorDataBase implements ConnectorClientIntf{
 	}
 	
 	
-	public boolean prepareDatabase( String expected, int keepOpenAfterPrepare ) throws Exception {
+	public boolean prepareDatabase( String expected, int keepOpenAfterPrepare, boolean prepareFingerprints ) throws Exception {
 		boolean rB=false;
 		String appnameShortStr;
 		 
 		try {
+			
+			this.prepareFingerprints = prepareFingerprints;
 			// remove any lock 
 			if (connection==null){
 				dataBaseBasics.removeLock(connection , storageDir);
@@ -196,8 +201,11 @@ public class AstorDataBase implements ConnectorClientIntf{
 				appnameShortStr = sfProperties.getPersistenceSettings().getAppNameShortStr() ;
 				
 				dbHandler = new DataBaseHandler( this ) ;
+			
 				databaseName = dbHandler.getDataBaseNameFromResource( xmlstr,  appnameShortStr, expected ) ;
-			}
+			} // this would be empty if no match is found, if expected is the full name without wildcards,
+			  // it will return the expected name,else the found one
+			
 			
 			int servermodeFlag=0;
 			if (accessMode.contentEquals("tcp")){
@@ -230,7 +238,7 @@ public class AstorDataBase implements ConnectorClientIntf{
 				getRelocatedH2Dir(storageDir) ;
 			}
 			databaseFile = connect( databaseName, h2Dir, servermodeFlag ) ;
-			
+			// ??? reported url is empty....
 			
 			
 			rB = databaseFile.length()>0;
@@ -463,7 +471,7 @@ public class AstorDataBase implements ConnectorClientIntf{
 			out.printErr(1, "\n\nretry...");
 			
 			connection=null;
-			prepareDatabase(databaseName,1) ;
+			prepareDatabase(databaseName,1,prepareFingerprints) ;
 			
 			iciDb = Db.open(connection);
 			getJdbMeta(connection);
@@ -499,7 +507,7 @@ public class AstorDataBase implements ConnectorClientIntf{
 		dataBaseBasics.removeLock(connection , getRelocatedH2Dir(storageDir));
 
 		try {
-			prepareDatabase( dbNamePattern,1 );
+			prepareDatabase( dbNamePattern,1,prepareFingerprints );
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -586,7 +594,12 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 			
 		} catch (Exception e) {
 			r = -7;
-			out.printlnErr(1, "Potential Problem met in createServer(): "+ e.getMessage());
+			String estr = e.getMessage();
+			if (estr.contains("Address already in use:")){
+				out.printlnErr(3, "Potential problem met in createServer(): "+ estr);
+			}else{
+				out.printlnErr(1, "Problem met in createServer(): "+ estr);
+			}
 		}
 		//createTcpServer(args).start();
 
@@ -658,7 +671,7 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 				if (connection.isClosed()==false){
 					databaseUrl = url;
 				}
-				
+				databaseUrl = url;
 			}
 			 
 			// CALL DATABASE_PATH(); 
@@ -878,7 +891,11 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 					nodecontentTable = "nodecontent" ;
 				}
 				
-				fpString = (new FingerPrint(sampler)).createFingerprint( 20, 6,";") ; // will be added as prefix to the fingerprints of the nodes 
+				fpString = "";
+				if (prepareFingerprints){
+					// this is quite slow, so avoid it if possible
+					fpString = (new FingerPrint(sampler)).createFingerprint( 20, 6,";") ; // will be added as prefix to the fingerprints of the nodes 
+				}
 				s.somid = somId;
 				s.tablename = nodecontentTable;
 				s.timestamp = System.currentTimeMillis() ;
@@ -1037,7 +1054,45 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 		
 	}
 
-	public Contexts getContextsEntryByRecId(int rec) {
+	public Randomdocuments getRandomDocEntryByRecId(Long rec) {
+		
+		Randomdocuments rdoc = new Randomdocuments();
+		
+		List<Randomdocuments> rds;
+		Db iciDb;
+
+		
+		try{
+			
+			// is of type SomTexxDataBase, which coves both L1=contexts and L2=randomdocuments
+			if (randomWordsDb==null){
+				throw(new Exception("Database <randomwords> is not available, nodecontent for database <astornodes> can't be created.")) ;
+			}
+			iciDb = randomWordsDb.getIciDb() ;
+			
+			if (iciDb.getConnection().isClosed()){      
+
+				iciDb = dataBaseBasics.iciOpenTolerant( databaseUrl, "sa","sa") ;
+			}	
+			// SELECT * FROM RANDOMDOCUMENTS where DOCID = 495;
+			
+			rds = iciDb.from(rdoc).where(rdoc.id).is((long)rec).select() ; // here we ask a table of structure astordocs
+			
+			if ((rds!=null) && (rds.size()>0)){
+				rdoc = rds.get(0);
+			}else{
+				rdoc.clear();
+			}
+
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
+		return rdoc;
+	}
+	
+	public Contexts getContextsEntryByRecId(Long rec) {
 		
 		Contexts c = new Contexts();
 		List<Contexts> cs;
@@ -1065,6 +1120,8 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 			
 			if ((cs!=null) && (cs.size()>0)){
 				c = cs.get(0);
+			}else{
+				c.clear();
 			}
 			
 		}catch(Exception e){
@@ -1075,7 +1132,7 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 		return c;
 	}
 
-	public long insertUpdateNodeContent(long somID, long nodeNumGuid, long docid, long contextId, long fpindex) {
+	public long insertUpdateNodeContent( long somID, long nodeNumGuid, long docid, long contextId, long fpindex) {
 		 
 		long dbKey=-1L, result=-1L;
 		long _max = 0L;
@@ -1101,6 +1158,10 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 			
 			if ((ncs!=null) && (ncs.size()>0)){
 				nc = ncs.get(0);
+				
+				if (nc.docid>=0){
+					// update
+				}
 			}else{
 				// not known....
 				// our own increment of id :

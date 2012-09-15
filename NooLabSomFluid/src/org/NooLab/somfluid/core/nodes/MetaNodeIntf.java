@@ -41,7 +41,7 @@ public interface MetaNodeIntf extends NodeObserverIntf {
 
 	public ExtensionalityDynamicsIntf getExtensionality()  ;
 
-	public ArrayList<Integer> getExtensionRecordsIndexValues() ;
+	public ArrayList<Long> getExtensionRecordsIndexValues() ;
 
 	public DataSourceIntf getSomData() ;
 
@@ -56,8 +56,8 @@ public interface MetaNodeIntf extends NodeObserverIntf {
 
 	public void insertDataAndAdjust( ArrayList<Double> dataNewRecord,
 			 						 // int nodeIndex,
-			 						 int recordIndexInTable,
-			 						 Object collectibleColumnInfo,
+			 						 long recordIndexInTable,
+			 						 long collectibleColumnInfo,
 			 						 int ithWinner,
 			 						 double learningrate,
 			 						 int fillingLimitForMeanStyle);
@@ -72,11 +72,11 @@ public interface MetaNodeIntf extends NodeObserverIntf {
 	*/
 	public void removeDataAndAdjust( int recordIndexInTable,  double learningrate ) ;
 
-	public ArrayList<Integer> exportDataFromNode(int countOfRecords, int quality, boolean removeExports);
+	public ArrayList<Long> exportDataFromNode(int countOfRecords, int quality, boolean removeExports);
 
-	public ArrayList<Integer> exportDataFromNode(double smallestPortion, double largestPortion, int quality, boolean removeExports);
+	public ArrayList<Long> exportDataFromNode(double smallestPortion, double largestPortion, int quality, boolean removeExports);
 
-	public void importDataByIndex( ArrayList<Integer> recordIndexes );
+	public void importDataByIndex( ArrayList<Long> recordIndexes );
 
 	public ArrayList<Double> getTargetVariableValues();
  

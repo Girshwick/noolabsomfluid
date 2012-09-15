@@ -23,6 +23,7 @@ import org.NooLab.somfluid.core.categories.similarity.SimilarityCalculator;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.core.engines.det.SomMapTable;
 import org.NooLab.somfluid.core.nodes.ClusterNode;
+import org.NooLab.somfluid.structures.AnalyticFunctionSpriteImprovementIntf;
 import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somsprite.func.SpriteFuncIntf;
 import org.NooLab.utilities.datatypes.IndexedDistances;
@@ -87,7 +88,7 @@ public class DependencyScreener {
 	
 	ArrayList<ArrayList<AnalyticFunctionSpriteImprovement>> bestEstimatedUtilitiesList = new ArrayList<ArrayList<AnalyticFunctionSpriteImprovement>>();
 	ArrayList<AnalyticFunctionSpriteImprovement> bestEstimatedUtilities = new ArrayList<AnalyticFunctionSpriteImprovement>();
-	ArrayList<AnalyticFunctionSpriteImprovement> knownTransformations;
+	ArrayList<AnalyticFunctionSpriteImprovementIntf> knownTransformations;
 	
 	ArrayList<Integer> lastBeuCheckIndex = new ArrayList<Integer>();
 	ArrayList<Integer> beusBestN = new ArrayList<Integer>();
