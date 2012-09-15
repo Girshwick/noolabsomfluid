@@ -6,7 +6,7 @@ public interface IndexDistanceIntf {
 
 	public int getIndex() ;
 	
-	public void setIndex(int index)  ;
+	public void setIndex(int rIndex)  ;
 
 	public double getDistance() ;
 

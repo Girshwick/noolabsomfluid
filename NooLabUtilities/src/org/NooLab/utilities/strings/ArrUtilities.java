@@ -2305,6 +2305,8 @@ public class ArrUtilities {
 		String cn1, cn2 ;
 		double v1=0,v2=0;
 		int vi1=0,vi2=0;
+		long vo1=0,vo2=0 ;
+		
 		String s1="",s2="";
 		
 		cn1 = obj1.getClass().getSimpleName().toLowerCase() ;
@@ -2316,6 +2318,9 @@ public class ArrUtilities {
 		if (cn1.startsWith("int")){
 			vi1 = (Integer)obj1;
 		}
+		if (cn1.startsWith("long")){
+			vo1 = (Long)obj1;
+		}
 		if (cn1.startsWith("string")){
 			s1 = (String)obj1;
 		}
@@ -2326,6 +2331,10 @@ public class ArrUtilities {
 		if (cn2.startsWith("int")){
 			vi2 = (Integer)obj2;
 			if (vi1==vi2)result=0;
+		}
+		if (cn2.startsWith("long")){
+			vo2 = (Long)obj2;
+			if (vo1==vo2)result=0;
 		}
 		if (cn2.startsWith("string")){
 			s2 = (String)obj2;

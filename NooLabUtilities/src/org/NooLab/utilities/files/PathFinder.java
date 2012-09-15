@@ -4,6 +4,9 @@ public class PathFinder {
 
 	public String getAppBinPath( Class clzz, boolean useJarAsBase) {
 		
+		if (clzz==null){
+			return "";
+		}
 		String binpath = clzz.getProtectionDomain().getCodeSource().getLocation().toString().substring(6);
 		
 		binpath = binpath.replace("\\", "/") ;
