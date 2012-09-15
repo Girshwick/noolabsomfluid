@@ -11,11 +11,11 @@ import org.NooLab.itexx.storage.TexxDataBaseSettings;
 import org.NooLab.somfluid.app.up.SomFluidStartup;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.data.VariableSettingsHandler;
-import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
 
 import org.NooLab.somfluid.properties.SomFluidSettings;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
+import org.NooLab.somfluid.structures.VariableSettingsHandlerIntf;
 import org.NooLab.somfluid.util.XmlStringHandling;
 import org.NooLab.somtransform.SomFluidXMLHelper;
 import org.NooLab.somtransform.algo.externals.AlgorithmPluginsLoader;
@@ -139,8 +139,8 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 	       			// then the coarse-som preprocessing will be organized, if it is allowed
 
 		
-		sfProperties.setGrowthMode( ModelingSettings._SOM_GROWTH_PRESELECT);// growth modes can be combined ! PRESELECT -> coarse-som preprocessing 
-		sfProperties.setGrowthMode( ModelingSettings._SOM_GROWTH_LATERAL); //  
+		sfProperties.addGrowthMode( ModelingSettings._SOM_GROWTH_PRESELECT);// growth modes can be combined ! PRESELECT -> coarse-som preprocessing 
+		sfProperties.addGrowthMode( ModelingSettings._SOM_GROWTH_LATERAL); //  
 		sfProperties.removeGrowthMode( ModelingSettings._SOM_GROWTH_LATERAL); 
 		sfProperties.setGrowthSizeAdaptationIntensity( 5 ) ;			   // 5=normal == default, 1=greedy -> large nodes, rather small lattice, 10=allowing sparsely filled nodes 
 				

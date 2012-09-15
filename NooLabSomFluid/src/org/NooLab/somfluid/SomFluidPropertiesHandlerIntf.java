@@ -2,7 +2,7 @@ package org.NooLab.somfluid;
 
 import java.io.IOException;
 
-import org.NooLab.somfluid.data.VariableSettingsHandlerIntf;
+import org.NooLab.somfluid.structures.VariableSettingsHandlerIntf;
 
 
 

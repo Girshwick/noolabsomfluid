@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
  
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
+import org.NooLab.somfluid.tasks.SomFluidTask;
  
 import org.NooLab.somtransform.SomFluidXMLHelper;
 import org.NooLab.somtransform.SomTransformer;
@@ -102,7 +103,7 @@ public class SomObjects {
 				taskguid = items.get(i).taskGuid;
 				_task = sfFactory.somFluidModule.somTasks.getItemByGuid(taskguid);
 				
-				if ((_task!=null) && (_task.isCompleted) && (_task.isExported()==false)){
+				if ((_task!=null) && (_task.isCompleted()) && (_task.isExported()==false)){
 					
 					// there we collect everything about the SOM created by this task...
 					smbuilder = extractSomModel( i, items.get(i).taskGuid );

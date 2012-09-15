@@ -1,6 +1,8 @@
 package org.NooLab.somfluid.env.data;
 
-import org.NooLab.somfluid.structures.DataTable;
+import org.NooLab.somfluid.storage.DataTable;
+
+ 
 
 public interface DataFileReceptorIntf {
 

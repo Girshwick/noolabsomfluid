@@ -4,6 +4,7 @@ import org.NooLab.somfluid.clapp.SomAppModelLoader;
 import org.NooLab.somfluid.clapp.SomAppResultAnalyses;
 import org.NooLab.somfluid.clapp.SomApplicationEventIntf;
 import org.NooLab.somfluid.components.SomDataObject;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 import org.NooLab.utilities.callback.ProcessFeedBackIntf;
 
 

@@ -1,5 +1,6 @@
-package org.NooLab.somfluid;
+package org.NooLab.somfluid.tasks;
 
+import org.NooLab.somfluid.ModelingResultsIntf;
 import org.NooLab.somfluid.core.engines.det.ModelingSettingsIntf;
 
 
@@ -16,8 +17,18 @@ public interface SomFluidTaskIntf 	extends 	ModelingSettingsIntf,
 	
 	public void setResumeMode(int modeOnOff);
 
-	int getSourceDatabaseType();
+	
+	public int getSourceDatabaseType();
 
-	String getSourceDatabaseName();
+	public String getSourceDatabaseName();
+
+	
+	// this applies for mono (purple) AND for prob (=astor) !!
+	public int getPreparingAbstraction();
+
+	public void setPreparingAbstraction(int flag);
+	
+	// ---
+	
 	
 }

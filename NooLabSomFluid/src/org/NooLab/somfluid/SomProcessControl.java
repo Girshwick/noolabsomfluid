@@ -1,6 +1,8 @@
 package org.NooLab.somfluid;
 
-class SomProcessControl implements SomProcessControlIntf{
+import org.NooLab.structures.InstanceProcessControlIntf;
+
+class SomProcessControl implements InstanceProcessControlIntf{
 
 
 	SomFluidFactory sfFactory;
@@ -36,6 +38,13 @@ class SomProcessControl implements SomProcessControlIntf{
 
 	public int getInterruptRequest() {
 		return interruptRequest;
+	}
+
+
+	@Override
+	public void close(int exitcode) {
+		// TODO Auto-generated method stub
+		
 	}
 
 

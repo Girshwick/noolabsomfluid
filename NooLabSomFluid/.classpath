@@ -14,20 +14,17 @@
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/datetime/joda-time-2.1/joda-time-2.1.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/database/iciql/iciql-1.0.0.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/database/h2/bin/h2.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/NooLabChord"/>
+	<classpathentry kind="lib" path="D:/data/iTexx/bin/lib/NooLabChord.jar"/>
 	<classpathentry kind="lib" path="D:/data/iTexx/bin/lib/NooLabCompare.jar"/>
 	<classpathentry kind="lib" path="D:/data/iTexx/bin/lib/NooLabMathCommonsAdapt.jar"/>
-	<classpathentry kind="lib" path="D:/data/iTexx/bin/lib/NooLabiTexxCommBox.jar"/>
-	<classpathentry kind="lib" path="D:/data/iTexx/bin/lib/NooLabiTexxStructures.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/org.NooLab/glue/NooLabGlue.jar"/>
+	<classpathentry kind="lib" path="D:/data/iTexx/bin/lib/NooLabUtilities.jar"/>
+	<classpathentry kind="lib" path="D:/data/iTexx/bin/lib/NooLabiTexxStructures.jar"/>
 	<classpathentry kind="lib" path="D:/data/iTexx/bin/NooLabParticleField.jar"/>
 	<classpathentry kind="lib" path="D:/data/iTexx/bin/lib/xercesImpl-2.9.1.jar"/>
 	<classpathentry kind="lib" path="D:/data/iTexx/bin/lib/JMathTools.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/NooLabUtilities"/>
-	<classpathentry kind="src" path="/NooLabiTexxStructures"/>
-	<classpathentry kind="src" path="/NooLabiTexx"/>
-	<classpathentry kind="src" path="/NooLabiTexxCommBox"/>
 	<classpathentry kind="src" path="/NooLabiTexxStorage"/>
+	<classpathentry kind="lib" path="D:/data/iTexx/bin/lib/NooLabiTexxCommBox.jar"/>
 	<classpathentry kind="src" path="/NooLabSomFluidStructures"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

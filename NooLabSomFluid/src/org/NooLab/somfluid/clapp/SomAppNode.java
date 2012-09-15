@@ -145,7 +145,7 @@ public class SomAppNode
 	
 
 	@Override
-	public ArrayList<Integer> getExtensionRecordsIndexValues() {
+	public ArrayList<Long> getExtensionRecordsIndexValues() {
 		return getExtensionRecordsIndexValues(); 
 	}
 	
@@ -215,7 +215,7 @@ public class SomAppNode
 	}
 	
 	@Override
-	public void insertDataAndAdjust(ArrayList<Double> dataNewRecord, int recordIndexInTable, Object collectibleInfo,int ithWinner,
+	public void insertDataAndAdjust(ArrayList<Double> dataNewRecord, long recordIndexInTable, long collectibleInfo,int ithWinner,
 			double learningrate, int fillingLimitForMeanStyle) {
 		// TODO Auto-generated method stub
 		
@@ -234,20 +234,20 @@ public class SomAppNode
 	}
 	
 	@Override
-	public ArrayList<Integer> exportDataFromNode(int countOfRecords, int quality, boolean removeExports) {
+	public ArrayList<Long> exportDataFromNode(int countOfRecords, int quality, boolean removeExports) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
-	public ArrayList<Integer> exportDataFromNode(double smallestPortion, double largestPortion, int quality,
+	public ArrayList<Long> exportDataFromNode(double smallestPortion, double largestPortion, int quality,
 			boolean removeExports) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
-	public void importDataByIndex(ArrayList<Integer> recordIndexes) {
+	public void importDataByIndex(ArrayList<Long> recordIndexes) {
 		// TODO Auto-generated method stub
 		
 	}

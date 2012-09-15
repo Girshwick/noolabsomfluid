@@ -14,7 +14,6 @@ import org.NooLab.field.repulsive.components.data.SurroundResults;
 import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.SomFluidTask;
 import org.NooLab.somfluid.components.*;
 import org.NooLab.somfluid.core.*;
 import org.NooLab.somfluid.env.data.* ;
@@ -31,6 +30,7 @@ import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.structures.Variables;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 
 
 import org.NooLab.somscreen.linear.SimpleExplorationClustering;
@@ -973,7 +973,7 @@ public class SomTargetedModeling    implements
 	}
 
 	@Override
-	public void nodeChangeEvent(ExtensionalityDynamicsIntf extensionality, int result) {
+	public void nodeChangeEvent(ExtensionalityDynamicsIntf extensionality, long result) {
 		
 		// for registration and handling : fork immediately into container !!
 		long nodeID, uuid = extensionality.getNodeNumGuid();

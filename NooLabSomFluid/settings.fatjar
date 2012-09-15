@@ -1,14 +1,14 @@
 #Fat Jar Configuration File
-#Sun Sep 02 19:10:24 BST 2012
+#Fri Sep 14 18:05:51 BST 2012
 onejar.license.required=true
 manifest.classpath=
 manifest.removesigners=true
 onejar.checkbox=false
 jarname=D\:\\dev\\java\\workspace\\NooLabSomFluid.jar
-manifest.mergeall=true
+manifest.mergeall=false
 manifest.mainclass=
 manifest.file=META-INF\\MANIFEST.MF
 jarname.isextern=true
 onejar.expand=
-excludes=<jar|commons-lang3-3.0.jar>;<jar|Jama-1.0.2.jar>;<jar|flanagan.jar>;<jar|commons-math-2.2.jar>;<jar|jsc.jar>;<jar|jep-2.4.1.jar>;<jar|core.jar>;<jar|NooLabMathCommonsAdapt.jar>;<jar|NooLabUtilities.jar>;<jar|NooLabiTexxCommBox.jar>;<jar|NooLabiTexxStorage.jar>;<jar|NooLabiTexxStructures.jar>;<jar|NooLabParticleField.jar>;<jar|commons-collections-3.2.1.jar>;<jar|commons-lang3-3.0.jar>
+excludes=<po|NooLabiTexxCommBox>;<po|NooLabiTexxStructures>;<po|NooLabiTexx>;<po|NooLabTikaServer>;<po|NooLabUtilities>;<po|NooLabiTexxStructures>;<po|NooLabiTexxStructures>;<po|NooLabiTexxStructures>;<jar|Jama-1.0.2.jar>;<jar|flanagan.jar>;<jar|commons-math-2.2.jar>;<jar|jsc.jar>;<jar|jep-2.4.1.jar>;<jar|ext-1.1.1.jar>;<jar|core.jar>;<jar|joda-time-2.1.jar>;<jar|NooLabChord.jar>;<jar|NooLabCompare.jar>;<jar|NooLabMathCommonsAdapt.jar>;<jar|NooLabGlue.jar>;<jar|NooLabUtilities.jar>;<jar|NooLabiTexxStructures.jar>;<jar|NooLabParticleField.jar>;<jar|xercesImpl-2.9.1.jar>;<jar|JMathTools.jar>;<jar|NooLabiTexxCommBox.jar>;<jar|NooLabSomFluidStructures.jar>;<jar|commons-lang3-3.0.jar>;<jar|commons-dbutils-1.5.jar>;<jar|commons-dbcp-1.4.jar>;<jar|commons-collections-3.2.1.jar>;<jar|commons-exec-1.1.jar>;<jar|jlibs-core.jar>;<jar|commons-lang3-3.0.jar>;<jar|commons-httpclient-3.1.jar>;<jar|commons-codec-1.4.jar>;<jar|commons-io-2.0.1.jar>;<jar|jNAT-PMPlib.jar>;<jar|serializer.jar>;<jar|java-xmlbuilder-0.4.jar>;<jar|uuid-3.2.jar>;<jar|mjxml.jar>;<jar|xml-apis.jar>;<jar|jsoup-1.6.0.jar>;<jar|jtidy-r938.jar>;<jar|xmlenc-0.52.jar>;<jar|javax.servlet.jar>;<jar|xercesImpl-2.9.1.jar>;<jar|xalan.jar>;<jar|xmlParserAPIs-2.6.2.jar>;<jar|tika-app-1.2.jar>;<jar|NooLabSomFluid.jar>
 includes=

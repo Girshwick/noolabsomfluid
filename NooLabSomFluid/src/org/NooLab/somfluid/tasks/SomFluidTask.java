@@ -1,7 +1,10 @@
-package org.NooLab.somfluid;
+package org.NooLab.somfluid.tasks;
 
 import java.io.Serializable;
 
+import org.NooLab.somfluid.SomFluidClassTaskIntf;
+import org.NooLab.somfluid.SomFluidResultsIntf;
+import org.NooLab.somfluid.SomFluidTransformTaskIntf;
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 import org.NooLab.somfluid.core.engines.det.results.SomResultDigesterIntf;
 import org.NooLab.structures.SomTaskDependProcessIntf;
@@ -88,12 +91,14 @@ public class SomFluidTask 	implements
 
 	private String dataBaseName;
 
+	private int preparingAbstraction=0;
+
 	
  
 	 
 	
 	// ========================================================================
-	protected SomFluidTask(String guidId, int somType){
+	public SomFluidTask(String guidId, int somType){
 		
 		guidID = guidId;
 		if (guidID.length()==0){
@@ -705,6 +710,17 @@ public class SomFluidTask 	implements
 		transferSourceDbName = targetsrcDbName; 
 		transferSourceDbType = dbtype;
 		transferSourceSomId = somId;
+	}
+
+
+	@Override
+	public int getPreparingAbstraction() {
+		return preparingAbstraction;
+	}
+	
+	@Override
+	public void setPreparingAbstraction(int flag) {
+		preparingAbstraction = flag;
 	}
 
 	

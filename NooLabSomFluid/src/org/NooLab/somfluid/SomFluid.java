@@ -1,5 +1,6 @@
 package org.NooLab.somfluid;
 
+
 import java.util.ArrayList;
 
 import org.NooLab.utilities.files.DFutils;
@@ -21,7 +22,13 @@ import org.NooLab.itexx.storage.TexxDataBaseSettings;
 import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
 
 import org.NooLab.somfluid.properties.* ;
+import org.NooLab.somfluid.structures.VariableSettingsHandlerIntf;
 import org.NooLab.somfluid.structures.Variables;
+import org.NooLab.somfluid.tasks.SomFluidSubTask;
+import org.NooLab.somfluid.tasks.SomFluidTask;
+import org.NooLab.somfluid.tasks.SomFluidTaskIntf;
+import org.NooLab.somfluid.tasks.SomSubTasks;
+import org.NooLab.somfluid.tasks.SomTasks;
 import org.NooLab.somfluid.app.astor.SomAStorageQueryHandler;
 import org.NooLab.somfluid.app.astor.SomAssociativeStorage;
 import org.NooLab.somfluid.app.astor.SomAstorFrameIntf;
@@ -38,7 +45,8 @@ import org.NooLab.somfluid.core.engines.det.results.SimpleSingleModelDigester;
   
 import org.NooLab.somfluid.env.data.*;
 import org.NooLab.somtransform.SomTransformer;
-import org.NooLab.itexx.storage.* ;
+import org.NooLab.structures.InstanceProcessControlIntf;
+
 import org.NooLab.itexx.storage.nodes.SomNodesDataConverter;
 import org.NooLab.itexx.storage.nodes.SomTexxProperties;
 import org.NooLab.itexx.storage.somfluid.db.DataBaseAccessDefinition;
@@ -85,12 +93,12 @@ public class SomFluid
 
 	SomFluidProperties sfProperties;
 	SomFluidFactory sfFactory ;
-	SomProcessControlIntf somProcessControl ;
+	InstanceProcessControlIntf somProcessControl ;
 	
 	ArrayList<SomDataObject> somDataObjects = new ArrayList<SomDataObject>();
 	
 	SomTasks somTasks;
-	
+	SomSubTasks somSubTasks;
 	
 	SomFluid sf ;
 	SomAppProperties soappProperties;
@@ -221,12 +229,13 @@ public class SomFluid
 		somfluidSettings = sfProperties.getSomFluidSettings() ;
 		databaseSettings = sfProperties.getDatabaseSettings() ;
 		
-		String str ="",dspGuid="", storagedir="", dbname="";
+		String str ="",dspGuid="",   dbname="", nodesDbName="";
 		int r, databaseStructureCode = -1 ;
 		
 		sfTask.setDescription("Astor()") ;
 		sfTask.setSomHost(null) ;
 		 
+		
 		
 		// are we going to create a secondary SOM?
 		// then we have to read the "astornodes" database first... creating the input
@@ -239,76 +248,22 @@ public class SomFluid
 			sfProperties.setApplicationContext("itexx") ;
 			// now we have to read the nodes database, e.g. astornodes ...
 			// and create a table from that
-			// we do it not in SomFluid, yet, ...we use iTexxStorage
+			// this also checks if it is necessary at all, by comparing two "select distinct" for docid in two databases
 			
-			ArrayList<ArrayList<?>> histogramTable;
-			long somID ;
-
-			DataBaseAccessDefinition dba = new DataBaseAccessDefinition();
-			SomTexxProperties stxProperties = new SomTexxProperties();
-			SomNodesDataConverter nodesDataConverter;
-
-			
-			dba.setUser( sfProperties.getPersistenceSettings().getDbUser() );
-			dba.setPassword( sfProperties.getPersistenceSettings().getDbPassword() ) ;
-			dba.setDatabaseName( sfTask.getSourceDatabaseName() );
-				str = sfTask.getSourceDatabaseName();
-				
-			stxProperties.setDocSomDatabaseAccessSettings(dba) ;	
-				
-			// probably we need a different dbaccess then after extracting the data from nodes ...
-			stxProperties.setContext( SomFluidProperties._APP_CONTEXT_ITEXX ) ;
-			stxProperties.setDatabaseAccessSettings(dba);
-			
-			// we need the id of the astor SOM (L1) that shall serve as input for L2
-			stxProperties.setSomId( sfTask.getTransferSourceSomId() );
-			// somclients client is initiated through SomAstor, which knows about the somId...
-		
-			stxProperties.setNodesSomDataBaseName(  sfTask.getTransferSourceDatabase() ) ;
-			stxProperties.setDocSomDataBaseName(  sfTask.getTransferTargetDatabase() ) ;
-				dbname = sfTask.getTransferTargetDatabase();
-
-			storagedir = DFutils.createPath(sfProperties.getSystemRootDir(),"storage") ;
-				         if (fileutil.listofFiles("", ".db", storagedir).size()==0){
-				        	 throw(new Exception("No data base for SomFluid process in performAssociativeStorage()..."));
-				         }
-			stxProperties.setStorageDir(storagedir) ;
-			
-			somID = sfTask.getTransferSourceSomId() ; // the ID of the AstorNodes Som
-			 								out.print(2, "accessing Som Nodes for extracting advanced preparations (histograms etc.)...");
-			nodesDataConverter = new SomNodesDataConverter( stxProperties ) ; 
-			histogramTable = nodesDataConverter.createHistogramTable(somID);
-			
-			// this histogram table will be saved into a database
-			// see Texx/randomGraph for this 
-			// texx.txxDataBase.storeDocTable(doctable);
-			r = nodesDataConverter.storeDocTable(histogramTable);
-											out.print(2, "extracting done...");
+			r = convertNodesToTable( sfTask ) ;
+								
 			if (r<0){
 				throw(new Exception("Preparing the database for SomFluid process in performAssociativeStorage() failed ...\nSub-process will be stopped.")) ;
 			}
-			TexxDataBaseSettingsIntf dbas = sfProperties.getDatabaseSettings() ;
-			DataBaseAccessDefinitionIntf dbaccess = dbas.getDbAccessDefinition() ;
 			
-			dbas.setDatabaseName("astordocs");
-
-			dbname = "astordocs"; // contains table "randomdocuments", made from histogram upon a primary SOM
-			dbname = sfTask.getSourceDatabaseName();
-
-			dbaccess.setDbUser("sa");
-			dbaccess.setDbpassword("sa");
-			dbaccess.setDatabaseName(dbname) ;
+			organizingDatabaseAccessForL2( sfTask );
 			
-			// this is called already in SomProducer
-			sfProperties.getDatabaseDefinitionInfo("astordocs",TexxDataBaseSettingsIntf._DATABASE_STRUC_RNDDOCS_L1);
-			// dbas.getDbAccessDefinition().			getDatabaseDefinitionInfo
-			
-			databaseStructureCode = TexxDataBaseSettingsIntf._DATABASE_STRUC_RNDDOCS_L1;
-			dbaccess.setDatabaseStructureCode( databaseStructureCode );
-			
-			sfProperties.setDatabaseSettings((TexxDataBaseSettings) dbas) ;
-			
-			
+			nodesDbName = "astornodes-L2";  
+			// this will take the definitions for astornodes, if the name extension matches the definitions: extensions="-L*;-id*"
+			// such, we can create different instances of a particular type of database
+			/* TODO: actually, we need sth like a meta ID for the nodesDbName 
+			*		 as it is neither bound to a session, nor to a L1 Som...
+			*/
 			
 		}else{
 		
@@ -343,22 +298,132 @@ public class SomFluid
 		    
 		    // TODO ACTUALLY this should come from the task
 		    dbname = "randomwords"; // contains table "contexts"
+		    nodesDbName = "astornodes";
+		    
 		    databaseStructureCode = TexxDataBaseSettingsIntf._DATABASE_STRUC_CONTEXTS_L0;
+		    
+		    VariableSettingsHandlerIntf varSett = sfProperties.getVariableSettings();
+		    if (varSett.getIdVariable().length()==0){
+		    	varSett.setIdVariable("id");
+		    }
 		} // ? else
 		// else ...in normal mode
 		
 		astor = new SomAssociativeStorage( this, sfFactory, sfTask, sfProperties, dspGuid ); 
 		sfTask.setTaskType( SomFluidTask._TASK_SOMSTORAGEFIELD);
 		
+		// reading the data is buggy !!! 
 		r = astor.prepareDataObject( SomAstorFrameIntf._ASTOR_SRCMODE_DB, databaseStructureCode, dbname) ; 
 		
 		if (r==0){
 			astor.setInitialVariableSelection( somfluidSettings.getInitialVariableSelection() ) ;
 			
-			astor.perform() ;
+			
+			// extensionality contains strange data, else we should fill the secondary index field
+			r = astor.perform( nodesDbName, sfTask.getPreparingAbstraction() ) ;
 		}
 
 		
+	}
+
+	private void organizingDatabaseAccessForL2( SomFluidTask sfTask ) throws Exception {
+
+		String dbname;
+		int databaseStructureCode = TexxDataBaseSettingsIntf._DATABASE_STRUC_RNDDOCS_L1;
+		
+		
+		TexxDataBaseSettingsIntf dbas = sfProperties.getDatabaseSettings() ;
+		DataBaseAccessDefinitionIntf dbaccess = dbas.getDbAccessDefinition() ;
+		
+		dbas.setDatabaseName("astordocs");
+
+		dbname = "astordocs"; // contains table "randomdocuments", made from histogram upon a primary SOM
+		dbname = sfTask.getSourceDatabaseName();
+
+		dbaccess.setDbUser("sa");
+		dbaccess.setDbpassword("sa");
+		dbaccess.setDatabaseName(dbname) ;
+		
+		// 
+		sfProperties.getDatabaseDefinitionInfo("astordocs",TexxDataBaseSettingsIntf._DATABASE_STRUC_RNDDOCS_L1);
+		//
+ 		
+		dbaccess.setDatabaseStructureCode( databaseStructureCode );
+		
+		sfProperties.setDatabaseSettings((TexxDataBaseSettings) dbas) ;
+		
+		VariableSettingsHandlerIntf varSett = sfProperties.getVariableSettings();
+		varSett.setIdVariable("id");
+		varSett.setIdVariableCandidates( new String[]{"*id","*index","*ix"});
+		varSett.setTargetVariable("");
+		varSett.getInitialSelection().add("rd_*") ;
+		// we have to set the index column !!!
+		// eventually removing persistence files...  somDataObject.ensureTransformationsPersistence
+		
+		// int[] gm = sfProperties.getGrowthModes() ;
+		// int n = gm.length ;
+		
+	}
+
+	private int convertNodesToTable(SomFluidTask sfTask) throws Exception {
+		int result = -1;
+		
+		String storagedir ;
+		long somID;
+		
+
+		DataBaseAccessDefinition dba = new DataBaseAccessDefinition();
+		SomTexxProperties stxProperties = new SomTexxProperties();
+		SomNodesDataConverter nodesDataConverter;
+
+		
+		dba.setUser( sfProperties.getPersistenceSettings().getDbUser() );
+		dba.setPassword( sfProperties.getPersistenceSettings().getDbPassword() ) ;
+		dba.setDatabaseName( sfTask.getSourceDatabaseName() );
+			// String str = sfTask.getSourceDatabaseName();
+			
+		stxProperties.setDocSomDatabaseAccessSettings(dba) ;	
+			
+		// probably we need a different dbaccess then after extracting the data from nodes ...
+		stxProperties.setContext( InstanceProcessControlIntf._APP_CONTEXT_ITEXX ) ;
+		stxProperties.setDatabaseAccessSettings(dba);
+		
+		// we need the id of the astor SOM (L1) that shall serve as input for L2
+		stxProperties.setSomId( sfTask.getTransferSourceSomId() );
+		// somclients client is initiated through SomAstor, which knows about the somId...
+	
+		stxProperties.setNodesSomDataBaseName(  sfTask.getTransferSourceDatabase() ) ;
+		stxProperties.setDocSomDataBaseName(  sfTask.getTransferTargetDatabase() ) ;
+			// String dbname = sfTask.getTransferTargetDatabase();
+
+			
+		storagedir = DFutils.createPath(sfProperties.getSystemRootDir(),"storage") ;
+			         if (fileutil.listofFiles("", ".db", storagedir).size()==0){
+			        	 throw(new Exception("No data base for SomFluid process in performAssociativeStorage()..."));
+			         }
+		stxProperties.setStorageDir(storagedir) ;
+		
+		somID = sfTask.getTransferSourceSomId() ; // the ID of the AstorNodes Som
+		 								out.print(2, "accessing Som Nodes for extracting advanced preparations (histograms etc.)...");
+		 								
+		// sth is wrong there, the context id is not caught correctly 								
+		nodesDataConverter = new SomNodesDataConverter( stxProperties ) ; 
+		
+		if (nodesDataConverter.checkForImport() ){
+		
+			ArrayList<ArrayList<?>> histogramTable = nodesDataConverter.createHistogramTable(somID);
+		
+			// this histogram table will be saved into a database
+			// see Texx/randomGraph for this 
+			// texx.txxDataBase.storeDocTable(doctable);
+			result = nodesDataConverter.storeDocTable(histogramTable);
+										out.print(2, "extracting done...");
+										
+		}else{
+			result=0;
+		}
+		
+		return result;
 	}
 
 	/**
@@ -626,23 +691,23 @@ public class SomFluid
 		
 		// 
 		
-		if (sfTask.isCompleted){
+		if (sfTask.isCompleted()){
 			
 			// not active yet... SomResultDigesterIntf resultHandler = sfTask.getSomResultHandler();
 			// not active yet... resultHandler.handlingResults() ;
 			
 			if (SomFluidTask.taskIsModelOptimizer(sfTask)){ 
 
-				SomFluidTask _task = sfFactory.somFluidModule.somTasks.getItemByGuid(sfTask.guidID);
+				SomFluidTask _task = sfFactory.somFluidModule.somTasks.getItemByGuid(sfTask.getGuidID());
 				if (_task == null) {
 					somTasks.add(sfTask);
 				}
 
 				// put the model to the list
 				// provide an option ...
-				sfFactory.getSomObjects().addSom(sfTask.somHost, sfTask.guidID);
+				sfFactory.getSomObjects().addSom(sfTask.getSomHost(), sfTask.getGuidID());
 
-				ModelOptimizer moz = (ModelOptimizer) sfTask.somHost;
+				ModelOptimizer moz = (ModelOptimizer) sfTask.getSomHost();
 				moz.saveResults();
 
 				if (sfProperties.getOutputSettings().isExportApplicationModel()) {
@@ -656,16 +721,16 @@ public class SomFluid
 					}
 					sfTask.setExported(true);
 					
-					out.printErr(2, "\nThe following task has been finished, exported and closed: " + sfTask.guidID + "\n");
+					out.printErr(2, "\nThe following task has been finished, exported and closed: " + sfTask.getGuidID() + "\n");
 				} else {
-					out.printErr(2, "\nThe following task has been finished and closed: " + sfTask.guidID + "\n");
+					out.printErr(2, "\nThe following task has been finished and closed: " + sfTask.getGuidID() + "\n");
 				}
 			}
 		} // completed "ModelOptimizer"
 		
 		if (SomFluidTask.taskIsSomApplication(sfTask)){ 
 			
-			out.printErr(2,"\nThe following task has been finished and closed: "+sfTask.guidID+"\n");
+			out.printErr(2,"\nThe following task has been finished and closed: "+sfTask.getGuidID()+"\n");
 			
 		}  // completed "SomApplication"
 	}
@@ -697,7 +762,7 @@ public class SomFluid
 	// ========================================================================
 	public String addTask(SomFluidTask somFluidTask) {
 		 
-		somFluidTask.guidID = GUID.randomvalue() ;
+		somFluidTask.setGuidID(GUID.randomvalue()) ;
 		
 		somTasks.setSfFactory(sfFactory) ;
 		
@@ -709,11 +774,19 @@ public class SomFluid
 		
 		isActivated = true;
 		
-		return somFluidTask.guidID  ;
+		return somFluidTask.getGuidID()  ;
 	}
 
 
-
+	public String addTask(SomFluidSubTask somFluidSubTask) {
+		
+		somSubTasks.setSfFactory(sfFactory) ;
+		
+		somSubTasks.add(somFluidSubTask);
+		
+		return somFluidSubTask.getGuid()  ;
+	}
+	
 
 	@Override
 	public void start() {
@@ -751,15 +824,15 @@ public class SomFluid
 						sfTask = somTasks.getItem(0) ;
 						// actually, we need a selection loop??? to get the FIRST non-treated one?
 						
-						if ((sfTask!=null) && (sfTask.taskDispatched==0) && (sfTask.isCompleted==false) && (sfTask.isExported==false)){
-							out.print(2,"\nworking on task, id = "+sfTask.guidID);
+						if ((sfTask!=null) && (sfTask.getTaskDispatched()==0) && (sfTask.isCompleted()==false) && (sfTask.isExported()==false)){
+							out.print(2,"\nworking on task, id = "+sfTask.getGuidID());
 							int n = sfProperties.getModelingSettings().getOptimizerSettings().getMaxStepsAbsolute();
 							
 							if (sfProperties.isITexxContext()==false){
 								out.print(2,"expected infimum number of explored variable combinations : " +n+"\n");
 							}
 									 
-							sfTask.taskDispatched=1;
+							sfTask.setTaskDispatched(1);
 							TaskDispatcher td = new TaskDispatcher(sfTask);
 							
 							if (td.isWorking==false){
@@ -779,7 +852,7 @@ public class SomFluid
 				
 				if ((isWorking) && (somTasks.size()>0) && (somTasks.getItem(0).isCompleted())){
 											out.print(5,"...tdp (6)") ;
-					out.print(2,"task ("+somTasks.getItem(0).guidID+") has been completed.\n"); // yet, the completion flag is set by the process itself !
+					out.print(2,"task ("+somTasks.getItem(0).getGuidID()+") has been completed.\n"); // yet, the completion flag is set by the process itself !
 					somTasks.setStopped(true) ; // remove(0);
 					isWorking=false;
 				}
@@ -811,11 +884,11 @@ public class SomFluid
 				if ( SomFluidTask.taskIsModeling( _typeId ) ){ // replace by a proc + constant : modeling
 					
 					
-					if (sfTask.somType == FieldIntf._SOMTYPE_PROB ){
+					if (sfTask.getSomType() == FieldIntf._SOMTYPE_PROB ){
 						// _INSTANCE_TYPE_ASTOR
 						performAssociativeStorage(sfTask) ;
 					}
-					if (sfTask.somType == FieldIntf._SOMTYPE_MONO){
+					if (sfTask.getSomType() == FieldIntf._SOMTYPE_MONO){
 						
 						/*
 						// accessing the persistent file,
@@ -1004,13 +1077,14 @@ public class SomFluid
 		DataReceptor dataReceptor = new DataReceptor( somDataObject );
 		
 		// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> difference to filemode
+		
 		dataReceptor.loadFromDataBase( 1000 , databaseStructureCode);
 		// the data loaded there is just a seed for the beginning...
 		// in resume mode, we load the Som and the SomDataObj directly
 		// yet, the data table in SomDataObj will not grow beyond 5000 records or so!!!
 		// max and min are also taken from the db, so the global values for normalization are available anyway
 		// de-referencing is done through the database
-		
+		            
 		somDataObject.importDataTable( dataReceptor, 1 ); 
 
 		if (somDataObject.getData().getRowcount()<=1){
@@ -1037,6 +1111,22 @@ public class SomFluid
 		// translating wildcards into accurate labels, also sets id,tv indicators in variable items
 		variables.explicateGenericVariableRequests();
 		
+		Variables av;
+		av = somDataObject.getActiveVariables();
+		
+		av.setUsageIndicationVector( variables.getUsageIndicationVector() ) ;
+		av.setInitialUsageVector( variables.getInitialUsageVector() );
+		
+
+		// int[] use = variables.getUseIndicatorArray() ;
+		
+		
+		if ((somDataObject.getVariablesLabels()==null) || (somDataObject.getVariablesLabels().size()==0)){
+			
+			somDataObject.updateVariableLabels();
+			
+		}
+		
 		return somDataObject;
 	}
 
@@ -1047,9 +1137,9 @@ public class SomFluid
 	public SomDataObject loadSource( String srcname ) throws Exception{
 		
 		SomDataObject somDataObject;
-		int result=-1;
+		 
 		String srcName ="";
-		String loadedsrc ;
+		
 		
 		
 		//  
@@ -1113,8 +1203,7 @@ public class SomFluid
 		
 		return somDataObject;
 	
-	}
-
+	} 
 
 
 
@@ -1126,8 +1215,7 @@ public class SomFluid
 		
 		return false;
 	}
-
-
+ 
 
 
 	public SomDataObject getSomDataObject(int index) {
@@ -1288,6 +1376,8 @@ public class SomFluid
 	public PrintLog getOut() {
 		return out;
 	}
+
+ 
  
 	
 	// ------------------------------------------------------------------------

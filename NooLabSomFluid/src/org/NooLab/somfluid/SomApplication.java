@@ -1,7 +1,6 @@
 package org.NooLab.somfluid;
 
-import java.util.ArrayList;
-
+ 
 import org.NooLab.utilities.callback.ProcessFeedBackContainerIntf;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
@@ -16,8 +15,9 @@ import org.NooLab.somfluid.clapp.SomAppProperties;
 import org.NooLab.somfluid.clapp.SomAppResultAnalyses;
 import org.NooLab.somfluid.clapp.SomApplicationEventIntf;
 import org.NooLab.somfluid.components.SomDataObject;
-import org.NooLab.somfluid.core.engines.det.SomHostIntf;
+ 
 import org.NooLab.somfluid.env.data.DataReceptor;
+import org.NooLab.somfluid.tasks.SomFluidTask;
  
 
 
@@ -211,7 +211,7 @@ class SomApplication implements SomApplicationIntf{
 		
 		resultAnalyses = soappClassify.getResultAnalyses() ;
 		
-		sfTask.isCompleted = true;
+		sfTask.setCompleted(true);
 		
 		somFluid.onTaskCompleted(sfTask);
 		

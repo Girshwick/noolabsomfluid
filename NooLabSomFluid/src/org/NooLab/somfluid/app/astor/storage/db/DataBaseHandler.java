@@ -204,8 +204,8 @@ public class DataBaseHandler  {
 
 	
 	public String getDataBaseNameFromResource(String xmlstr, String appnameShortStr, String pattern) throws Exception {
-		String   dbName = "" ;
-		
+		String   nameextx="",dbName = "" , extension ;
+		String[] nameext = new String[]{""}; // we need 1 empty entry 
 
 		XmlStringHandling xMsg = new XmlStringHandling();
 		String ccStr,str, dstr, tnStr;
@@ -226,24 +226,44 @@ public class DataBaseHandler  {
 		if (nodeDbObjs==null){
 			return "";
 		}
+		
 		for (int i=0;i<nodeDbObjs.size();i++){
+			
 			str = xMsg.getNodeInfo( nodeDbObjs.get(i), "database", "name") ;
 			if ((str==null) || (str.length()==0)){
-				//databaseUrl
 				throw(new Exception("Requested name for database is empty."));
 			}
+			
+			dbName ="" ;
+			nameextx = xMsg.getNodeInfo( nodeDbObjs.get(i), "database", "extensions") ;
+			nameext = nameextx.split(";");
 			/*
 			 *   <texx><database name="randomwords">
 			 */
 			hb = pattern.length()==0;
 			
 			if (hb==false){
-				hb = str.toLowerCase().contentEquals( pattern);
+				for (int n=0;n<nameext.length;n++){
+					extension = nameext[n] ;
+					if (extension.length()>0){
+						hb = StringsUtil.matchSimpleWildCard( str+extension , pattern) ;
+					}else{
+						hb = str.toLowerCase().contentEquals( pattern);
+					}
+					if (hb){
+						if (pattern.contains("*")){
+							dbName = str; // or the extended name ??
+						}else{
+							dbName = pattern;
+						}
+						return dbName;
+					}
+				}
 			}
 			if ((hb==false) && (pattern.contains("*"))){
 				hb = StringsUtil.matchSimpleWildCard( pattern, str) ;
 			}
-			if (hb){
+			if ((hb) && (dbName.length()==0)){
 				dbName = str;
 				return dbName;
 			}
@@ -317,6 +337,11 @@ public class DataBaseHandler  {
 		
 		XmlStringHandling xMsg = new XmlStringHandling();
 		String ccStr,str, dstr, tnStr, _user ,_pwd;
+
+		String   nameextx="",dbName = "" , matchingDbName="", extension ;
+		String[] nameext = new String[]{""}; // we need 1 empty entry 
+		boolean hb;
+		
 		
 		
 		xMsg.clear( );
@@ -335,16 +360,45 @@ public class DataBaseHandler  {
 		for (int i=0;i<nodeDbObjs.size();i++){
 			
 			str = xMsg.getNodeInfo( nodeDbObjs.get(i), "database", "name") ;
+			
+
+			dbName ="" ; hb=false;
+			nameextx = xMsg.getNodeInfo( nodeDbObjs.get(i), "database", "extensions") ;
+			nameext = nameextx.split(";");
+
+			
 			if ((str==null) || (str.length()==0)){
 				//databaseUrl
 				throw(new Exception("Requested name for database is empty."));
 			}
-			if (str.contentEquals(databaseName)){
+			
+			
+			for (int n=0;n<nameext.length;n++){
+				extension = nameext[n] ;
+				if (extension.length()>0){
+					hb = StringsUtil.matchSimpleWildCard( str+extension , databaseName) ;
+				}else{
+					hb = str.contentEquals(databaseName) ;
+				}
+				if (hb){
+					if (databaseName.contains("*")){
+						matchingDbName = str; // or the extended name ??
+					}else{
+						matchingDbName = str;
+					}
+					break;
+				}
+			}
+
+			if (hb){
+				
 				dbNodeObj = nodeDbObjs.get(i);
+				
 				break;
 			}
 			// 
 		}// i->
+		
 		if (dbNodeObj==null){
 			return ccs;
 		}
@@ -415,10 +469,11 @@ public class DataBaseHandler  {
 		
 		
 		// instead we use ...
-		int r = xMsg.setBasicConditionLocation(rawXmlMsg, "//database", "name", databaseName, "/access");
-		
+		int r = xMsg.setBasicConditionLocation( rawXmlMsg, "//database", "name", matchingDbName, "/access");
+												// note that "databaseName" could be "matchingDbName" + "[extension]"
+												// yet, here we need the dbname as it is defining the xml node
 		if (r!=0){
-			throw(new Exception("Requested node in xml not found (r="+r+")."));
+			throw(new Exception("Requested node in xml not found (expected node: database::name::"+matchingDbName+"::access , r="+r+")."));
 		}
 		usernodes = xMsg.getItemsList(rawXmlMsg, "//users", "user", "");
 		

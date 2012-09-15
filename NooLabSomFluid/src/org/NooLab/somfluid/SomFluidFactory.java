@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.Random;
  
  
+
 import org.NooLab.field.FieldIntf;
 import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
 import org.NooLab.field.interfaces.RepulsionFieldEventsIntf;
+import org.NooLab.itexx.comm.tcp.box.TcpBox;
  
  
 import org.NooLab.somfluid.app.up.IniProperties;
@@ -24,8 +26,16 @@ import org.NooLab.somfluid.env.data.DataFileReceptorIntf;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.SomPersistence;
+import org.NooLab.somfluid.tasks.SomFluidMonoTaskIntf;
+import org.NooLab.somfluid.tasks.SomFluidProbTaskIntf;
+import org.NooLab.somfluid.tasks.SomFluidSubTask;
+import org.NooLab.somfluid.tasks.SomFluidSubTaskIntf;
+import org.NooLab.somfluid.tasks.SomFluidSubTaskTcpIntf;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 import org.NooLab.somtransform.SomTransformerClientIntf;
+import org.NooLab.structures.InstanceProcessControlIntf;
 import org.NooLab.structures.SomTaskDependProcessIntf;
+import org.NooLab.structures.infra.SubTaskTypesIntf;
  
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.PrintLog;
@@ -522,7 +532,7 @@ public class SomFluidFactory  implements 	//
 
 	
 
-	public SomProcessControlIntf getSomProcessControl() {
+	public InstanceProcessControlIntf getSomProcessControl() {
 		return somProcessControl;
 	}
 	
@@ -608,6 +618,21 @@ public class SomFluidFactory  implements 	//
 		 
 	}
 
+	public <T> Object createSubTask(int subTaskType) {
+ 
+		return createSubTask(  subTaskType, "");
+	} 
+	
+	public <T> Object createSubTask(int subTaskType, String guidId) {
+		SomFluidSubTaskIntf subclass=null;
+		
+		if (subTaskType == SubTaskTypesIntf._SUBTASK_TCPBOX ){
+			
+			subclass = (SomFluidSubTaskTcpIntf) ((new SomFluidSubTask( guidId ).get(SubTaskTypesIntf._SUBTASK_TCPBOX) ));
+			 
+		}
+		return subclass;
+	}
 	
 	public <T> Object createTask(int instancetype) {
 		 
@@ -660,7 +685,15 @@ public class SomFluidFactory  implements 	//
 	public  void produce( Object sfTask ) throws Exception {
 	
 		SomFluidTask somFluidTask ;
+		SomFluidSubTask somFluidSubTask ;
 		
+		if (sfTask instanceof SomFluidSubTaskIntf){
+		 
+			somFluidSubTask = (SomFluidSubTask)sfTask;
+			somFluidModule.addTask( somFluidSubTask );
+			
+			return;
+		}
 
 		// now heading towards the SomFluid
 		somFluidTask = (SomFluidTask)sfTask;
@@ -672,7 +705,7 @@ public class SomFluidFactory  implements 	//
 		// First caring about the data, using the transformer module
 		 
 		preparePhysicalParticlesField = 1;
-		if (somFluidTask.taskType.toLowerCase().startsWith("c")){
+		if (somFluidTask.getTaskType().toLowerCase().startsWith("c")){
 			preparePhysicalParticlesField = 0;
 		}
 		
@@ -920,6 +953,31 @@ public class SomFluidFactory  implements 	//
 		// parameters for starting the SomClients host
 		somTaskdependentProcess = new SomTaskDependProcess();
 		return somTaskdependentProcess ;
+	}
+
+
+
+	public TcpBox openTcpBox(SomFluidSubTaskTcpIntf tcpTask) throws Exception {
+		
+		TcpBox tbox ;
+		
+		tbox = new TcpBox();
+		
+		 
+		tbox.createReceiver( tcpTask.getTcpPortIn(), 
+							 tcpTask.getTcpPortOut(), 
+							 tcpTask.getObserver(), "");
+		
+		tbox.createSender( tcpTask.getTcpPortOut(), tcpTask.getTcpPortIn(), "");
+		
+		return tbox;
+	}
+
+
+
+	public void setTcpBox( TcpBox tcp) {
+		// TODO Auto-generated method stub
+		
 	}
 
  

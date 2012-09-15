@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.SomApplicationIntf;
-import org.NooLab.somfluid.SomFluidTask;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 
 
 

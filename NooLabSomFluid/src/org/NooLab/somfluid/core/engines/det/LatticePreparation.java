@@ -8,7 +8,6 @@ import org.NooLab.field.fixed.components.FixedFieldParticlesIntf;
 import org.NooLab.field.interfaces.PhysicalGridFieldIntf;
 import org.NooLab.field.repulsive.intf.particles.RepFieldParticlesIntf;
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.SomFluidTask;
 import org.NooLab.somfluid.components.DataSourceIntf;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.components.SomDataObjectIntf;
@@ -19,6 +18,7 @@ import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.env.communication.NodesInformer;
 import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.structures.Variable;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.strings.ArrUtilities;
 

@@ -112,10 +112,11 @@ public class ModelingSettings extends SomDynamicsAbstract implements Serializabl
 	 * the growth is automatically controlled by some relative measures on variance (intra-/inter-node,) 
 	 * and size of nodes, where relative means "compared to the SOM lattice averages" 
 	 */
-	int somGrowthMode = _SOM_GROWTH_NONE;
+	ArrayList<Integer> somGrowthModes = new ArrayList<Integer>(); 
 	/** if not "auto",, then it will require parameters to be defined and stored to the list "somGrowthControlParams" */
 	
 	int somGrowthControl = _SOM_GROWTH_CTRL_AUTO;
+	
 	/** these parameters control the growth, they include (in this order):  ;
 	 *  use -3.0 if you do not want to apply a certain dimension
 	 */
@@ -135,8 +136,6 @@ public class ModelingSettings extends SomDynamicsAbstract implements Serializabl
 	 * if  somGrowthMode changes from none to any other, this will be set to 1, if it was <0=switched off
 	 */
 	int intensityForRearrangements = -1 ;
-	
-	
 	
 	
 	   
@@ -224,7 +223,8 @@ public class ModelingSettings extends SomDynamicsAbstract implements Serializabl
 		
 		super();
 		
-		 
+		somGrowthModes.add( _SOM_GROWTH_NONE );
+		
 		classifySettings = new ClassificationSettings(this) ;
 		
 		spriteSettings = new SpriteSettings (this) ;
@@ -317,8 +317,8 @@ public class ModelingSettings extends SomDynamicsAbstract implements Serializabl
 		return confirmDataReading;
 	}
 
-	private void updateGrowthModesIndicators(int growthMode, int i) {
-		// TODO Auto-generated method stub
+	private void updateGrowthModesIndicators(int growthModes, int i) {
+		// 
 		
 	}
 
@@ -362,7 +362,7 @@ public class ModelingSettings extends SomDynamicsAbstract implements Serializabl
 		return classesDictionary;
 	}
 	
-
+	
 
 	public int getThreadPriority( int targetindex){
 		
@@ -596,25 +596,47 @@ public class ModelingSettings extends SomDynamicsAbstract implements Serializabl
 		this.autoSomDifferentiate = autoSomDifferentiate;
 	}
 
-	public int getSomGrowthMode() {
-		return somGrowthMode;
+	
+	public boolean isGrowthActive() {
+	 
+		return false;
+	}
+	
+	
+	public ArrayList<Integer> getSomGrowthMode() {
+		return somGrowthModes;
 	}
 
 	/**
-	 * use negative values to remove a particular growthmode from the list, i-e- to deactivate a particular growth mode 
+	 * use negative values to remove a particular growthmode from the list, i.e. to deactivate a particular growth mode 
 	 * 
-	 * @param growthMode
+	 * @param growthModes
 	 */
-	public void setSomGrowthMode(int growthMode) {
+	@SuppressWarnings("unchecked")
+	public void setSomGrowthMode(int[] growthModes) {
 		// it is not a simple variable, but a bit index that indicates modes
-		updateGrowthModesIndicators( growthMode,1 ) ;
+		int gmode;
+		for (int i=0;i<growthModes.length;i++){
+			gmode = growthModes[i];
+			updateGrowthModesIndicators( gmode,1 ) ;
+		}
+		
 		
 		// somGrowthMode reflects the most general mode, which includes modes of lower power
 		// but for actually retrieving the info, a targeted query has to be called
-		somGrowthMode = growthMode;
+		ArrayList<Integer> gms = ArrUtilities.changeArraystyle(growthModes); 
+		somGrowthModes.addAll(gms) ;
+		
+		somGrowthModes = ArrUtilities.removeDoubleEntries(somGrowthModes );
+		
 	}
 	
-
+	@SuppressWarnings("unchecked")
+	public void setSomGrowthMode(int gmode) {
+		 
+		somGrowthModes.add(gmode) ;
+		somGrowthModes = ArrUtilities.removeDoubleEntries(somGrowthModes );
+	}
 
 	public int getSomGrowthControl() {
 		return somGrowthControl;
@@ -1017,6 +1039,10 @@ public class ModelingSettings extends SomDynamicsAbstract implements Serializabl
 	public double getCoverageByCasesFraction() {
 		return coverageByCasesFraction;
 	}
+
+
+
+	
 
 	
 	

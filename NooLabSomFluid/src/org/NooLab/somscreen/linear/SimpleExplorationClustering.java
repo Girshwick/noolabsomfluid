@@ -2,7 +2,7 @@ package org.NooLab.somscreen.linear;
 
 import java.util.ArrayList;
 
-import org.NooLab.somfluid.structures.DataTable;
+import org.NooLab.somfluid.storage.DataTable;
 
 public class SimpleExplorationClustering {
 

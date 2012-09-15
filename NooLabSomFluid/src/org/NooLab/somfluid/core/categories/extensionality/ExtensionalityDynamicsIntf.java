@@ -29,7 +29,7 @@ public interface ExtensionalityDynamicsIntf {
 	/**
 	 * @return contains index values that will be pointing to the data table
 	 */
-	public ArrayList<Integer> getListOfRecords() ;
+	public ArrayList<Long> getListOfRecords() ;
 
 	
 	/**
@@ -38,10 +38,10 @@ public interface ExtensionalityDynamicsIntf {
 	 * @param informUpstream
 	 * @return
 	 */
-	public int addRecordByIndex( int index, Object collectibleColumnInfo, int returnMode , boolean informUpstream) ;
-	public void addRecordByIndex(int indexValues, Object collectibleColumnInfo,boolean informUpdatream);
-	public void addRecordByIndex( int index,Object collectibleColumnInfo) ;
-	public int addRecordByIndex( int index, Object collectibleColumnInfo,int returnMode );
+	public long addRecordByIndex( long index, long collectibleColumnInfo, int returnMode , boolean informUpstream) ;
+	public void addRecordByIndex(long recordIndexInTable, long collectibleColumnInfo,boolean informUpdatream);
+	public void addRecordByIndex( long index, long collectibleColumnInfo) ;
+	public long addRecordByIndex( long index, long collectibleColumnInfo,int returnMode );
 		
 	
 	 
@@ -49,7 +49,7 @@ public interface ExtensionalityDynamicsIntf {
 	 * @param iindex pointing to the list of the extension, not to the data table!
 	 * @return
 	 */
-	public int getRecordItem(int iindex );
+	public Long getRecordItem(int iindex );
 	
 	/**
 	 * @param indexPtr is pointing to the data table, =value at the i-th position of the list of record indexes
@@ -86,11 +86,13 @@ public interface ExtensionalityDynamicsIntf {
 
 	public int getSupport();
 	
-	public ArrayList<Object> getListOfSecondaryId();
+	public ArrayList<Long> getListOfSecondaryId();
 	
-	public void setListOfSecondaryId(ArrayList<Object> collectibleObj);
+	public void setListOfSecondaryId(ArrayList<Long> collectibleObj);
 	
 	public int getCountSecondaryIndex();
+	
+	public void setChangeEventIndication(int changeEventActive);
 	
 
 	

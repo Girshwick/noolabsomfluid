@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.NooLab.somfluid.structures.DataTableCol;
+import org.NooLab.somfluid.storage.DataTableCol;
 import org.NooLab.somfluid.util.Formula;
 
 

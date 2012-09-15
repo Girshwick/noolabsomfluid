@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 
+import org.NooLab.somfluid.structures.VariableSettingsHandlerIntf;
 import org.NooLab.utilities.datatypes.ValuePair;
 
 
@@ -145,7 +146,16 @@ public class VariableSettingsHandler implements VariableSettingsHandlerIntf{
 	}
 
 	@Override
+	public void setIdVariableCandidates(String[] idCandidates) {
+		ArrayList<String> stringsList = new ArrayList<String>(Arrays.asList(idCandidates)) ;
+		
+	}
+
+	@Override
 	public String getIdVariable() {
+		if (idVariable==null){
+			idVariable="";
+		}
 		return idVariable;
 	}
 
@@ -186,6 +196,9 @@ public class VariableSettingsHandler implements VariableSettingsHandlerIntf{
 
 
 	public String getTargetVariable() {
+		if (targetVariable==null){
+			targetVariable="";
+		}
 		return targetVariable;
 	}
 
@@ -228,6 +241,31 @@ public class VariableSettingsHandler implements VariableSettingsHandlerIntf{
 	}
 
 
+
+	@Override
+	public void setGroupIndicatorDesignVariables( ArrayList<String> strings) {
+		// 
+		groupIndicatorDesignVariables = new ArrayList<String>(strings);  
+	}
+
+	@Override
+	public void setGroupIndicatorDesignVariables(String[] strings) {
+		groupIndicatorDesignVariables = new ArrayList<String>(Arrays.asList(strings));
+	}
+
+	@Override
+	public ArrayList<String> getGroupIndicatorDesignVariables() {
+		return groupIndicatorDesignVariables;
+	}
+
+	@Override
+	public ArrayList<String> getGroupDesignVariables() {
+		return groupIndicatorDesignVariables;
+	}
+
+	public void setTvGroupIntervals(ArrayList<ValuePair> tvGroupIntervals) {
+		this.tvGroupIntervals = tvGroupIntervals;
+	}
 
 	@Override
 	public void setWhiteListedVariables(ArrayList<String> stringsList) {
@@ -310,33 +348,16 @@ public class VariableSettingsHandler implements VariableSettingsHandlerIntf{
 		treatmentDesignVariables = new ArrayList<String>(Arrays.asList(strings)); 
 	}
 
+	public ArrayList<String> getTreatmentDesignVariables() {
+		return treatmentDesignVariables;
+	}
+
 	@Override
 	public ArrayList<String> getTreatmentDesignListedVariables() {
 		// 
 		return treatmentDesignVariables;
 	}
 
-
-	@Override
-	public void setGroupIndicatorDesignVariables( ArrayList<String> strings) {
-		// 
-		groupIndicatorDesignVariables = new ArrayList<String>(strings);  
-	}
-
-	@Override
-	public void setGroupIndicatorDesignVariables(String[] strings) {
-		groupIndicatorDesignVariables = new ArrayList<String>(Arrays.asList(strings));
-	}
-
-	@Override
-	public ArrayList<String> getGroupIndicatorDesignVariables() {
-		return groupIndicatorDesignVariables;
-	}
-
-	@Override
-	public ArrayList<String> getGroupDesignVariables() {
-		return groupIndicatorDesignVariables;
-	}
 
 	@Override
 	public String createXmlRepresenation() {
@@ -347,16 +368,6 @@ public class VariableSettingsHandler implements VariableSettingsHandlerIntf{
 	@Override
 	public String createSimplifiedIniRepresenation() {
 		return "";
-	}
-
-	
-
-	public ArrayList<String> getTreatmentDesignVariables() {
-		return treatmentDesignVariables;
-	}
-
-	public void setTvGroupIntervals(ArrayList<ValuePair> tvGroupIntervals) {
-		this.tvGroupIntervals = tvGroupIntervals;
 	}
 
 

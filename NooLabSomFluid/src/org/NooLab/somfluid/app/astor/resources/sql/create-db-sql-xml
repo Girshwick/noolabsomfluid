@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
         
   <astor>
-	<database name="astornodes">
+	<database name="astornodes" extensions="-L*;-id*">
 	  <!-- this database is owned by astor
-	  	   there are 3 tables:  
-	  	     somnames, nodecontent, nodefingerprints,
-	   -->
+	  	   there are 4 tables:  
+	  	      somnames, nodecontent, nodefingerprints, nodeneighborhoods
+	  	   the extension refers to the allowed extensions of the name: if the requested name matches "name"+"extension"  
+		   -->
       <config>
          <separator name="::" />
       </config>
@@ -114,6 +115,57 @@
 					                                  if sentence, then the same value as in ....  **                         
 					  
 					  )
+		    </text>	
+         </create>              
+      </table>      
+
+	  
+      <table name="nodeneighborhoods" >
+         <!-- we have at most 8+4 direct neighbors in an extended grid, and 11 neighbors in a hex grid
+              where "extended" means temporary densified, i.e. a grid that is not perfectly regular due to 
+              node divisions;
+              We have 17 neighbors in rectangular grid if we take two layers.
+              
+              This table is necessary to determine neighborhoods without the necessity to load the whole SomLattice;
+              
+              Note that we are NOT interested in the physical distance in most queries. We refer to the physical
+              distance here only implicitly, as it circumscribes the area where we expect the first layer of surrounding
+              neighbors.
+              Such these neighbors here are also NOT always identical to the connected neighbors, as a connected neighbor
+              might be far away in physical terms (axon like nodes)
+                  
+              if we are interested in the physical distance, we will have to load the SomLattice
+              
+              The query will be a nested select (distinct), grouped by nodeid;
+              note that the neighborhoods overlap, of course!!
+              ELse, not all of the neighbor fields in the rows need to be filled 
+              -->
+              
+         <create>
+            <drop active="1" cmd="DROP TABLE IF EXISTS ::tablename::" />
+            <text name="nodeneighborhoods">
+                CREATE TABLE  ::tablename:: (  
+					  
+					  id             IDENTITY PRIMARY KEY ,     
+                      nodeid         BIGINT,
+                      nnb0           BIGINT,
+                      nnb1           BIGINT,
+                      nnb2           BIGINT,
+                      nnb3           BIGINT,
+                      nnb4           BIGINT,
+                      nnb5           BIGINT,
+                      nnb6           BIGINT,
+                      nnb7           BIGINT,
+                      nnb8           BIGINT,
+                      nnb9           BIGINT,
+                      nnb10          BIGINT,
+                      nnb11          BIGINT,
+                      nnb12          BIGINT,
+                      nnb13          BIGINT,
+                      nnb14          BIGINT,
+                      nnb15          BIGINT,
+                      nnb16          BIGINT
+                   )
 		    </text>	
          </create>              
       </table>      

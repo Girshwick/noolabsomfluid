@@ -9,9 +9,7 @@ import java.util.Random;
 import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
-import org.NooLab.somfluid.SomFluidMonoTaskIntf;
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.SomFluidTask;
 
 import org.NooLab.somfluid.clapp.SomValidation;
 import org.NooLab.somfluid.components.SomDataObject;
@@ -21,6 +19,8 @@ import org.NooLab.somfluid.core.engines.det.results.SomTargetResults;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
+import org.NooLab.somfluid.tasks.SomFluidMonoTaskIntf;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
 import org.NooLab.utilities.logging.PrintLog;
 

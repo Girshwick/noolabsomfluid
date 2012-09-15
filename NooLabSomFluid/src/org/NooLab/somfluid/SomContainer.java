@@ -17,6 +17,7 @@ import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.lattice.VirtualLattice;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somtransform.SomFluidXMLHelper;
 import org.NooLab.utilities.datatypes.IndexDistanceIntf;
@@ -86,7 +87,7 @@ public class SomContainer {
 			    
 			    SomFluidTask _task = somObj.sfFactory.somFluidModule.somTasks.getItemByGuid(taskGuid) ;
 			    prjLabel = sfProperties.getPersistenceSettings().getProjectName();
-			    long deltaTsec = (_task.closetime - _task.opentime)/1000;
+			    long deltaTsec = (_task.getClosetime() - _task.getOpentime())/1000;
 			    
 				spbuilder = spbuilder.e("task").a("id", taskGuid).up() 
 									 .e("name").a("label", ""+prjLabel ).up()

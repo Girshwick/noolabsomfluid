@@ -5,12 +5,12 @@ import java.util.Collections;
 
 import org.NooLab.field.FieldIntf;
 import org.NooLab.field.repulsive.components.data.SurroundResults;
+import org.NooLab.itexx.storage.DataBaseAccessDefinitionIntf;
 import org.NooLab.itexx.storage.DataStreamProviderIntf;
 import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.SomFluidTask;
 import org.NooLab.somfluid.app.astor.query.SomQueryFactory;
 import org.NooLab.somfluid.app.astor.query.SomQueryIntf;
 import org.NooLab.somfluid.app.astor.storage.db.AstorDataBase;
@@ -19,7 +19,7 @@ import org.NooLab.somfluid.app.astor.trans.SomAstorNodeContent;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.engines.det.DSom;
-import org.NooLab.somfluid.core.engines.det.LatticePreparation;
+
 import org.NooLab.somfluid.core.engines.det.SomHostIntf;
 import org.NooLab.somfluid.core.engines.det.SomTargetedModeling;
 import org.NooLab.somfluid.core.engines.det.results.ModelProperties;
@@ -29,9 +29,10 @@ import org.NooLab.somfluid.env.data.SomTexxDataBase;
 import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.structures.Variables;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 
 import org.NooLab.somsprite.ProcessCompletionMsgIntf;
-import org.NooLab.somtransform.SomFluidAppGeneralPropertiesIntf;
+
 import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
@@ -47,8 +48,10 @@ import org.NooLab.utilities.logging.SerialGuid;
  *         as there are even much, much more contexts than different words ...the figures could easily reach millions...
  *        
  *        anyway, from there, we can infer the fingerprint-id 
+ *        
+ *        
  * 
- * This takes the same role as the ModelOptimizer or the SimpleSingleModel
+ * This class takes the same role as the ModelOptimizer or the SimpleSingleModel
  * 
  * 
  * the idea is to keep most of the infrastructure (DSom+ ... the Lattice, nodes), just the loops provided by
@@ -158,6 +161,9 @@ public class SomAssociativeStorage
 	SomAstor somAstor;
 	SomAstorNodeContent astorNodeContent;
 	
+	/** this refers to the source of the node data: is it from L1 som (words) or from L2 Som (docs)*/
+	int dbStructureCode =-1;
+	
 	private SomTexxDataBase randomWordsDb;
 	
 	SomQueryIntf somQuery;
@@ -171,6 +177,10 @@ public class SomAssociativeStorage
 	
 	transient PrintLog out = new PrintLog(2,true);
 	private int databaseStructureCode;
+	private int prepareAbstraction;
+	/** by powers of 10 */
+	double nodesDbUpdateIntensity = 1.5;
+	private boolean prepareFingerprints=false;
 	
 	
 	// ========================================================================
@@ -183,6 +193,8 @@ public class SomAssociativeStorage
 		somFluid = somfluid ;
 		sfFactory = factory ;
 		sfProperties = properties;
+		
+
 		
 		this.sfTask = sftask;
 		
@@ -209,16 +221,35 @@ public class SomAssociativeStorage
 		randomWordsDb.close() ;
 	}
 	
-	public void perform() throws Exception{
+	/**
+	 * 
+	 * @param prepareabstraction if >0 a database for node content (only indexes) will be created
+	 * @param dbName  e.g. "astornodes" if we create a L1 SOM from contexts, or
+	 *                     "astornodes-L2" if we read L1 and create L2
+	 *                     databases like "astornodes-L2" are needed for fast query of the SOM in order
+	 *                     to avoid looping across the nodes over and over again
+	 *                     The query will also use a db that contains the direct neighborhoods
+	 *                     the neighborhoods table is created after learning has been finished
+	 * @throws Exception
+	 */
+	public int perform( String dbName , int prepareabstraction ) throws Exception{
 		
+		int result = -1;
 		PersistenceSettings ps ;
 		long serialID=0;
+		
 		serialID = SerialGuid.numericalValue();
 		
 		SomTargetedModeling stm;
 		
 		sfTask.setCallerStatus(0) ;
 		 
+		prepareAbstraction = prepareabstraction ;
+		
+		TexxDataBaseSettingsIntf dbas = sfProperties.getDatabaseSettings() ;
+		DataBaseAccessDefinitionIntf dbaccess = dbas.getDbAccessDefinition() ;
+		dbStructureCode = dbaccess.getDatabaseStructureCode() ;
+		
 		
 		try{
 			
@@ -239,7 +270,20 @@ public class SomAssociativeStorage
 			// alternative to using "PersistenceSettings" -> astorDb.setCfgResourceJarPath("") ;
 			
 			astorDb.setRandomWordsDb(randomWordsDb) ;
-			astorDb.prepareDatabase("astornodes",0) ;
+			
+			if (prepareAbstraction>=1){
+				
+				/*  
+				 * 	in some cases we need a random graph of the sequence of nodes;
+              		for doing this, we need a numerical representation of the name == a fingerprint vector, 
+              		which is used in the same way as we use it for words;
+              		because it is expensive, we avoid it for SOM that we just query, without further abstraction 
+				 */
+				
+				prepareFingerprints = (prepareAbstraction>=2); 
+				
+				astorDb.prepareDatabase( dbName,0, prepareFingerprints) ; // TODO: name should be dynamical
+			}                       // the nodes db, e.g. astornodes or astornodes-L2
 			   // .................
 			
 			
@@ -248,7 +292,9 @@ public class SomAssociativeStorage
 			
 			astorSomLattice = somAstor.getSomLattice();
 			
-			establishDbRegistration(astorSomLattice);
+			if (prepareAbstraction>=1){
+				establishDbRegistration(astorSomLattice);
+			}
 			
 			// create/care for database, create entries 
 			
@@ -259,18 +305,23 @@ public class SomAssociativeStorage
 			somQuery = SomQueryFactory.getInstance(astorSomLattice);
 			// somQuery.setExternalStorage();
 			
-			int n = Math.max( astorSomLattice.getNodes().size() * 20 ,10000) ;
-			n = 500;
 
-			//<<<<<<<<<<<<<< TODO: DEBUG ONLY, remove this for production 
-			                                
+			//<<<<<<<<<<<<<< TODO: DEBUG ONLY, remove this for production ??? 
+
 			astorNodeContent = new SomAstorNodeContent( this );
 			astorNodeContent.registerObservedSomProcess( somAstor );
 			
-			
 			//>>>>>>>>>>>>>>
 			
-			somAstor.setChangesThreshold(n);
+			somAstor.setPrepareAbstraction(prepareAbstraction) ;
+
+				int n = Math.max( astorSomLattice.getNodes().size() * 20 ,10000) ;
+				n = 100;
+			// update period for nodes db : adaptive per node size
+			somAstor.setChangesThreshold(n); 
+			// update period : manually, directly... both conditions must be fulfilled !!
+			somAstor.setUpdatePeriodByChangeCount( (int) Math.pow(10, nodesDbUpdateIntensity) ); 
+			
 			
 			somAstor.prepare(usedVariables);
 			
@@ -286,6 +337,10 @@ public class SomAssociativeStorage
 			
 			while (somAstor.isRunning()==true){
 				out.delay(10);
+				
+				if (somAstor.calculationFinished){
+					out.delay(100);
+				}
 			}
 
 			// ensure persistence
@@ -293,16 +348,21 @@ public class SomAssociativeStorage
 			
 			// clear structures, stop threads
 			somAstor.clear() ;
-			
+			result = 0;
 			
 		}catch(Exception e){
 			// restart option ... ?
 			if (out.getPrintlevel()>=1){
 				e.printStackTrace();
 			}
+			result = -7;
+			if (somAstor!=null){
+				somAstor.clear() ;
+			}
 		}
 		
 		somAstor = null;
+		return result;
 	}
 	
 
@@ -508,6 +568,30 @@ public class SomAssociativeStorage
 
 	public ArrayList<Integer> getUsedVariables() {
 		return usedVariables;
+	}
+
+	public int getPrepareAbstraction() {
+		return prepareAbstraction;
+	}
+
+	public void setPrepareAbstraction(int prepareAbstraction) {
+		this.prepareAbstraction = prepareAbstraction;
+	}
+
+	public int getDbStructureCode() {
+		return dbStructureCode;
+	}
+
+	public void setDbStructureCode(int dbStructureCode) {
+		this.dbStructureCode = dbStructureCode;
+	}
+
+	public double getNodesDbUpdateIntensity() {
+		return nodesDbUpdateIntensity;
+	}
+	/** defines period by number of node changes by powers of 10 , e.g. 2.5 = 250 */
+	public void setNodesDbUpdateIntensity( double intensity ) {
+		nodesDbUpdateIntensity = intensity;
 	}
 
 	 

@@ -4,17 +4,16 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.TreeMap;
 
-import org.NooLab.astor.storage.iciql.NodeContent;
-import org.NooLab.astor.storage.iciql.NodeFingerprints;
-import org.NooLab.astor.storage.iciql.SomNames;
+
+
+import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
+import org.NooLab.itexx.storage.docsom.iciql.Randomdocuments;
 import org.NooLab.itexx.storage.randomwords.iciql.Contexts;
 import org.NooLab.somfluid.app.astor.SomAssociativeStorage;
 import org.NooLab.somfluid.app.astor.query.SomQueryIntf;
 import org.NooLab.somfluid.app.astor.storage.db.AstorDataBase;
-import org.NooLab.somfluid.core.engines.det.DSom;
-import org.NooLab.somfluid.core.engines.det.DSomCore;
+
 import org.NooLab.somfluid.core.nodes.MetaNode;
 import org.NooLab.somfluid.core.nodes.MetaNodeIntf;
 import org.NooLab.somfluid.lattice.VirtualLattice;
@@ -63,7 +62,7 @@ import org.NooLab.utilities.strings.ArrUtilities;
  */
 public class SomAstorNodeContent {
 
-	boolean collectorIsRunning = false, collectoIsWorking=false;
+	boolean collectorIsRunning = false, collectorIsWorking=false;
 	boolean cheobsIsRunning = false;
 	
 	SomAssociativeStorage astorHost;
@@ -222,6 +221,7 @@ public class SomAstorNodeContent {
 					
 					if (_changedNodes.size()>0){
 						changedNodes.addAll(_changedNodes);
+						out.delay(20);
 						_changedNodes.clear();
 					}
 					
@@ -232,10 +232,14 @@ public class SomAstorNodeContent {
 			}
 		}
 
+		@SuppressWarnings("unchecked")
 		@Override
 		public void update(Observable o, Object arrData) { // arrData has been cloned before sending...
 			// observer sending this data could be found by searching the project code for "138709" (it is in SomAstor :: nodeChangeEvent() )
 			
+			if (astorHost.getPrepareAbstraction()<=0){
+				return;
+			}
 			String senderName = o.toString().replace("org.NooLab.somfluid.astor.", "") ;
 			
 			out.print(2, "<SomAstorNodeContent::SomChangeEventObserver> received an update message : "+
@@ -284,29 +288,39 @@ public class SomAstorNodeContent {
 		@Override
 		public void run() {
 			
+			int r,a=2;
 			collectorIsRunning = true;
 			long changedNode = -1L;
 			
+			out.print(2, "SomCollector process for updating node storage is going to be started...");
+			
+			
 			while (collectorIsRunning) {
 				
-				if ((collectoIsWorking==false) &&
-					((astorLattice==null) || (astorLattice.getNodes().size()<50) ||
-					(astorLattice.isInitializing() ))){
+				if ((collectorIsWorking==false) 
+						&& ( (astorLattice==null) || 
+							 (astorLattice.getNodes().size()<50) || 
+							 (astorLattice.isInitializing()) ||
+							 (a==2)
+							)
+					){
 					
 					if (changedNodes.size()>0){
-						collectoIsWorking=true;
+						collectorIsWorking=true;
 						
 						while (changedNodes.size()>0){
 							
 							changedNode = changedNodes.get(0);
 							if (changedNode>=0){
-								updateCollectionOfNode(changedNode);
+								
+								// it is less a collection than just the single node
+								r = updateCollectionOfNode( changedNode, astorHost.getDbStructureCode() );
 								changedNodes.remove(0) ;
 							}
 							
 						}// changedNodes -> []
 						
-						collectoIsWorking=false;
+						collectorIsWorking=false;
 					}// changedNodes>0 ?
 					
 					
@@ -327,8 +341,99 @@ public class SomAstorNodeContent {
 	}
 	// ----------------------------------------------------
 	
-	// this creates a new histogram for the documents ???
-	public int updateCollectionOfNode( long changedNodeUid ){
+	public int updateCollectionOfNode( long changedNodeUid , int structureCode){
+		
+		int r=-3;
+		
+		if (structureCode == TexxDataBaseSettingsIntf._DATABASE_STRUC_CONTEXTS_L0){
+			r = updateCollectionOfNodeFromRandomContexts( changedNodeUid );
+		}
+		if (structureCode == TexxDataBaseSettingsIntf._DATABASE_STRUC_RNDDOCS_L1){
+			r = 5;
+			 
+			
+			r = updateCollectionOfNodeFromRandomDocs( changedNodeUid );
+		}
+		return r;
+	}
+	
+	
+	
+	
+	private int updateCollectionOfNodeFromRandomDocs( long changedNodeUid ){
+	
+		// that's the bean for queryrunner or for iciql
+		Randomdocuments rdoc;
+		MetaNodeIntf node ;
+		ArrayList<Long> records ;
+		Long rec;
+		int fpindex,ctxtId , result = -1; 
+		Long docid , _iukey;
+		
+		
+		
+		if (astorHost==null){
+			return -9;
+		}
+
+
+		try{
+			
+			if (astorLattice==null){
+				return  -1;
+				// throw exception ...
+			}
+			node = astorLattice.getNodeByNumGuid( changedNodeUid );
+			
+			if (node==null){
+				
+				// NodeFingerprints nfp = astorDb.getNodeEntry( changedNodeUid ); 
+				out.printErr(3, "requested node id ("+changedNodeUid+") not found in updateCollectionOfNodeFromRandomDocs()");
+				return  -3 ;
+			}
+			records = node.getExtensionRecordsIndexValues();
+
+  			long _somID = somId ;
+			_somID = astorLattice.getNumGuid() ;
+			
+			if ((records!=null) && (records.size()>0)){
+
+				for (int i=0;i<records.size();i++){
+					
+					rec = records.get(i) ; // som still uses its own index instead of that of the db....
+					// this record id refers to the INPUT database, NOT to the nodes database
+			
+					// SELECT * FROM CONTEXTS where CONTEXTID = 34;
+					rdoc = astorDb.getRandomDocEntryByRecId( rec ); 
+					// String wordlabel = (String)ar.get(0) ;
+					
+					
+					if ((rdoc!=null) && (rdoc.docid>=0)){
+						
+						docid = rdoc.docid;
+						fpindex = 0;
+						ctxtId = 0;
+						_iukey = astorDb.insertUpdateNodeContent(  _somID, changedNodeUid, docid, ctxtId, fpindex );
+					} // rdoc ?
+
+					
+				} // i -> 
+				result = 0;
+			} // != null ?
+			
+			
+		}catch(Exception e){
+			e.printStackTrace() ;
+			result = -7;
+		}
+		
+		
+		return result ;
+	}
+	
+	// TODO UPDATE, avoid multiple entries
+	// the prepared collection of nodes then may serve as input for creating a new histogram for the documents 
+	private int updateCollectionOfNodeFromRandomContexts( long changedNodeUid ){
 		/*
 		 * the context of this method
 		 * 
@@ -339,7 +444,7 @@ public class SomAstorNodeContent {
 		 *   each node thus represents a class of similar "contexts", or a "class of words" 
 		 * 
 		 * we build a histogram , where 
-		 *   each bin is representing a node
+		 *   each bin is representing a node  (but we build it NOT here, we create the appropriate node storage here)
 		 *   
 		 * for a given document, we need 
 		 * 
@@ -383,10 +488,14 @@ public class SomAstorNodeContent {
 
 		 */
 		
-		int result=0, rec;
+		int result=0;
+		Long rec;
 		MetaNodeIntf node;
-		ArrayList<Integer> records ;
+		ArrayList<Long> records ;
 		
+		Contexts contxt;
+		long ctxtId,fpindex,docid, _iukey ;
+
 		
 		// TODO: should fork into a container immediately !!! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 		// this method is called periodically by the threaded process in class "SomCollector", 
@@ -416,8 +525,11 @@ public class SomAstorNodeContent {
 				
 				return  -3 ;
 			}
-			records = node.getExtensionRecordsIndexValues();
 			
+			// this asks the node for the list of index values 
+			records = node.getExtensionRecordsIndexValues();
+		
+		
 			// from here onwards: database stuff! 
 			
 			// we first need a difference list: we retrieve 
@@ -432,8 +544,6 @@ public class SomAstorNodeContent {
 			
 			   astorDb.prepareDatabase("astornodes") ;
 			*/
-			Contexts contxt;
-			long ctxtId,fpindex,docid, _iukey ;
 			
 			 
 			long _somID = somId ;
@@ -448,14 +558,15 @@ public class SomAstorNodeContent {
 					// SELECT * FROM CONTEXTS where CONTEXTID = 34;
 					contxt = astorDb.getContextsEntryByRecId( rec ); 
 					// String wordlabel = (String)ar.get(0) ;
-					
+				
 					if (contxt!=null){
 						docid = contxt.docid;
 						fpindex = contxt.fpindex;
 						ctxtId = contxt.contextid;
 						// changedNodeUid = node's num guid , _somID
 
-						_iukey = astorDb.insertUpdateNodeContent( _somID, changedNodeUid, docid, ctxtId, fpindex);
+						// check whether the doc already exists? will be done there...
+						_iukey = astorDb.insertUpdateNodeContent(  _somID, changedNodeUid, docid, ctxtId, fpindex);
 					}
  					
 				}// i-> all records

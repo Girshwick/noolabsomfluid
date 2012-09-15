@@ -5,7 +5,7 @@ import java.util.Arrays;
 
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.components.MissingValues;
-import org.NooLab.somfluid.structures.DataTable;
+import org.NooLab.somfluid.storage.DataTable;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
 import org.NooLab.somfluid.util.BasicStatistics;
 import org.NooLab.somfluid.util.DescriptiveStatisticsValues;

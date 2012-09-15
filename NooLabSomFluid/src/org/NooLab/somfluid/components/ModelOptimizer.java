@@ -1,15 +1,13 @@
 package org.NooLab.somfluid.components;
 
 import java.util.ArrayList;
-import java.util.Collection;
+
  
 import java.util.Collections;
 
 import org.apache.commons.collections.CollectionUtils;
 
 import org.math.array.StatisticSample;
-import org.math.array.util.Random;
-
 
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexedDistances;
@@ -20,20 +18,19 @@ import org.NooLab.utilities.strings.ArrUtilities;
 
 import org.NooLab.field.FieldIntf;
 import org.NooLab.field.repulsive.components.data.SurroundResults;
-import org.NooLab.math3.exception.NoDataException;
-import org.NooLab.math3.exception.NullArgumentException;
+
 import org.NooLab.math3.stat.correlation.SpearmansCorrelation;
 import org.NooLab.math3.stat.inference.MannWhitneyUTest;
 import org.NooLab.somfluid.*;
 import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.* ;
-import org.NooLab.somfluid.structures.DataTable;
-import org.NooLab.somfluid.structures.DataTableCol;
+import org.NooLab.somfluid.storage.DataTable;
+import org.NooLab.somfluid.storage.DataTableCol;
 import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.structures.Variables;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 
  
-import org.NooLab.somfluid.data.*;
 import org.NooLab.somfluid.components.post.Coarseness;
 import org.NooLab.somfluid.components.post.MultiCrossValidation;
 import org.NooLab.somfluid.components.post.OutResults;

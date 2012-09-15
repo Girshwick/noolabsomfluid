@@ -1,10 +1,9 @@
-package org.NooLab.somfluid.components;
+package org.NooLab.somfluid.tasks;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.NooLab.somfluid.SomFluidFactory;
-import org.NooLab.somfluid.SomFluidTask;
 
 
 
@@ -25,8 +24,7 @@ public class SomTasks implements Serializable{
 	public SomTasks(SomFluidFactory factory) {
 		
 		sfFactory = factory;
-		
-		
+		 
 	}
 	// ------------------------------------------------------------------------
 
@@ -133,6 +131,7 @@ public class SomTasks implements Serializable{
 	public void setTaskitems(ArrayList<SomFluidTask> taskitems) {
 		this.taskitems = taskitems;
 	}
+
 	
 	
 }

@@ -471,9 +471,9 @@ public class SomAppProperties
 	}
 
 	@Override
-	public Object getCollectibleColumn() {
+	public int getCollectibleColumn() {
 		//  
-		return null;
+		return -1 ;
 	}
 
 	 

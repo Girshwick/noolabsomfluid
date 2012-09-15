@@ -14,8 +14,8 @@ import org.NooLab.somfluid.properties.PersistenceSettings;
  
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.storage.PersistentAgentIntf;
-import org.NooLab.somfluid.structures.DataTable;
-import org.NooLab.somfluid.structures.DataTableCol;
+import org.NooLab.somfluid.storage.DataTable;
+import org.NooLab.somfluid.storage.DataTableCol;
 import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somfluid.util.BasicStatisticalDescription;
