@@ -9,20 +9,17 @@ import java.util.Map;
 
 import processing.core.*;
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.SomApplicationResults;
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidIntf;
 import org.NooLab.somfluid.SomFluidMonoResultsIntf;
-import org.NooLab.somfluid.SomFluidMonoTaskIntf;
-import org.NooLab.somfluid.SomFluidProbTaskIntf;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidResultsIntf;
 import org.NooLab.somfluid.SomFluidStateDescriptionIntf;
-import org.NooLab.somfluid.SomFluidTask;
-import org.NooLab.somfluid.SomProcessControlIntf;
-import org.NooLab.somfluid.app.SomAppUsageIntf;
-import org.NooLab.somfluid.app.SomApplicationEventIntf;
+import org.NooLab.somfluid.clapp.SomAppUsageIntf;
+import org.NooLab.somfluid.clapp.SomApplicationEventIntf;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.core.engines.det.results.ValidationSet;
 import org.NooLab.somfluid.properties.ModelingSettings;
@@ -30,8 +27,12 @@ import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.properties.ValidationSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
 import org.NooLab.somfluid.storage.FileOrganizer;
+import org.NooLab.somfluid.tasks.SomFluidMonoTaskIntf;
+import org.NooLab.somfluid.tasks.SomFluidProbTaskIntf;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 import org.NooLab.somfluid.util.PowerSetSpringSource;
 import org.NooLab.somtransform.algo.externals.AlgorithmPluginsLoader;
+import org.NooLab.structures.InstanceProcessControlIntf;
 import org.NooLab.utilities.callback.ProcessFeedBackContainerIntf;
 import org.NooLab.utilities.datatypes.IndexDistance;
 import org.NooLab.utilities.datatypes.IndexDistanceIntf;
@@ -155,7 +156,7 @@ public class M2_loadmodifysettings_SomFluidModuleApplet extends PApplet{
 		println();
 		println("starting...");
 		
-		somInstance = new SomModuleInstanceM2( SomFluidFactory._INSTANCE_TYPE_SOM , 
+		somInstance = new SomModuleInstanceM2( FieldIntf._INSTANCE_TYPE_SOM , 
 			 									SomFluidFactory._GLUE_MODULE_ENV_NONE,
 			 									sourceForProperties ) ;
 		somInstance.startInstance() ;
@@ -163,7 +164,7 @@ public class M2_loadmodifysettings_SomFluidModuleApplet extends PApplet{
 	
 	private void resume(){
 		
-		somInstance = new SomModuleInstanceM2( SomFluidFactory._INSTANCE_TYPE_SOM , 
+		somInstance = new SomModuleInstanceM2( FieldIntf._INSTANCE_TYPE_SOM , 
 												SomFluidFactory._GLUE_MODULE_ENV_NONE,
 												sourceForProperties ) ;
 		somInstance.setResumeMode(true);
@@ -195,7 +196,7 @@ class SomModuleInstanceM2 implements 	Runnable,
 	SomFluidFactory sfFactory;
 	SomFluidProperties sfProperties;
 	SomFluidIntf somFluid;
-	SomProcessControlIntf somProcessControl ;
+	InstanceProcessControlIntf somProcessControl ;
 	
 	int instanceType = 1;
 	int glueModuleMode = 0;
@@ -269,7 +270,7 @@ class SomModuleInstanceM2 implements 	Runnable,
 		 * Nevertheless the module should be able to exhibit a particular "main" functionality 
 		 * 
 		 */
-		if (instanceType == SomFluidFactory._INSTANCE_TYPE_SOM){
+		if (instanceType == FieldIntf._INSTANCE_TYPE_SOM){
 			if (resumeMode){
 				resumeMode=false;
 				try {
@@ -281,13 +282,13 @@ class SomModuleInstanceM2 implements 	Runnable,
 				prepareSOM();
 			}
 		}
-		if (instanceType == SomFluidFactory._INSTANCE_TYPE_OPTIMIZER){
+		if (instanceType == FieldIntf._INSTANCE_TYPE_OPTIMIZER){
 			prepareSomOptimizer();
 		}
-		if (instanceType == SomFluidFactory._INSTANCE_TYPE_SPRITE){
+		if (instanceType == FieldIntf._INSTANCE_TYPE_SPRITE){
 			prepareSomSprite();
 		}
-		if (instanceType == SomFluidFactory._INSTANCE_TYPE_TRANSFORM){
+		if (instanceType == FieldIntf._INSTANCE_TYPE_TRANSFORM){
 			prepareSomTransformer();
 		}
 		
@@ -362,7 +363,7 @@ class SomModuleInstanceM2 implements 	Runnable,
 
 		// target oriented modeling 
 		// lattice
-		sfProperties.setSomType( SomFluidProperties._SOMTYPE_MONO ) ;      // we define to create a SOM for targeted modeling 
+		sfProperties.setSomType( FieldIntf._SOMTYPE_MONO ) ;      // we define to create a SOM for targeted modeling 
 
 		sfProperties.setInitialNodeCount(nodeCount);                       // initial size; yet it does not matter much since the SomFluid will grow anyway 
 		
@@ -501,7 +502,7 @@ class SomModuleInstanceM2 implements 	Runnable,
 				
 		sfProperties.setActivationOfGrowing( true );                       // activates/deactivates growing without removing the settings, default=true
 		
-		sfProperties.setMultipleWinners(1) ; 							   // max 5, if=1 == default = single winner
+		sfProperties.setWinnersCountMultiple(1) ; 							   // max 5, if=1 == default = single winner
 																	       // only the best winner will be actually updated by the data ;
 																		   // the further winners only update their profile
 																		   // in most cases, a singular winner (n=1) provides the best results
@@ -573,7 +574,7 @@ class SomModuleInstanceM2 implements 	Runnable,
 		
 		try {
 											System.out.println("resuming...");
-			instanceType = SomFluidFactory._INSTANCE_TYPE_SOM;
+			instanceType = FieldIntf._INSTANCE_TYPE_SOM;
 			
 			startupTraceInfo = SomFluidFactory.loadStartupTrace( instanceType ) ;
 		
@@ -606,7 +607,7 @@ class SomModuleInstanceM2 implements 	Runnable,
 			
 			fileorg.setPropertiesBase(sfProperties);
 			
-			dir = fileorg.getObjectStoreDir();
+			dir = fileorg.getObjectStoreDir("");
 			propertiesFileName = DFutils.createPath( dir, SomFluidProperties._STORAGE_OBJ ) ;
 			
 			// now loading the desired properties into a new object;
@@ -686,7 +687,7 @@ class SomModuleInstanceM2 implements 	Runnable,
 																		   // can be defined only with an existing factory since we need access to the data
 																		   // not yet functional
 		
-		sfFactory.saveStartupTrace(SomFluidFactory._INSTANCE_TYPE_SOM, _prepareStartupTraceInfo());
+		sfFactory.saveStartupTrace(FieldIntf._INSTANCE_TYPE_SOM, _prepareStartupTraceInfo());
 		sfProperties.save();
 		
 		SomFluidMonoTaskIntf sfTask = (SomFluidMonoTaskIntf)sfFactory.createTask( ); //  

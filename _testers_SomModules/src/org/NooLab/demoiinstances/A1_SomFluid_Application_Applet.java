@@ -4,6 +4,7 @@ package org.NooLab.demoiinstances;
 
 import processing.core.*;
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.SomAppFactoryClientIntf;
 import org.NooLab.somfluid.SomApplicationIntf;
 import org.NooLab.somfluid.SomApplicationResults;
@@ -12,21 +13,21 @@ import org.NooLab.somfluid.SomFluidClassTaskIntf;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidFactoryClassifierIntf;
 import org.NooLab.somfluid.SomFluidMonoResultsIntf;
-import org.NooLab.somfluid.SomFluidMonoTaskIntf;
 import org.NooLab.somfluid.SomFluidProperties;
-import org.NooLab.somfluid.SomFluidStartup;
-import org.NooLab.somfluid.SomFluidTask;
-import org.NooLab.somfluid.SomProcessControlIntf;
-import org.NooLab.somfluid.app.IniProperties;
-import org.NooLab.somfluid.app.SomAppModelLoader;
-import org.NooLab.somfluid.app.SomAppProperties;
-import org.NooLab.somfluid.app.SomAppUsageIntf;
-import org.NooLab.somfluid.app.SomApplicationEventIntf;
  
 
+import org.NooLab.somfluid.app.up.IniProperties;
+import org.NooLab.somfluid.app.up.SomFluidStartup;
+import org.NooLab.somfluid.clapp.SomAppModelLoader;
+import org.NooLab.somfluid.clapp.SomAppProperties;
+import org.NooLab.somfluid.clapp.SomAppUsageIntf;
+import org.NooLab.somfluid.clapp.SomApplicationEventIntf;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
+import org.NooLab.somfluid.tasks.SomFluidMonoTaskIntf;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 import org.NooLab.somtransform.algo.externals.AlgorithmPluginsLoader;
+import org.NooLab.structures.InstanceProcessControlIntf;
 import org.NooLab.utilities.callback.ProcessFeedBackContainerIntf;
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.files.PathFinder;
@@ -71,7 +72,7 @@ public class A1_SomFluid_Application_Applet extends PApplet{
 		// put this on top of any application: it cares for a well-defined base directory
 		try {
 		
-			SomFluidStartup.setApplicationID("soapp");
+			SomFluidStartup.setApplicationID("soapp", this.getClass());  
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -227,9 +228,9 @@ public class A1_SomFluid_Application_Applet extends PApplet{
 		System.out.println("project space : " + IniProperties.fluidSomProjectBasePath);
 		println();
 		
-		somInstance = new SomModuleInstanceA1( SomFluidFactory._INSTANCE_TYPE_CLASSIFIER, 
-			 									SomFluidFactory._GLUE_MODULE_ENV_NONE,
-			 									sourceForProperties ) ;
+		somInstance = new SomModuleInstanceA1( FieldIntf._INSTANCE_TYPE_CLASSIFIER,
+											   SomFluidFactory._GLUE_MODULE_ENV_NONE,
+			 								   sourceForProperties ) ;
 		somInstance.startInstance() ;
 	}
 	
@@ -292,12 +293,12 @@ class SomModuleInstanceA1 implements 	Runnable,
 	SomFluidProperties sfProperties;
 	
 	
-	SomProcessControlIntf somProcessControl ;
+	InstanceProcessControlIntf somProcessControl ;
 
 	
 	String dataSource = "";
 	
-	int instanceType = SomFluidFactory._INSTANCE_TYPE_CLASSIFIER ;  
+	int instanceType = FieldIntf._INSTANCE_TYPE_CLASSIFIER ;  
 	int glueModuleMode = 0;
 	String sourceForProperties = "";
 	
@@ -352,7 +353,7 @@ class SomModuleInstanceA1 implements 	Runnable,
 		 
 		String guid="";
 		 
-		if (instanceType == SomFluidFactory._INSTANCE_TYPE_CLASSIFIER){
+		if (instanceType == FieldIntf._INSTANCE_TYPE_CLASSIFIER){
 			
 			dataSource = SomFluidStartup.getLastDataSet();  // just the simple name, sth like "bank_C.txt"
 			
@@ -540,7 +541,7 @@ class SomModuleInstanceA1 implements 	Runnable,
 	@Override
 	public void onProcessStarted( SomFluidTask sfTask, int applicationId, String pid) {
 		
-		if (applicationId == SomFluidFactory._INSTANCE_TYPE_CLASSIFIER ){
+		if (applicationId == FieldIntf._INSTANCE_TYPE_CLASSIFIER ){
 			System.err.println("A classification task has been started (id: " +pid+") for task Id <"+sfTask.getGuidID()+">.");
 		}
 		

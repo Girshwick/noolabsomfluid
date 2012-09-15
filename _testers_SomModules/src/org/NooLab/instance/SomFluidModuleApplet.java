@@ -9,23 +9,24 @@ import java.util.Map;
 
 import processing.core.*;
 
+import org.NooLab.field.FieldIntf;
 import org.NooLab.somfluid.SomApplicationResults;
 import org.NooLab.somfluid.SomFluid;
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidIntf;
 import org.NooLab.somfluid.SomFluidMonoResultsIntf;
-import org.NooLab.somfluid.SomFluidMonoTaskIntf;
 import org.NooLab.somfluid.SomFluidProperties;
 import org.NooLab.somfluid.SomFluidResultsIntf;
 import org.NooLab.somfluid.SomFluidStateDescriptionIntf;
-import org.NooLab.somfluid.SomFluidTask;
-import org.NooLab.somfluid.app.SomAppUsageIntf;
-import org.NooLab.somfluid.app.SomApplicationEventIntf;
+import org.NooLab.somfluid.clapp.SomAppUsageIntf;
+import org.NooLab.somfluid.clapp.SomApplicationEventIntf;
 import org.NooLab.somfluid.core.engines.det.ClassificationSettings;
 import org.NooLab.somfluid.core.engines.det.results.ValidationSet;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.properties.ValidationSettings;
+import org.NooLab.somfluid.tasks.SomFluidMonoTaskIntf;
+import org.NooLab.somfluid.tasks.SomFluidTask;
 import org.NooLab.somfluid.util.PowerSetSpringSource;
 import org.NooLab.somtransform.algo.externals.AlgorithmPluginsLoader;
 import org.NooLab.utilities.callback.ProcessFeedBackContainerIntf;
@@ -80,7 +81,7 @@ public class SomFluidModuleApplet extends PApplet{
 
 		 
 		
-		somInstance = new SomModuleInstance( SomFluidFactory._INSTANCE_TYPE_SOM , 
+		somInstance = new SomModuleInstance( FieldIntf._INSTANCE_TYPE_SOM , 
 											 SomFluidFactory._GLUE_MODULE_ENV_NONE,
 											 sourceForProperties ) ;
 		somInstance.startInstance() ;
@@ -290,16 +291,16 @@ class SomModuleInstance implements 	Runnable,
 		 * Nevertheless the module should be able to exhibit a particular "main" functionality 
 		 * 
 		 */
-		if (instanceType == SomFluidFactory._INSTANCE_TYPE_SOM){
+		if (instanceType == FieldIntf._INSTANCE_TYPE_SOM){
 			prepareSOM();
 		}
-		if (instanceType == SomFluidFactory._INSTANCE_TYPE_OPTIMIZER){
+		if (instanceType == FieldIntf._INSTANCE_TYPE_OPTIMIZER){
 			prepareSomOptimizer();
 		}
-		if (instanceType == SomFluidFactory._INSTANCE_TYPE_SPRITE){
+		if (instanceType == FieldIntf._INSTANCE_TYPE_SPRITE){
 			prepareSomSprite();
 		}
-		if (instanceType == SomFluidFactory._INSTANCE_TYPE_TRANSFORM){
+		if (instanceType == FieldIntf._INSTANCE_TYPE_TRANSFORM){
 			prepareSomTransformer();
 		}
 		
@@ -368,7 +369,7 @@ class SomModuleInstance implements 	Runnable,
 
 		// target oriented modeling 
 		// lattice
-		sfProperties.setSomType( SomFluidProperties._SOMTYPE_MONO ) ;      // we define to create a SOM for targeted modeling 
+		sfProperties.setSomType( FieldIntf._SOMTYPE_MONO ) ;      // we define to create a SOM for targeted modeling 
 
 		sfProperties.setInitialNodeCount(nodeCount);                       // initial size; yet it does not matter much since the SomFluid will grow anyway 
 		
@@ -486,7 +487,7 @@ class SomModuleInstance implements 	Runnable,
 				
 		sfProperties.setActivationOfGrowing( true );                       // activates/deactivates growing without removing the settings, default=true
 		
-		sfProperties.setMultipleWinners(1) ; 							   // max 5, if=1 == default = single winner
+		sfProperties.setWinnersCountMultiple(1) ; 							   // max 5, if=1 == default = single winner
 																	       // only the best winner will be actually updated by the data ;
 																		   // the further winners only update their profile
 																		   // in most cases, a singular winner (n=1) provides the best results
