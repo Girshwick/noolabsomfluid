@@ -17,6 +17,10 @@ public class ValuePair <T> implements Serializable{
 	public ValuePair(){
 	}
 	
+	public ValuePair(String s1, String s2) {
+		value1 = (T)(String)s1;
+		value2 = (T)(String)s2;
+	}
 	
 	public ValuePair(double v1, double v2) {
 		value1 = (T)(Double)v1;
@@ -60,7 +64,9 @@ public class ValuePair <T> implements Serializable{
 		if (cn.contains("long")){
 			outv = (T)(Long)value2;
 		}
-		
+		if (cn.contains("string")){
+			outv = (T)(String)value2;
+		}		
 		return outv ;
 	}
 
@@ -93,4 +99,13 @@ public class ValuePair <T> implements Serializable{
 		return this;
 	}
 
+	public ValuePair<T> setValue1(String value) {
+		value1 = (T)value;
+		return this;
+	}
+	public ValuePair<T> setValue2(String value) {
+		value2 = (T)value;
+		return this;
+	}
+	
 }

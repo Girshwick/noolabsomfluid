@@ -1568,13 +1568,13 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		toFullString = toFullString.toLowerCase() ;
 		
 		if (compareThis.startsWith("*") ){
-			compareThis = compareThis.replace("*", "");
-			rB = toFullString.endsWith(compareThis) ;
+			compareThisSnip = compareThisSnip.replace("*", "");
+			rB = toFullString.endsWith(compareThisSnip) ;
 			return rB;
 		}
 		if (compareThis.endsWith("*")){
-			compareThis = compareThis.replace("*", "");
-			rB = toFullString.startsWith(compareThis) ;
+			compareThisSnip = compareThisSnip.replace("*", "");
+			rB = toFullString.startsWith(compareThisSnip) ;
 			return rB;
 		}
 		
