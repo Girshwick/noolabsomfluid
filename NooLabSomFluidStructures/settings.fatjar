@@ -1,0 +1,14 @@
+#Fat Jar Configuration File
+#Fri Sep 14 18:00:15 BST 2012
+onejar.license.required=true
+manifest.classpath=
+manifest.removesigners=true
+onejar.checkbox=false
+jarname=D\:\\dev\\java\\workspace\\NooLabSomFluidStructures.jar
+manifest.mergeall=true
+manifest.mainclass=
+manifest.file=<createnew>
+jarname.isextern=true
+onejar.expand=
+excludes=<jar|NooLabSomFluid.jar>;<jar|NooLabUtilities.jar>
+includes=
