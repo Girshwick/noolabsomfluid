@@ -1,0 +1,31 @@
+Manifest-Version: 1.0
+
+Specification-Title: unified utilities library UUL for NooLab stuff
+Built-By: NooLab
+Created-By: NooLab
+Export-Package: org.NooLab.utilities;version=2.1,org.NooLab.utilities.
+ files;version=2.1,org.NooLab.utilities.callback;version=2.1,org.NooLa
+ b.utilities.clipboard;version=2.1,org.NooLab.utilities.colors;version
+ =2.1,org.NooLab.utilities.database;version=2.1,org.NooLab.utilities.d
+ atatypes;version=2.1,org.NooLab.utilities.datetime;version=2.1,org.No
+ oLab.utilities.dialog;version=2.1,org.NooLab.utilities.files;version=
+ 2.1,org.NooLab.utilities.infile;version=2.1,org.NooLab.utilities.logg
+ ing;version=2.1,org.NooLab.utilities.net;version=2.1,org.NooLab.utili
+ ties.net.connex;version=2.1,org.NooLab.utilities.net.pages;version=2.
+ 1,org.NooLab.utilities.net.services;version=2.1,org.NooLab.utilities.
+ nums;version=2.1,org.NooLab.utilities.objects;version=2.1,org.NooLab.
+ utilities.process;version=2.1,org.NooLab.utilities.reflect;version=2.
+ 1,org.NooLab.utilities.resources;version=2.1,org.NooLab.utilities.sor
+ t;version=2.1,org.NooLab.utilities.stings;version=2.1,org.NooLab.util
+ ities.timing;version=2.1,org.NooLab.utilities.url;version=2.1,org.Noo
+ Lab.utilities.vm;version=2.1,org.NooLab.utilities.xml;version=2.1,org
+ .NooLab.utilities.zip;version=2.1,
+Implementation-Vendor-Id: org.NooLab
+Implementation-Title: org.NooLab.utilities
+Implementation-Version: 2.1
+Implementation-Vendor: Joda.org
+Specification-Vendor: NooLab
+Specification-Version: 2.1
+Package: org.NooLab.utilities
+Sealed: true
+

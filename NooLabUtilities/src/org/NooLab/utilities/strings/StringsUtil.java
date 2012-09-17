@@ -4978,6 +4978,58 @@ if (temp.contains("staggers")){
 		return splits;
 	}
 
+	public String getStringFromT(Object obj, String itemSeparator) {
+		String content="", cn,str;
+		
+		if (obj==null){
+			return "";
+		}
+		
+		if (itemSeparator.length()==0){
+			itemSeparator=" " ;
+		}
+		
+		cn = obj.getClass().getSimpleName().toLowerCase();
+		
+		if (cn.contentEquals("string")){
+			content = (String)obj;
+		}
+		if ((cn.contentEquals("int")) || (cn.contentEquals("integer"))){
+			content = ""+(Integer)obj;
+		}
+		if (cn.contentEquals("double")){
+			String.format("%.6f", (Double)obj);
+		}
+		if (cn.contentEquals("long")){
+			content = ""+(Long)obj;
+		}
+		if (cn.contentEquals("string[]")){
+			String[] strarr = (String[])obj;
+			content = arr2text(strarr, "", itemSeparator);
+		}
+		
+		if (cn.contentEquals("int[]")){
+			int[] intarr = (int[])obj;
+			content = ArrUtilities.arr2Text( ArrUtilities.changeArraystyle(intarr) );
+		}
+		if (cn.contentEquals("double[]")){
+			double[] doubarr = (double[])obj;
+			content = this.arr2text(doubarr, 6, true, itemSeparator);
+		}
+		if (cn.contentEquals("long[]")){
+			long[] intarr = (long[])obj;
+			content = arr2text(intarr, itemSeparator);
+		}
+		
+		/*
+		    dtstr = datetimeValue.get(); // according to defined format
+			hs1 = String.format("%05d", n);
+		 */
+		return content;
+	}
+
+
+
 
 
 	
