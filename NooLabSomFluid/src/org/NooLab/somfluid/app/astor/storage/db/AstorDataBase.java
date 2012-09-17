@@ -37,8 +37,6 @@ import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.astor.storage.iciql.NodeContent;
 import org.NooLab.astor.storage.iciql.NodeFingerprints;
 import org.NooLab.astor.storage.iciql.SomNames;
-import org.NooLab.docserver.storage.db.iciql.Documents;
-import org.NooLab.docserver.storage.db.iciql.Folders;
 
 import org.NooLab.itexx.storage.ConnectorClientIntf;
 import org.NooLab.itexx.storage.DataBaseCreateCommand;
@@ -48,6 +46,8 @@ import org.NooLab.itexx.storage.DbConnector;
 import org.NooLab.itexx.storage.DbLogin;
 import org.NooLab.itexx.storage.DbUser;
 import org.NooLab.itexx.storage.MetaData;
+import org.NooLab.itexx.storage.docserver.storage.db.iciql.Documents;
+import org.NooLab.itexx.storage.docserver.storage.db.iciql.Folders;
 import org.NooLab.itexx.storage.docsom.iciql.Randomdocuments;
 import org.NooLab.itexx.storage.randomwords.iciql.Contexts;
 

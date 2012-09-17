@@ -17,7 +17,8 @@ import org.NooLab.utilities.strings.StringsUtil;
 
 import org.NooLab.itexx.storage.DBColumn;
 import org.NooLab.itexx.storage.MetaData;
-import org.NooLab.itexx.storage.doco.DocoDbTable;
+import org.NooLab.itexx.storage.docserver.storage.DocoDbTable;
+
   
  
 
