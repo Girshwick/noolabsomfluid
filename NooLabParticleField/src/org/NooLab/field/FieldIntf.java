@@ -13,6 +13,7 @@ public interface FieldIntf {
 	public static final int _INSTANCE_TYPE_IDEA       = 4;
 	public static final int _INSTANCE_TYPE_ASTOR      = 5;
 	
+	
 	public static final int _INSTANCE_TYPE_CLASSIFIER = 6;
 	
 	public static final int _INSTANCE_TYPE_TRANSFORM  = 8;
