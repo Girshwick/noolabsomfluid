@@ -17,12 +17,13 @@ import org.NooLab.graph.commons.WeightedGraphIntf;
 import org.NooLab.graph.visual.*;
 import org.apache.xml.serialize.*;
 import org.apache.xerces.parsers.*;
-import org.apache.xerces.utils.*;
-import org.apache.xerces.framework.*;
+import org.apache.xerces.utils.QName;
+import org.apache.xerces.utils.StringPool;
+
 import java.util.*;
 
 /**
- * An implmentation of GraphToXMLHandler that serializes a Graph and/or
+ * An implementation of GraphToXMLHandler that serializes a Graph and/or
  * VisualGraph to XGMML via SAX.
  * <p>
  * This class simply delegates handling of events to either the inner class
