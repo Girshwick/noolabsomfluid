@@ -507,7 +507,7 @@ public class MultiDigester   {
 		// . . . . . . . . . . . . . . . . . . . . . . . . 
 		public ThreadedDigester(int ix){
 			index = ix;
-			thrdName = "multidigThr-"+ix ;
+			thrdName = "multidigThrd-"+ix ;
 			thrd = new Thread(this,thrdName) ;
 			
 			thrdName = thrd.getName() ;
@@ -710,6 +710,12 @@ public class MultiDigester   {
 		this.threadcount = threadcount;
 	}
 
+
+
+	public static int getProcessorCount() {
+		// 
+		return 1;
+	}
 
 
 	public ItemSet[] getDocumentsubset() {
