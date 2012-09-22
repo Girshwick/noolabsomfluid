@@ -415,7 +415,50 @@ public class ArrUtilities {
 		return strings ;
 	}
     
-    
+	public static double[] copyArray(double[] inArray) {
+		double[] arr = new double[0];
+		
+		if ((inArray==null) || (inArray.length==0)){
+			return arr;
+		}
+		
+		arr = new double[inArray.length];
+		
+		System.arraycopy(inArray, 0, arr, 0, arr.length);
+		
+		return arr;
+	}
+	
+	public static int[] copyArray(int[] inArray) {
+		int[] arr = new int[0];
+		
+		if ((inArray==null) || (inArray.length==0)){
+			return arr;
+		}
+		
+		arr = new int[inArray.length];
+		
+		System.arraycopy(inArray, 0, arr, 0, arr.length);
+		
+		return arr;
+	}
+	
+	
+
+	public static long[] copyArray(long[] inArray) {
+		long[] arr = new long[0];
+		
+		if ((inArray==null) || (inArray.length==0)){
+			return arr;
+		}
+		
+		arr = new long[inArray.length];
+		
+		System.arraycopy(inArray, 0, arr, 0, arr.length);
+		
+		return arr;
+	}
+	
 	public String[] changeArrayStyle( ArrayList<String> arrayList , String e ){
 		String[] strarr ;
 		 
@@ -2639,6 +2682,8 @@ public class ArrUtilities {
 		values.clear() ;
 		return outList;
 	}
+
+
  
 	
 	

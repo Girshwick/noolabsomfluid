@@ -2,7 +2,7 @@ package org.NooLab.utilities.xml;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+
 import java.util.Properties;
 import java.util.Vector;
 
@@ -125,7 +125,7 @@ public abstract class XMessageAbs {
 	public String insertXmlStrToXmlStr( String xmlstr, String embeddingTag, String insertionXml){
 		
 		String xmlout , insertionStr="";
-		int p1,p2;
+		int p1;
 		
 		
 		if (embeddingTag.length()==0){
@@ -294,7 +294,7 @@ public abstract class XMessageAbs {
 			                 //             "//transaction","/relay/hopcount","value",rxstr){
 		
 		boolean entryExists, hb;
-		int  attrNumValue=-9999;
+		
 		
 		String completeXPath, str, indent="", steppedanchor, anchorTag ,guidStr, attrValue;
 		String[] leveledTags = new String[1] ;
@@ -502,7 +502,7 @@ public abstract class XMessageAbs {
 	public Vector<Object> getNodeList( String rawXmlMsg, String domainSpecs, String itemSpecs){
 		
 		Vector<Object> list;
-		String xQuery = "";
+		
 		
 		String root;
     	
@@ -544,7 +544,9 @@ public abstract class XMessageAbs {
        the query would be:</br>
        &nbsp;&nbsp;getItemsList(rawXmlStr, ":RootElement:"/exclude/type", "item", "name")</br> 	
 	   this will return then a list of objects containing image, video, sound, program;</br></br>
-	   if you want to get the list of nodes instead you may use getNodeList(rawXmlStr, "/exclude/type", "item") ; 
+	   if you want to get the list of nodes instead you may use getNodeList(rawXmlStr, "/exclude/type", "item") ;</br></br>
+	   yet, you have to include the xml root node as the first part of domainSpecs!
+	    </br></br>
      *  
      * 
      * @param rawXmlMsg
@@ -561,11 +563,11 @@ public abstract class XMessageAbs {
 		</properties>
 	  */
     	Vector<Object> listItems = new Vector<Object>() ;
-    	String root;
+    	
     	
     	// Object getMatchingXmlNode( String xmlpath, String nodeName, String attrName  )
     	
-    	root = this.contentRoot ;
+    	// String root = this.contentRoot ;
     	
     	domainSpecs = domainSpecs.trim();
     	itemSpecs = itemSpecs.trim();
@@ -613,7 +615,7 @@ public abstract class XMessageAbs {
 
     	Vector<Object> containedNodes;
     	
-		String infoStr="",rootpath="",itemSpecs="";
+		String infoStr="",rootpath="" ;
 		String  root,secondpart="",str ;
 		Node node;
 		int p;
@@ -748,7 +750,7 @@ public abstract class XMessageAbs {
     public Object selectSpecifiedItem( String rawXmlMsg, String domainSpecs, String attrSpecs, String attrValue){
     	Object xmlNodeObj = null;
     	
-    	String infoStr="",rootpath="";
+    	String rootpath="";
     	
 		String  root,secondpart="" ;
 		int p;
@@ -891,9 +893,9 @@ public abstract class XMessageAbs {
 	
 	public String getConditionalXPath() {
 		
-		// TODO Auto-generated method stub
+		// 
 		String xstr = xpathQuery.getQueryPrefix() ;
-		String str = xqueryBasicCondition ;
+		// String str = xqueryBasicCondition ;
 		return xstr;
 	}
 	public String getTextDataFromNode( String rawXmlMsg, Object xmlNodeObj, String xpath) {
@@ -916,7 +918,7 @@ public abstract class XMessageAbs {
 		
 		// npath = node.getLocalName() ;
 		if (npath!=null){
-			int z = npath.length();
+			// int z = npath.length();
 		}
 		
 		resultInfo = getTextData( rawXmlMsg, xpath);
@@ -927,10 +929,7 @@ public abstract class XMessageAbs {
 	public String getNodeInfo(Object xmlNodeObj, String domainSpecs, String attrSpecs){
 		
 		String resultInfo="";
-		String  rootpath="";
-    	
-		String  root,secondpart="" ;
-		int p;
+		
 		
 		if (xmlNodeObj==null){
 			return resultInfo;
@@ -943,7 +942,7 @@ public abstract class XMessageAbs {
 			resultInfo = xpathQuery.readNode( xmlNodeObj, attrSpecs ) ;
 			
 		if ((resultInfo.length()==0) || (resultInfo.contentEquals("-1"))){
-			p=0;
+			// p=0;
 		}
 			
 		}catch(Exception ex){
@@ -1023,6 +1022,16 @@ public abstract class XMessageAbs {
 	}
 	
 	
+	public String getTextData( String rawXmlMsg, 
+			 				   String domainSpecs, 
+			 				   String condAttrSpecs,
+			 				   String dataTagSpecs){
+		String str;
+		
+		str = getTextDataFromConditionalSection( rawXmlMsg,domainSpecs,condAttrSpecs,"",dataTagSpecs);
+		return str;
+	}
+	
 	public String getTextDataFromConditionalSection( String rawXmlMsg, 
 									 				 String domainSpecs, 
 													 String condAttrSpecs,
@@ -1030,7 +1039,7 @@ public abstract class XMessageAbs {
 													 String dataTagSpecs){
 
 		String resultInfo = "",uri="", rawNodeValue="", putName =""; 
-		Node pkgNode;
+		
 		int nodeType ;
 		
 		// similar to 
@@ -1056,8 +1065,11 @@ public abstract class XMessageAbs {
     			domainSpecs = domainSpecs.substring(1,domainSpecs.length()) ;
     		}
         	
-    		
-        	xquery = startmarker + domainSpecs+"[@"+condAttrSpecs+"='"+condition+"']/"+dataTagSpecs;
+    		if (condition.length()>0){
+    			xquery = startmarker + domainSpecs+"[@"+condAttrSpecs+"='"+condition+"']/"+dataTagSpecs;
+    		}else{
+    			xquery = startmarker + domainSpecs+ "/"+dataTagSpecs;
+    		}
         		 //   //property[@id='1'] 
 
     		if (xquery.startsWith("///")){
@@ -1116,7 +1128,7 @@ public abstract class XMessageAbs {
 												String dataTagSpecs,
 												String dataAttrSpecs ) {
 		String resultInfo = "";
-		Node pkgNode;
+		
 		
 		// similar to 
 		// pkgNode = (Node)selectSpecifiedItem(rawXmlMsg, "//sompackages/packages", "package", "name", condition);
@@ -1204,8 +1216,8 @@ public abstract class XMessageAbs {
 										     String dataTagSpecs
 										      ) {
 		
-		String resultInfo = "";
-		Node pkgNode;
+		
+		
 		int result=-1;
 		 	
 		
@@ -1284,7 +1296,7 @@ public abstract class XMessageAbs {
 	 */
 	public String getSpecifiedInfo( String rawXmlMsg, String domainSpecs, String attrSpecs, String attrValue, String requAttr) { // "type") ;
 	
-		String infoStr="",rootpath="",itemSpecs="";
+		String infoStr="",rootpath="";
 		String  root,secondpart="",str ;
 		Node node;
 		int p;
@@ -1369,6 +1381,21 @@ public abstract class XMessageAbs {
 	}
 	 
 	
+	/**
+	 * example: </br>
+	 *  &lt;metadata&gt; &lt;mime value="abc" /&gt; </br> </br>
+	 *  
+	 * one would call like so: </br>
+	 *  getSpecifiedInfo( xmlstr, "/metadata/mime", "value") ; </br> </br>
+	 * 
+	 * that is, the xml root node should not be part of the domainSpecs! </br>
+	 * set it before using  setContentRoot( rootTagLabel ) ; </br> </br>
+	 * 
+	 * @param rawXmlMsg
+	 * @param domainSpecs
+	 * @param attrSpecs
+	 * @return
+	 */
     public String getSpecifiedInfo( String rawXmlMsg, String domainSpecs,String attrSpecs) { // "type") ;
     	String infoStr="",rootpath="";
     	
@@ -1812,7 +1839,7 @@ String string = text1.getData();
     	String rowstr,xliststr="";
     	
     	XMLBuilder aBuilder ;
-		int n=0,m=0;
+		int n=0;
 		 
 		
 		aBuilder = getXmlBuilder( "array" );
@@ -2136,15 +2163,11 @@ String string = text1.getData();
 	
 	protected XMLBuilder getXmlBuilder( String XFrame ){
 		
-		String str;
-		
 		XMLBuilder builder = null ;
 		 
 		try {
-		
 			
 			builder = XMLBuilder.create( XFrame ) ;// e.g. "MessageBoard"
-
 		
 		} catch (ParserConfigurationException e) {
 			e.printStackTrace();
