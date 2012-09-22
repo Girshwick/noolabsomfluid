@@ -1984,6 +1984,9 @@ public class DFutils extends Thread{
 	    boolean exists , rb=false;
 	    String parentDirStr;
 	    
+	    if (filename.length()==0){
+	    	return false;
+	    }
 	    file= new File(filename);
 	    
 	    parentDirStr = file.getParent() ;
@@ -2352,13 +2355,17 @@ public class DFutils extends Thread{
 		File file;
 	    Writer writer = null;
 	     
+	    if (filename.length()==0){
+	    	return false;
+	    }
+	    
 	    if (content==null){
 	    	content="" ;
 	    }
 	    try {
       
           file = new File(filename);
-          
+          		
           createDirforDoc(filename) ;
           
           writer = new BufferedWriter(new FileWriter(file));
