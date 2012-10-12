@@ -26,5 +26,6 @@
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xercesImpl-2.9.1.jar"/>
 	<classpathentry kind="lib" path="C:/Users/kwa/dev/Eclipse/xlibs/apacheTools/xml/xalan/xalan-j_2_7_1/xalan.jar"/>
 	<classpathentry kind="lib" path="C:/Programs/dev/eclipse/xlibs/apacheTools/xml/xmlParserAPIs-2.6.2.jar"/>
+	<classpathentry kind="lib" path="D:/data/iTexx/bin/lib/commons-logging-1.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

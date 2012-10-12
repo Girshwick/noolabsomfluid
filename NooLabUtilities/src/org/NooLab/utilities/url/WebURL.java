@@ -26,13 +26,16 @@ public class WebURL implements Serializable {
 	private static final long serialVersionUID = -8010874245521005945L;
 	
 	
-	private String url;
-	private int docid;
-	private int parentDocid;
-	private int depth;
-	
-	
-	
+	private String url="";
+	private int docid=-1;
+	private int parentDocid = -1;
+	private String parentUrl ="";
+	private int depth = 0;
+
+	// ----------------------------------------------------
+	public WebURL(){
+	}
+	// ----------------------------------------------------	
 	
 	public int getDocid() {
 		return docid;
@@ -84,5 +87,21 @@ public class WebURL implements Serializable {
 
 	public void setDepth( int depth) {
 		this.depth = depth;
+	}
+
+	public String getUrl() {
+		return url;
+	}
+
+	public void setUrl(String url) {
+		this.url = url;
+	}
+
+	public String getParentUrl() {
+		return parentUrl;
+	}
+
+	public void setParentUrl(String parentUrl) {
+		this.parentUrl = parentUrl;
 	}
 }

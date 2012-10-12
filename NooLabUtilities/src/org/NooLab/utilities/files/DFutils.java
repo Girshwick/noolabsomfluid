@@ -857,9 +857,17 @@ public class DFutils extends Thread{
 				
 				try{
 					
-					_fdir = new File(path);
-					if (_fdir!=null){
-						dir = _fdir.getParent();
+					if (isWebAddress(dir)){
+						path = strgutil.trimm(path, "/") ;
+						int p= path.lastIndexOf("/");
+						if (p>=3){
+							dir = path.substring(0,p);
+						}
+					}else{
+						_fdir = new File(path);
+						if (_fdir!=null){
+							dir = _fdir.getParent();
+						}
 					}
 					
 				}catch(Exception e){
@@ -875,6 +883,32 @@ public class DFutils extends Thread{
 		return path;
 	}
 	
+	private static boolean isWebAddress(String pathstr) {
+		boolean rB=true;
+		
+		
+		rB = pathstr.toLowerCase().trim().startsWith("http://");
+		if (rB==false){
+			rB = pathstr.toLowerCase().trim().startsWith("www.");
+		}
+		if (rB==false){
+			rB = pathstr.toLowerCase().trim().startsWith("ftp://");
+		}
+		if (rB==false){
+			rB = pathstr.toLowerCase().trim().startsWith("ftp");
+		}
+		if (rB==false){
+			rB = pathstr.toLowerCase().trim().startsWith("tcp://");
+		}
+		if (rB==false){
+			rB = pathstr.toLowerCase().trim().startsWith("udp://");
+		}
+		
+		
+		return rB;
+	}
+
+
 	public String getparentdir( String path ){
 		return getParentDir(path);
 	}	
@@ -1054,8 +1088,28 @@ public class DFutils extends Thread{
 		return path ;
 	}
 
+
+	public String createTempFilename(String namesnip, String extension){
 		
-	public String getTempFileJava(String namesnip){
+		String fname,tmpfolder = getTempDir();
+		
+		String idStr = GUID.randomvalue();
+		idStr = idStr.replace("-", "").replace(".", "");
+		
+		if (extension.trim().length()>0){
+			if (extension.startsWith(".")==false){
+				extension = "."+extension;
+			}
+		}
+		fname = namesnip + idStr + extension;
+		fname = this.createpath(tmpfolder, fname) ;
+		
+		return fname ;
+	}
+
+	
+	
+	private String getTempFileJava(String namesnip){
 		
 		return "" ;
 	}
@@ -2780,9 +2834,9 @@ public class DFutils extends Thread{
 	}
 	
 	
-	public Vector<String> readplainFileintoVectorstringTable( String filename ){
+	public ArrayList<String> readplainFileintoItemList( String filename ){
 	
-		Vector<String> filestr = new Vector<String>(); 
+		ArrayList<String> filestr = new ArrayList<String>(); 
 		BufferedReader reader = null;
 	    String str ;
 
@@ -2793,7 +2847,9 @@ public class DFutils extends Thread{
       
           
           reader = getLineReaderReference( filename ) ;  
-          
+          if (reader==null){
+        	  return filestr;
+          }
           while ((str = reader.readLine()) != null) {
           	   
           	if (str.trim().length()>0){
@@ -2968,7 +3024,9 @@ public class DFutils extends Thread{
 		File file;
 		BufferedReader reader = null ;
 		
-		
+		if ((filename==null) || (filename.length()==0) || fileexists(filename)==false){
+			return null;
+		}
 		file = new File(filename);
 
 		if (file.exists()==false){

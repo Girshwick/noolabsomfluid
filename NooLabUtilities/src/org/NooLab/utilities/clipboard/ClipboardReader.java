@@ -12,6 +12,7 @@ import java.util.TimerTask;
 import java.util.TreeMap;
 
  
+import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.strings.MD5Content;
 
 
@@ -52,10 +53,17 @@ public static void setClipboard(String str) {
 
 public class ClipboardReader {
 
+	public int DEBUG=0;
+	
+	ClipBoardIntf callingInstance;
 	private Method clipboardEventMethod;
 	private ClipboardOwner owner ;
 	
 	int timeOut = 2300 ;
+	int lifeSpan = -1;
+
+	String reasonStr = "";
+	int reasonCode = 0;
 	
 	Clipboard clipboard ;
 	
@@ -69,9 +77,10 @@ public class ClipboardReader {
 	
 	Map<String,Integer> mappedContent = new TreeMap<String,Integer>();
 	
-	private ClipboardSupervisor csv ;
+	ClipboardSupervisor csv ;
 	
-	ClipBoardIntf callingInstance;
+	PrintLog out = new PrintLog(2,false);
+	
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -82,7 +91,7 @@ public class ClipboardReader {
 		setupProcessingEvent( co );
 		
 		csv = new ClipboardSupervisor();
-		
+		removalTimer = new RemovalTimer( this, timeOut, mappedContent, deliveredContentID );
 		// checkingClipboard() ;
 	}
 	
@@ -130,6 +139,9 @@ public class ClipboardReader {
 		
 		clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 
+		
+		//Toolkit.getDefaultToolkit().getSystemSelection();
+		
 		// odd: the Object param of getContents is not currently used
 		Transferable contents = clipboard.getContents(null);
 		hasTransferableText = (contents != null) && 
@@ -139,6 +151,8 @@ public class ClipboardReader {
 			try {
 				
 				result = (String) contents.getTransferData(DataFlavor.stringFlavor);
+				
+				out.printErr(4, "raw detection (reading allowed:"+csv.readingAllowed+"): "+ result ) ;
 				
 			} catch (UnsupportedFlavorException ex) {
 				// highly unlikely since we are using a standard DataFlavor
@@ -256,8 +270,8 @@ public class ClipboardReader {
 				deliveredContentID++; 
 				mappedContent.put(_md5,deliveredContentID);
 				clearClipboard();
-				new RemovalTimer( timeOut, mappedContent, deliveredContentID );
 			}
+			
 
 		} catch (NoSuchAlgorithmException e) {
 			 
@@ -275,51 +289,71 @@ public class ClipboardReader {
 
 	class ClipboardSupervisor implements Runnable{
 		
+		boolean readingAllowed =false;
 		Thread csvThrd;
 		boolean alive = false;
 		
 		public ClipboardSupervisor(){
+			
 			
 			csvThrd = new Thread(this,"ClipboardSupervisor");
 			csvThrd.start();
 		}
 
 		public void stopSupervising(){
-			csvThrd.interrupt();
+			alive=false;
+			reasonStr = "stopSupervising() has been called." ; 
+			PrintLog.Delay(50);
+									
 		}
 		
 		@SuppressWarnings("static-access")
 		public void run() {
 			int z=1;
-			boolean readingAllowed = true;
+			readingAllowed = true;
+			
 			String str ;
+			
 			try{
+				out.print(2,"clipboard supervisor has been started..." );
 				
 				alive  = true;
 				
 				while (alive){
-					csvThrd.sleep(50);
-					
+					csvThrd.sleep(25);
+
+
 					if (readingAllowed){
-						if (z % 40 == 0) {
-							System.out.print(".");
+
+if (DEBUG>0){
+	z=z+1-1;
+}
+
+						if (z % 80 == 0) {
+							out.print(3,".");
 						}
-						if (z % 200 == 0) {
-							System.out.println();
+						if (z % 400 == 0) {
+							out.print(3,"");
 							z = 1;
 						}
 
 						str = getClipboardContents();
 
 						if (str.length() > 0) {
+							
 							readingAllowed = false;
 							// if we did not see it, then no changes, if we know
 							// it, the string will be empty then
+							out.delay(2);
 							str = qualifyClipboardString(str);
 
 							if (str.length() > 0) {
 								
-								((ClipBoardIntf) callingInstance).clipboardContentStrEvent(str);
+								if (callingInstance!=null){
+									readingAllowed = true;
+									((ClipBoardIntf) callingInstance).clipboardContentStrEvent(str);
+									DEBUG = 1;
+								}
 								/*
 								if (clipboardEventMethod != null) {
 									clipboardEventMethod.invoke( callingInstance, str);
@@ -329,80 +363,33 @@ public class ClipboardReader {
 								}
 								*/
 							}
-							readingAllowed = true;
+							
 						}
-
+						readingAllowed = true;
 					}
 					z++;
 				}
 			}catch(Exception e){
-				e.printStackTrace();
+				// e.printStackTrace();
+				reasonStr= reasonStr + "\n"+e.getMessage();
 			}
-			System.out.println("thread stopped and left...");
+			out.print(2,"supervisor thread stopped and left ("+reasonStr+")...");
+			((ClipBoardIntf) callingInstance).clipboardProcessStopped(true);
 		}
 		 
 	} // end inner class ClipboardSupervisor
 
 	
-	
-	class RemovalTimer{
-		
-		Timer timer;
-		
-		int revomalsID;
-		Map<String,Integer> mappedContent;
-		
-		public RemovalTimer( int timeout, Map<String,Integer> mappedcontent, int id){
-			mappedContent = mappedcontent ;
-			revomalsID = id;
-
-			startInstance( timeout );
-			
-		}
-		
-		public void startInstance( int timeout ){
-			
-			
-			timer = new Timer();
-			timer.schedule(new removalTask(), timeout);
-		}
-		
-		
-		
-		class removalTask extends TimerTask {
-			
-			@SuppressWarnings("rawtypes")
-			public void run() {
-				Iterator it ;
-				String str, previous_content;
-				int id;
-				Map.Entry pairs ;
-				
-				// System.out.println("going to remove old content from map (id="+revomalsID+")");
-				
-				it = mappedContent.entrySet().iterator();
-				
-			    while (it.hasNext()) {
-			        pairs = (Map.Entry)it.next();
-			    
-			        previous_content = (String) pairs.getKey();
-			        
-			        id  = (int)(Integer) pairs.getValue();
-			        
-			        if (id==revomalsID){
-			        	// System.out.println("old content (id="+revomalsID+") removed from map.");
-			        	mappedContent.remove( pairs.getKey() ) ;
-			        	//clearClipboard()
-			        	break;
-			        }
-			    }
-
-				timer.cancel();
-			}
-		}
-		
+	public void setLifespan(int lifespan) {
+		// 
+		lifeSpan = lifespan;
+		timeOut = lifespan ; 
+		removalTimer.setTimeOut (timeOut);
 	}
 } // ClipboardReader
+
+
+
 
 
 //This class serves as the clipboard owner.
@@ -422,14 +409,110 @@ class ClipboardOwnerInstance implements ClipboardOwner {
 }
 
 
-class RemovalTimer{
+
+// ============================================================================
+
+// this one actually without a java timer... just dojo java loop
+class RemovalTimer implements Runnable{
+
+	Thread cliprtThrd;
+	int revomalsID;
+	long now;
+	boolean rtIsWaiting=false;
+	Map<String,Integer> mappedContent;
+	ClipboardReader clipReader;
+	int timeOut;
+	String rrStr="" ;
+	
+	
+	public RemovalTimer( ClipboardReader clipreader, int timeout, Map<String,Integer> mappedcontent, int id){
+		
+		
+		clipReader = clipreader;
+		mappedContent = mappedcontent ;
+		revomalsID = id;
+
+		timeOut = timeout;
+		cliprtThrd = new Thread(this,"cliprtThrd") ;
+		startInstance();
+		
+	}
+	
+	public void setTimeOut(int timeout) {
+
+		timeOut = timeout;
+		now = System.currentTimeMillis() ;
+	}
+
+	public void startInstance( ){
+		
+		clipReader.out.print(2,"\n\nRemovalTimer: clipboard reader now waiting for "+(timeOut/1000.0)+" seconds");
+		now = System.currentTimeMillis() ; 
+		cliprtThrd.start() ;
+	}
+
+	public void stop(){
+		rtIsWaiting=false;
+	}
+	
+	@SuppressWarnings("rawtypes")
+	@Override
+	public void run() {
+		// 
+		Iterator it = null;;
+		String str, previous_content;
+		int id;
+		Map.Entry pairs ;
+		
+		if ((mappedContent!=null)&&(mappedContent.size()>0)){
+			it = mappedContent.entrySet().iterator();
+		}
+		rtIsWaiting=true;
+		long dT = -1;
+											clipReader.out.print(2,"timing out has been started");
+		
+		while ((rtIsWaiting) && (dT<timeOut) && (clipReader.csv.alive)){
+			
+			dT = System.currentTimeMillis() - now  ;
+			
+			if (it!=null)
+			while (it.hasNext()) {
+		        pairs = (Map.Entry)it.next();
+		    
+		        previous_content = (String) pairs.getKey();
+		        
+		        id  = (int)(Integer) pairs.getValue();
+		        
+		        if (id==revomalsID){
+		        	// System.out.println("old content (id="+revomalsID+") removed from map.");
+		        	mappedContent.remove( pairs.getKey() ) ;
+		        	//clearClipboard()
+		        	
+		        	break;
+		        }
+		    }
+			clipReader.out.delay(10);
+			
+				
+		}
+		rtIsWaiting=false;
+		// if (
+		clipReader.reasonStr = "removal timer "+ rrStr;
+		clipReader.csv.alive=false;
+		clipReader.out.print(2,"clipboard reader has been stopped and removed.");
+	}
+	
+
+}
+
+class RemovalTimer2{
 	
 	Timer timer;
 	
 	int revomalsID;
 	Map<String,Integer> mappedContent;
 	
-	public RemovalTimer( int timeout, Map<String,Integer> mappedcontent, int id){
+	public RemovalTimer2( int timeout, Map<String,Integer> mappedcontent, int id){
 		mappedContent = mappedcontent ;
 		revomalsID = id;
 

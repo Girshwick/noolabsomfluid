@@ -30,6 +30,10 @@ import org.NooLab.utilities.strings.StringsUtil;
  * for repeated requests, it buffers the retrieved pages for a specifiable period of time,
  * before reloading will be enforced (that age is specified for the host, not for the page) 
  * 
+ * 
+ * here, no javascript engine is included 
+ * 
+ * 
  * http://www.java2s.com/Code/Java/Apache-Common/UsingHttpClientInsideThread.htm
  * http://www.java2s.com/Code/Java/Apache-Common/ExecuteHttpmethodpostget.htm
  *
@@ -132,7 +136,7 @@ public class WebRetriever {
 		if (page.trim().startsWith("/")==false){
 			page = "/"+page;
 		}
-		
+		if (host.endsWith("/")){ host = host.substring(0,host.length()-1);}
 		// System.out.println("\naccessing page -> "+ page +"\n");
 		urlStr = (host + ":"+port+page).trim();
 		urlstr = urlStr ;
@@ -802,6 +806,9 @@ public class WebRetriever {
 		this.port = port;
 	}
 	public void setUrlStr(String host, String page) {
+		if ((host.endsWith("/")==false) && (page.startsWith("/")==false)){
+			host=host+"/";
+		}
 		this.urlStr = host+page;
 		this.host = host;
 		this.page = page ;

@@ -105,8 +105,8 @@ public class IniStyleSection {
 		return itemvalue;
 	}
 	
-	public Vector<String> getSimpleEntries(){
-		Vector<String> simple_entries = new Vector<String>() ;
+	public ArrayList<String> getSimpleEntries(){
+		ArrayList<String> simple_entries = new ArrayList<String>() ;
 		String str;
 		
 		for (int i=0;i<sectionitems.size();i++){
