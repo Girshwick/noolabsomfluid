@@ -1349,6 +1349,17 @@ public class ArrUtilities {
 		return return_value;		
 	}
 	
+	public static long arraySumL( ArrayList<Long> long_arr){
+		long return_value=0;
+		int i;
+		
+		i=0;
+		for ( i = 0; i < long_arr.size(); i++) {
+			 return_value = return_value + long_arr.get(i);
+		}
+		return return_value;		
+	}
+	
 	public int arraysum( Vector<Integer> int_arr){
 		return arraySum( int_arr);
 	}
@@ -2386,6 +2397,124 @@ public class ArrUtilities {
 		
 		return result;
 	}
+	
+	
+	
+	/**
+	 * 
+	 * creates a directed difference list, i.e. those items will be returned 
+	 * that are in list1 but not in list2, HOWEVER, it is NOT checked whether items are in list2 but not in list1
+	 * 
+	 * @param list1
+	 * @param list2
+	 * @param relaxedMatch
+	 * @return
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static ArrayList disjunctionLR(ArrayList list1 , ArrayList list2, int relaxedMatch) {
+	
+		boolean isStringList=false;
+		String cn, str1,str2;
+		ArrayList list = new ArrayList();
+		Object obj1, obj2 ;
+		
+		
+		cn = list.getClass().getSimpleName().toLowerCase();
+		isStringList = cn.contains("string");
+		
+		
+		int i=0, k=0;
+
+		while (i<list1.size()){
+			
+			obj1 = list1.get(i) ;
+			
+			int cc=0;
+			for (int j=0;j<list.size();j++){
+				
+				obj2 = list.get(j);
+				
+				if ((isStringList) && (relaxedMatch>=1)){
+					str1 = (String)obj1;
+					str2 = (String)obj2;
+					str1 = str1.toLowerCase();
+					str2 = str2.toLowerCase();
+					if (str1.contentEquals(str2)){
+						cc=1;
+						break;
+					}
+				}
+				if ( objectsSimpleEqual(obj1, obj2) == 0){
+					cc=1;
+					break;
+				}
+			}
+			if (cc>0){
+				i++;
+				continue;
+			}
+			
+			cc=0;
+			for (int j=0;j<list2.size();j++){
+				obj2 = list2.get(j) ;
+			
+				if ( objectsSimpleEqual(obj1, obj2) == 0){
+					cc=1;
+					break;
+				}
+			}
+			if (cc==0){
+				list.add(obj1) ;
+			}
+			
+			i++;
+		}
+		
+		
+		list.trimToSize() ;
+		return list;
+	}
+	
+	
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static ArrayList interSection(ArrayList list1 , ArrayList list2) {
+		
+		ArrayList list = new ArrayList();
+		Object obj1, obj2 ;
+		
+		int i=0, k=0;
+		
+		while (i<list1.size()){
+			
+			obj1 = list1.get(i) ;
+			
+			int cc=0;
+			for (int j=0;j<list.size();j++){
+				if ( objectsSimpleEqual(obj1, list.get(j)) == 0){
+					cc=1;
+					break;
+				}
+			}
+			if (cc>0){
+				i++;
+				continue;
+			}
+			for (int j=0;j<list2.size();j++){
+				obj2 = list2.get(j) ;
+				if ( objectsSimpleEqual(obj1, obj2) == 0){
+					list.add(obj1) ;
+					break;
+				}
+			}
+			
+			i++;
+		}
+		
+		list.trimToSize() ;
+		return list;
+	}
+	
 	
 	@SuppressWarnings("rawtypes")
 	public static ArrayList removeDoubleEntries(ArrayList list) {

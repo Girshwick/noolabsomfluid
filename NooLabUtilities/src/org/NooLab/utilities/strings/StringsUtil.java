@@ -577,7 +577,49 @@ public class StringsUtil{  //  implements Serializable
 	}
 		
 	
-
+	/**
+	 * 
+	 * allows for simple wildcard match
+	 * 
+	 * @param strList
+	 * @param searchFor
+	 * @param offset
+	 * @param matchMode 0=normal, 1=... 2=... ; 3=wildcards expected at both ends; 4=wildcard and case insensitive; 5=wildcard, case insensitive and relaxed match
+	 * @return
+	 */
+	public int indexOf(ArrayList<String> strList, String searchFor, int offset, int matchMode){
+		
+		int position=-1;
+		String item="" ;
+		boolean hb=false;
+		
+		
+		if ((searchFor.contains("*")==false) && (matchMode<2)){
+			position = strList.indexOf(searchFor) ;
+		}else{
+			
+			for (int i=offset;i<strList.size();i++){
+				item = strList.get(i);
+				
+				if (matchMode>=3){
+					item=item.toLowerCase();
+					searchFor = searchFor.toLowerCase() ;
+				}
+				hb = matchSimpleWildcard(searchFor, item);
+				if ((hb==false) && (matchMode>=3)){
+					hb = matchSimpleWildcard(item, searchFor);
+				}
+				if (hb){
+					position=i;
+					break;
+				}
+			}// ->
+			
+		}
+		
+		return position;
+	}
+	
 	public int indexOf(String str, String[] snips){
 		return indexOf(str, snips,0);
 	}
@@ -749,7 +791,7 @@ public class StringsUtil{  //  implements Serializable
 		int[] positions = new int[0];
 		int n, p,z=0;
 		String dpart;
-		Vector<Integer> pos = new Vector<Integer>();
+		ArrayList<Integer> pos = new ArrayList<Integer>();
 		try {
 			n = words.length;
 
@@ -776,7 +818,9 @@ public class StringsUtil{  //  implements Serializable
 
 					if (p >= offset) {
 						pos.add(p);
-						break;
+						if (collectAll==false){
+							break;
+						}
 					}
 					 
 				}
@@ -808,7 +852,7 @@ public class StringsUtil{  //  implements Serializable
 		int[] positions = new int[0];
 		int n, p,z=0;
 		String dpart;
-		Vector<Integer> pos = new Vector<Integer>();
+		ArrayList<Integer> pos = new ArrayList<Integer>();
 		try {
 			n = words.length;
 
@@ -1738,7 +1782,10 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		return rStr;
 	}
 	
-	public static String replaceall( String str, String searchfor, String byThat){
+	public static String replaceall( String str, String searchfor, String byThat ){
+		return replaceall( str,searchfor, byThat,0);
+	}
+	public static String replaceall( String str, String searchfor, String byThat,int relaxedMode){
 
 		String rStr = str;
 		boolean done=false, twophaseRepl;
@@ -1756,6 +1803,12 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		
 		z=0; sLen = str.length() ;
 		
+		int casesMode = 0; // -> all of byThat -> upper case
+		if (relaxedMode>=1){ casesMode=2;
+		if (isCharUpperCase(str, 0)){
+			casesMode=1;   // // -> all of byThat -> lower case
+		}
+		}
 		originalReplacement = byThat;
 		twophaseRepl =  (byThat.indexOf(searchfor)>=0) ; // (searchfor.trim().indexOf(byThat.trim())>=0) || 
 			
@@ -1766,8 +1819,16 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		while (!done){
 			
 			str = rStr.replace(searchfor, byThat);
-			
-			rStr = str ;
+			// 
+			if ((relaxedMode>=1) && (str.contentEquals(rStr))){
+				if (casesMode==2){
+					str = rStr.replace(searchfor, searchfor.toUpperCase());
+				}
+				if (casesMode==1){
+					str = rStr.replace(searchfor, searchfor.toLowerCase());
+				}
+			}
+			rStr = str  ;
 			
 			p = str.indexOf(searchfor); 
 			if (p<0){
@@ -1787,9 +1848,13 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 
 		return rStr ;
 	}
+	
+	public String replaceAll( String str, String searchfor, String byThat, int relaxedMode){
+		return replaceall(str, searchfor, byThat,relaxedMode); 
+	}
 	public String replaceAll( String str, String searchfor, String byThat){
 		
-		return replaceall(str, searchfor, byThat);
+		return replaceall(str, searchfor, byThat,0);
 		
 	}
 	
@@ -1803,6 +1868,7 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 		if (searchfors.length==0){
 			return str;
 		}
+	
 		
 		try{
 			 
@@ -2296,7 +2362,10 @@ if (temp.contains("staggers")){
 	}
 	
 	
-	public String[] substringsBetweenEmbracingPair( String istr, String open, String[] close, int matchingMode, boolean regardUnfinshedClosings) {
+	public String[] substringsBetweenEmbracingPair( String istr, String open, String[] close, 
+			 										int matchingMode, 
+			 										boolean regardUnfinshedClosings) {
+		
 		String[] substring = new String[0];
 		Vector<String> substrings = new Vector<String> ();
 		String str,xstr ,strc="",lastExtractAdded="";
@@ -2458,6 +2527,34 @@ if (temp.contains("staggers")){
 	}
 	
 	
+	public String removeStringsBetweenEmbracingPairs( String istr, String open, String close, int count){
+		
+		
+		boolean done = false;
+		int p1,p2,ps1=0,ps2=0,pe1=0,pe2=0;
+		int cc=0;
+		
+		String[] finst = substringsBetweenEmbracingPair( istr, open, close, 2) ;
+		if (finst.length==0){
+			finst = substringsBetweenEmbracingPair( istr, open.toUpperCase(), close.toUpperCase(), 2) ;
+		}
+		
+		if ((finst!=null) && (finst.length>0)){
+			
+			for (int i=0;i<finst.length;i++){
+				istr = istr.replace( finst[i], "");
+				cc++;
+				if ((count>0) && (cc>=count)){
+					break ;
+				}
+				
+			} // ->
+			
+		}
+		
+		return istr;
+	}
+	
 	public String[] changeArrayStyle( Vector<String> strvec  ){
 		String[] strarr ;
 		 
@@ -2481,13 +2578,13 @@ if (temp.contains("staggers")){
 		return vs ;
 	}
 	
-	public int[] changeArrayStyle( Vector<Integer> intvec  , int v){
+	public int[] changeArrayStyle( ArrayList<Integer> pos  , int v){
 		int[] intarr ;
 		 
-		intarr = new int[intvec.size()];
-		if (intvec.size() > 0) {
-			for (int i = 0; i < intvec.size(); i++) {
-				intarr[i] = intvec.get(i);
+		intarr = new int[pos.size()];
+		if (pos.size() > 0) {
+			for (int i = 0; i < pos.size(); i++) {
+				intarr[i] = pos.get(i);
 			}
 		}
 
@@ -2682,14 +2779,19 @@ if (temp.contains("staggers")){
 		return UnaccentedStr.convertNonAscii(str);
 	}
 	
+	
+	public boolean isCharUppercase(String str, int pos){
+		return isCharUpperCase(str, pos);
+	}
+	
 	/**
-	 * // we return TRUE only, if we have a letter char
+	 * 
 	 * 
 	 * @param str 
 	 * @param pos
 	 * @return
 	 */
-	public boolean isCharUpperCase(String str, int pos){
+	public static boolean isCharUpperCase(String str, int pos){
 		boolean rb=false;
 		String firstChar ;
 		char cc ;
@@ -3131,9 +3233,13 @@ if (temp.contains("staggers")){
 	}
 
 
-	public IniStyleContent getIniStyleFile( Vector<String> textlines){
+	public IniStyleContent getIniStyleFile( ArrayList<String> filecontent){
 		
-		IniStyleContent inifile = new IniStyleContent(textlines);
+		if ((filecontent==null) || (filecontent.size()==0)){
+			return new IniStyleContent("");
+		}
+		String filecontentstr = filecontent.toString() ;
+		IniStyleContent inifile = new IniStyleContent(filecontentstr);
 		 
 		return inifile;
 		
@@ -3378,7 +3484,42 @@ if (temp.contains("staggers")){
 		return rb;
 	}
 	
-	
+	public boolean isUrl(String str) {
+		boolean rB=false;
+
+		if (str.length()<3){
+			return rB;
+		}
+		str = str.trim().toLowerCase() ;
+		
+		rB = str.startsWith("http://");
+		if (rB==false){
+			rB = str.startsWith("www.");
+		}
+		if (rB==false){
+			rB = str.contains("www") && (this.frequencyOfStr(str, ".")>=2);
+		}
+		if (rB==false){
+			rB = str.contains("localhost") ;
+		}
+		if (rB==false){
+			rB = isIpAddress(str);
+		}
+
+		
+		return rB;
+	}
+
+
+	// TODO: use regex
+	private boolean isIpAddress(String str) {
+		// 
+		boolean rB=false;
+		
+		
+		return rB;
+	}
+
 	public boolean containsYearValue( String str){
 		boolean rb=false;
 		String regex, xs;
@@ -3983,18 +4124,18 @@ if (temp.contains("staggers")){
 		return return_value;
 	}
 	
-	public String contentofCollection( Vector<String> items , String separator, boolean keepLF){
+	public String contentofCollection( ArrayList<String> filecontent , String separator, boolean keepLF){
 		String str, concatted="" ;
 		
-		for (int i=0;i<items.size();i++){
-			str = items.get(i) ;
+		for (int i=0;i<filecontent.size();i++){
+			str = filecontent.get(i) ;
 			if (keepLF==false){
 				str = str.trim();
 			}
 			
 			if (str.length()>0){
 				concatted = concatted + str;
-				if ((i<items.size()-1) && (str.indexOf("\n")<str.length())){
+				if ((i<filecontent.size()-1) && (str.indexOf("\n")<str.length())){
 					concatted = concatted + separator;
 				}
 			}
@@ -5026,6 +5167,31 @@ if (temp.contains("staggers")){
 			hs1 = String.format("%05d", n);
 		 */
 		return content;
+	}
+
+	public String removeTagfromHtml(String htmlstr, String tag, int position) {
+		// 
+		String html;
+		int[] divP,divC;
+		ArrayList<Integer> divpositions,divCloses;
+		int divB,divE;
+		html = htmlstr ;
+		
+		divP = indexesOfStrings(htmlstr, new String[]{"<div"}, position, true);
+		divC = indexesOfStrings(htmlstr, new String[]{"</div>"}, position, true);
+		
+		divpositions = ArrUtilities.changeArraystyle(divP) ;
+		divCloses = ArrUtilities.changeArraystyle(divC) ;
+			
+		for (int i=0;i<divpositions.size();i++){
+			divB = divpositions.get(i);
+			
+			for (int k=0;i<divCloses.size();k++){
+				divE = divCloses.get(k) ;
+			}
+		}
+		
+		return html;
 	}
 
 

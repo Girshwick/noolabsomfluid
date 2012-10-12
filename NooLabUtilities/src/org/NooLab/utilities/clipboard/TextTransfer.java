@@ -22,6 +22,7 @@ public final class TextTransfer implements ClipboardOwner {
     //change the contents and then re-display
     textTransfer.setClipboardContents("blah, blah, blah");
     System.out.println("Clipboard contains:" + textTransfer.getClipboardContents() );
+    
   }
 
    /**
@@ -29,6 +30,14 @@ public final class TextTransfer implements ClipboardOwner {
    */
    public void lostOwnership( Clipboard aClipboard, Transferable aContents) {
      //do nothing
+		try {
+		
+			System.out.println("lostOwnership:" + aContents.getTransferData(DataFlavor.stringFlavor));
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+			   
    }
 
   /**

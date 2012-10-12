@@ -20,9 +20,9 @@ public class IniStyleContent {
 	IniStyleContent isc;
 	
 	// --------------------------------------------------------------
-	public IniStyleContent(String text) {
+	public IniStyleContent(String filecontent) {
 		 
-		filetext = text;
+		filetext = filecontent;
 		
 	}
 	public IniStyleContent() {
