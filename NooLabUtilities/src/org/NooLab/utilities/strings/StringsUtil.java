@@ -3484,7 +3484,15 @@ if (temp.contains("staggers")){
 		return rb;
 	}
 	
+	/**
+	 * note that a valid Url does NOT contain blanks... set mode to 1+ if you would like to allow it 
+	 * @param str
+	 * @return
+	 */
 	public boolean isUrl(String str) {
+		return isUrl(str, 0);
+	}
+	public boolean isUrl(String str, int relaxedMode) {
 		boolean rB=false;
 
 		if (str.length()<3){
@@ -3501,6 +3509,9 @@ if (temp.contains("staggers")){
 		}
 		if (rB==false){
 			rB = str.contains("localhost") ;
+		}
+		if ((relaxedMode<=0) && (rB)){
+			rB = str.indexOf(" ")<0 ;
 		}
 		if (rB==false){
 			rB = isIpAddress(str);
