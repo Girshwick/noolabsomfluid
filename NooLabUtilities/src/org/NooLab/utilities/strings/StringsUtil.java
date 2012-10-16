@@ -3521,7 +3521,67 @@ if (temp.contains("staggers")){
 		return rB;
 	}
 
+	public boolean isHtmlDoc( String str){
+		boolean rB=false;
+		
+		if (str.length()<13){
+			return false;
+		}
+		
+		int n=1000;
+		if (str.length()<1000)n=str.length();
+		str = str.substring(0, n).trim();
+		
+		int p = str.toLowerCase().indexOf("<html>");
+		if ((p>=0) && (p<n-1)){
+			rB=true;
+		}
+		
+		return rB;
+	}
+	
+	public boolean isXmlDoc(String str) {
+		boolean rB=false;
+		
 
+		if (str.length()<13){
+			return false;
+		}
+		
+		int n=1000;
+		if (str.length()<1000)n=str.length();
+		str = str.substring(0, n).trim();
+		
+		int p = str.toLowerCase().indexOf("<?xml");
+		if ((p>=0) && (p<10)){
+			rB=true;
+		}
+		
+		return rB;
+	}
+
+	public boolean isIniFileContent(String str) {
+		boolean rB=false;
+
+		if (str.length()<=3){
+			return false;
+		}
+
+		int f1 = this.frequencyOfStr(str,"[") ;
+		int f2 = this.frequencyOfStr(str,"]") ;
+		
+		if (f1==0){
+			return false;
+		}
+		
+		if ((f1==f2) || 
+			((f1>5) && (Math.abs(f1-f2)<=2))){
+			rB=true;
+		}
+		
+		return rB;
+	}
+	
 	// TODO: use regex
 	private boolean isIpAddress(String str) {
 		// 
