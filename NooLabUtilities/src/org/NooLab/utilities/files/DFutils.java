@@ -1109,10 +1109,6 @@ public class DFutils extends Thread{
 
 	
 	
-	private String getTempFileJava(String namesnip){
-		
-		return "" ;
-	}
 	
 	/**
 	 * Create a new temporary directory. Use something like
@@ -2891,9 +2887,9 @@ public class DFutils extends Thread{
 	 * @param filename
 	 * @return
 	 */
-	public Vector<String> readFileintoVectorstringTable( String filename ){
+	public ArrayList<String> readFileintoVectorstringTable( String filename ){
 	
-		Vector<String> data = new Vector<String>(); 
+		ArrayList<String> data = new ArrayList<String>(); 
 		BufferedReader reader = null;
 	    String str ;
 

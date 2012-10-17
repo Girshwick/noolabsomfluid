@@ -173,7 +173,7 @@ public class StringsUtil{  //  implements Serializable
 		return effectiveSeparator;
 	}
 	
-	public int getColumnsCount( Vector<String> strtable, int inspectrowscount){
+	public int getColumnsCount( ArrayList<String> strtable, int inspectrowscount){
 		
 		String[] separators = {";","\t"," ",","} ;
 		
@@ -1439,18 +1439,18 @@ public class StringsUtil{  //  implements Serializable
 	}
 	
 	public boolean contains( String[] strs, String costr, int colength){
-		Vector<String> strv;
+		ArrayList<String> strv;
 		
-		strv = new Vector<String>(Arrays.asList(strs));
+		strv = new ArrayList<String>(Arrays.asList(strs));
 		
 		return contains( strv, costr, colength) ;
 	}
 	
-	public boolean contains( Vector<String> strs, String costr){
+	public boolean contains( ArrayList<String> strs, String costr){
 		return contains( strs, costr, -1) ;
 	}
 	
-	public boolean contains( Vector<String> strs, String costr, int colength){
+	public boolean contains( ArrayList<String> strs, String costr, int colength){
 		boolean rb=false;
 		String str1,str2 ;
 		
@@ -1473,11 +1473,11 @@ public class StringsUtil{  //  implements Serializable
 		return rb;
 	}
 
-	public boolean isMemberofSimpleSet( String syntag, Vector<String> iset){
+	public boolean isMemberofSimpleSet( String syntag, ArrayList<String> iset){
 		return isMemberofSimpleSet( syntag, iset, -1);
 	}
 	
-	public boolean isMemberofSimpleSet( String syntag, Vector<String> iset, int startLen ){
+	public boolean isMemberofSimpleSet( String syntag, ArrayList<String> iset, int startLen ){
 		return isMemberofSimpleSet( syntag, iset, startLen,false );
 	}
 	/**
@@ -1488,7 +1488,7 @@ public class StringsUtil{  //  implements Serializable
 	 * @param iset
 	 * @return
 	 */
-	public boolean isMemberofSimpleSet( String syntag, Vector<String> iset, int startLen, boolean strict ){
+	public boolean isMemberofSimpleSet( String syntag, ArrayList<String> iset, int startLen, boolean strict ){
 		boolean rb=false, hb;
 		String str;
 		
@@ -1921,12 +1921,12 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 	}
 	
 	
-	public String collapse( Vector<String> items, String separator){
+	public String collapse( ArrayList items, String separator){
 		String str ="";
 		String istr;
 		
 		for (int i=0;i<items.size();i++){
-			istr = items.get(i);
+			istr = (String) items.get(i);
 			if ( (istr!=null) && (istr.length()>0)){
 				str = str + istr ;
 				if (i<items.size()-1){
@@ -4381,9 +4381,11 @@ if (temp.contains("staggers")){
 				rstr1 = str.substring( 0,startAt);
 				rstr2 = str.substring( endAt, str.length());
 				
-				String s1,s2;
-				s1 = rstr1.substring( rstr1.length()-10,rstr1.length() ) ;
-				s2 = rstr2.substring( 0,10 ) ;
+						String s1,s2;
+						int pr1 = Math.max(rstr1.length()-10,0);
+						int pr2 = Math.min(rstr2.length(),10);
+				s1 = rstr1.substring( pr1,rstr1.length() ) ;
+				s2 = rstr2.substring( 0,pr2 ) ;
 				
 				rstr = s1+s2 ;
 				rstr = rstr1+rstr2;
@@ -5263,6 +5265,32 @@ if (temp.contains("staggers")){
 		}
 		
 		return html;
+	}
+
+	public int determineTagBoundary(String str, String strAround) {
+		//
+		int p1=-1;
+		int aroundPos = -1;
+		
+		if (aroundPos < 0) {
+			aroundPos = str.indexOf(strAround) ;
+		}
+		if (aroundPos > 0) {
+			int p1a = -1, p1b = -1;
+			
+			p1a = indexOfBefore( str, "<", aroundPos);
+			
+			if (p1a > 0) {
+				p1b = str.indexOf(">", p1a);
+			}
+			if ((p1a > 0) && (p1a < aroundPos) && (aroundPos > 0) && (p1b > aroundPos)) {
+				p1 = p1a;
+			} else {
+				p1 = -3;
+			}
+		}
+
+		return p1;
 	}
 
 

@@ -1,5 +1,6 @@
 package org.NooLab.utilities.files;
 
+import java.util.ArrayList;
 import java.util.Vector;
 
 import org.NooLab.utilities.strings.*;
@@ -20,7 +21,7 @@ import org.NooLab.chord.*;
  */
 public class FastFileReader {
 
-	Vector<double[]> table = null;
+	ArrayList<double[]> table = null;
 	
 	int threadcount = 4;
 	
@@ -56,7 +57,7 @@ public class FastFileReader {
 	
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 	
-	public Vector<double[]> readValuesTablefromFile( String filename){
+	public ArrayList<double[]> readValuesTablefromFile( String filename){
 		
 		readFile2ValuesTable(filename);
 		
@@ -65,12 +66,12 @@ public class FastFileReader {
 	}
 	
 	
-	public Vector<double[]> getValuesTable(){
+	public ArrayList<double[]> getValuesTable(){
 		return table ;
 	}
 	
 	@SuppressWarnings("unused")
-	private void detectSeparator( Vector<String> textrows){
+	private void detectSeparator( ArrayList<String> textrows){
 		int cc;
 		
 		cc = strgutil.getColumnsCount(textrows,8);
@@ -112,7 +113,7 @@ public class FastFileReader {
 		int resultState=-1;
 		 
 		String str ;
-		Vector<String> textrows ;
+		ArrayList<String> textrows ;
 		
 		double[] emptyarr  ; 
 		
@@ -133,7 +134,7 @@ public class FastFileReader {
 		}
 		 
  		// create the table: empty but all rows present
-		table = new Vector<double[]>();
+		table = new ArrayList<double[]>();
 		
 		emptyarr = new double[0]; // cc ?
 		
@@ -184,7 +185,7 @@ public class FastFileReader {
 		 
 		MultiDigester digester ; 
 		 
-		Vector<String>  rowText ;
+		ArrayList<String>  rowText ;
 		
 		
 		// . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -194,7 +195,7 @@ public class FastFileReader {
 		
 		// . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 		
-		protected void digestingStrings( Vector<String> rowtext, int threadcount){ 
+		protected void digestingStrings( ArrayList<String> rowtext, int threadcount){ 
 			 
 			
 			// providing also right now the callback address (=this class)

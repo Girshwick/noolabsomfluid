@@ -84,17 +84,17 @@ public class StringComparison {
 	// . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 	
 
 
-	public int[] findMostSimilarStringItems( Vector<String> items, String compareStr ){
+	public int[] findMostSimilarStringItems( ArrayList<String> items, String compareStr ){
 		int[] positions= new int[0];
 	
 		return positions;
 	}
 
-	public int findMostSimilarStringItem( Vector<String> items, String compareStr ){
+	public int findMostSimilarStringItem( ArrayList<String> items, String compareStr ){
 		return findMostSimilarStringItem( items, compareStr ,1,0 );
 	}
 
-	public int findMostSimilarStringItem( Vector<String> items, String compareStr, int maxThreadCount, int offset ){
+	public int findMostSimilarStringItem( ArrayList<String> items, String compareStr, int maxThreadCount, int offset ){
 		int position=-1;
 		
 		String str;

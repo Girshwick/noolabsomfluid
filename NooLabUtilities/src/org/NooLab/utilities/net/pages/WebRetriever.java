@@ -18,6 +18,7 @@ import org.apache.commons.lang3.*;
 
 import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.logging.LogControl;
+import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 
 
@@ -53,7 +54,7 @@ public class WebRetriever {
 	String accessmode = "httpc" ;
 	
 	/** if the returned html contains this string, the return of the retriever will be an empty string */
-	Vector<String> emptyPagePatterns = new Vector<String>();
+	ArrayList<String> emptyPagePatterns = new ArrayList<String>();
 	
 	boolean saveRawPagestoTmp = false ;
 	boolean useSystemTmp = true;
@@ -203,13 +204,13 @@ public class WebRetriever {
 	    	
 	    	str = hostcfg.getHostURL() ; // with ... starting with http://...
 	    	request = request.replace(str,"") ;
-	    	request = page ;
+	    	// request = page ;
 	    	// uri = new URI( "",  "", page, null);
-	    	urlstr = uri.getURI() ;
+	    	urlstr = uri.getURI() ; // http://conjugator.reverso.net
 	    	urlstr = uri.toString() ;
 	    		//or String request = uri.toString();
 	    	
-	    	 
+	    	// request = urlstr+page; 
 			retrieval = new MethodThread( client, hostcfg, request );
 			retrieval.setPrintLevel(printLevel) ;
 			
@@ -276,7 +277,9 @@ public class WebRetriever {
 		} catch (NullPointerException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
-			e.printStackTrace();
+			// e.printStackTrace();
+			String estr ="Problem in WebRetriever::getPageSafely(): "+e.getMessage() ;
+			System.err.println(estr);
 		}
 		 
 		
@@ -818,13 +821,13 @@ public class WebRetriever {
 	public String getHtmlStr() {
 		return htmlStr;
 	}
-	public Vector<String> getEmptyPagePattern() {
+	public ArrayList<String> getEmptyPagePattern() {
 		return emptyPagePatterns;
 	}
 
 	public String getEmptyPagePatternAsStr() {
 		String str;
-		str = strgutil.collapse( emptyPagePatterns,"; ");
+		str = ArrUtilities.arr2Text(emptyPagePatterns,"; ");
 		str = strgutil.trimm(str, ";");
 		return str ;
 	}
