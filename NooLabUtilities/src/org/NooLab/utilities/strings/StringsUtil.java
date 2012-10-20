@@ -1595,9 +1595,37 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 	}
 
 	public static boolean matchSimpleWildCard(String compareThisSnip, String toFullString) {
+		return matchSimpleWildCard(compareThisSnip, toFullString, 0) ;
+	}
+	public static boolean matchSimpleWildCard(String compareThisSnip, String toFullString, int relaxed) {
 		boolean rB=false;
 		String compareThis = compareThisSnip.trim();
 
+		if ((compareThisSnip.contains("*")==false) && (toFullString.contains("*"))){
+			String str = compareThisSnip;
+			toFullString = compareThisSnip;
+			compareThisSnip = str;
+		}
+		
+		if (relaxed==1){
+			compareThisSnip = compareThisSnip.toLowerCase() ; 
+			toFullString = toFullString.toLowerCase();
+		}
+
+		if (relaxed==2){
+			if (toFullString.length()>=6){
+				int sz = (int)(((double)toFullString.length())*0.79);
+				if (sz>=4){
+					toFullString = toFullString.substring(0,sz) ;	
+				}
+			}
+		}
+
+		
+		if (compareThisSnip.contentEquals(toFullString)){ 
+			return true; 
+		}
+		
 		if ((compareThis.endsWith("*")) && (compareThis.startsWith("*") )){
 			compareThis = compareThis.replace("*", "");
 			if (compareThis.length()==0){
@@ -2367,7 +2395,7 @@ if (temp.contains("staggers")){
 			 										boolean regardUnfinshedClosings) {
 		
 		String[] substring = new String[0];
-		Vector<String> substrings = new Vector<String> ();
+		ArrayList<String> substrings = new ArrayList<String> ();
 		String str,xstr ,strc="",lastExtractAdded="";
 		int i,d=0,p0,p1,p2=-1,pe,pno,z,zz,lx,x,pc,nb=-1,ne=-1,c,maxL,minL;
 		boolean ok;
@@ -2555,7 +2583,7 @@ if (temp.contains("staggers")){
 		return istr;
 	}
 	
-	public String[] changeArrayStyle( Vector<String> strvec  ){
+	public String[] changeArrayStyle( ArrayList<String> strvec  ){
 		String[] strarr ;
 		 
 		strarr = new String[strvec.size()];

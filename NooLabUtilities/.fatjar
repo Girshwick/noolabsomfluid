@@ -1,11 +1,11 @@
 #Fat Jar Configuration File
-#Sun Sep 02 18:38:24 BST 2012
+#Thu Oct 18 21:36:01 BST 2012
 onejar.license.required=true
 manifest.classpath=
 manifest.removesigners=true
 onejar.checkbox=false
 jarname=D\:\\dev\\java\\workspace\\NooLabUtilities.jar
-manifest.mergeall=false
+manifest.mergeall=true
 manifest.mainclass=
 manifest.file=META-INF\\MANIFEST.MF
 jarname.isextern=true

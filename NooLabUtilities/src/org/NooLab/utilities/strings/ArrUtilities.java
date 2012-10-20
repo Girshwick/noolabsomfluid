@@ -45,22 +45,30 @@ public class ArrUtilities {
 		return return_value;
 	}
 	
-	public String arr2text( float[] dweights ){
+	public String arr2text( float[] vector ){
 		String return_value="";
 		int i;
 		
-		 for ( i = 0; i < dweights.length; i++) {
-			 return_value = return_value + " " + dweights[i]; 
+		if ((vector==null) || (vector.length==0)){
+			return "";
+		}
+		
+		 for ( i = 0; i < vector.length; i++) {
+			 return_value = return_value + " " + vector[i]; 
 		 }
 		return return_value;
 	}
 	
-	public String arr2text( double[] dweights ){
+	public String arr2text( double[] vector ){
 		String return_value="";
 		int i;
 		
-		 for ( i = 0; i < dweights.length; i++) {
-			 return_value = return_value + " " + dweights[i]; 
+		if ((vector==null) || (vector.length==0)){
+			return "";
+		}
+
+		 for ( i = 0; i < vector.length; i++) {
+			 return_value = return_value + " " + vector[i]; 
 		 }
 		return return_value;
 	}
@@ -75,9 +83,10 @@ public class ArrUtilities {
 		String return_value="";
 		int i;
 		
-		if (vector==null){
+		if ((vector==null) || (vector.length==0)){
 			return "";
 		}
+		
 		for ( i = 0; i < vector.length; i++) {
 			 return_value = return_value + " " + String.format("%."+fracdigits+"f", vector[i]); 
 		 }
@@ -117,6 +126,9 @@ public class ArrUtilities {
 		String return_value="";
 		int i;
 		
+		if ((vector==null) || (vector.length==0)){
+			return "";
+		}
 
 		if (fromIndex<0){
 			fromIndex=0;
@@ -145,6 +157,11 @@ public class ArrUtilities {
 	public static String arr2Text(ArrayList<Integer> selectedSet) {
 		String return_value ="";
 		int n;
+		
+		if ((selectedSet==null) || (selectedSet.size()==0)){
+			return "";
+		}
+
 		int[] ints = new int[selectedSet.size()];
 		Object[] objints = new Object[selectedSet.size()];;
 		
@@ -193,6 +210,9 @@ public class ArrUtilities {
 	    String return_value="";
 		int i;
 		
+		if ((vector==null) || (vector.size()==0)){
+			return "";
+		}
 		if (separator.length()==0){
 			separator="\t";
 		}
@@ -237,6 +257,10 @@ public class ArrUtilities {
 		String return_value="";
 		int i;
 		
+		if ((vector==null) || (vector.length==0)){
+			return "";
+		}
+
 		if (separator.length()==0){
 			separator="\t";
 		}
@@ -263,6 +287,10 @@ public class ArrUtilities {
 		String return_value="",hs1;
 		int i;
 		
+		if ((vector==null) || (vector.length==0)){
+			return "";
+		}
+
 		try{
 			
 			if (separator.length()==0){
@@ -2810,6 +2838,28 @@ public class ArrUtilities {
 		
 		values.clear() ;
 		return outList;
+	}
+
+
+	public static ArrayList setSize(ArrayList items, int sz, String defaultVal) {
+		// 
+		boolean isString=false;
+		
+		if (items==null){
+			items = new ArrayList<String>();
+		}
+		int n=items.size();
+		if (n>0){
+			isString = items.get(0).getClass().getSimpleName().toLowerCase().contentEquals("string");
+		}
+		for (int i=n;i<sz;i++){
+			if (isString){
+				items.add("");
+			}else{
+				items.add( null );
+			}
+		}
+		return items;
 	}
 
 
