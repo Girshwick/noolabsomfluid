@@ -8,8 +8,14 @@ public interface ClipBoardIntf {
 	
 	
 	public void clipboardContentStrEvent( String str);
+	// ABC789
+	// void clipboardContentStrEvent(ClipBoardListener clipp, String str);
 	
 	public void clipboardContentImgEvent( Object obj );
 	
 	public void clipboardProcessStopped( boolean alive) ;
+	
+	
+
+	
 }
