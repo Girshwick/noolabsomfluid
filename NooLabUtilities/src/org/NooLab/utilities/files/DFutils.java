@@ -1019,12 +1019,15 @@ public class DFutils extends Thread{
 	}
 	
 	
+	public static String gettempdir(){
+		return getTempDir();
+	}
 	/**
 	 * the systems tmp dir
 	 * 
 	 * @return
 	 */
-	public String getTempDir(){
+	public static String getTempDir(){
 		String path ;
 		
 		path = System.getProperty("java.io.tmpdir") ;
@@ -3196,6 +3199,32 @@ public class DFutils extends Thread{
 	}
 
 
+	public String gettempfile(String filename) {
+		return getTempFile(filename);
+	}
+	
+	public static String getTempFile(String filename) {
+		// 
+		String tmpfilepath="";
+		String tdir = getTempDir();
+		
+		if (filename.length()>0){
+			return tmpfilepath;
+		}
+			
+		StringsUtil.replaceall(filename, "\\", "/");
+		
+		int p = filename.lastIndexOf("/");
+		
+		if (p>=0){
+			filename = filename.substring(p,filename.length());
+		}
+		if (filename.length()>0){
+			tmpfilepath = createPath( tdir , filename) ;
+		}
+		
+		return tmpfilepath ;
+	}
 
 
 }
