@@ -2596,11 +2596,11 @@ if (temp.contains("staggers")){
 		return strarr ;
 	}
 	
-	public Vector<String> changeArrayStyle( String[] strarr  ){
-		Vector<String> vs =  new Vector<String> () ;
+	public ArrayList<String> changeArrayStyle( String[] strarr  ){
+		ArrayList<String> vs =  new ArrayList<String> () ;
 		 
 		if ((strarr!=null) && (strarr.length>0)){
-			vs = new Vector<String> (Arrays.asList(strarr));
+			vs = new ArrayList<String> (Arrays.asList(strarr));
 		}
 
 		return vs ;
@@ -5319,6 +5319,25 @@ if (temp.contains("staggers")){
 		}
 
 		return p1;
+	}
+
+	public String condenseDoubleEntries(String txt) {
+		
+		String otxt="" ;
+		
+		int i=0;
+		while (i<txt.length()-1){
+			
+			otxt = otxt + txt.substring(i, i+1);
+			if ((txt.charAt(i)) == (txt.charAt(i+1))){
+				i++;
+			}
+			
+			i++;
+		}
+		
+		
+		return otxt;
 	}
 
 
