@@ -43,7 +43,8 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 	int buffersize = 2;
 
 	private String lastClipboardText = "";
-
+	boolean nextActionBlocked=false;
+	
 	private RemovalTimer removalTimer;
 	boolean removalIsScheduled = false;
 
@@ -215,8 +216,9 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 			if (trans!=null){
 				
 				try {
-				
-					processContents(trans) ;  //ABC789
+
+					
+					processContents(1,trans) ;  //ABC789
 
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -254,7 +256,10 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 
 		try {
 			if (callingInstance != null) {
-				processContents(contents);
+				if (nextActionBlocked){
+					clearClipboard();
+				}
+				processContents(2,contents);
 			}
 
 		} catch (Exception e) {
@@ -319,11 +324,17 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 		return result;
 	}
 
-	void processContents(Transferable t) throws UnsupportedFlavorException,
+	void processContents(int i,Transferable t) throws UnsupportedFlavorException,
 			IOException, Exception {
 
 		String cbStr = "";
 
+		out.print(3, "Clipboard, processContents(), param = "+i);
+		
+		if (nextActionBlocked){
+			nextActionBlocked=false;
+			// return;
+		}
 		if (t.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
 
 			// FIXME java.lang.ClassCastException: java.lang.String cannot be
@@ -350,8 +361,7 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 
 			lastClipboardText = cbStr;
 			if (callingInstance != null) {
-				((ClipBoardIntf) callingInstance)
-						.clipboardContentStrEvent(cbStr);
+				((ClipBoardIntf) callingInstance).clipboardContentStrEvent(cbStr);
 			}
 
 		}
@@ -482,6 +492,14 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 	}
 
 	// --------------------------------------------------------------
+
+	public boolean isNextActionBlocked() {
+		return nextActionBlocked;
+	}
+
+	public void setNextActionBlocked(boolean nextActionBlocked) {
+		this.nextActionBlocked = nextActionBlocked;
+	}
 
 	public int getTimeOut() {
 		return timeOut;
