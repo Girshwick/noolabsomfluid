@@ -88,7 +88,7 @@ public class StringSimplifier implements StringEncoder {
 		txt = strgutil.replaceAll(txt, "UH", "U");
 		txt = strgutil.replaceAll(txt, "EH", "E");
 
-		
+		txt = strgutil.replaceAll(txt, "I", "E");
 		txt = strgutil.replaceAll(txt, "V", "B");
 		txt = strgutil.replaceAll(txt, "R", "L");
 		txt = strgutil.replaceAll(txt, "G", "K");
@@ -100,6 +100,16 @@ public class StringSimplifier implements StringEncoder {
 			txt=txt.substring(0,txt.length()-1);
 		}
 		
+		txt = strgutil.replaceAll(txt, "TIO", "ZIE");
+		txt = strgutil.replaceAll(txt, "TIA", "ZIE");
+		txt = strgutil.replaceAll(txt, "TIU", "ZIU");
+		
+		txt = strgutil.replaceAll(txt, "ZIU", "ZU");
+		txt = strgutil.replaceAll(txt, "ZIE", "ZE");
+		
+		txt = strgutil.replaceAll(txt, "GLI", "LI");
+		
+		
 		txt = strgutil.replaceAll(txt, "EI", "E");
 		txt = strgutil.replaceAll(txt, "IO", "O");
 		txt = strgutil.replaceAll(txt, "IA", "A");
@@ -110,11 +120,16 @@ public class StringSimplifier implements StringEncoder {
 			txt = strgutil.replaceAll(txt, "EU", "O");
 		}
 		
-		
+		txt = strgutil.replaceAll(txt, "AHE", "AE");
+		txt = strgutil.replaceAll(txt, "AHO", "AO");
+		txt = strgutil.replaceAll(txt, "AHU", "AU");
+
 		txt = strgutil.replaceAll(txt, "PH", "F");
 		txt = strgutil.replaceAll(txt, "EA", "E");
 		txt = strgutil.replaceAll(txt, "CH", "C");
 		txt = strgutil.replaceAll(txt, "WN", "N");
+		txt = strgutil.replaceAll(txt, "CK", "K");
+		txt = strgutil.replaceAll(txt, "BF", "F");
 		
 		txt = strgutil.replaceAll(txt, "D", "T");
 		txt = strgutil.replaceAll(txt, "P", "B");
@@ -124,6 +139,10 @@ public class StringSimplifier implements StringEncoder {
 		
 		txt = strgutil.replaceAll(txt, "OES", "S");
 		txt = strgutil.replaceAll(txt, "OAS", "S");
+		
+		txt = strgutil.replaceAll(txt, "ING", "IK");
+		
+		txt = strgutil.replaceAll(txt, "LN", "L");
 		
 		if ((txt.endsWith("EN")) && (txt.length()>=4)){
 			txt = txt.substring(0, txt.length()-2);
@@ -136,6 +155,8 @@ public class StringSimplifier implements StringEncoder {
 		
 		txt = strgutil.replaceAll(txt, "CT", "KT");
 		txt = strgutil.replaceAll(txt, "RV", "V");
+		txt = strgutil.replaceAll(txt, "Z", "T");
+		
 		
 		if ((txt.endsWith("E")) && (txt.length()>=4)){
 			txt = txt.substring(0, txt.length()-1);

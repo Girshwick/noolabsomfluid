@@ -106,8 +106,11 @@ public class StringsUtil{  //  implements Serializable
 
 	transient CallbackForPrcCompletionIntf displayCompletion;
 	
+	
 	String lastErrorDescription = "";
 	int lastErr=0;
+
+	private StringSimplifier strSimplifier;
 	
 	
 	// ========================================================================
@@ -116,6 +119,10 @@ public class StringsUtil{  //  implements Serializable
 		displayCompletion = callbackInstance;
 	}
 
+	public void startSimplifier(){
+		strSimplifier = new StringSimplifier();
+	}
+	
 	/**
 	 * 
 	 * replaces 
@@ -576,6 +583,34 @@ public class StringsUtil{  //  implements Serializable
 		return frequencies;
 	}
 		
+	public int[] indexesOf(ArrayList<String> strList, String searchFor, int offset, int matchMode){
+		int[] positions = new int[0]; 
+		
+		ArrayList<Integer> posits = new ArrayList<Integer>(); 
+		int p1,p2;
+		
+		
+		p1=0;p2=0;
+		int z=0;
+		
+		while ((p1>=0) && (p2>=0) && (z<strList.size())){
+			if (p2==0)p2=-1;
+			p1 = indexOf(strList, searchFor, p2, matchMode);
+			
+			if (p1>=0){
+				posits.add(p1);
+				p2=p1+1;
+			}else{
+				p2=-1;
+			}
+			z++;
+		} // ->
+		
+		positions = (int[]) ArrUtilities.changeArraystyle(posits);
+		
+		posits.clear() ;
+		return positions;
+	}
 	
 	/**
 	 * 
@@ -590,22 +625,50 @@ public class StringsUtil{  //  implements Serializable
 	public int indexOf(ArrayList<String> strList, String searchFor, int offset, int matchMode){
 		
 		int position=-1;
-		String item="" ;
+		String item="",isearchFor ;
 		boolean hb=false;
+		int p=0;
 		
+		if ((searchFor.contains("*")) && (matchMode>=2)){
+			p= searchFor.indexOf("*");
+			searchFor = searchFor.replace("*", "") ;
+		}
 		
-		if ((searchFor.contains("*")==false) && (matchMode<2)){
-			position = strList.indexOf(searchFor) ;
-		}else{
+			if (matchMode>=5){
+				searchFor = strSimplifier.superphone(searchFor);
+			}
+			isearchFor = searchFor;
+			if(offset<0)offset=0;
 			
+			if (offset<strList.size()){
 			for (int i=offset;i<strList.size();i++){
-				item = strList.get(i);
 				
-				if (matchMode>=3){
-					item=item.toLowerCase();
-					searchFor = searchFor.toLowerCase() ;
+				item = strList.get(i);
+				if (item.length()==0){
+					continue;
 				}
-				hb = matchSimpleWildcard(searchFor, item);
+				
+				if (matchMode>=2){
+					item=item.toLowerCase();
+					searchFor = isearchFor.toLowerCase() ;
+				}
+				
+				if (matchMode>=4){
+					String str2=item, str1 = searchFor; 
+					searchFor = shortenString( searchFor, 0.76, 4,3); 
+					item      = shortenString( item, 0.76, 4,3);
+					if (item.length()<searchFor.length()){
+						item = item+"*";
+					}else{
+						searchFor = searchFor+"*" ;
+					}
+				}
+				
+				if (matchMode>=5){
+					item = strSimplifier.superphone(item);
+				}
+				hb = matchSimpleWildcard(searchFor, item); // falls back to standard comparison if no wildcard is present
+				
 				if ((hb==false) && (matchMode>=3)){
 					hb = matchSimpleWildcard(item, searchFor);
 				}
@@ -614,12 +677,51 @@ public class StringsUtil{  //  implements Serializable
 					break;
 				}
 			}// ->
-			
-		}
+		} // ?
+		
 		
 		return position;
 	}
 	
+	
+	public String trunk(String str, int xLen) {
+	
+		if (str==null){
+			str="";
+		}
+		str = str.trim();
+		
+		if (str.length()>xLen){
+			str = str.substring(0,xLen);
+		}
+		return str;
+	}
+	
+	private String shortenString(String inStr, double factor, int maxCharsRemoved, int miniLenTheshold) {
+		// 
+		String outStr = "";
+		int n,k,d;
+		
+		if (inStr.length()-1<=miniLenTheshold){
+			return inStr;
+		}
+		
+		n = inStr.length();
+		k = (int)Math.round((double)n*(1.0-factor));
+		d = n-k;
+		
+		if (d>maxCharsRemoved){
+			d=maxCharsRemoved;
+		}
+		if (k<miniLenTheshold){
+			d = n - miniLenTheshold;
+		}
+		
+		outStr = inStr.substring(0,d);
+		
+		return outStr;
+	}
+
 	public int indexOf(String str, String[] snips){
 		return indexOf(str, snips,0);
 	}
@@ -1603,8 +1705,8 @@ var myNewPattern = /(\w+)\s(?=\1)/g;
 
 		if ((compareThisSnip.contains("*")==false) && (toFullString.contains("*"))){
 			String str = compareThisSnip;
-			toFullString = compareThisSnip;
-			compareThisSnip = str;
+			compareThisSnip = toFullString  ;
+			toFullString = str;
 		}
 		
 		if (relaxed==1){
@@ -5044,6 +5146,21 @@ if (temp.contains("staggers")){
 		return extStr ;
 	}
 	
+	public static String exchangeFilenameExtension(String filename, String newExtension) {
+		// 
+		
+		newExtension = newExtension.trim();
+		if (newExtension.startsWith(".")==false){
+			newExtension = "." + newExtension;
+		}
+		
+		String ext = StringsUtil.getExtensionFromFilename(filename);
+		String sfile = filename.replace(ext, "")+newExtension;
+		
+		return sfile;
+	}
+
+
 	public static String getExtensionFromFilename(String filename) {
 		return getExtensionFromFilename(filename,1);
 	}
@@ -5329,16 +5446,21 @@ if (temp.contains("staggers")){
 		while (i<txt.length()-1){
 			
 			otxt = otxt + txt.substring(i, i+1);
+			
 			if ((txt.charAt(i)) == (txt.charAt(i+1))){
 				i++;
 			}
 			
 			i++;
 		}
-		
+		if (i<txt.length()){
+			otxt = otxt + txt.substring(i, i+1);
+		}
 		
 		return otxt;
 	}
+
+
 
 
 

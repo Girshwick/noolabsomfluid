@@ -973,7 +973,7 @@ class MethodThread implements Runnable {
 		
 		pageAddr = hostCfg.getHostURL() + resource ;
 		
-		reThrd = new Thread(this) ;
+		reThrd = new Thread(this,"webretr") ;
 		
 		tempDir = System.getProperty("java.io.tmpdir") ;
 	}

@@ -55,6 +55,8 @@ public class StartInstanceByClassLoader implements Runnable{
 		started=false;
 		
 		loaderThrd = new Thread(clazzname) ;
+		loaderThrd.setName("clzload");
+		
 		loaderThrd.start();
 		
 		int z=0;

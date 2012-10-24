@@ -654,8 +654,10 @@ public class ArrUtilities {
 	public static ArrayList<Integer> changeArraystyle(int[] values) {
 		ArrayList<Integer> xa = new ArrayList<Integer>();
 		
-		for (int i=0;i<values.length;i++){
-			xa.add(values[i]) ;
+		if ((values!=null) && (values.length>0)){
+			for (int i=0;i<values.length;i++){
+				xa.add(values[i]) ;
+			}
 		}
 		return xa;
 	}
