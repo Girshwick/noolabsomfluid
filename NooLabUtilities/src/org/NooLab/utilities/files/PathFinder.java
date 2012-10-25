@@ -1,22 +1,49 @@
 package org.NooLab.utilities.files;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 
 public class PathFinder {
 
+	private String lastError="";
+	URL location ;
+	String binpath ="" ;
+	// ----------------------------------------------------
+	public PathFinder (){
+		
+		try {
+		
+			location = new URL("");
+
+		} catch (MalformedURLException e) {}
+		
+	}
+	// ----------------------------------------------------
+	
 	public String getAppBinPath( Class clzz, boolean useJarAsBase) {
 		
 		if (clzz==null){
+			lastError = "input was null.";
+			return "";
+		}
+		try{
+			
+			location = clzz.getProtectionDomain().getCodeSource().getLocation();
+			
+		}catch(Exception e){
+			lastError = "Problem to interpret the command sequence \n"+
+						""+clzz.getProtectionDomain().getCodeSource().getLocation()+"\n"+
+						""+e.getMessage();
 			return "";
 		}
 		
-		URL location = clzz.getProtectionDomain().getCodeSource().getLocation();
-		String str = location.toString();
-		String binpath = str.substring(6); // clips off the "file:/" prefix
+		if (location!=null){
+			String str = location.toString();
+			binpath = str.substring(6); // clips off the "file:/" prefix
 		
-		binpath = binpath.replace("\\", "/") ;
-		
+			binpath = binpath.replace("\\", "/") ;
+		}
 		// binpath = binpath + "sjdhfkg12376.jar" ;
 		
 		if (useJarAsBase==false){
@@ -48,6 +75,26 @@ public class PathFinder {
 		}
 		// throw new IllegalStateException("Cannot determine main class.");
 		return mainclassName ; 
+	}
+
+
+	public String getLastError() {
+		return lastError;
+	}
+
+
+	public void setLastError(String lastError) {
+		this.lastError = lastError;
+	}
+
+
+	public URL getLocation() {
+		return location;
+	}
+
+
+	public void setLocation(URL location) {
+		this.location = location;
 	}
 
 }
