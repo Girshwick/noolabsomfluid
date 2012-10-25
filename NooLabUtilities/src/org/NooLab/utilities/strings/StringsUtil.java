@@ -2754,10 +2754,14 @@ if (temp.contains("staggers")){
 	    
 		return vdarr;
 	}
-	
-	public Vector<Long> changeArrayType( Vector<String> vstr , long defaultValue, boolean blockEmptyItems ){
+	public ArrayList<Long> changeArrayType( Vector<String> vstr , long defaultValue, boolean blockEmptyItems ){
 		
-		Vector<Long> vlo = new Vector<Long>();
+		ArrayList<String> avstr = new ArrayList<String> (vstr); 
+		return changeArrayType( avstr ,  defaultValue, blockEmptyItems );
+	}
+	public ArrayList<Long> changeArrayType( ArrayList<String> vstr , long defaultValue, boolean blockEmptyItems ){
+		
+		ArrayList<Long> vlo = new ArrayList<Long>();
 		long v = defaultValue;
 		String str;
 		

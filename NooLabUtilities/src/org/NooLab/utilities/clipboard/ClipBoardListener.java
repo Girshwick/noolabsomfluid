@@ -175,7 +175,14 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 		StringSelection reply;
 
 		reply = new StringSelection("");
-		sysClip.setContents(reply, this);
+		if (sysClip==null){
+			try{
+				sysClip = Toolkit.getDefaultToolkit().getSystemClipboard();
+			}catch(Exception e){}
+		}
+		if (sysClip!=null){
+			sysClip.setContents(reply, this);
+		}
 
 	}
 
