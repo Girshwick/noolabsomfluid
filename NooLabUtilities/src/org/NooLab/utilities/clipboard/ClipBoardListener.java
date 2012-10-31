@@ -421,11 +421,17 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 			return;
 		}
 
-		if (cBoardProperties.getFollowUp() == CBoardPropertiesIntf._FOLLOWUP_CLEAR_AFTER_FETCHING) {
-			reply = new StringSelection("");
-			sysClip.setContents(reply, this);
-		} else {
-			sysClip.setContents(t, this);
+		try{
+
+			if (cBoardProperties.getFollowUp() == CBoardPropertiesIntf._FOLLOWUP_CLEAR_AFTER_FETCHING) {
+				reply = new StringSelection("");
+				sysClip.setContents(reply, this);
+			} else {
+				sysClip.setContents(t, this);
+			}
+
+		}catch(Exception e){
+			// educated silence...
 		}
 
 	}
@@ -454,7 +460,7 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 	private void initiateInitialFetch() {
 
 		if (cBoardProperties.getAllowForFetchOnStart()) {
-			out.print(2, "Preparing board for initial fetch...");
+			out.print(3, "Preparing board for initial fetch...");
 
 			new InitialFetch();
 		}

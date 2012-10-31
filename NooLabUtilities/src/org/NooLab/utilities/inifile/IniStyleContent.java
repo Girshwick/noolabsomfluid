@@ -1,8 +1,10 @@
 package org.NooLab.utilities.inifile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Vector;
 
+import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.strings.StringsUtil;
   
 
@@ -20,9 +22,16 @@ public class IniStyleContent {
 	IniStyleContent isc;
 	
 	// --------------------------------------------------------------
-	public IniStyleContent(String filecontent) {
+	public IniStyleContent(String filecontent) throws IOException {
 		 
-		filetext = filecontent;
+		if (filecontent.contains("[")==false){
+			
+			filetext = (new DFutils()).readFile2String(filecontent);
+			getUp();
+		}else{
+			filetext = filecontent;	
+		}
+		
 		
 	}
 	public IniStyleContent() {
@@ -42,15 +51,17 @@ public class IniStyleContent {
 	}
 	// --------------------------------------------------------------
 
-	
-	public void getUp(){
+	public void parse(){
+		getUp();
+	}
+	protected void getUp(){
 		
 		splitStr2List();
 		
 		parseforSections();
 	}
 	
-	public IniStyleContent fromIniText(String text) {
+	public IniStyleContent fromIniText(String text) throws IOException {
 		 
 		isc = new IniStyleContent(text); 
 		isc.getUp();

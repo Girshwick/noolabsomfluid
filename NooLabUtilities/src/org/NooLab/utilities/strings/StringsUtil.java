@@ -3367,7 +3367,7 @@ if (temp.contains("staggers")){
 	}
 
 
-	public IniStyleContent getIniStyleFile( ArrayList<String> filecontent){
+	public IniStyleContent getIniStyleFile( ArrayList<String> filecontent) throws IOException{
 		
 		if ((filecontent==null) || (filecontent.size()==0)){
 			return new IniStyleContent("");
@@ -3390,7 +3390,7 @@ if (temp.contains("staggers")){
 		
 	}
 
-	public IniStyleSections getIniStyleSections( String text){
+	public IniStyleSections getIniStyleSections( String text) throws IOException{
 		IniStyleContent inifile = new IniStyleContent(text);
 		IniStyleSections  iniSections ;
 
@@ -3446,6 +3446,11 @@ if (temp.contains("staggers")){
 	}
 	
 	public boolean isNumericX(String str){
+	
+		return isNumeric(str);
+	}
+	
+	public static boolean isNumeric( String str){
 		boolean return_value = false;
 		String regex_for_num = "^[-+]?\\d+([.,]?\\d+)?$";
 
@@ -3468,12 +3473,10 @@ if (temp.contains("staggers")){
 		finally{
 		
 		}
-		return return_value ;		
-		
+		return return_value ;	
 	}
 	
-	
-	public boolean isNumeric( String str){
+	public boolean isnumeric( String str){
 		boolean rb=false;
 		int p,code;
 		char cc;
@@ -4804,6 +4807,14 @@ if (temp.contains("staggers")){
 		return weburlstr;
 	}
 	
+
+	public String getDomainFromUrl(String urlStr) {
+		// 
+		
+		String ds = getHomePageUrl(urlStr, true);
+		
+		return ds;
+	}
 
 	public String getWebDocNamefromURL( String weburl){
 		String rstr = ""   ;

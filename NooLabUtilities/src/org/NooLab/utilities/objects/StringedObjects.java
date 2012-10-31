@@ -73,10 +73,12 @@ public class StringedObjects {
 			// oos.close();
 			oos.flush() ;
 			
-			if (baos.size()>1){
-				str = new String( base64.encode( baos.toByteArray() ) );
-			}else{
-				str = "";
+			str = "";
+			if (baos.size()>8){
+				byte[] bytes = baos.toByteArray();
+				if (bytes != null){
+					str = new String( base64.encode( bytes  ));
+				}
 			}
 			
 			oos.close();

@@ -9,6 +9,7 @@ public class ItemValue {
 	Object obj = null;
 	
 	public ItemValue( String str){
+
 		determineFormat();
 		createRepresentatations();
 		
