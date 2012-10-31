@@ -155,6 +155,43 @@ public class IniStyleSection {
 	public void setStrgutil(StringsUtil strgutil) {
 		this.strgutil = strgutil;
 	}
+
+	public boolean getBool(String str) {
+		boolean rB=false;
+		
+		str = str.trim().toLowerCase();
+		if ((str!=null) && (str.length()>0)){
+			
+			if ((str.startsWith("1")) || 
+				(str.startsWith("t")) ||	
+				(str.startsWith("d")) ||
+				(str.startsWith("s")) ||
+				(str.startsWith("y")) ||
+				(str.startsWith("j")) 
+										){
+				rB=true;
+			}
+		}
+		
+		return rB;
+	}
+	
+	public int getInt(String str) {
+		// 
+		int vi=-1;
+		str = str.trim();
+		if ((str!=null) && (str.length()>0)){
+			if (StringsUtil.isNumeric(str)){
+				int p=str.indexOf(".");
+				if (p>0){
+					str = str.substring(0,p);
+				}
+				vi = Integer.parseInt(str) ;
+			}
+		}
+			
+		return vi;
+	}
 }
 
 	

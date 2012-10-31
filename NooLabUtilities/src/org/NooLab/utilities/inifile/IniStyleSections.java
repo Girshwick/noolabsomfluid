@@ -54,6 +54,38 @@ public class IniStyleSections {
 	public Vector<IniStyleSection> getSections() {
 		return sections;
 	}
+
+	public Integer getEntryValue(String sectionName, String keyName, int defaultValue) {
+		// 
+		int entryvalue = defaultValue;
+		
+
+		IniStyleSection section = getByName( sectionName );
+		
+		String phStr = section.getEntry( keyName );
+		int ph = section.getInt(phStr);
+		
+		if ((ph>=0) ){
+			entryvalue = ph;
+		}
+		
+		return entryvalue;
+	}
+
+	public String getEntryValue(String sectionName, String keyName, String defaultStr) {
+		String entryvalue = defaultStr;
+		
+		IniStyleSection section = getByName( sectionName );
+		try{
+			
+			entryvalue = section.getEntry( keyName );
+			
+		}catch(Exception e){
+			// educated silence...
+		}
+		
+		return entryvalue;
+	}
 	
 	
 }

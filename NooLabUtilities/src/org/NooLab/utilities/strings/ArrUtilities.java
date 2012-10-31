@@ -1365,19 +1365,6 @@ public class ArrUtilities {
 		
 	}
 	
-	public int arraysum( ArrayList<Integer> int_arr){
-		return arraySum( int_arr);
-	}
-	public static int arraySum( ArrayList<Integer> int_arr){
-		int return_value=0;
-		int i;
-		
-		i=0;
-		for ( i = 0; i < int_arr.size(); i++) {
-			 return_value = return_value + int_arr.get(i);
-		}
-		return return_value;		
-	}
 	
 	public static long arraySumL( ArrayList<Long> long_arr){
 		long return_value=0;
@@ -1398,9 +1385,58 @@ public class ArrUtilities {
 		int i;
 		ArrayList<Integer> int_arl = new ArrayList<Integer>(int_arr);
 
-		return arraySum(int_arl);		
+		return (Integer) arraySum(int_arl);		
 	}
 
+	public int arraysum( ArrayList<Integer> int_arr){
+		return (Integer) arraySum( int_arr);
+	}
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	static public Object arraySum(ArrayList values) {
+		Object sum = 0.0;
+		
+		if ((values==null) || (values.size()==0)){
+			return 0.0;
+		}
+		
+		String cn = values.get(0).getClass().getSimpleName().toLowerCase() ;
+		
+		if (cn.startsWith("int")){
+			Integer isum = intarraysum( values);
+			sum = isum;
+		}
+		if (cn.startsWith("doub")){
+			Double dsum = doubarraysum( values);
+			sum = dsum;
+		}
+		
+		return sum;
+	}
+	
+	private static int intarraysum( ArrayList<Integer> int_arr){
+		int return_value=0;
+		int i;
+		
+		i=0;
+		for ( i = 0; i < int_arr.size(); i++) {
+			 return_value = return_value + int_arr.get(i);
+		}
+		return return_value;		
+	}
+	private static double doubarraysum(ArrayList<Double> values) {
+		double sum = 0.0;
+		
+		int i;
+		
+		i=0;
+		for ( i = 0; i < values.size(); i++) {
+			sum = sum + values.get(i);
+		}
+		
+		return sum;
+	}
+	
 	/**
 	 * summing two lists into a result list
 	 * @param values1
@@ -1436,6 +1472,7 @@ public class ArrUtilities {
 			return rvalues;
 		}
 	}
+
 
 	// should not be static !
 	public ArrayList<Double> arraySum(ArrayList<Double> values1, ArrayList<Double> values2, int lenMode) {
@@ -2571,7 +2608,46 @@ public class ArrUtilities {
 		return list;
 	}
 
-
+	public static ArrayList<String> removeEntries(ArrayList<String> list,String[] markers) {
+		
+		if (list==null){
+			list = new ArrayList<String>();
+			return list;
+		}
+		if (list.size()==0){
+			return list;
+		}
+		
+		for (int i=0;i<markers.length;i++){
+			
+			String removal = markers[i].trim(); 
+			boolean done=false;
+			int p1=-1;
+			while ((done==false) && (list.size()>0)){
+				done=true;
+				
+				p1 = list.indexOf(removal);
+				if (p1>=0){
+					list.remove(p1);
+					done=false;
+				}
+				
+			}// -> all instances of marker[i]
+			
+			if ((removal==null) || (removal.length()==0)){
+				for (int k=list.size()-1;k>=0;k--){
+					if ((list.get(k)==null) || (list.get(k).length()==0)){
+						list.remove(k);
+					}
+				}
+			} // removal = "" = empty?
+		}
+		
+		
+		return list;
+	}
+	
+	
 	public int arrayMinPos( ArrayList<Double> values, Double[] excludedValues, Double lowerBarrier) {
 		double v,minv = 9999999999999999999.09;
 		boolean consider ;

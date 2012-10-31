@@ -9,6 +9,8 @@ public class PathFinder {
 	private String lastError="";
 	URL location ;
 	String binpath ="" ;
+	private String fullJarFilePath="";
+	private Class givenClass;
 	// ----------------------------------------------------
 	public PathFinder (){
 		
@@ -27,6 +29,8 @@ public class PathFinder {
 			lastError = "input was null.";
 			return "";
 		}
+		
+		givenClass = clzz;
 		try{
 			
 			location = clzz.getProtectionDomain().getCodeSource().getLocation();
@@ -40,6 +44,7 @@ public class PathFinder {
 		
 		if (location!=null){
 			String str = location.toString();
+			
 			binpath = str.substring(6); // clips off the "file:/" prefix
 		
 			binpath = binpath.replace("\\", "/") ;
@@ -61,6 +66,24 @@ public class PathFinder {
 		return binpath ;
 	}
 
+	public String getFullJarFilePath() {
+		String jarfile = "";
+		if (fullJarFilePath.length()==0){
+			String cn = getMainClassname();
+			if ((cn==null) || (cn.length()==0)){
+				cn = givenClass.getSimpleName() ;
+			}
+			
+			// now we have to check all files "*.jar" whether it contains a class <cn>
+			fullJarFilePath = DFutils.createPath(binpath , jarfile);
+		}
+		return fullJarFilePath;
+	}
+
+	public String getMainClassname(){
+		return getMainClassName();
+	}
+	
 	public static String getMainClassName()	{
 		
 		String mainclassName = "";

@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.TreeMap;
 
 
 
@@ -11,6 +13,8 @@ public class IndexedDistances implements Serializable{
  
 	private static final long serialVersionUID = 2535904175527972027L;
 	
+	Map<String,Integer> fastIndexMap = new TreeMap<String,Integer>();
+	boolean listHasChanged=true;
 	
 	ArrayList<IndexDistance> items = new ArrayList<IndexDistance> ();
 	
@@ -27,12 +31,17 @@ public class IndexedDistances implements Serializable{
 
 	
 	public IndexedDistances(IndexedDistances ixds) {
-		items.addAll( ixds.getItems() ) ;
+		
+		if ((ixds!=null) && (ixds.size()>0)){
+			for (int i=0;i<ixds.size();i++){
+				IndexDistance ixd = new IndexDistance(ixds.getItem(i))  ;
+			}
+		}
 	}
 
 
 	public void clear() {
-		 
+		fastIndexMap.clear();
 		items.clear();
 	}
 
@@ -56,20 +65,90 @@ public class IndexedDistances implements Serializable{
 		return pos;
 	}
 	
+	/**
+	 * this lookup is buffered by a TreeMap
+	 * 
+	 * @param checkstr
+	 * @return
+	 */
 	public int getIndexByStr( String checkstr){
 		int pos=-1;
 		
-		// we should maintain a TreeMap...
-		for (int i=0;i<items.size();i++){
-			String str = items.get(i).guidStr ;
-			if (checkstr.contentEquals(str)){
-				pos=i;
-				break;
+		
+		if ((fastIndexMap.size()==0) || (listHasChanged)){
+			fastIndexMap.clear();
+			for (int i=0;i<items.size();i++){
+				fastIndexMap.put(items.get(i).guidStr, i) ;
 			}
 		}
+		// 
+		
+		if (fastIndexMap.containsKey(checkstr)){
+			pos = fastIndexMap.get(checkstr);
+		}else{
+
+			for (int i = 0; i < items.size(); i++) {
+				String str = items.get(i).guidStr;
+				if (checkstr.contentEquals(str)) {
+					pos = i;
+					break;
+				}
+			}
+		}
+		
 		return pos;
 	}
 	
+	public double getMinimum( int offset) {
+		return getMinimum( -999999999.0, offset) ;
+	}
+	/**
+	 * 
+	 * @param inf minimum that is larger than the infimum
+	 * @param offset positional offset
+	 * @return
+	 */
+	public double getMinimum( double inf, int offset) {
+		// 
+		double minV= inf - 1.0;
+		
+		int ix = getIndexOfMinimum(inf,offset);
+		
+		if (ix>=0){
+			minV = items.get(ix).getDistance();
+		}
+		return minV;
+	}
+
+	public int getIndexOfMinimum(double inf, int offset) {
+		int s=0, index= -1;
+		
+		if (offset<0){
+			s=0;
+		}else{
+			s=offset;
+		}
+		if (s>=items.size()){
+			return -1;
+		}
+		
+		double minv = 9999999999999.9;
+		for (int i=s;i<items.size();i++){
+			if (minv > items.get(i).distance){
+				minv = items.get(i).distance;
+				index = i;
+			}
+		}
+		
+		return index;
+	}
+	
+	public int getIndexOfMinimum(int offset) {
+		// 
+		return getIndexOfMinimum(-99999999999.9,offset);
+	}
+
+
 	/**
 	 * 
 	 * sorting the list of indexed distances according to the distances
@@ -90,6 +169,7 @@ public class IndexedDistances implements Serializable{
 		}
 		
 		Collections.sort(items, new ixdComparator(direction));
+		listHasChanged=true;
 	}
 	
 	// ------------------------------------------------------------------------
@@ -103,6 +183,7 @@ public class IndexedDistances implements Serializable{
 	public void sort(int criterion, int direction) {
 		// 
 		Collections.sort(items, new ixdComparator(direction));
+		listHasChanged=true;
 	}
 
 
@@ -133,6 +214,7 @@ public class IndexedDistances implements Serializable{
 			}// i->
 			
 		} // done? ->
+		listHasChanged=true;
 	}
 	
 	public ArrayList<IndexDistance> getItems() {
@@ -145,16 +227,20 @@ public class IndexedDistances implements Serializable{
 		
 		item = new IndexDistance(indexValue, secIndexValue, 0.0, string ) ;
 		items.add(item) ;
+		listHasChanged=true;
 	}
 
 
 	public void setItems(ArrayList<IndexDistance> items) {
 		this.items = items;
+		listHasChanged=true;
 	}
 
 	public void add( IndexDistance ixd ){
 		items.add(ixd) ;
+		listHasChanged=true;
 	}
+	
 	public void add( int index, IndexDistance ixd ){
 		if (index<0)index=0;
 		if (index>items.size()-1){
@@ -162,6 +248,7 @@ public class IndexedDistances implements Serializable{
 		}else{
 			items.add(index,ixd) ;
 		}
+		listHasChanged=true;
 	}
 	
 	public IndexDistance getItem( int index){
@@ -216,6 +303,7 @@ public class IndexedDistances implements Serializable{
 
 	public void removeItem( int index){
 		items.remove(index);
+		listHasChanged=true;
 	}
 
 	
@@ -224,6 +312,7 @@ public class IndexedDistances implements Serializable{
 		for (int i=0;i<ixdiList.size();i++){
 			items.add( (IndexDistance) ixdiList.get(i)) ;
 		}
+		listHasChanged=true;
 	}
 
 
@@ -232,12 +321,13 @@ public class IndexedDistances implements Serializable{
 		for (int i=0;i<ixds.size();i++){
 			items.add( (IndexDistance) ixds.getItem(i)) ;
 		}
+		listHasChanged=true;
 	}
 
 
 	public void addItems(IndexedDistances listOfPutativeTransforms) {
-		// TODO Auto-generated method stub
-		
+		// 
+		listHasChanged=true;
 	}
 
 
