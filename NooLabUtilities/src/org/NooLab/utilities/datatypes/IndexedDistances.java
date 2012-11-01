@@ -116,6 +116,8 @@ public class IndexedDistances implements Serializable{
 		
 		if (ix>=0){
 			minV = items.get(ix).getDistance();
+		}else{
+			
 		}
 		return minV;
 	}
