@@ -114,6 +114,7 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 		if (owner==null){
 			owner = new ClipBoardListener(callingInstance);
 		}
+		
 		return owner;
 
 	}
@@ -165,7 +166,7 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 		out.setPrefix("[Clipp]");
 
 		opSysOSX = OSDetector.isMac();
-
+		if (timeOut<0)timeOut=100;
 		removalTimer = new RemovalTimer(this, timeOut);
 	}
 
@@ -190,6 +191,7 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 
 		// isRunning=false; // ABC789
 		removeListener();
+		cBoardProperties.setNilAction(false);
 	}
 
 	public void removeListener() {
@@ -203,10 +205,14 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 	public void start() {
 
 		initiateInitialFetch();
-
+											out.print(2, "Clipboard passed initiateInitialFetch()...");
 		out.delay(50);
+		
 		clippThrd = new Thread(this, "clippThrd");
 		clippThrd.start();
+		
+		// isRunning = false;
+		// stopListening();
 	}
 
 	public void run() {
@@ -350,7 +356,7 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 
 			// GenericMediator.getInstance().itemsToClipboardEvent(list);
 			// System.out.println("files -->  " + Utils.filesToString(list));
-
+			return;
 		}
 
 		if (t.isDataFlavorSupported(DataFlavor.stringFlavor)) {
@@ -367,10 +373,10 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 			}
 
 			lastClipboardText = cbStr;
-			if (callingInstance != null) {
+			if ((callingInstance != null) && ( cBoardProperties.isNilAction()==false)) {
 				((ClipBoardIntf) callingInstance).clipboardContentStrEvent(cbStr);
 			}
-
+			return;
 		}
 
 		if (t.isDataFlavorSupported(DataFlavor.imageFlavor)) {
@@ -382,6 +388,7 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 			if ((callingInstance!=null) && (imgobj!=null)){
 				((ClipBoardIntf) callingInstance).clipboardContentImgEvent(imgobj);
 			}
+			return;
 		}
 
 		// System.out.println("CB listener processing : " +
@@ -493,7 +500,7 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 			if ((str != null) && (str.length() > 0)) {
 				out.print(4, "S.TH.found on initial fetch (len=" + str.length()
 						+ ")...");
-				if (callingInstance != null) {
+				if ((callingInstance != null) && ( cBoardProperties.isNilAction()==false)) {
 					((ClipBoardIntf) callingInstance).clipboardContentStrEvent(str);
 				}
 				// out.delay(4000);
@@ -501,6 +508,7 @@ public class ClipBoardListener implements Runnable, ClipboardOwner {
 			} else {
 				out.print(3, "Nothing found on initial fetch...");
 			}
+			cBoardProperties.setNilAction(false);
 		}
 	}
 

@@ -7,6 +7,7 @@ public class CBoardProperties implements CBoardPropertiesIntf{
 	boolean blockIdenticalContent = true;
 	private int followUp = 1; // clear by default
 	private boolean allowForFetchOnStart;
+	private boolean nilAction=false;
 
 	
 	
@@ -46,6 +47,14 @@ public class CBoardProperties implements CBoardPropertiesIntf{
 	public  boolean getAllowForFetchOnStart() {
 		// 
 		return allowForFetchOnStart;
+	}
+
+	public void setNilAction(boolean flag) {
+		nilAction = flag;
+	}
+
+	public boolean isNilAction() {
+		return nilAction;
 	}
 	
 }
