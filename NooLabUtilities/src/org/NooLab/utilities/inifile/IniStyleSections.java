@@ -86,6 +86,22 @@ public class IniStyleSections {
 		
 		return entryvalue;
 	}
+
+	public float getEntryValue(String sectionName, String keyName, float defaultValue) {
+		float entryvalue = defaultValue;
+		
+
+		IniStyleSection section = getByName( sectionName );
+		
+		String phStr = section.getEntry( keyName );
+		float ph = section.getFloat(phStr);
+		
+		if ((ph>=0) ){
+			entryvalue = ph;
+		}
+		
+		return entryvalue;
+	}
 	
 	
 }

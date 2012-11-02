@@ -192,6 +192,33 @@ public class IniStyleSection {
 			
 		return vi;
 	}
+
+	public float getFloat(String str) {
+
+		float vi=-1;
+		str = str.trim();
+		if ((str!=null) && (str.length()>0)){
+			if (StringsUtil.isNumeric(str)){
+				vi = Float.parseFloat(str) ;
+			}
+		}
+			
+		return vi;
+	}
+	
+	public double getDouble(String str) {
+
+		double vi=-1;
+		str = str.trim();
+		if ((str!=null) && (str.length()>0)){
+			if (StringsUtil.isNumeric(str)){
+				vi = Double.parseDouble(str) ;
+			}
+		}
+			
+		return vi;
+	}
+
 }
 
 	

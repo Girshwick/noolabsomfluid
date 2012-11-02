@@ -23,7 +23,7 @@ public class DirectoryContent extends Observable  {
 	 
 	 
 	
-	Vector<String> filenames = new Vector<String>() ;
+	ArrayList<String> filenames = new ArrayList<String>() ;
 	
 	File[] files ;
 	File[] subdirectories ;
@@ -99,7 +99,7 @@ public class DirectoryContent extends Observable  {
 		return enumerateFiles( namefilter, "", directoryPath) ;
 	}
 	
-	public Vector<String> getFileList( String namefilter, String directoryPath) {
+	public ArrayList<String> getFileList( String namefilter, String directoryPath) {
 		
 		return getListOfFileList( namefilter, "", directoryPath);
 	}
@@ -232,7 +232,7 @@ public class DirectoryContent extends Observable  {
 	    return filenames;
 	}
 	
-	public Vector<String> getListOfFileList( String namefilter, String extension, String directoryPath) {
+	public ArrayList<String> getListOfFileList( String namefilter, String extension, String directoryPath) {
 		String[] children;
 		
 		File tmpffil;
@@ -301,10 +301,10 @@ public class DirectoryContent extends Observable  {
 		 
 		
 		if ((children!=null) && (children.length>0)){
-			filenames = new Vector<String>(Arrays.asList(children));
+			filenames = new ArrayList<String>(Arrays.asList(children));
 		}
 		if (filenames==null){
-			filenames = new Vector<String>();
+			filenames = new ArrayList<String>();
 		}
 		
 		int i=filenames.size()-1 ;
@@ -480,10 +480,10 @@ public class DirectoryContent extends Observable  {
 
 		
 		
-		Vector<String> filefilters = new Vector<String> () ;
-		Vector<String> dirfilters  = new Vector<String> () ;
-		Vector<String> fileRegexFilter = new Vector<String>() ;
-		Vector<String> dirRegexFilter  = new Vector<String>() ;
+		ArrayList<String> filefilters = new ArrayList<String> () ;
+		ArrayList<String> dirfilters  = new ArrayList<String> () ;
+		ArrayList<String> fileRegexFilter = new ArrayList<String>() ;
+		ArrayList<String> dirRegexFilter  = new ArrayList<String>() ;
 		
 		
 		boolean anyPositiveDefsDir;
@@ -492,12 +492,14 @@ public class DirectoryContent extends Observable  {
 		boolean anyNegativeDefsFil;
 		
 		
-		public FFilter( Vector<String> filters , Vector<String> dirfilters){
+		public FFilter( ArrayList<String> filters , ArrayList<String> dirfilters){
 			int p ;
 			
 			this.filefilters = filters ;
 			this.dirfilters  = dirfilters ;
-
+			if (dirfilters==null){
+				dirfilters = new ArrayList<String>();
+			}
 			p = dirfilters.indexOf("*");
 			if (p>=0){
 				dirfilters.remove(p) ;
@@ -518,7 +520,7 @@ public class DirectoryContent extends Observable  {
 			// translate filters into regex'es, if they contain \ [*] [+] or escaped " 
 		}
 		
-		private boolean checkforpositives( Vector<String> filterstr){
+		private boolean checkforpositives( ArrayList<String> filterstr){
 			boolean rb = false;
 			int i,p;
 			String str;
@@ -533,7 +535,7 @@ public class DirectoryContent extends Observable  {
 				
 			return rb;
 		}
-		private boolean checkfornegatives( Vector<String> filterstr){
+		private boolean checkfornegatives( ArrayList<String> filterstr){
 			boolean rb = false;
 			int i,p;
 			String str;
@@ -574,7 +576,7 @@ if (name.contentEquals("_a")){
 				
 				
 				
-				if (dirfilters.size()>0){
+				if ((dirfilters!=null) && (dirfilters.size()>0)){
 
 					
 					
@@ -678,8 +680,8 @@ if (name.contentEquals("_a")){
 	 * @param recurse
 	 * @return
 	 */
-	public Vector<String> completeListofFiles( String directory, Vector<String> filterStr, boolean recurse){
-		Vector<String> filenames = new Vector<String>() ;
+	public ArrayList<String> completeListofFiles( String directory, ArrayList<String> filterStr, boolean recurse){
+		ArrayList<String> filenames = new ArrayList<String>() ;
 		
 		filenames = completeListofFiles( directory, filterStr, null, recurse) ;
 		
@@ -687,9 +689,9 @@ if (name.contentEquals("_a")){
 	}
 	
 	
-	public Vector<String> completeListofFiles( Vector<String> directories, Vector<String> filfilter, Vector<String> dirfilter, boolean recurse){
-		Vector<String> filenames = new Vector<String>() ;
-		Vector<String> ff;
+	public ArrayList<String> completeListofFiles( ArrayList<String> directories, ArrayList<String> filfilter, ArrayList<String> dirfilter, boolean recurse){
+		ArrayList<String> filenames = new ArrayList<String>() ;
+		ArrayList<String> ff;
 		
 		for (int i=0;i<directories.size();i++){
 			
@@ -713,7 +715,7 @@ if (name.contentEquals("_a")){
 		return filenames;
 	}
 	
-	public Vector<String> completeListofFiles( String directory, Vector<String> filfilter, Vector<String> dirfilter, boolean recurse){
+	public ArrayList<String> completeListofFiles( String directory, ArrayList<String> filfilter, ArrayList<String> dirfilter, boolean recurse){
 		File[] files;
 		File dir ;
 		FilenameFilter filter =null ;
@@ -735,7 +737,7 @@ if (name.contentEquals("_a")){
 	}
 		
 		
-	public Vector<String> getListofCollectedFiles() {
+	public ArrayList<String> getListofCollectedFiles() {
 		return filenames;
 	}
 
