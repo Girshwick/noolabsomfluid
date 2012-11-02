@@ -681,9 +681,11 @@ if (name.contentEquals("_a")){
 	 * @return
 	 */
 	public ArrayList<String> completeListofFiles( String directory, ArrayList<String> filterStr, boolean recurse){
-		ArrayList<String> filenames = new ArrayList<String>() ;
 		
-		filenames = completeListofFiles( directory, filterStr, null, recurse) ;
+		ArrayList<String> filenames = new ArrayList<String>() ;
+		ArrayList<String> dirfilter = new ArrayList<String>() ;
+		
+		filenames = completeListofFiles( directory, filterStr, dirfilter, recurse) ;
 		
 		return filenames;
 	}
