@@ -1799,7 +1799,7 @@ public class DFutils extends Thread{
 	 
 	public void deleteOldFiles( String path, String[] extensions, long oldAgeThreshold ){
 		
-		Vector<String> files;
+		ArrayList<String> files;
 		String str="";
 		File file ;
 		Long lastModified ;

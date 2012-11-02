@@ -405,6 +405,16 @@ public class IndexedDistances implements Serializable{
 		
 	}
 
+
+	public void renewEnumeration(int indextype, int base) {
+		// 
+		
+		for (int i=0;i<items.size();i++){
+			items.get(i).index= (base+i);
+		}
+		
+	}
+
  	 
 	
 }
