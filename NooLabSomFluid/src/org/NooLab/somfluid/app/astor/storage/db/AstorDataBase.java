@@ -195,7 +195,7 @@ public class AstorDataBase implements ConnectorClientIntf{
 				
 				//             e.g. resourceName = "create-db-sql-xml" ;
 				String xmlstr;
-				
+												//             org/NooLab/somfluid/app/astor/resources/sql    org/NooLab/somfluid/app/astor/resources/sql
 				xmlstr = ResourceContent.getConfigResource( this.getClass(), cfgResourceJarPath, internalCfgStoreName ) ;
 				
 				appnameShortStr = sfProperties.getPersistenceSettings().getAppNameShortStr() ;
@@ -203,6 +203,9 @@ public class AstorDataBase implements ConnectorClientIntf{
 				dbHandler = new DataBaseHandler( this ) ;
 			
 				databaseName = dbHandler.getDataBaseNameFromResource( xmlstr,  appnameShortStr, expected ) ;
+							   if (databaseName.length()==0){
+								   throw(new Exception("Resource for definition of database <"+expected+"> could not be confirmed."));
+							   }
 			} // this would be empty if no match is found, if expected is the full name without wildcards,
 			  // it will return the expected name,else the found one
 			
@@ -493,7 +496,8 @@ public class AstorDataBase implements ConnectorClientIntf{
 			databaseUrl = 	"jdbc:h2:tcp://localhost/"+ _h2Dir+"/"+databaseName; // +";AUTO_SERVER=TRUE" ;
 
 		}
-			
+		
+		
 		iciDb = Db.open(databaseUrl, user, password);
 		connection = iciDb.getConnection();
 
@@ -682,7 +686,7 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 											    "expected db file   : " + dbname+".h2.db\n");
 			}
 
-			out.print(1,"database has been started ...");
+			out.print(1,"database has been started (Astor) ...");
 			out.print(2,"...its connection url is : "+ databaseUrl) ;
 
 			
@@ -935,7 +939,7 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 	 */
 	public long[] updateLatticNodeRegistration( long somId, long numGuid, int runningIndex, double x, double  y, double z) {
 
-
+		int err=0;
 		long[] resultvalues = new long[]{-1,-1};
 		long result = -1L,_max =10L;
 		long dbKey, confirmedId = -1L;
@@ -945,21 +949,28 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 		List<Object> indexes;
 		
 		try{
+					
+															err=1;
+			if (databaseUrl.length()==0){
 				
-			if (iciDb.getConnection().isClosed()){
+				open();
+			}
+			if ((iciDb==null) || (iciDb.getConnection().isClosed())){
 				iciDb = Db.open(databaseUrl, user, password);
 				 
 			}
 			NodeFingerprints nfp = new NodeFingerprints();
 	
-			
+															err=2;
 			nods=null;
 			
 			if ((result == -3) || (nods==null) || (nods.size()==0)){
 				try{
+															err=3;
 					nods = iciDb.from(nfp).where(nfp.somid).is(somId)
 				                      	  .and(nfp.runindex).is(runningIndex).select() ;
 					result = 0;
+															err=4;
 					if ((nods!=null) && (nods.size()>0)){
 						nfp = nods.get(0) ;
 						if ((nfp.numguid>=0) && (nfp.somid==somId) && (nfp.fingerprint.length()>10 )){
@@ -969,13 +980,15 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 							return resultvalues;
 						}
 					}
+															err=5;
 				}catch(Exception e){
 					result = -3;
+															err=err+100;
 				}
 			}
 			
 			try{
-				
+															err=6;
 				indexes = iciDb.from(nfp).select(nfp.id) ;
 				if (indexes.size()==0){
 					_max=1L;
@@ -984,7 +997,7 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 					long lastvalue = (Long)indexes.get(n-1); 
 					_max = lastvalue +1L;	
 				}
-				
+															err=7;
 				// nods = iciDb.from(nfp).where(nfp.somid).is(somId).and(nfp.numguid).is(numGuid).select() ;
 				
 				result = 0;
@@ -992,21 +1005,25 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 			}catch(Exception e){
 				result = -3;
 			}
+															err=8;
 			if ((result== -3) || (nods==null) || (nods.size()==0)){
 				
 				fpString = (new FingerPrint(sampler)).createFingerprint( 50, 6,";") ; // will be added as prefix to the fingerprints of the nodes 
 				
-				
+															err=9;
 				// iciDb.from(nfp).increment(nfp.id) ; -->> increments by 16 or even 24... so we do it by our own
 				// yet we have to guarantee uniqueness of numguid
 				
 				
 				try{
 					long _numGuid = numGuid;
+															err=10;
 					while (_numGuid == numGuid){
 						indexes = iciDb.from(nfp).where(nfp.numguid).is(numGuid).select(nfp.numguid) ;
 						_numGuid = numGuid;
+															err=11;
 						if (indexes.size()>0){
+							
 							if (indexes.indexOf(numGuid)>=0){
 								numGuid = SerialGuid.numericalValue() ;
 							}else{
@@ -1015,6 +1032,7 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 						}else{
 							break;
 						}
+															err=12;
 					} // ->
 					
 				}catch(Exception e){
@@ -1022,7 +1040,7 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 				}
 				
 				
-				
+															err=14;
 				nfp.id = _max;
 				nfp.numguid = numGuid;
 				nfp.somid = somId;
@@ -1032,20 +1050,21 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 				nfp.locationz = z;
 				nfp.fingerprint = fpString ;
 				
+															err=15;
 				dbKey = iciDb.insertAndGetKey( nfp );
 				
 				resultvalues[0] = dbKey; // usually _max;
 				resultvalues[1] = nfp.numguid ; 
 			} // insert...
 			
-			
+															err=0;
 			// connection.close() ;
 			// iciDb.close() ;
 			
 		}catch(Exception e){
 			result = -17;
 			// e.printStackTrace() ;
-			String estr = "Problem in <updateLatticNodeRegistration()> for node index <"+runningIndex+"> in som id <"+somId+">...\n" + 
+			String estr = "Problem (code:"+err+") in <updateLatticNodeRegistration()> for node index <"+runningIndex+"> in som id <"+somId+">...\n" + 
 			              e.getMessage() ;
 			out.printErr(2, estr) ;
 		}
@@ -1137,6 +1156,7 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 		long dbKey=-1L, result=-1L;
 		long _max = 0L;
 		
+		boolean _update;
 		
 		NodeContent nc = new NodeContent();
 		List<NodeContent> ncs;
@@ -1147,6 +1167,8 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 				// iciDb = Db.open(databaseUrl, user, password);
 				iciDb = dataBaseBasics.iciOpenTolerant( databaseUrl, user, password);
 			}	
+			
+			_update = false;
 			
 			// is it already contained?
 			ncs = iciDb.from(nc).where(nc.somid).is(somID )
@@ -1161,39 +1183,49 @@ SELECT * FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES ;
 				
 				if (nc.docid>=0){
 					// update
+					_update = true;
 				}
-			}else{
+			}
+			// else
+			{
 				// not known....
 				// our own increment of id :
-				
-				try{
-					List<Object> indexes ;
+				if (_update==false){
 					
-					
-					indexes = iciDb.from(nc).select(nc.id) ;
-					if (indexes.size()==0){
-						_max=1L;
-					}else{
-						int n = indexes.size();
-						long lastvalue = (Long)indexes.get(n-1); 
-						_max = lastvalue +1L;	
+					try{
+						List<Object> indexes ;
+						
+						
+						indexes = iciDb.from(nc).select(nc.id) ;
+						if (indexes.size()==0){
+							_max=1L;
+						}else{
+							int n = indexes.size();
+							long lastvalue = (Long)indexes.get(n-1); 
+							_max = lastvalue +1L;	
+						}
+						
+						result = 0;
+						
+					}catch(Exception e){
+						result = -3;
 					}
-					
-					result = 0;
-					
-				}catch(Exception e){
-					result = -3;
-				}
-				
-				
-				nc.id = _max;
-				// now the data
+
+					nc.id = _max;
+					// now the data
+
+				} // _update==false? 
+
 				nc.somid = somID  ;
                 nc.nodeid = nodeNumGuid  ;
                 nc.docid = docid ;
                 nc.contextid = contextId ;
-				
-                dbKey = iciDb.insertAndGetKey(nc);
+
+                if (_update){
+                	// iciDb.update(nc) ;
+                }else{
+                	dbKey = iciDb.insertAndGetKey(nc);
+                }
                 // iciDb.update(nc);
 			}
 			

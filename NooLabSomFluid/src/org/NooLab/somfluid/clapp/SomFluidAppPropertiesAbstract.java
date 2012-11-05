@@ -255,7 +255,7 @@ public abstract class SomFluidAppPropertiesAbstract
 		
 		if ((dirname==null) || (dirname.length()==0)){
 			String str = GUID.randomvalue().replace("-", "").substring(0,10) ;
-			dirname = fileutil.getTempFileJava("~noo-classifiers-"+str) ;
+			dirname = fileutil.createTempFilename("~noo-classifiers-"+str,"") ;
 			dirname = fileutil.createpath( dirname, subfolder);
 			supervisedDirectory = dirname;
 			return 1;

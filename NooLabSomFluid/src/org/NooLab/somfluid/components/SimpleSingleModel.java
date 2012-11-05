@@ -17,6 +17,7 @@ import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.ModelingSettings;
 import org.NooLab.somfluid.properties.PersistenceSettings;
 import org.NooLab.somfluid.storage.ContainerStorageDevice;
+import org.NooLab.somfluid.storage.DataTable;
 import org.NooLab.somfluid.storage.FileOrganizer;
 import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somfluid.tasks.SomFluidTask;
@@ -361,6 +362,12 @@ public class SimpleSingleModel implements SomHostIntf, Serializable{
 	public void selectionEventRouter(SurroundResults results, VirtualLattice somLattice) {
 		 
 		somLattice.handlingRoutedSelectionEvent(results);
+	}
+
+	@Override
+	public void addStreamingData(DataTable dataTable) {
+		// TODO Auto-generated method stub
+		
 	}
  
 	

@@ -67,7 +67,10 @@ public class SomAstorNodeContent {
 	
 	SomAssociativeStorage astorHost;
 	SomAstorNodeContent astorNodeC ;
-	
+
+	SomQueryIntf somQuery;
+	AstorDataBase astorDb;
+
 	VirtualLattice astorLattice = null ;
 	long somId=-1L;
 	
@@ -76,10 +79,10 @@ public class SomAstorNodeContent {
 	
 	ArrayList<Long> changedNodes = new ArrayList<Long> ();
 	
+	transient ArrayList<Long> failingNodeRequests = new ArrayList<Long> ();
+
 	transient ArrUtilities arrutil = new ArrUtilities ();
 	transient PrintLog out = new PrintLog(2,true);
-	private SomQueryIntf somQuery;
-	private AstorDataBase astorDb;
 	
 	// ========================================================================
 	public SomAstorNodeContent(SomAssociativeStorage astorHost){
@@ -121,8 +124,12 @@ public class SomAstorNodeContent {
 		
 			nodeContentTable = "" ; // get it from SomNames
 															out.print(2, "preparing node references: fingerprints and maps...");
-			for (int i=0;i<nodes.size();i++){
-				
+		    int nc = nodes.size();
+		    double f = 10.0; if (nc>2500){ f=20.0;}
+			for (int i=0;i<nc;i++){
+											if (nc>800){
+												out.printprc(2, i, nc, (int)((double)nc/f), "");
+											}
 				node = nodes.get(i);
 				
 				// the nodes elf-assign a unique numerical guid...
@@ -210,6 +217,9 @@ public class SomAstorNodeContent {
 		public void run() {
 			cheobsIsRunning = true; 
 			int n1,n2;
+			long cni;
+			
+			
 			while (cheobsIsRunning){
 				
 				if (_changedNodes.size()>0){
@@ -220,6 +230,14 @@ public class SomAstorNodeContent {
 					out.print(2, "n1,n2 : "+n1+", "+n2);
 					
 					if (_changedNodes.size()>0){
+
+						for (int i=_changedNodes.size()-1;i>=0;i--){
+							cni = _changedNodes.get(i);
+							if (changedNodes.indexOf(cni)>=0){
+								_changedNodes.remove(i);
+							}
+						}
+
 						changedNodes.addAll(_changedNodes);
 						out.delay(20);
 						_changedNodes.clear();
@@ -235,16 +253,20 @@ public class SomAstorNodeContent {
 		@SuppressWarnings("unchecked")
 		@Override
 		public void update(Observable o, Object arrData) { // arrData has been cloned before sending...
-			// observer sending this data could be found by searching the project code for "138709" (it is in SomAstor :: nodeChangeEvent() )
+			// observer sending this data could be found by searching 
+			// the project code for "138709" (it is in SomAstor :: nodeChangeEvent() )
 			
 			if (astorHost.getPrepareAbstraction()<=0){
 				return;
 			}
-			String senderName = o.toString().replace("org.NooLab.somfluid.astor.", "") ;
+			String senderName = o.toString().replace("org.NooLab.somfluid.app.astor.", "") ;
 			
-			out.print(2, "<SomAstorNodeContent::SomChangeEventObserver> received an update message : "+
+			out.print(4, "<SomAstorNodeContent::SomChangeEventObserver> received an update message : "+
 							arrData.toString()+" from sender "+
 					        senderName ) ;
+			
+			out.print(4, "Node update request sent by : "+senderName );
+			
 			
 			if ((arrData!=null) && (senderName.contains("SomAstor"))){
 				try{
@@ -350,7 +372,6 @@ public class SomAstorNodeContent {
 		}
 		if (structureCode == TexxDataBaseSettingsIntf._DATABASE_STRUC_RNDDOCS_L1){
 			r = 5;
-			 
 			
 			r = updateCollectionOfNodeFromRandomDocs( changedNodeUid );
 		}
@@ -401,12 +422,11 @@ public class SomAstorNodeContent {
 				for (int i=0;i<records.size();i++){
 					
 					rec = records.get(i) ; // som still uses its own index instead of that of the db....
-					// this record id refers to the INPUT database, NOT to the nodes database
-			
+					// this record id refers to the INPUT database (e.g. randomwords), NOT to the nodes database
+    
 					// SELECT * FROM CONTEXTS where CONTEXTID = 34;
 					rdoc = astorDb.getRandomDocEntryByRecId( rec ); 
 					// String wordlabel = (String)ar.get(0) ;
-					
 					
 					if ((rdoc!=null) && (rdoc.docid>=0)){
 						
@@ -522,6 +542,9 @@ public class SomAstorNodeContent {
 			if (node==null){
 				
 				// NodeFingerprints nfp = astorDb.getNodeEntry( changedNodeUid ); 
+				// create a logging list
+				
+				failingNodeRequests.add( changedNodeUid );
 				
 				return  -3 ;
 			}
@@ -558,20 +581,26 @@ public class SomAstorNodeContent {
 					// SELECT * FROM CONTEXTS where CONTEXTID = 34;
 					contxt = astorDb.getContextsEntryByRecId( rec ); 
 					// String wordlabel = (String)ar.get(0) ;
-				
+			
+					
 					if (contxt!=null){
+						
 						docid = contxt.docid;
 						fpindex = contxt.fpindex;
 						ctxtId = contxt.contextid;
 						// changedNodeUid = node's num guid , _somID
 
+					    out.print(2, "entry for table <nodecontent> , record id from som: "+rec+" , found contextid: "+ 
+					    		      ctxtId+" , document id "+docid+" ,  table record id: "+contxt.id );
+						
 						// check whether the doc already exists? will be done there...
 						_iukey = astorDb.insertUpdateNodeContent(  _somID, changedNodeUid, docid, ctxtId, fpindex);
+					}else{
+						out.printErr(2, "id request mismatch, no entry in randomwords!! ...  requested as provided from SOM node : "+rec) ;
 					}
  					
 				}// i-> all records
 			}// records ?
-			
 			
 			
 			
@@ -583,5 +612,9 @@ public class SomAstorNodeContent {
 		return result ;
 	}
 	
-	
+
+	public ArrayList<Long> getFailingNodeRequests() {
+		return failingNodeRequests;
+	}
+
 }

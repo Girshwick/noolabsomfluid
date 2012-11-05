@@ -72,6 +72,8 @@ public class DSom extends Observable implements DSomIntf{
 	
 	MultiprocDispatcher multiprocDispatcher ;
 	
+	boolean sppIsWorking = false;
+	StreamPerceptionProcess spp ;
 	//SomTargetedModeling somTargetedModeling;  
 	
 	private DSomCore dSomCore;
@@ -183,6 +185,8 @@ public class DSom extends Observable implements DSomIntf{
 		
 		System.gc() ;
 
+		sppIsWorking=false;
+		
 		dSomCore = null;
 	}
 	
@@ -254,7 +258,49 @@ public class DSom extends Observable implements DSomIntf{
 
 	// ========================================================================
 	
+	public void startStreamPerceptionProcess(){
 	
+		spp = new StreamPerceptionProcess();
+		spp.start();
+	}
+	
+	
+	// The SOM itself also runs a "perception" process that inserts the new data to the map
+	// if necessary, either local or global recalculation will be initiates
+
+	class StreamPerceptionProcess implements Runnable{
+
+		Thread dsomSppThrd;
+		
+		public StreamPerceptionProcess(){
+		
+			dsomSppThrd = new Thread (this,"dsomSppThrd");
+		}
+		
+		
+		public void start() {
+			// 
+			dsomSppThrd.start();
+		}
+
+
+		@Override
+		public void run() {
+			// 
+			sppIsWorking = true;
+			while (sppIsWorking ){
+				
+				out.delay(10);
+			}// ->
+			
+		}
+		
+		
+	}
+	
+
+	// ========================================================================
+
 	public int getTargetVariableColumn() throws Exception{
 		// dependent on modelingSettings
 		int varix ,varix2;

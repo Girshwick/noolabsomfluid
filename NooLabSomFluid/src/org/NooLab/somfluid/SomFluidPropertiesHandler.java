@@ -352,9 +352,9 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 	
 		boolean loadingOk=false;
 		String str,section, rawXmlStr="" ;
-		String[] iniContent,sectionItems,lines ;
+		String[] iniContent,sectionItems,lines, iniitem ;
 		ArrayList<String> items ;
-		
+		int insertIdExtraColumn=0;
 		
 		ModelingSettings ms = sfProperties.getModelingSettings();
 	
@@ -382,6 +382,8 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 		if (iniContent.length<=1){
 			return false;
 		}
+		
+		insertIdExtraColumn = 0;
 		
 		variableSettings = getVariableSettingsHandler();
 		
@@ -437,7 +439,29 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 						variableSettings.setInitialSelection( items );
 					}
 				}
+
+				if (section.toLowerCase().contentEquals("nonormalization")){
+					if (items.size()>0){
+						variableSettings.setExcludeFromNormalization( items );
+					}
+				}
 				
+				if (section.toLowerCase().contentEquals("structure")){
+					// insertid=0
+					if (items.size()>0){
+						str = items.get(0) ;
+						iniitem = str.split("=");
+						if ( (iniitem.length==2) && (iniitem[0].toLowerCase().trim().contentEquals("insertid")) ){
+							if (iniitem[0].toLowerCase().trim().contentEquals("1")){
+								insertIdExtraColumn = 1;
+							}else{
+								insertIdExtraColumn = 0;
+							}
+						}
+					}
+					
+				}
+ 
 				if (section.toLowerCase().contentEquals("blacklist")){
 					if (items.size()>0){
 						variableSettings.setBlackListedVariables( items ) ;
@@ -478,6 +502,7 @@ public class SomFluidPropertiesHandler implements SomFluidPropertiesHandlerIntf{
 			e.printStackTrace();
 		}
 		
+		sfProperties.setInsertIdExtraColumn( insertIdExtraColumn );
 		
 		return loadingOk;
 	}

@@ -127,7 +127,7 @@ public class SomAppModelLoader {
 		
 			dataSourceFile = filename;
 			
-			Vector<String> lines = fileutil.readFileintoVectorstringTable(filename) ;
+			ArrayList<String> lines = fileutil.readFileintoVectorstringTable(filename) ;
 			String[] headerRow = lines.get(0).split("\t") ;
 			if (headerRow.length>1){
 				providedVarLabels = new ArrayList<String>(Arrays.asList(headerRow));

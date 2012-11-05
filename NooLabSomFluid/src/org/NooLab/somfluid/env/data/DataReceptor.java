@@ -126,7 +126,9 @@ public class DataReceptor implements //
 	}
 
 	@SuppressWarnings("unchecked")
-	public void loadFromDataBase( int recCount, int databaseStructureCode) {
+	public void loadFromDataBase( int recCount, int databaseStructureCode, int isNext) {
+		
+		boolean getStream;
 		
 		SomDataStreamer dataStreamer;
 		TexxDataBaseSettingsIntf dbsett;
@@ -174,12 +176,14 @@ public class DataReceptor implements //
 			}
 			
 			variableSettings = sfProperties.getVariableSettings() ;
-			excludeds = variableSettings.getAbsoluteExclusions();  //  larger than fieldLabels
+			excludeds = variableSettings.getAbsoluteExclusions();  //  larger than fieldLabels ?
 			
 			// 1. get all excluded fields that are part of the fieldlabels list
 			excludeds = (ArrayList<String>) CollectionUtils.intersection( fieldLabels , excludeds) ;
+			
 			// 2. remove them
 			requestFields = (ArrayList<String>) CollectionUtils.disjunction( fieldLabels , excludeds) ;
+			
 			// unfortunately requestFields is now sorted
 			requestFields = arrutil.alignStringList( requestFields, fieldLabels,0); // second list provides the sorting
 			
@@ -196,15 +200,26 @@ public class DataReceptor implements //
 				// e.g. TexxDataBaseSettingsIntf._DATABASE_STRUC_CONTEXTS_L0
 				if (dbAccess.getDatabaseName().contentEquals("randomwords")){ // contains table "contexts" with column "randomcontext"
 					// the "randomwords" DB is a special one, because the actual data vector is contained as a list [;]
-					dataTable = somData.getSomTexxDb().retrieve( dbsCode , "randomwords", requestFields, 1000);
-					
+								if (isNext>0){
+									recCount = isNext;
+									getStream = true;
+								}else{
+									getStream = false;
+								}
+					dataTable = somData.getSomTexxDb().retrieve( dbsCode , "randomwords", 
+																 requestFields, 
+																 recCount,  // e.g. 5000;
+																 getStream ) ; 
 				}
 				// the same is true for "astordocs" which contains a table "randomdocuments" and this a column "randomdoc"
 				if (dbAccess.getDatabaseName().contentEquals("astordocs")){ //
 					
 					// AstorDocSomDataBase astordbi = somData.getSomAstorDb();
 					// dataTable = astordbi.retrieve("randomwords", requestFields);
-					dataTable = somData.getSomTexxDb().retrieve( dbsCode, "astordocs", requestFields, 25000);
+					dataTable = somData.getSomTexxDb().retrieve( dbsCode, "astordocs", requestFields, 
+																 25000,
+																 false); // false = so far no streaming for astordocs (= into L2)
+																  // TODO: streaming mode for astordocs is required of course !
 				}
 				
 			}

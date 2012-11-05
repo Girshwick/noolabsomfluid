@@ -22,6 +22,7 @@ import org.NooLab.itexx.storage.TexxDataBaseSettings;
 import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
 
 import org.NooLab.somfluid.properties.* ;
+import org.NooLab.somfluid.storage.DataTable;
 import org.NooLab.somfluid.structures.VariableSettingsHandlerIntf;
 import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somfluid.tasks.SomFluidSubTask;
@@ -106,6 +107,8 @@ public class SomFluid
 	SomTransformer soappTransformer ;
 	SomApplicationDsom somApplication;
 	
+	int astorInitializationRecordCount = 3000 ;
+	
 	boolean isActivated=false, isInitialized=false;
 	boolean processIsRunning=false;
 	Thread sfThread;
@@ -141,7 +144,9 @@ public class SomFluid
 		if (sfFactory.preparePhysicalParticlesField>0){
 			prepareParticlesField( (RepulsionFieldEventsIntf)this);	
 		}
-		cleanTmpFolders(); 
+		cleanTmpFolders();
+		
+		astorInitializationRecordCount = sfProperties.getAstorInitializationRecordCount() ;
 	}
 	 
 	private void cleanTmpFolders() {
@@ -214,12 +219,22 @@ public class SomFluid
 	}
 	
 
+	/**
+	 * in its last passage, the lattice will inform SomAstor about changes in the nodes
+	 * through a callback to "nodeChangeEvent".
+	 * This in turn triggers (updates) an observer in class SomAstorNodeContent::SomChangeEventObserver
+	 * which is routing the data finally to the method "updateCollectionOfNode()" in 
+	 * class "SomAstorNodeContent"
+	 * 
+	 * @param sfTask
+	 * @throws Exception
+	 */
 	private void performAssociativeStorage(SomFluidTask sfTask) throws Exception {
 		 
 		
 		
 		SomFluidSettings somfluidSettings ; 
-		SomAssociativeStorage astor ;
+		SomAssociativeStorage astora ;
 		SomAStorageQueryHandler astorQueryHandler;
 		TexxDataBaseSettingsIntf databaseSettings;
 		DataStreamProvider dataStreamProvider ;
@@ -230,7 +245,7 @@ public class SomFluid
 		databaseSettings = sfProperties.getDatabaseSettings() ;
 		
 		String str ="",dspGuid="",   dbname="", nodesDbName="";
-		int r, databaseStructureCode = -1 ;
+		int r, databaseStructureCode = -1 ,prepareAbstraction = -1;
 		
 		sfTask.setDescription("Astor()") ;
 		sfTask.setSomHost(null) ;
@@ -264,9 +279,12 @@ public class SomFluid
 			/* TODO: actually, we need sth like a meta ID for the nodesDbName 
 			*		 as it is neither bound to a session, nor to a L1 Som...
 			*/
+			prepareAbstraction = sfTask.getPreparingAbstraction();
+			prepareAbstraction = 0;
 			
 		}else{
-		
+			
+			prepareAbstraction = sfTask.getPreparingAbstraction();
 					str = str + " " ;
 		
 		    // we accept streaming only if we work on a "data table" that we can read directly, NOT a nodes db!
@@ -294,6 +312,9 @@ public class SomFluid
 				
 				databaseStructureCode = TexxDataBaseSettingsIntf._DATABASE_STRUC_CONTEXTS_L0;
 				dbaccess.setDatabaseStructureCode( databaseStructureCode );
+				
+				
+			    prepareAbstraction = 2; // 2+ = nodes get identifiable via fingerprints
 			}
 		    
 		    // TODO ACTUALLY this should come from the task
@@ -306,26 +327,173 @@ public class SomFluid
 		    if (varSett.getIdVariable().length()==0){
 		    	varSett.setIdVariable("id");
 		    }
+		    
 		} // ? else
 		// else ...in normal mode
 		
-		astor = new SomAssociativeStorage( this, sfFactory, sfTask, sfProperties, dspGuid ); 
+		astora = new SomAssociativeStorage( this, sfFactory, sfTask, sfProperties, dspGuid ); 
+		
+		astora.setPrepareAbstraction(prepareAbstraction) ;
+
 		sfTask.setTaskType( SomFluidTask._TASK_SOMSTORAGEFIELD);
 		
-		// reading the data is buggy !!! 
-		r = astor.prepareDataObject( SomAstorFrameIntf._ASTOR_SRCMODE_DB, databaseStructureCode, dbname) ; 
+		// reading the data is buggy !!! ???
+		r = astora.prepareDataObject( SomAstorFrameIntf._ASTOR_SRCMODE_DB, databaseStructureCode, dbname) ; 
 		
 		if (r==0){
-			astor.setInitialVariableSelection( somfluidSettings.getInitialVariableSelection() ) ;
+			astora.setInitialVariableSelection( somfluidSettings.getInitialVariableSelection() ) ;
+			
+
+			/*
+			 * once we have completed the initialization with the first 1000 (=astorInitializationRecordCount ) 
+			 * records, we have to initiate the streaming mode
+			 * For organizing the streaming (-> "online" learning) we need a specialized
+			 * property 
+			 * 
+			 * note that we need a global structure that measures max and min for any of the columns 
+			 * for the SOM
+			 * 
+			 */
+			// starting the stream "receptor" process: it is a process that sends data to the SOM
+			// The SOM itself also runs a "perception" process that inserts the new data to the map
+			// if necessary, either local or global recalculation will be initiates
+			
+			// randomwords DB needs a field = counter, which counts how often a record has been sent
+			// to L0-Astor. This serves as a selection criterion
+			ReceptorTransferProcess rtp = new ReceptorTransferProcess(this);
+			sfTask.setDataStreamReceptor( (ReceptorTransferProcessIntf)rtp );
+			rtp.setDatabaseName(dbname);
+			rtp.setSourcemode("DB"); // or "TCP"
+			rtp.setSomHost( (SomHostIntf)astora);
 			
 			
 			// extensionality contains strange data, else we should fill the secondary index field
-			r = astor.perform( nodesDbName, sfTask.getPreparingAbstraction() ) ;
+			r = astora.perform( nodesDbName,prepareAbstraction ) ;
+			// note, that "astor" is of type  "SomAssociativeStorage" here (NOT SomAstor) !!!	
+			// if finished with the initial bunch, SomAstor will start the ReceptorTransferProcess...
 		}
-
-		
+		r=0;
 	}
 
+	
+	/**
+	 * 
+	 * dependent on settings, this connects either to a TCP process, 
+	 * or it will check the requested database (e.g. randomwords in case of iTexx) for new data;
+	 * 
+	 * the data are then sent through the transformation model and then 
+	 * sent to the final target = the waiting instance : such as SomAstor, or SomTargetedModeling 
+	 *  
+	 * 
+	 * @author kwa
+	 *
+	 */
+	class ReceptorTransferProcess 
+									implements 
+												Runnable,
+												ReceptorTransferProcessIntf {
+
+		int period=2000, trigger=-1;
+		Thread rtpThrd;
+		boolean receptorTransferIsRunning = false;
+		private int sourceType = 1; // == "DB";
+		private String databaseName = "";
+		private SomHostIntf somHost;
+		private SomDataObject somDataObj;
+		
+		
+		int databaseStructureCode = 0;
+		
+		// ................................................
+		public ReceptorTransferProcess(SomFluid somFluid) {
+
+			rtpThrd = new Thread(this,"rtpThrd") ;
+		}
+		// ................................................
+		
+		public void setSomHost(SomHostIntf somhost) {
+			somHost = somhost;
+			somDataObj = somHost.getSomDataObj();
+		}
+
+		/**
+		 * 
+		 * @param marker either DB or TCP
+		 */
+		public void setSourcemode(String marker) {
+
+			if (marker.contentEquals("DB")){
+				sourceType = 1;
+			}
+			if (marker.contentEquals("TCP")){
+				sourceType = 2;
+			}
+		}
+
+		public void setDatabaseName(String dbname) {
+			databaseName = dbname;
+		}
+
+		@Override
+		public void run() {
+			
+			boolean isWorking=false;
+			int r=-1;
+			receptorTransferIsRunning = true;
+			DataTable dataTable ;
+			
+			while (receptorTransferIsRunning){
+				
+				if (isWorking==false){
+					isWorking=true;
+					trigger = -1;
+					
+					if ((sourceType==1)){
+						r = loadNextDataFromData( somHost, somDataObj, databaseStructureCode );
+					}
+
+					if ((sourceType==2)){
+						
+					}
+					
+					isWorking = false;
+				}
+				int z=0, n=20; 
+				while ((z<n) && (trigger<0)){
+					z++;
+					out.delay(period/n) ;
+				}
+				
+			}// -> 
+		}
+
+		/**
+		 * this is being called by a Tcp process or sth. similar,
+		 * there, the incoming data have to be buffered.
+		 * The accepting process also has to provide an interface for providing
+		 * the data.
+		 * 
+		 */
+		@Override
+		public void triggerNextRead(){
+			trigger++;	
+		}
+		
+		@Override
+		public void start( SomHostIntf somhost,int dbStructureCode ) {
+			databaseStructureCode = dbStructureCode ;
+			somHost = somhost;
+			rtpThrd.start();
+		}
+
+		@Override
+		public void stop() {
+			receptorTransferIsRunning = false;
+			out.delay(period + 100);
+		}
+		
+	}
+	
 	private void organizingDatabaseAccessForL2( SomFluidTask sfTask ) throws Exception {
 
 		String dbname;
@@ -396,8 +564,11 @@ public class SomFluid
 		stxProperties.setDocSomDataBaseName(  sfTask.getTransferTargetDatabase() ) ;
 			// String dbname = sfTask.getTransferTargetDatabase();
 
-			
-		storagedir = DFutils.createPath(sfProperties.getSystemRootDir(),"storage") ;
+		String dir = sfProperties.getSystemRootDir();
+		if (dir.indexOf("/app")>0){
+			dir = DFutils.getParentDir( dir,2);
+		}
+		storagedir = DFutils.createPath(dir,"storage") ;
 			         if (fileutil.listofFiles("", ".db", storagedir).size()==0){
 			        	 throw(new Exception("No data base for SomFluid process in performAssociativeStorage()..."));
 			         }
@@ -409,18 +580,21 @@ public class SomFluid
 		// sth is wrong there, the context id is not caught correctly 								
 		nodesDataConverter = new SomNodesDataConverter( stxProperties ) ; 
 		
+		// checking which documents got an upgrade in astornodes, and 
+		// also which documents are present in astornodes but not in astordocs
 		if (nodesDataConverter.checkForImport() ){
-		
+
+			// create the table with histograms for respective documents
 			ArrayList<ArrayList<?>> histogramTable = nodesDataConverter.createHistogramTable(somID);
 		
 			// this histogram table will be saved into a database
 			// see Texx/randomGraph for this 
 			// texx.txxDataBase.storeDocTable(doctable);
 			result = nodesDataConverter.storeDocTable(histogramTable);
-										out.print(2, "extracting done...");
+										out.print(2, "extracting and transferring data from L1 -> L2 done...");
 										
 		}else{
-			result=0;
+			result=-3;
 		}
 		
 		return result;
@@ -1024,43 +1198,83 @@ public class SomFluid
 		return null;
 	}
 	
-	public SomDataObject loadDbTable( SomDataStreamer streamer, int databaseStructureCode) {
 	
+	
+	
+	public int loadNextDataFromData(SomHostIntf somHost, SomDataObject somDataObj, int databaseStructureCode) {
+		/*
+		 * we fetch the next 1000 records, or the next document, dependent on options
+		 * we identify the "next" records by means of callcount:
+		 * "callcount" is a field that increments each time the record is being fetched
+		 *  
+		 */
+		
+		int result = -1;
+		SomDataObject _sdObj ;
+		SomDataStreamer _streamer;
+		DataBaseAccessDefinition dbAccess=null;
+		
+		
+		dbAccess = setDbDefinitionInfo( databaseStructureCode) ;
+		
+		_sdObj = createSomDataObject( sfProperties.getDatabaseSettings() ) ;
+		
+		_sdObj.setSomDataStreamer( somDataObj.getSomDataStreamer() ); 
+		
+		_streamer = _sdObj.getSomDataStreamer() ;
+		_streamer.setSomDataObject(somDataObj) ;
+		// correct db defined now ?
+
+		
+		SomTransformer transformer = new SomTransformer( _sdObj, sfProperties );
+		
+		_sdObj.setTransformer(transformer) ;
+		
+		_sdObj.activateNormalizationOfInData( false );
+		
+		DataReceptor dataReceptor = new DataReceptor( _sdObj );
+		
+		// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> difference to filemode
+		                          //  e.g. 1000  
+		dataReceptor.loadFromDataBase( 100, databaseStructureCode, 1 ); // TODO make this 100 dynamic
+								// astorInitializationRecordCount
+		/* the streamer is responsible for putting the tables together
+		   instead of calling  "somDataObject.importDataTable( dataReceptor, 1 )"
+		
+		   ... we hand it over to somDataStreamer, which also send the indexes of the new records (and other metadata,
+		       such as request for rebuilding the SOM) to the SomHost (via its interface) 
+		
+		*/
+		result = -5;
+		
+		if ((dataReceptor.getDataTable()!=null) && (dataReceptor.getDataTable().getDataTable().size()>0)){
+			somHost.addStreamingData(dataReceptor.getDataTable());
+		}
+		
+		
+		return result ;
+	}
+
+	
+	
+	/**
+	 * 
+	 * called from prepareDataObject() above
+	 * 
+	 * @param streamer is created by SomHostIntf = SomAstorFrameIntf;
+	 * @param databaseStructureCode  randomwords or astordocs (so far)
+	 * 
+	 * @return
+	 */
+	public SomDataObject loadDbTable( SomDataStreamer streamer, int databaseStructureCode) {
+		
 		DataBaseAccessDefinition dbAccess;
 		
 		
 		SomDataObject somDataObject = null ;
 		
 		 
-		
-		try {
-			
-			dbAccess = sfProperties.getDbAccessDefinition() ;
-			
-			
-			if (databaseStructureCode == TexxDataBaseSettingsIntf._DATABASE_STRUC_CONTEXTS_L0){
-
-				if ((dbAccess==null) || (dbAccess.getxColumns()==null) || (dbAccess.getxColumns().getItems().size()==0)){
-					
-					sfProperties.getDatabaseDefinitionInfo("randomwords",TexxDataBaseSettingsIntf._DATABASE_STRUC_CONTEXTS_L0);
-					 
-				}
-				
-			}
-			if (databaseStructureCode == TexxDataBaseSettingsIntf._DATABASE_STRUC_RNDDOCS_L1){
-				if ((dbAccess==null) || (dbAccess.getxColumns()==null) || (dbAccess.getxColumns().getItems().size()==0)){
-					
-					sfProperties.getDatabaseDefinitionInfo("astordocs", TexxDataBaseSettingsIntf._DATABASE_STRUC_RNDDOCS_L1 );
-					 
-				}
-			}
-			
-		} catch (Exception e) {
-
-			e.printStackTrace();
-			return null;
-		}
-		
+		dbAccess = setDbDefinitionInfo( databaseStructureCode) ;		
 		
 		
 		// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> difference to filemode
@@ -1074,18 +1288,22 @@ public class SomFluid
 		
 		somDataObject.setTransformer(transformer) ;
 		
+		somDataObject.activateNormalizationOfInData( true );
+		
 		DataReceptor dataReceptor = new DataReceptor( somDataObject );
 		
 		// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> difference to filemode
-		
-		dataReceptor.loadFromDataBase( 1000 , databaseStructureCode);
+		                          //  e.g. 1000  
+		// TODO:  allow for more complex constraints like number of different documents, contexts per document, etc
+		// dataReceptor.setQueryConstraint()
+		dataReceptor.loadFromDataBase( astorInitializationRecordCount, databaseStructureCode,0 );
 		// the data loaded there is just a seed for the beginning...
 		// in resume mode, we load the Som and the SomDataObj directly
 		// yet, the data table in SomDataObj will not grow beyond 5000 records or so!!!
 		// max and min are also taken from the db, so the global values for normalization are available anyway
 		// de-referencing is done through the database
 		            
-		somDataObject.importDataTable( dataReceptor, 1 ); 
+		somDataObject.importDataTable( dataReceptor, 1 ); // FIXME TODO PROBLEM writer of sourcedata not found
 
 		if (somDataObject.getData().getRowcount()<=1){
 			out.printErr(1, "loading data tables did NOT complete successfully. ...stopping.");
@@ -1099,7 +1317,7 @@ public class SomFluid
 		// as defined by the user
 		somDataObject.acquireInitialVariableSelection();
 		
-		// 
+		// this we need to transform new records from incoming stream ....
 		somDataObject.ensureTransformationsPersistence(0);
 											out.print(4, "somDataObject instance @ loadSource : "+somDataObject.toString()) ;
 								
@@ -1133,6 +1351,45 @@ public class SomFluid
 	
 	
 
+
+	private DataBaseAccessDefinition setDbDefinitionInfo(int databaseStructureCode){
+		
+		DataBaseAccessDefinition dbAccess=null;
+		
+		
+	
+		try {
+			
+			dbAccess = sfProperties.getDbAccessDefinition() ;
+			
+			
+			if (databaseStructureCode == TexxDataBaseSettingsIntf._DATABASE_STRUC_CONTEXTS_L0){
+	
+				if ((dbAccess==null) || (dbAccess.getxColumns()==null) || (dbAccess.getxColumns().getItems().size()==0)){
+					
+					sfProperties.getDatabaseDefinitionInfo("randomwords",TexxDataBaseSettingsIntf._DATABASE_STRUC_CONTEXTS_L0);
+					 
+				}
+				
+			}
+			if (databaseStructureCode == TexxDataBaseSettingsIntf._DATABASE_STRUC_RNDDOCS_L1){
+				if ((dbAccess==null) || (dbAccess.getxColumns()==null) || (dbAccess.getxColumns().getItems().size()==0)){
+					
+					sfProperties.getDatabaseDefinitionInfo("astordocs", TexxDataBaseSettingsIntf._DATABASE_STRUC_RNDDOCS_L1 );
+					 
+				}
+			}
+			
+		} catch (Exception e) {
+	
+			e.printStackTrace();
+			return null;
+		}
+	
+		
+		
+		return dbAccess;
+	}
 
 	public SomDataObject loadSource( String srcname ) throws Exception{
 		

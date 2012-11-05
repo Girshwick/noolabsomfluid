@@ -127,10 +127,14 @@ public class SomFluidProperties
 
 
 	private String onCompletion="";
-	
 
 
-	
+	private int streamingActive;
+
+	private int insertIdExtraColumn;
+	private int astorInitializationRecordCount = 5000 ;
+	private int astorInitializationDocCount = 10 ;
+
  
 	// ========================================================================
 	public SomFluidProperties(){
@@ -1127,10 +1131,47 @@ public class SomFluidProperties
 	}
 
 
+	public void setStreamingActive(int flag) {
+		// 
+		streamingActive = flag;
+	}
+
+	public int getStreamingActive() {
+		return streamingActive ;
+	}
 
 
+	public void setInsertIdExtraColumn(int flag) {
+		insertIdExtraColumn = flag;
+	}
 
-	
+	public int getInsertIdExtraColumn() {
+		return insertIdExtraColumn;
+	}
+
+
+	/**
+	 * this describes the number of contexts, that are initially loaded from randomwords
+	 * 
+	 * @return
+	 */
+	public int getAstorInitializationRecordCount() {
+		// 
+		return astorInitializationRecordCount;
+	}
+
+	public void setAstorInitializationRecordCount( int count) {
+		astorInitializationRecordCount = count;
+	}
+
+
+	public int getAstorInitializationDocCount() {
+		return astorInitializationDocCount;
+	}
+	public void setAstorInitializationDocCount(int count) {
+		// 
+		astorInitializationDocCount = count;
+	}
 
 
 

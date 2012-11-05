@@ -1082,8 +1082,7 @@ if (basevarLabel.contains("Bisher_c2")){
 	}
 
 	public void createDataDescriptions() {
-		// TODO Auto-generated method stub
-		
+		somData.calculateStatisticalDescription();
 	}
 
 
@@ -1501,6 +1500,12 @@ if (basevarLabel.contains("Bisher_c2")){
 		// TODO Auto-generated method stub
 		
 	}
+
+
+
+	
+
+
 	 
 }
 

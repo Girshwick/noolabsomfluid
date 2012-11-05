@@ -561,16 +561,29 @@ if (varLabel.toLowerCase().contains("_c")){
 			}
 	
 			
-			n = somData.getDataTable().getColumnHeaders().size() ; 
+		n = somData.getDataTable().getColumnHeaders().size() ; 
 											out.print(2, "# columns in headers : "+n) ;
 			/*
 			n = somData.getDataTable().getDataTable().size()     ; out.print(2, "# columns in table   : "+n) ;
 			n = somData.getVariables().size()                    ; out.print(2, "# variables          : "+n) ;
 			*/
-			return result;		
-		}
+		return result;		
+	}
 
-	
+	@Override
+	public int basicTransformToNumericalFormat(int streamingRowOffset) {
+		/*
+		 * here we assume that the transformation model already exists!!
+		 * 
+		 * such we apply the existing transformations (as known for the columns) to the new data,
+		 * writing the transformed data to the respective columns
+		 *  
+		 */
+		
+		// FIXME  abc124  basicTransformToNumericalFormat(int streamingRowOffset) 
+		
+		return 0;
+	}
 
 	/**
 	 * @return the addedVariablesByIndex
@@ -815,6 +828,9 @@ if (varLabel.toLowerCase().contains("_c")){
 
 	
 
+
+	@Override
+	abstract public void createDataDescriptions() ;
 
 	/**
 		 * 
@@ -1311,10 +1327,6 @@ if (varLabel.toLowerCase().contains("_c")){
  
 	@Override
 	public void initializeTransformationModel() {
-	}
- 
-	@Override
-	public void createDataDescriptions() {
 	}
  
 	@Override

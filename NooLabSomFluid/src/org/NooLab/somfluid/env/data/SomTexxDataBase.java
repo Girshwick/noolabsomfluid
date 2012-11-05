@@ -32,6 +32,9 @@ import org.NooLab.utilities.objects.StringedObjects;
 import org.NooLab.utilities.strings.ArrUtilities;
 import org.NooLab.utilities.strings.StringsUtil;
 
+import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.ResultSetHandler;
+import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.h2.jdbc.JdbcSQLException;
 // import org.h2.server.Service;
 import org.h2.tools.Server;
@@ -290,7 +293,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 											    "expected db file   : " + dbname+".h2.db\n");
 			}
 
-			out.print(1,"database has been started ...");
+			out.print(1,"database has been started (SomTexx Db, name of database: "+dbname+") ...");
 			out.print(3,"...its connection url is : "+ databaseUrl) ;
 			
 		}catch(JdbcSQLException jx){
@@ -407,7 +410,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 					nMetaData.retrieveMetaData();
 					String str = ArrUtilities.arr2Text( nMetaData.getTableNames(1),";");
 
-					out.printErr(2, "Tables : "+str) ;
+					out.printErr(2, "Tables in database <"+databaseName+">: "+str) ;
 				}
 			}
 			
@@ -554,12 +557,23 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 	}
 
 	
+	
+	/**
+	 * 
+	 * @param structureCode
+	 * @param dbname
+	 * @param requestFields
+	 * @param limitcount
+	 * @param getStream  if false, just read the first 'limitcount' records; 
+	 *                   if true, read the field 'callcount' from db table and create a priority based on its max and min
+	 * @return
+	 */
 	//  the requestFields are not yet aligned to the "initialselection" of variableSettings (in sfProperties)
-	public DataTable retrieve( int structureCode, String dbname, ArrayList<String> requestFields, int limitcount) {
+	public DataTable retrieve( int structureCode, String dbname, ArrayList<String> requestFields, int limitcount, boolean getStream) {
 		DataTable  dataTable = null;
 		
 		if (structureCode==1){
-			dataTable = retrieveRandomWords(dbname, requestFields, limitcount) ;
+			dataTable = retrieveRandomWords(dbname, requestFields, limitcount,getStream) ;
 		}
 		if (structureCode==2){
 			dataTable = retrieveRandomDocs(dbname, requestFields, limitcount) ;
@@ -747,19 +761,25 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 	}
 
 	
-	private DataTable retrieveRandomWords(String dbname, ArrayList<String> requestFields, int limitcount) {
+	private DataTable retrieveRandomWords( String dbname, 
+										   ArrayList<String> requestFields, 
+										   int limitcount, 
+										   boolean getStream) {
 		
 		DataTable  dataTable = null;
 		
 		// ArrayList<String> resultLines = new ArrayList<String>() ;
 		String sql, fieldLabelsStr ; 
 		int n=0, df;
-
+		boolean hb=false;
 		Contexts c,iciContext;
 		Contexts rowObj;
 		List<Contexts> rows = null;
 		
-		requestFields.add(0, "id") ;
+		if (sfProperties.getInsertIdExtraColumn()>=1){
+			requestFields.add(0, "recid") ;
+		}
+		
 		fieldLabelsStr = somData.arrutil.arr2text( requestFields, ",");
 		if (fieldLabelsStr.endsWith(",")){
 			fieldLabelsStr = fieldLabelsStr.substring(0,fieldLabelsStr.length()-1);
@@ -784,13 +804,40 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 			if (connection.isClosed()){
 				open();
 			}
-			rows = iciDb.from(c).limit(limitcount).select();
+			
+			int[] ccExtrema = getContextsCallCountExtremalDifference();
+			hb = (ccExtrema[0]>0) ;
+			if ((getStream==false) || (hb==false)){
+				// rows = iciDb.from(c).limit(limitcount).select();
+				sql = "SELECT * FROM CONTEXTS Limit "+limitcount+";"; // where ... 
+
+			}else{
+				if (ccExtrema[0]>=5){
+					sql = "SELECT * FROM CONTEXTS where callcount = (SELECT min(callcount) FROM CONTEXTS) Limit "+limitcount+";";
+				}else{
+					sql = "SELECT * FROM CONTEXTS where callcount < (SELECT max(callcount) FROM CONTEXTS) Limit "+limitcount+";";
+				}
+			}
+			QueryRunner run = new QueryRunner();
+			
+			ResultSetHandler<List<Contexts>> crh ;
+			crh = new BeanListHandler<Contexts>(Contexts.class);
+
+			rows = run.query( connection,sql, crh);
+			if (rows!=null){
+				n = rows.size();
+			}else{
+				rows = new ArrayList<Contexts>(); // just to ensure a non-null condition 
+			}
 			 
-			n = rows.size();
+			
+			
 			
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		
+		// TODO: is there a threshold in sfProperties for the minimal number of records allowed to add ?
 		
 		if (n==0){
 			return null;
@@ -811,7 +858,7 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		
 		DataTableCol col;
 		
-		rcStr = rows.get(1).randomcontext;
+		rcStr = rows.get(1).randomcontext; 
 		if (rcStr.endsWith(";")){
 			rcStr=rcStr.substring(0,rcStr.length()) ;
 		}
@@ -852,15 +899,22 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		
 		String datastr ;
 		String[] datastrvalues;
+		int row_id, cc=0;
 		
+		row_id=0;
 		for (int i=0;i<n;i++){
 			
 			rowObj = rows.get(i) ;
 			
 			// [id, contextid, docid, wordlabel, relfrequency, distanceMean, distanceStDev, groupsCount, saliency, randomcontext]
 			// _setvalue uses the header strings for determining the index of the respective column
-			_setValue( dataTable, (Long)(long)i, "id" );
+			if (sfProperties.getInsertIdExtraColumn()>=1){
+				_setValue( dataTable, (Long)(long)i, "recid" );
+			}
+			
 			                     // TODO: we need type id in bean Contexts
+			
+			_setValue( dataTable, rowObj.id ,           "id" );
 			_setValue( dataTable, rowObj.contextid ,    "contextid" );
 			_setValue( dataTable, rowObj.docid ,        "docid" );
 			_setValue( dataTable, rowObj.wordlabel ,    "wordlabel" );
@@ -889,6 +943,20 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 				col.setFormat( DataTable.__FORMAT_NUM) ;
 			}
 			
+			// update = inc the field callcount for the respective id
+			sql = "update contexts set callcount="+(rowObj.callcount+1)+" where id="+ rowObj.getId()+";";
+			
+			QueryRunner run = new QueryRunner();
+			
+			try {
+				run.update(connection, sql) ;
+			} catch (SQLException e) {
+				// e.printStackTrace();
+				String estr = e.getMessage() ;
+				// it is not critical, just annoying ?
+				out.printErr(2, "problem encountered while updating database <randomwords> for field <callcount>, db index:"+rowObj.getId()+"."+estr);
+			}
+			
 		}// i-> all rows
 	  
 		// we have to fill the row perspective
@@ -897,6 +965,43 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		return dataTable;
 	}
 
+	
+	private int[] getContextsCallCountExtremalDifference() throws SQLException {
+		int[] extremalValues = new int[3] ;
+		int _min=0,_max=0;
+		String sql;
+
+		
+		List<Contexts> rows = null;
+		
+		ResultSetHandler<List<Contexts>> crh ;
+		crh = new BeanListHandler<Contexts>(Contexts.class);
+		
+		QueryRunner run = new QueryRunner();
+		
+		sql = "SELECT max(callcount) as cc FROM CONTEXTS ;";
+
+		rows = run.query( connection,sql, crh);
+		if ((rows!=null) && (rows.size()>0)){
+			_max = rows.get(0).cc;
+		}
+		
+		
+		sql = "SELECT min(callcount) as cc FROM CONTEXTS ;";
+
+		rows = run.query( connection,sql, crh);
+		if (rows!=null){
+			_min = rows.get(0).cc;
+		}
+		
+		extremalValues[0] = _max - _min;
+		extremalValues[1] = _min ;
+		extremalValues[2] = _max ;
+		
+		return extremalValues;
+	}
+	
+	
 	
 	private void _setValue( DataTable dataTable, Long idvalue, String colheader ){
 		
@@ -907,14 +1012,20 @@ public class SomTexxDataBase implements ConnectorClientIntf{
 		
 		col = dataTable.getColumn(colheader) ;
 		ix = col.getIndex() ;
-		col2 = dataTable.getDataTableColumn(ix) ;
 		
-		col.setNumeric( true );
-		col.addValue( 1.0*idvalue) ;
-		if (col.getDataFormat()<0){
-			_dataformat = _determineFormat(idvalue.getClass(), colheader);
-			col.setDataFormat(_dataformat) ;
-		}
+		if (ix>=0){
+			
+			col2 = dataTable.getDataTableColumn(ix) ;
+			
+			col.setNumeric( true );
+			col.addValue( 1.0*idvalue) ;
+			if (col.getDataFormat()<0){
+				_dataformat = _determineFormat(idvalue.getClass(), colheader);
+				col.setDataFormat(_dataformat) ;
+			}
+			
+		}// ? available
+		
 	}
 	
 	private void _setValue( DataTable dataTable, Integer ivalue, String colheader ){

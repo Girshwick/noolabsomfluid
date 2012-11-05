@@ -2,6 +2,7 @@ package org.NooLab.somfluid.tasks;
 
 import java.io.Serializable;
 
+import org.NooLab.somfluid.ReceptorTransferProcessIntf;
 import org.NooLab.somfluid.SomFluidClassTaskIntf;
 import org.NooLab.somfluid.SomFluidResultsIntf;
 import org.NooLab.somfluid.SomFluidTransformTaskIntf;
@@ -92,6 +93,8 @@ public class SomFluidTask 	implements
 	private String dataBaseName;
 
 	private int preparingAbstraction=0;
+
+	private ReceptorTransferProcessIntf receptorTransferProcess;
 
 	
  
@@ -721,6 +724,14 @@ public class SomFluidTask 	implements
 	@Override
 	public void setPreparingAbstraction(int flag) {
 		preparingAbstraction = flag;
+	}
+
+ 
+	public void setDataStreamReceptor(ReceptorTransferProcessIntf rtp) {
+		receptorTransferProcess = rtp;
+	}
+	public ReceptorTransferProcessIntf getDataStreamReceptor() {
+		return receptorTransferProcess;
 	}
 
 	

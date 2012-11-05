@@ -141,6 +141,12 @@ public class SomDataObject 	implements      Serializable,
 	transient public ArrUtilities arrutil = new ArrUtilities();
 	
 	transient PrintLog out = new PrintLog(2,true) ;
+
+
+	private boolean normalizeData;
+
+
+	private int streamingRowOffset;
 	// transient arrutil
 
 	
@@ -814,6 +820,35 @@ public class SomDataObject 	implements      Serializable,
 		}
 		
 	}
+	public void calculateStatisticalDescription() {
+		
+		int dataformat ;
+		DataTableCol column;
+		
+		int n=data.getColcount();
+											out.print(2, "calculating statistical description for all numerical columns...");
+											double f=10.0;
+		
+		for (int i=0;i<n;i++){
+											out.printprc(2, i, n, (int)((double)n/f), "");
+			column = data.getColumn(i);
+			dataformat = column.getDataFormat() ;
+		
+			if (dataformat<=8){
+				
+				column.calculateBasicStatistics();
+				
+			}// not string, text date?
+			if (dataformat>8){
+				// we count the different strings, avg. string length
+				
+			}
+			
+		}// i->
+											out.print(2, "calculating statistical descriptions done.");
+	}
+
+
 	public SomMapTable extractSimpleTable() {
 		return extractSimpleTable( 1, -1, true) ;
 	}
@@ -1052,7 +1087,7 @@ public class SomDataObject 	implements      Serializable,
 			actualizeVariables();
 			vectorSize = variables.size() ;
 			
-			VariableSettingsHandlerIntf vsi;
+			//VariableSettingsHandlerIntf vsi;
 			 
 			variables.setVariableSettings( sfProperties.getVariableSettings() ); 
 			// --- transforming data ------------------------------------------
@@ -1083,14 +1118,23 @@ public class SomDataObject 	implements      Serializable,
 			// note that index columns and string columns need to be excluded
 			// which we can do via the format[] value : use only 1<= f <= 7, exclude otherwise
 					out.delay(400);
-			// normalizedSomData = transformer.normalizeData(variables);   
-			somTransformerIntf.normalizeData(); // just adding everywhere LinNorm, caring for output data
-				    out.delay(400);
-			// creating the usable table as an instance of DataTable
-			// creates columns by copying out-data from transformation stack into columns (list of columns = of DataTable)  
+					
+					
+			// normalizedSomData = transformer.normalizeData(variables);
+					
+			// usually, normalizing data is ON by default;
+			if (normalizeData){
+
+				somTransformerIntf.normalizeData(); // just adding everywhere LinNorm, caring for output data
+					    					out.delay(400);
+				    // creating the usable table as an instance of DataTable
+				    // creates columns by copying out-data from transformation stack into columns (list of columns = of DataTable)
+					    					
+			}
+
 			normalizedSomData = somTransformerIntf.writeNormalizedData() ; 
 			normalizedSomData.setName("normalized table");
-			
+
 			// where is the request for this ?
 			if (applyExtendedPreparations>1){ // should be actually ">0"
 			// shifting distributions (kurtosis, skewness), 
@@ -1147,6 +1191,17 @@ public class SomDataObject 	implements      Serializable,
 		}
 	}
 
+	
+	public void extendDataTable( SomTransformerIntf somTransformerIntf, DataTable datatable, int applyExtendedPreparations ){
+		 
+		
+		if (datatable==null){
+			return;
+		}
+
+		somTransformerIntf.basicTransformToNumericalFormat(streamingRowOffset); 
+	}
+	
 	
 	public void clearDataFromTransformStack() {
 		 
@@ -1449,6 +1504,34 @@ public class SomDataObject 	implements      Serializable,
 	}
 
 
+	/**
+	 * this comes from  ExtensionalityDynamics, which maintains a list of index values
+	 * that are being collected by the node (MetaNode in VirtualLattice)
+	 *   
+	 * @param extensionality
+	 * @param result
+	 */
+	public void nodeChangeEvent( ExtensionalityDynamicsIntf extensionality, long result) {
+		//  
+		// for registration and handling : fork immediately into container !!
+		long nodeID, uuid;
+		
+		uuid  = extensionality.getNodeNumGuid();
+		nodeID = extensionality.getNodeSerial();
+		
+		/* it is also sent to implementations of SomProcessIntf :
+		 * 	  - SomTargetedModeling
+		 *    - SomAstor
+		 */
+	}
+
+
+	public void activateNormalizationOfInData(boolean normalizedata) {
+		//
+		normalizeData = normalizedata ;
+	}
+
+
 	public DataTable getData() {
 		return data;
 	}
@@ -1668,31 +1751,15 @@ public class SomDataObject 	implements      Serializable,
 		
 	}
 
-	/**
-	 * this comes from  ExtensionalityDynamics, which maintains a list of index values
-	 * that are being collected by the node (MetaNode in VirtualLattice)
-	 *   
-	 * @param extensionality
-	 * @param result
-	 */
-	public void nodeChangeEvent( ExtensionalityDynamicsIntf extensionality, long result) {
-		//  
-		// for registration and handling : fork immediately into container !!
-		long nodeID, uuid;
-		
-		uuid  = extensionality.getNodeNumGuid();
-		nodeID = extensionality.getNodeSerial();
-		
-		/* it is also sent to implementations of SomProcessIntf :
-		 * 	  - SomTargetedModeling
-		 *    - SomAstor
-		 */
-	}
- 
-
 	public void updateVariableLabels() {
 		
 		this.variableLabels = new ArrayList<String>( variables.getLabelsForVariablesList(variables) );
+	}
+
+
+	public void setStreamingRowOffset(int offset) {
+
+		streamingRowOffset = offset ;
 	}
 
 
