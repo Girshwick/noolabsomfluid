@@ -192,6 +192,7 @@ public class ExtensionalityDynamics implements ExtensionalityDynamicsIntf{
 			}else{
 				result=index;
 			}
+			
 			if ((informUpstream) && (somData!=null) && (changeEventIndication>0) && (processHost!=null)){
 				somData.nodeChangeEvent( (ExtensionalityDynamicsIntf)this, result );
 				processHost.nodeChangeEvent( (ExtensionalityDynamicsIntf)this, result );

@@ -1506,9 +1506,11 @@ public class VirtualLattice
 						dt = 1 ;
 						minidelay(dt);
 						// a delay in nanoseconds...
+						out.delay(1) ;
 					}else{
 						// as long as there are items in the queue, there will be no waiting time
 						dt = 0 ;
+						minidelay(2);
 					}
 					
 				}// -> isRunning?

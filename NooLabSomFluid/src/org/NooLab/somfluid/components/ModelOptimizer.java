@@ -2030,6 +2030,14 @@ if (bestHistoryIndex==0){
 		somLattice.handlingRoutedSelectionEvent(results);
 	}
 
+
+
+	@Override
+	public void addStreamingData(DataTable dataTable) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	
 	
 }

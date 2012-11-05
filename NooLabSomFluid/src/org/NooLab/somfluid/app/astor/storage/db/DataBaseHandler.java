@@ -235,7 +235,7 @@ public class DataBaseHandler  {
 			}
 			
 			dbName ="" ;
-			nameextx = xMsg.getNodeInfo( nodeDbObjs.get(i), "database", "extensions") ;
+			nameextx = ";"+xMsg.getNodeInfo( nodeDbObjs.get(i), "database", "extensions") ;
 			nameext = nameextx.split(";");
 			/*
 			 *   <texx><database name="randomwords">
@@ -363,7 +363,7 @@ public class DataBaseHandler  {
 			
 
 			dbName ="" ; hb=false;
-			nameextx = xMsg.getNodeInfo( nodeDbObjs.get(i), "database", "extensions") ;
+			nameextx = ";"+xMsg.getNodeInfo( nodeDbObjs.get(i), "database", "extensions") ;
 			nameext = nameextx.split(";");
 
 			

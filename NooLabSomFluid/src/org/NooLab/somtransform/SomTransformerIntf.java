@@ -52,6 +52,8 @@ public interface SomTransformerIntf {
 	
 	public int basicTransformToNumericalFormat();
 	
+	public int basicTransformToNumericalFormat(int streamingRowOffset);
+	
 	// ......................
 	
 	public void applyAdvNumericalTransforms( IndexedDistances listOfPutativeTransforms )  ;
@@ -117,6 +119,8 @@ public interface SomTransformerIntf {
 	public int getDerivationLevel();
 
 	public TransformationModel getTransformationModel();
+
+	
 
 	// ......................
 	

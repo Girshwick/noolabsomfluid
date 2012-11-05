@@ -18,6 +18,7 @@ import org.NooLab.itexx.storage.TexxDataBaseSettingsIntf;
 
 import org.NooLab.somfluid.SomFluidFactory;
 import org.NooLab.somfluid.SomFluidProperties;
+import org.NooLab.somfluid.app.astor.trans.SomAstorNodeContent;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.categories.extensionality.ExtensionalityDynamicsIntf;
@@ -115,7 +116,9 @@ public class SomAstor
 	ArrayList<Long> changedNodes = new ArrayList<Long> ();
 	private int prepareAbstraction=0;
 	
-	ArrUtilities arrutil = new ArrUtilities(); 
+	ArrUtilities arrutil = new ArrUtilities();
+	private int databaseStructureCode;
+	boolean initializationCompleted = false; 
 			
 	// ========================================================================
 	public SomAstor( SomHostIntf somhost, 
@@ -144,7 +147,14 @@ public class SomAstor
 		isRunning = false;
 		delay=10 ;
 		
+		if (dSom != null){
+			dSom.close();
+		}
 		
+		if (sfTask.getDataStreamReceptor()!=null){
+			sfTask.getDataStreamReceptor().stop();
+		}
+
 	}
 	// ========================================================================	
 
@@ -178,6 +188,8 @@ public class SomAstor
 		particleField.registerEventMessaging(this) ;
 		 
 		astorThrd = new Thread(this,"astorThrd") ;
+		
+		initializationCompleted = true;
 	}
 	
 	
@@ -404,18 +416,23 @@ public class SomAstor
 		
 		dSom = new DSom( this, somDataObj, astorLattice, sfTask );
 		
+		// if option then start
+		dSom.startStreamPerceptionProcess();
+		
 		dSom.performAstor();
 	}
 	
 	@Override
-	public void update(Observable senderObj, Object msg) {
+	public void update(Observable senderObj, Object msg) {  
 		 
 		out.printErr(2, "Observer-update msg received in SomAstor, \n"+
 				        "  sender = "+latticeProperties.toString()+ "\n"+
 				        "  msg    = "+msg.toString())  ;
 		
 		if (senderObj instanceof DSom){
-			if (((String)(msg.getClass().getSimpleName())).toLowerCase().contains("modelProperties")){}
+			if (((String)(msg.getClass().getSimpleName())).toLowerCase().contains("modelProperties")){
+				
+			}
 		}
 		if (senderObj instanceof DataStreamProvider){
 			
@@ -487,12 +504,25 @@ public class SomAstor
 		
 		calculationFinished = true;
 		//
-		out.print(2, "\n\nAstor SOM is in stream receiver mode now.");
+		if (sfProperties.getStreamingActive()>0){
+			out.print(2, "\n\nAstor SOM is in stream receiver mode now.");
+		}else{
+			out.print(2, "\n\nAstor SOM has finished grouping of data (streaming is not available or has been switched off).");
+		}
+		
+		
+		
+		if ((sfProperties.getStreamingActive()>0) && (sfTask.getDataStreamReceptor()!=null)){
+			sfTask.getDataStreamReceptor().start(somHost, databaseStructureCode);
+		}
+		
 		while ((isRunning==true) && (userBreak==false)){
 			
 			PrintLog.Delay(delay);
 		}
 		out.printErr(2, "");
+		
+		// SomAstor contains a process StreamPerceptionProcess
 	}
 	
 	
@@ -647,7 +677,6 @@ public class SomAstor
 			
 			// copy to a clone
 			// ArrayList<Integer> changedNodes 
-			
 			// informing inner class "SomChangeEventObserver" in "SomAstorNodeContent" 
 			// registering via astorNodeContent.registerObservedSomProcess( somAstor ) takes
 			// place in "SomAssociativeStorage"
@@ -656,6 +685,7 @@ public class SomAstor
 			 
 			registeredChanges=0;
 			changedNodes.clear(); 
+			SomAstorNodeContent sanc; // a pure dummy for DEV
 		}
 	}
 
@@ -734,6 +764,12 @@ public class SomAstor
 
 	public void setUpdatePeriodByChangeCount(int updatePeriodByChangeCount) {
 		this.updatePeriodByChangeCount = updatePeriodByChangeCount;
+	}
+
+
+	public void setDatabaseStructureCode(int dbStructureCode) {
+		databaseStructureCode = dbStructureCode ;
+		
 	}
 
 }

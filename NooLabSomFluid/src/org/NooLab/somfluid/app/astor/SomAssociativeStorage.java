@@ -15,6 +15,7 @@ import org.NooLab.somfluid.app.astor.query.SomQueryFactory;
 import org.NooLab.somfluid.app.astor.query.SomQueryIntf;
 import org.NooLab.somfluid.app.astor.storage.db.AstorDataBase;
 import org.NooLab.somfluid.app.astor.stream.SomDataStreamer;
+
 import org.NooLab.somfluid.app.astor.trans.SomAstorNodeContent;
 import org.NooLab.somfluid.components.SomDataObject;
 import org.NooLab.somfluid.core.SomProcessIntf;
@@ -28,6 +29,8 @@ import org.NooLab.somfluid.core.nodes.LatticePropertiesIntf;
 import org.NooLab.somfluid.env.data.SomTexxDataBase;
 import org.NooLab.somfluid.lattice.VirtualLattice;
 import org.NooLab.somfluid.properties.PersistenceSettings;
+import org.NooLab.somfluid.storage.DataTable;
+import org.NooLab.somfluid.structures.Variable;
 import org.NooLab.somfluid.structures.Variables;
 import org.NooLab.somfluid.tasks.SomFluidTask;
 
@@ -36,6 +39,8 @@ import org.NooLab.somsprite.ProcessCompletionMsgIntf;
 import org.NooLab.somtransform.SomTransformer;
 import org.NooLab.utilities.logging.PrintLog;
 import org.NooLab.utilities.logging.SerialGuid;
+import org.NooLab.utilities.strings.ArrUtilities;
+import org.apache.commons.collections.CollectionUtils;
 
 
 
@@ -126,7 +131,6 @@ import org.NooLab.utilities.logging.SerialGuid;
  * 
  * This class is just an app-like wrapper, organizing references, processes and classes
  * 
- * 
  *  implements  
  *  
  */
@@ -136,6 +140,7 @@ public class SomAssociativeStorage
 												SomAstorFrameIntf,
 												ProcessCompletionMsgIntf{
 
+	String astorDbResourcePath = "org/NooLab/somfluid/app/astor/resources/sql";
 	// objects above
 	SomFluid somFluid ;
 	SomFluidTask sfTask;
@@ -178,6 +183,7 @@ public class SomAssociativeStorage
 	transient PrintLog out = new PrintLog(2,true);
 	private int databaseStructureCode;
 	private int prepareAbstraction;
+	
 	/** by powers of 10 */
 	double nodesDbUpdateIntensity = 1.5;
 	private boolean prepareFingerprints=false;
@@ -194,7 +200,8 @@ public class SomAssociativeStorage
 		sfFactory = factory ;
 		sfProperties = properties;
 		
-
+		// general instantiation, even if we will not use it (but most likely we will do)
+		somDataStreamer = new SomDataStreamer( this , sfProperties);
 		
 		this.sfTask = sftask;
 		
@@ -260,7 +267,7 @@ public class SomAssociativeStorage
 			AstorProperties astorProperties = new AstorProperties(sfProperties);
 
 			ps = astorProperties.getPersistenceSettings() ;
-			ps.setConfigSqlResourceJarPath("org/NooLab/somfluid/app/astor/resources/sql");
+			ps.setConfigSqlResourceJarPath( astorDbResourcePath );
 			ps.setAppNameShortStr("astor") ;
 			
 			// create/care for database, read somid if it is available ...
@@ -284,7 +291,15 @@ public class SomAssociativeStorage
 				
 				astorDb.prepareDatabase( dbName,0, prepareFingerprints) ; // TODO: name should be dynamical
 			}                       // the nodes db, e.g. astornodes or astornodes-L2
-			   // .................
+			else{
+				if (dbName.length()>0){ // astornodes here
+					astorDb.prepareDatabase( dbName,0, prepareFingerprints) ;	
+				}
+				// astorDb.prepareDatabase( dbName,0, prepareFingerprints)
+				
+			}
+				// .................
+			
 			
 			
 			// create the lattice
@@ -314,7 +329,8 @@ public class SomAssociativeStorage
 			//>>>>>>>>>>>>>>
 			
 			somAstor.setPrepareAbstraction(prepareAbstraction) ;
-
+			somAstor.setDatabaseStructureCode(databaseStructureCode);
+			
 				int n = Math.max( astorSomLattice.getNodes().size() * 20 ,10000) ;
 				n = 100;
 			// update period for nodes db : adaptive per node size
@@ -331,18 +347,34 @@ public class SomAssociativeStorage
 
 			// the node content collector should start earliest after initial instantiation of a full L1-SOM,
 			// or after full resume
-			// astorNodeContent = new SomAstorNodeContent( this );
-//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TODO: DEBUG DEACT ONLY , unblock for production !!!!!!!!!!!!!!!!!!			
-			//astorNodeContent.registerObservedSomProcess( somAstor );
-			
 			while (somAstor.isRunning()==true){
 				out.delay(10);
-				
-				if (somAstor.calculationFinished){
-					out.delay(100);
+				if (somAstor.initializationCompleted){
+					break;
 				}
 			}
+			
+			if (somAstor.initializationCompleted){
+				astorNodeContent = new SomAstorNodeContent( this );
+				
+//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TODO: DEBUG DEACT ONLY , unblock for production !!!!!!!!!!!!!!!!!!			
+				astorNodeContent.registerObservedSomProcess( somAstor );
+				n=-1;
+				while (somAstor.isRunning() == true) {
+					out.delay(100);
 
+					if (somAstor.calculationFinished) {
+						out.delay(1000);
+						if (n<0){
+							n = astorNodeContent.getFailingNodeRequests().size() ;
+							if (n>0){
+								out.printErr(2, "For some nodes their entry in the database has not been updated due to id-mismatch (n="+n+")...");
+							}
+						}
+						
+					}
+				}
+			}
 			// ensure persistence
 			
 			
@@ -385,21 +417,53 @@ public class SomAssociativeStorage
 		}
 		
 	}
+	@SuppressWarnings("unchecked")
 	public void setInitialVariableSelection(ArrayList<String>  vs){
 		
 		//ArrayList<Double> initialUsageIndicator = new ArrayList<Double>();
+		int n;
+		Variables variables;
+		ArrayList<String> excludedVars,blacklistVars,ixesVars,allVars, xVars,sVars;
+		ArrayList<Variable> ixVars;
 		
 		if (somDataObj==null){
 			return;
 		}
-		Variables variables = somDataObj.getVariables() ;
+		variables = somDataObj.getVariables() ;
 		String label;
 		
-		
-		for (int i=0;i<vs.size();i++){
-			label = vs.get(i);
-			int ix = variables.getIndexByLabel(label);
-			usedVariables.add(ix) ;
+		if ((vs!=null) && (vs.size()>0)){
+			for (int i = 0; i < vs.size(); i++) {
+				label = vs.get(i);
+				int ix = variables.getIndexByLabel(label);
+				usedVariables.add(ix);
+			}
+		}
+		// if autoselectMode = _ALL ( | _RANDOM_ | N<num> )       <<<<<<<<<<<<<< TODO: introduce a constant, String to parse
+		if ((vs!=null) && (vs.size()==0)){
+			if (usedVariables.size()<=1){
+				variables = this.somDataObj.getVariables();
+				excludedVars  = variables.getAbsoluteFieldExclusions();
+				blacklistVars = variables.getBlacklistLabels() ;
+				ixVars = variables.getAllIndexVariables();
+				ixesVars = variables.getLabelsForVariablesList(ixVars);
+				allVars = variables.getLabelsForVariablesList(variables);
+				
+				// we have the wrong list of excluded  here...  reference to a wrong database? where is it set before  
+				xVars = (ArrayList<String>)ArrUtilities.interSection(allVars, excludedVars);
+				
+				xVars.addAll((ArrayList<String>) ArrUtilities.interSection(allVars, blacklistVars));
+				xVars.addAll((ArrayList<String>) ArrUtilities.interSection(allVars, ixesVars));
+				
+				sVars = (ArrayList<String>) ArrUtilities.disjunctionLR(allVars, xVars,1) ;
+				n = sVars.size();
+				
+				usedVariables.addAll( variables.getIndexesForLabelsList(sVars) ) ;
+				
+				n = sVars.size();
+				n = blacklistVars.size();
+				n = ixesVars.size();
+			}
 		}
 		Collections.sort(usedVariables); 
 		usedVariables.trimToSize();
@@ -432,7 +496,7 @@ public class SomAssociativeStorage
 				if ( sfFactory.getInstanceType() == FieldIntf._INSTANCE_TYPE_ASTOR){
 					
 					limit = 1000 ;
-					somDataStreamer = new SomDataStreamer( this, sfProperties ) ;
+					
 					
 				}else{
 					limit = 80000 ; ;
@@ -477,6 +541,13 @@ public class SomAssociativeStorage
 	}
 
 	@Override
+	public void addStreamingData(DataTable dataTable) {
+
+		out.printErr(2, "\n>>> SomHost (=SomAssociativeStorage) received data (n:"+dataTable.getRowcount()+") through the streaming path...\n");
+		somDataStreamer.addData( dataTable );
+	}
+
+	@Override
 	public void selectionEventRouter(SurroundResults results, VirtualLattice somLattice) {
 		 
 		somLattice.handlingRoutedSelectionEvent(results);
@@ -487,11 +558,14 @@ public class SomAssociativeStorage
 		 
 		somprocessCompleted = true;
 	}
+	
 	@Override
 	public void onTargetedModelingCompleted(ModelProperties results) {
 		 
 		
 	}
+	
+	
 	@Override
 	public SomFluidTask getSfTask() {
 		
@@ -517,6 +591,7 @@ public class SomAssociativeStorage
 
 		return null;
 	}
+	
 	@Override
 	public SomDataObject getSomDataObj() {
 		// 
@@ -574,8 +649,8 @@ public class SomAssociativeStorage
 		return prepareAbstraction;
 	}
 
-	public void setPrepareAbstraction(int prepareAbstraction) {
-		this.prepareAbstraction = prepareAbstraction;
+	public void setPrepareAbstraction(int flag) {
+		prepareAbstraction = flag;
 	}
 
 	public int getDbStructureCode() {

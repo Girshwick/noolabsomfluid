@@ -29,7 +29,6 @@ import org.NooLab.utilities.logging.PrintLog;
 public class SomAppTransformer 
 								extends 
 											SomTransformerAbstract
-											
 								implements 	
 											Serializable
 											{
@@ -136,6 +135,16 @@ public class SomAppTransformer
 
 	public void setNodeCount(int nodeCount) {
 		this.nodeCount = nodeCount;
+	}
+
+
+
+
+
+	@Override
+	public void createDataDescriptions() {
+		// TODO Auto-generated method stub
+		
 	}
 
 

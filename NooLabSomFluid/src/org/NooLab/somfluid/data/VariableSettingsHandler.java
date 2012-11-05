@@ -54,7 +54,7 @@ public class VariableSettingsHandler implements VariableSettingsHandlerIntf{
 	ArrayList<String> treatmentDesignVariables = new ArrayList<String>();
 	ArrayList<String> groupIndicatorDesignVariables = new ArrayList<String>();
 	
-	
+	ArrayList<String> excludeFromNormalization = new ArrayList<String>();
 	
 	int absoluteExclusionsMode = 1 ;
 	
@@ -177,6 +177,17 @@ public class VariableSettingsHandler implements VariableSettingsHandlerIntf{
 	}
 	 
 	
+	@Override
+	public void setExcludeFromNormalization(ArrayList<String> items) {
+		if ((items!=null) && (items.size()>1)){
+			excludeFromNormalization.addAll(items);
+		}
+	}
+
+	public ArrayList<String> getExcludeFromNormalization() {
+		return excludeFromNormalization ;
+	}
+
 	public ArrayList<String> getTargetVariableCandidates() {
 		return targetVariableCandidates;
 	}
@@ -369,7 +380,6 @@ public class VariableSettingsHandler implements VariableSettingsHandlerIntf{
 	public String createSimplifiedIniRepresenation() {
 		return "";
 	}
-
 
 
 

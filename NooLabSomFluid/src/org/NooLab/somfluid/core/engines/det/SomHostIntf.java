@@ -10,6 +10,7 @@ import org.NooLab.somfluid.components.post.OutResults;
 import org.NooLab.somfluid.core.SomProcessIntf;
 import org.NooLab.somfluid.core.engines.det.results.ModelProperties;
 import org.NooLab.somfluid.lattice.VirtualLattice;
+import org.NooLab.somfluid.storage.DataTable;
 import org.NooLab.somfluid.tasks.SomFluidTask;
  
 
@@ -43,4 +44,6 @@ public interface SomHostIntf {
 	public String getOutResultsAsXml(boolean asHtmlTable);
 
 	public void selectionEventRouter(SurroundResults results, VirtualLattice somLattice);
+
+	public void addStreamingData(DataTable dataTable);
 }
