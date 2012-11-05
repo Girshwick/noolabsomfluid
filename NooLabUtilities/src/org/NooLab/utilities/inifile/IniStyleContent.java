@@ -1,6 +1,7 @@
 package org.NooLab.utilities.inifile;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Vector;
 
@@ -8,7 +9,8 @@ import org.NooLab.utilities.files.DFutils;
 import org.NooLab.utilities.strings.StringsUtil;
   
 
-public class IniStyleContent {
+
+public class IniStyleContent implements Serializable{
 
 	String filetext ;
 	
@@ -16,8 +18,8 @@ public class IniStyleContent {
 	
 	ArrayList<String> lines = new ArrayList<String>();
 
-	StringsUtil strgutil = new StringsUtil();
-	static org.apache.commons.lang3.StringUtils ApacheStrings;	
+	transient StringsUtil strgutil = new StringsUtil();
+	transient static org.apache.commons.lang3.StringUtils ApacheStrings;	
 	
 	IniStyleContent isc;
 	

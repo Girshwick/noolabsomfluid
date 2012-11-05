@@ -1,5 +1,6 @@
 package org.NooLab.utilities.inifile;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -7,7 +8,7 @@ import java.util.Vector;
 
 import org.NooLab.utilities.strings.StringsUtil;
 
-public class IniStyleSection {
+public class IniStyleSection  implements Serializable{
 
 	/** the whole line */
 	ArrayList<String> sectionitems = new ArrayList<String>();
@@ -22,11 +23,14 @@ public class IniStyleSection {
 	int parseMode = 0; // 0=lazy, 1=strict
 	
 	
-	StringsUtil strgutil;
+	transient StringsUtil strgutil;
 	
+	// ------------------------------------------------------------------------
 	public IniStyleSection(){
 		
 	}
+	// ------------------------------------------------------------------------
+	
 	
 	protected void setObj( StringsUtil strutil ){
 		
@@ -129,8 +133,15 @@ public class IniStyleSection {
 		return  mappedItems;
 	}
 	
+	/**
+	 * not functoinal yet !!!
+	 * 
+	 * @param pattern
+	 * @return
+	 */
 	public Map<String,ItemValue> getMappedEntries(String pattern){
-		// TODO not ready !!
+		// 
+		
 		return  mappedItems;
 	}
 	
@@ -217,6 +228,36 @@ public class IniStyleSection {
 		}
 			
 		return vi;
+	}
+
+
+	public ArrayList<String> getSectionitems() {
+		return sectionitems;
+	}
+
+
+	public void setSectionitems(ArrayList<String> sectionitems) {
+		this.sectionitems = sectionitems;
+	}
+
+
+	public ArrayList<String> getSectionKeys() {
+		return sectionKeys;
+	}
+
+
+	public void setSectionKeys(ArrayList<String> sectionKeys) {
+		this.sectionKeys = sectionKeys;
+	}
+
+
+	public Map<String, ItemValue> getMappedItems() {
+		return mappedItems;
+	}
+
+
+	public void setMappedItems(Map<String, ItemValue> mappedItems) {
+		this.mappedItems = mappedItems;
 	}
 
 }
