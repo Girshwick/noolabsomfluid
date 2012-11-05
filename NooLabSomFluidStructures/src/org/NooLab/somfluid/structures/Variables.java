@@ -27,6 +27,8 @@ public class Variables implements Serializable, VariablesIntf{
 	ArrayList<String> 	  blacklistLabels = new ArrayList<String>() ;
 	ArrayList<String> 	  absoluteFieldExclusions = new ArrayList<String>() ;
 	
+	ArrayList<String>     excludedFromNormalization = new ArrayList<String>() ;
+	
 	/** 
 	 * these exclusions are regulated by the modeling process itself, the user can't access them;
 	 * they are of temporary character !
@@ -69,6 +71,9 @@ public class Variables implements Serializable, VariablesIntf{
 	
 	transient StringsUtil  strgutil ;
 	transient ArrUtilities arrutils = new ArrUtilities();
+
+
+	
 
 	
 
@@ -297,6 +302,11 @@ public class Variables implements Serializable, VariablesIntf{
 	}
 	
 	
+	/**
+	 * 
+	 * expand wildcarded variable settings
+	 * 
+	 */
 	public void explicateGenericVariableRequests() {
 		explicateGenericVariableRequests(0) ;
 	}
@@ -512,6 +522,7 @@ public class Variables implements Serializable, VariablesIntf{
 				initialUsedVariablesStr = new ArrayList<String>(strList);
 			}
 		}
+		
 		
 		vlabel = "" ;
 	}
@@ -784,12 +795,17 @@ if (varLabel.contains(pL)){
 	 */
 	public ArrayList<Integer> getIndexesForLabelsList(ArrayList<String> stringList) {
 		ArrayList<Integer> indexes = new ArrayList<Integer>();
+		int k;
 		String inlabel ;
 		ArrayList<String> varLabels = getLabelsForVariablesList(items);
 		
 		for (int i=0;i<stringList.size();i++){
+			
 			inlabel = stringList.get(i) ;
 			int p = varLabels.indexOf(inlabel) ;
+if ((p==31) || (p==57)){
+	k=0;
+}
 			if (indexes.indexOf(p)<0){
 				indexes.add(p) ;
 			}
@@ -984,7 +1000,17 @@ if (varLabel.contains(pL)){
 	}
  
 	
+	/**
+	 * 
+	 * also expands wildcarded variable settings
+	 * 
+	 * @param variablesettings
+	 */
 	public void setVariableSettings(VariableSettingsHandlerIntf variablesettings) {
+		
+		ArrayList<String> explics ; 
+		String vlabel ;
+		
 		
 		if (variablesettings==null){
 			return;
@@ -1012,6 +1038,34 @@ if (varLabel.contains(pL)){
         		addTargetedVariablesByLabels( variableSettings.getTargetVariableCandidates() );  
         	}
         }
+        
+        if ( variableSettings.getExcludeFromNormalization().size()>0 ){
+        	
+        	excludedFromNormalization.addAll( variableSettings.getExcludeFromNormalization()) ;
+        	// treat as in : explicateGenericVariableRequests() 
+        	
+    		for (int i=0; i< excludedFromNormalization.size();i++){
+    			vlabel = excludedFromNormalization.get(i) ;
+    			
+    			if ((vlabel.startsWith("*")) || (vlabel.endsWith("*"))){
+    				explics = explicateWildcardedLabel(vlabel);
+    				
+    				if (explics.size()>0){
+    					excludedFromNormalization.addAll( explics);
+    					int p = excludedFromNormalization.indexOf(vlabel);
+    					if (p>=0){
+    						excludedFromNormalization.remove(p) ;
+    					}
+    				}
+    				explics.clear(); explics=null;
+    			} // contains * ?
+    			else{
+    				
+    			}
+    		} // i ->
+
+        }
+        
 	}
 
 	public void addTargetedVariablesByLabels(ArrayList<String> vlabels) {
@@ -1199,6 +1253,15 @@ if (varLabel.contains(pL)){
 		return absoluteFieldExclusions;
 	}
 
+	public ArrayList<String> getExcludedNormalization(){
+		return excludedFromNormalization;
+	}
+
+	public void setExcludedNormalization(ArrayList<String> exclNorm){
+		excludedFromNormalization = new ArrayList<String>(exclNorm);
+	}
+
+	
 	/**
 	 * @return the absoluteAccessible
 	 */
@@ -1374,22 +1437,40 @@ if (varLabel.contains(pL)){
 	// public void setInitialUsageVector(ArrayList<String> initialUseVector) {
 	public void setInitialUsageVector(ArrayList<String> initialUseVector) {
 		
+		boolean hb=false;
+		
+		
 		if ((initialUseVector==null) || (initialUseVector.size()<=1)){
 			// int n=0;
 		}
-		this.initialUsedVariablesStr = new ArrayList<String>( initialUseVector ) ;
+		
+		initialUsedVariablesStr = new ArrayList<String>( initialUseVector ) ;
 		
 		// initialized as existing but empty list: ArrayList<Double> usageIndicationVector = new ArrayList<Double>() ;
 		if (usageIndicationVector.size() != items.size()){
+
 			for (int i=0;i<items.size();i++){
 				usageIndicationVector.add(0.0);
 				String label = items.get(i).getLabel();
-				if (initialUseVector.contains(label )){
+				
+				if (label.contains("*")){
+					hb = strgutil.indexOf( initialUseVector, label, 0, 4)>=0;
+				}else{
+					hb = initialUseVector.contains(label.toLowerCase());
+					if (hb==false){
+						hb = initialUseVector.contains(label.toUpperCase());
+					}
+					if (hb==false){
+						hb = strgutil.indexOf( initialUseVector, label, 0, 4)>=0;	
+					}
+				}
+				
+				if (hb ){
 					usageIndicationVector.set(i,1.0);
 				}
 			}
 		}
-		
+		hb=false;
 	}
 
 	public int[] getUseIndicatorArray() {

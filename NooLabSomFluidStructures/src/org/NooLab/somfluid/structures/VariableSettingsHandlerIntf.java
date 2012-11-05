@@ -94,6 +94,10 @@ public interface VariableSettingsHandlerIntf {
 
 	public ArrayList<String> getGroupDesignVariables();
 
+	public void setExcludeFromNormalization(ArrayList<String> items);
+	
+	public ArrayList<String> getExcludeFromNormalization();
+	
 	// ----------------------------------------------------
 
 	public String createXmlRepresenation();
@@ -111,6 +115,8 @@ public interface VariableSettingsHandlerIntf {
 	public void setTvGroupIntervals(ArrayList<ValuePair> tvGroupIntervals) ;
 
 	public void setIdVariableCandidates(String[] idCandidates);
+
+
 
 	
 	
