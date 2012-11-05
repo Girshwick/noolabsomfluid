@@ -1,5 +1,7 @@
 package org.NooLab.utilities.inifile;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import org.NooLab.utilities.strings.StringsUtil;
@@ -7,17 +9,19 @@ import org.NooLab.utilities.strings.StringsUtil;
 
 
 
-public class IniStyleSections {
+public class IniStyleSections implements Serializable{
 
 	
 	private Vector<IniStyleSection> sections = new Vector<IniStyleSection>();
 	
-	StringsUtil strgutil;
+	transient StringsUtil strgutil;
 	
-	
+	// ------------------------------------------------------------------------
 	public IniStyleSections(){
 		
 	}
+	// ------------------------------------------------------------------------
+	
 	
 	protected void setObj( StringsUtil strutil ){
 		
@@ -33,7 +37,13 @@ public class IniStyleSections {
 		return sections.size();
 	}
 	
+	/**
+	 * returns the matching section as object, matching is exact 
+	 * @param name
+	 * @return
+	 */
 	public IniStyleSection getByName(String name){
+	
 		IniStyleSection section = null ;
 		
 		for (int i=0;i<sections.size();i++){
@@ -46,7 +56,40 @@ public class IniStyleSections {
 		
 		return section;
 	}
-	
+
+	/**
+	 * returns the matching section as object, matching is relaxed;
+	 * simple wildcard matching with wildcard at the beginning or the end of the pattern
+	 * 
+	 * @param pattern
+	 * @param relaxed,  1=mutual inclusion ; 2=regarding .-sections of the name separately 
+	 * @return
+	 */
+	public ArrayList<IniStyleSection> getByName(String pattern, int relaxed){
+		
+		boolean hb;
+		IniStyleSection section = null ;
+		ArrayList<IniStyleSection> foundSections = new ArrayList<IniStyleSection>();
+		
+		for (int i=0;i<sections.size();i++){
+			
+			String sectLabel = sections.get(i).name.toLowerCase() ;
+			
+			hb = (sectLabel.contentEquals(pattern));
+			if (hb==false){
+				hb = (sectLabel.contains(pattern)) || (pattern.contains(sectLabel));
+			}
+			if (hb){
+				section = sections.get(i) ;
+				foundSections.add(section);
+			}
+		}
+		
+		return foundSections;
+	}
+
+		
+		
 	public IniStyleSection get(int index){
 		return sections.get(index) ;
 	}
@@ -101,6 +144,11 @@ public class IniStyleSections {
 		}
 		
 		return entryvalue;
+	}
+
+
+	public void setSections(Vector<IniStyleSection> sections) {
+		this.sections = sections;
 	}
 	
 	
